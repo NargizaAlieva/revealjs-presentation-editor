@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SlideList from "../components/SlideList";
 import Toolbar from "../components/Toolbar";
 import EditorCanvas from "../components/EditorCanvas";
@@ -18,6 +18,19 @@ export default function EditorPage() {
     },
   ]);
 
+  useEffect(() => {
+    const savedSlides = localStorage.getItem("presentation-slides");
+
+    if (savedSlides) {
+      const parsedSlides = JSON.parse(savedSlides);
+      setSlides(parsedSlides);
+
+      if (parsedSlides.length > 0) {
+        setSelectedSlideId(parsedSlides[0].id);
+      }
+    }
+  }, []);
+
   const [selectedSlideId, setSelectedSlideId] = useState(1);
 
   const selectedSlide = slides.find((slide) => slide.id === selectedSlideId);
@@ -25,33 +38,93 @@ export default function EditorPage() {
   const updateSlideText = (newText) => {
     setSlides((prevSlides) =>
       prevSlides.map((slide) =>
-        slide.id === selectedSlideId
-          ? { ...slide, text: newText }
-          : slide
-      )
+        slide.id === selectedSlideId ? { ...slide, text: newText } : slide,
+      ),
     );
   };
 
   const addSlide = () => {
     const newSlide = {
-        id: Date.now(),
-        title: `Slide ${slides.length + 1}`,
-        text: "New slide content",
+      id: Date.now(),
+      title: `Slide ${slides.length + 1}`,
+      text: "New slide content",
     };
 
     setSlides([...slides, newSlide]);
     setSelectedSlideId(newSlide.id);
-    };
+  };
 
-    const deleteSlide = () => {
+  const deleteSlide = () => {
     if (slides.length === 1) return;
 
     const updatedSlides = slides.filter(
-        (slide) => slide.id !== selectedSlideId
+      (slide) => slide.id !== selectedSlideId,
     );
 
     setSlides(updatedSlides);
     setSelectedSlideId(updatedSlides[0].id);
+  };
+
+  const duplicateSlide = () => {
+    const currentSlide = slides.find((slide) => slide.id === selectedSlideId);
+
+    if (!currentSlide) return;
+
+    const duplicatedSlide = {
+      ...currentSlide,
+      id: Date.now(),
+      title: `${currentSlide.title} Copy`,
+    };
+
+    const currentIndex = slides.findIndex(
+      (slide) => slide.id === selectedSlideId,
+    );
+
+    const updatedSlides = [
+      ...slides.slice(0, currentIndex + 1),
+      duplicatedSlide,
+      ...slides.slice(currentIndex + 1),
+    ];
+
+    setSlides(updatedSlides);
+    setSelectedSlideId(duplicatedSlide.id);
+  };
+
+  const moveSlideUp = () => {
+    const currentIndex = slides.findIndex(
+      (slide) => slide.id === selectedSlideId,
+    );
+
+    if (currentIndex <= 0) return;
+
+    const updatedSlides = [...slides];
+    [updatedSlides[currentIndex - 1], updatedSlides[currentIndex]] = [
+      updatedSlides[currentIndex],
+      updatedSlides[currentIndex - 1],
+    ];
+
+    setSlides(updatedSlides);
+  };
+
+  const moveSlideDown = () => {
+    const currentIndex = slides.findIndex(
+      (slide) => slide.id === selectedSlideId,
+    );
+
+    if (currentIndex === -1 || currentIndex === slides.length - 1) return;
+
+    const updatedSlides = [...slides];
+    [updatedSlides[currentIndex], updatedSlides[currentIndex + 1]] = [
+      updatedSlides[currentIndex + 1],
+      updatedSlides[currentIndex],
+    ];
+
+    setSlides(updatedSlides);
+  };
+
+  const savePresentation = () => {
+    localStorage.setItem("presentation-slides", JSON.stringify(slides));
+    alert("Presentation saved successfully.");
   };
 
   return (
@@ -63,14 +136,15 @@ export default function EditorPage() {
       />
 
       <div className="editor-main">
-        <Toolbar 
-            onAddSlide={addSlide} 
-            onDeleteSlide={deleteSlide} 
+        <Toolbar
+          onAddSlide={addSlide}
+          onDeleteSlide={deleteSlide}
+          onDuplicateSlide={duplicateSlide}
+          onMoveSlideUp={moveSlideUp}
+          onMoveSlideDown={moveSlideDown}
+          onSavePresentation={savePresentation}
         />
-        <EditorCanvas
-          slide={selectedSlide}
-          onChangeText={updateSlideText}
-        />
+        <EditorCanvas slide={selectedSlide} onChangeText={updateSlideText} />
       </div>
     </div>
   );
