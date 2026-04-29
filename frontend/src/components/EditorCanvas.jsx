@@ -1,18 +1,30 @@
 import "./EditorCanvas.css";
 
-export default function EditorCanvas({ slide, onChangeTitle, onChangeText }) {
+export default function EditorCanvas({ slide, onChangePlaceholder }) {
+  const titlePlaceholder = slide.placeholders.find(
+    (placeholder) => placeholder.id === "title",
+  );
+
+  const bodyPlaceholder = slide.placeholders.find(
+    (placeholder) => placeholder.id === "body",
+  );
+
   return (
     <main className="canvas-wrapper">
       <section className="editor-slide">
         <input
-          value={slide.title}
-          onChange={(e) => onChangeTitle(e.target.value)}
+          value={titlePlaceholder.content}
+          onChange={(e) =>
+            onChangePlaceholder(titlePlaceholder.id, e.target.value)
+          }
           className="title-editor"
         />
 
         <textarea
-          value={slide.text}
-          onChange={(e) => onChangeText(e.target.value)}
+          value={bodyPlaceholder.content}
+          onChange={(e) =>
+            onChangePlaceholder(bodyPlaceholder.id, e.target.value)
+          }
           className="text-editor"
         />
       </section>

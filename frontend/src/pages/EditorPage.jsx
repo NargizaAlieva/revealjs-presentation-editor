@@ -8,12 +8,36 @@ const defaultSlides = [
   {
     id: 1,
     title: "Slide 1",
-    text: "Click here to edit text",
+    layoutId: "title-and-content",
+    placeholders: [
+      {
+        id: "title",
+        type: "text",
+        content: "Slide 1",
+      },
+      {
+        id: "body",
+        type: "text",
+        content: "Click here to edit text",
+      },
+    ],
   },
   {
     id: 2,
     title: "Slide 2",
-    text: "Second slide content",
+    layoutId: "title-and-content",
+    placeholders: [
+      {
+        id: "title",
+        type: "text",
+        content: "Slide 2",
+      },
+      {
+        id: "body",
+        type: "text",
+        content: "Second slide content",
+      },
+    ],
   },
 ];
 
@@ -143,10 +167,20 @@ export default function EditorPage() {
     alert("Presentation saved successfully.");
   };
 
-  const updateSlideTitle = (newTitle) => {
+  const updatePlaceholderContent = (placeholderId, newContent) => {
     setSlides((prevSlides) =>
       prevSlides.map((slide) =>
-        slide.id === selectedSlideId ? { ...slide, title: newTitle } : slide,
+        slide.id === selectedSlideId
+          ? {
+              ...slide,
+              title: placeholderId === "title" ? newContent : slide.title,
+              placeholders: slide.placeholders.map((placeholder) =>
+                placeholder.id === placeholderId
+                  ? { ...placeholder, content: newContent }
+                  : placeholder,
+              ),
+            }
+          : slide,
       ),
     );
   };
@@ -179,17 +213,29 @@ export default function EditorPage() {
         />
         <EditorCanvas
           slide={selectedSlide}
-          onChangeTitle={updateSlideTitle}
-          onChangeText={updateSlideText}
-        />{" "}
+          onChangePlaceholder={updatePlaceholderContent}
+        />
       </div>
 
       {isPreviewOpen && (
         <div className="preview-overlay">
           <div className="preview-window">
             <button onClick={() => setIsPreviewOpen(false)}>Close</button>
-            <h2>{selectedSlide.title}</h2>
-            <p>{selectedSlide.text}</p>
+            <h2>
+              {
+                selectedSlide.placeholders.find(
+                  (placeholder) => placeholder.id === "title",
+                )?.content
+              }
+            </h2>
+
+            <p>
+              {
+                selectedSlide.placeholders.find(
+                  (placeholder) => placeholder.id === "body",
+                )?.content
+              }
+            </p>
           </div>
         </div>
       )}
