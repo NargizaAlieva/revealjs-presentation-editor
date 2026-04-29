@@ -32,6 +32,28 @@ export default function EditorPage() {
     );
   };
 
+  const addSlide = () => {
+    const newSlide = {
+        id: Date.now(),
+        title: `Slide ${slides.length + 1}`,
+        text: "New slide content",
+    };
+
+    setSlides([...slides, newSlide]);
+    setSelectedSlideId(newSlide.id);
+    };
+
+    const deleteSlide = () => {
+    if (slides.length === 1) return;
+
+    const updatedSlides = slides.filter(
+        (slide) => slide.id !== selectedSlideId
+    );
+
+    setSlides(updatedSlides);
+    setSelectedSlideId(updatedSlides[0].id);
+  };
+
   return (
     <div className="editor-page">
       <SlideList
@@ -41,7 +63,10 @@ export default function EditorPage() {
       />
 
       <div className="editor-main">
-        <Toolbar />
+        <Toolbar 
+            onAddSlide={addSlide} 
+            onDeleteSlide={deleteSlide} 
+        />
         <EditorCanvas
           slide={selectedSlide}
           onChangeText={updateSlideText}

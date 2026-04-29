@@ -1,10 +1,12 @@
 import "./Toolbar.css";
 
-export default function Toolbar() {
+export default function Toolbar({ onAddSlide, onDeleteSlide }) {
   return (
-    <div className="toolbar">
-      <button>New Slide</button>
-      <button>Delete Slide</button>
-    </div>
+    <header className="toolbar">
+      <button onClick={onAddSlide}>New Slide</button>
+      <button onClick={onDeleteSlide}>Delete Slide</button>
+      <button>Save</button>
+      <button>Preview</button>
+    </header>
   );
 }
