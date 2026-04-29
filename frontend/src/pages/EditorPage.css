@@ -26,3 +26,11 @@
   padding: 40px;
   border-radius: 8px;
 }
+
+.draggable {
+  cursor: move;
+}
+
+.editor-slide {
+  position: relative;
+}

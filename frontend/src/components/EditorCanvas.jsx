@@ -1,32 +1,40 @@
 import "./EditorCanvas.css";
 
-export default function EditorCanvas({ slide, onChangePlaceholder }) {
-  const titlePlaceholder = slide.placeholders.find(
-    (placeholder) => placeholder.id === "title",
-  );
-
-  const bodyPlaceholder = slide.placeholders.find(
-    (placeholder) => placeholder.id === "body",
-  );
-
+export default function EditorCanvas({
+  slide,
+  onChangePlaceholder,
+  onMovePlaceholder,
+}) {
   return (
     <main className="canvas-wrapper">
       <section className="editor-slide">
-        <input
-          value={titlePlaceholder.content}
-          onChange={(e) =>
-            onChangePlaceholder(titlePlaceholder.id, e.target.value)
-          }
-          className="title-editor"
-        />
-
-        <textarea
-          value={bodyPlaceholder.content}
-          onChange={(e) =>
-            onChangePlaceholder(bodyPlaceholder.id, e.target.value)
-          }
-          className="text-editor"
-        />
+        {slide.placeholders.map((p) => (
+          <div
+            key={p.id}
+            className="draggable"
+            style={{
+              position: "absolute",
+              left: p.position?.x || 0,
+              top: p.position?.y || 0,
+            }}
+            draggable
+            onDragEnd={(e) =>
+              onMovePlaceholder(p.id, e.clientX - 300, e.clientY - 100)
+            }
+          >
+            {p.id === "title" ? (
+              <input
+                value={p.content}
+                onChange={(e) => onChangePlaceholder(p.id, e.target.value)}
+              />
+            ) : (
+              <textarea
+                value={p.content}
+                onChange={(e) => onChangePlaceholder(p.id, e.target.value)}
+              />
+            )}
+          </div>
+        ))}
       </section>
     </main>
   );

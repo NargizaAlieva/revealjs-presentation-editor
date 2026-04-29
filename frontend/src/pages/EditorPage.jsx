@@ -20,6 +20,7 @@ export default function EditorPage() {
     moveSlideDown,
     savePresentation,
     updatePlaceholderContent,
+    updatePlaceholderPosition,
   } = useSlides();
 
   const selectedSlideIndex = slides.findIndex(
@@ -59,6 +60,7 @@ export default function EditorPage() {
         <EditorCanvas
           slide={selectedSlide}
           onChangePlaceholder={updatePlaceholderContent}
+          onMovePlaceholder={updatePlaceholderPosition}
         />
       </div>
 

@@ -10,11 +10,13 @@ const defaultSlides = [
         id: "title",
         type: "text",
         content: "Slide 1",
+        position: { x: 50, y: 50 }
       },
       {
         id: "body",
         type: "text",
         content: "Click here to edit text",
+        position: { x: 50, y: 50 }
       },
     ],
   },
@@ -27,11 +29,13 @@ const defaultSlides = [
         id: "title",
         type: "text",
         content: "Slide 2",
+        position: { x: 50, y: 50 }
       },
       {
         id: "body",
         type: "text",
         content: "Second slide content",
+        position: { x: 50, y: 50 }
       },
     ],
   },
@@ -50,6 +54,7 @@ const getInitialSlides = () => {
 
   return defaultSlides;
 };
+
 
 export function useSlides() {
   const initialSlides = getInitialSlides();
@@ -90,6 +95,23 @@ export function useSlides() {
       )
     );
   };
+
+  const updatePlaceholderPosition = (placeholderId, x, y) => {
+  setSlides((prevSlides) =>
+    prevSlides.map((slide) =>
+      slide.id === selectedSlideId
+        ? {
+            ...slide,
+            placeholders: slide.placeholders.map((p) =>
+              p.id === placeholderId
+                ? { ...p, position: { x, y } }
+                : p
+            ),
+          }
+        : slide
+    )
+  );
+};
 
   const addSlide = () => {
     const slideNumber = slides.length + 1;
@@ -212,5 +234,6 @@ export function useSlides() {
     moveSlideDown,
     savePresentation,
     updatePlaceholderContent,
+    updatePlaceholderPosition,
   };
 }
