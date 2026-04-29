@@ -1,3 +1,5 @@
+import EditorPage from "./pages/EditorPage";
+
 export default function App() {
-  return <h1>Editor</h1>;
+  return <EditorPage />;
 }
