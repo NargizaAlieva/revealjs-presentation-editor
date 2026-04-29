@@ -1,0 +1,15 @@
+.canvas-wrapper {
+  flex: 1;
+  background-color: #eeeeee;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.editor-slide {
+  width: 800px;
+  height: 450px;
+  background-color: white;
+  border: 1px solid #ccc;
+  padding: 40px;
+}

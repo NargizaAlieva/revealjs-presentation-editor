@@ -1,0 +1,21 @@
+.slide-list {
+  width: 220px;
+  height: 100vh;
+  border-right: 1px solid #ddd;
+  padding: 16px;
+  background-color: #f8f8f8;
+}
+
+.slide-list-item {
+  padding: 12px;
+  margin-bottom: 10px;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.slide-list-item.active {
+  border: 2px solid #ff5a00;
+  background-color: #fff3eb;
+}
