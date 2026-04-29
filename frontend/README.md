@@ -1,16 +1,126 @@
-# React + Vite
+# Frontend — Web-Based Presentation Editor
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 📌 Overview
+This module implements the frontend of the web-based presentation editor.
 
-Currently, two official plugins are available:
+It provides a graphical user interface that allows users to create, edit, and manage presentation slides interactively. The frontend is responsible for rendering the editor interface, handling user interactions, and updating the UI in real time.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## 🎯 Responsibilities
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The frontend (Presentation Layer) is responsible for:
 
-## Expanding the ESLint configuration
+- Rendering the editor interface
+- Handling user interactions (click, input, drag & drop)
+- Managing UI state (selected slide, content updates)
+- Communicating with the backend via REST APIs
+- Displaying the presentation preview using reveal.js
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## ⚙️ Technologies
+
+- React (UI framework)
+- Vite (development and build tool)
+- JavaScript (ES6+)
+- HTML5 / CSS3
+
+---
+
+## 🧩 Main Components
+
+### EditorPage
+Main container of the editor interface.  
+Combines all UI elements such as slide list, toolbar, and editing canvas.
+
+### SlideList
+Displays all slides of the presentation and allows slide selection.
+
+### EditorCanvas
+Represents the editable workspace where slide content is displayed and modified.
+
+### Toolbar
+Provides editing tools such as formatting, adding elements, and actions.
+
+---
+
+## 🏗️ Architecture
+
+The frontend follows a component-based architecture using React.
+
+- Components are modular and reusable
+- State is managed locally (and can be extended with global state if needed)
+- UI updates are performed immediately after user interaction
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (v18 or higher recommended)
+- npm
+
+### Install dependencies
+```bash
+npm install
+```
+
+### Run development server
+```bash
+npm run dev
+```
+
+### Open in browser
+http://localhost:5173
+
+---
+
+## 📁 Project Structure
+
+```
+src/
+├── components/
+│   ├── SlideList.jsx
+│   ├── EditorCanvas.jsx
+│   └── Toolbar.jsx
+├── pages/
+│   └── EditorPage.jsx
+├── App.jsx
+└── main.jsx
+```
+
+---
+
+## 🔄 Data Flow
+
+1. User interacts with the UI (e.g., edits text, selects slide)
+2. State is updated in React components
+3. UI re-renders immediately
+4. (Future) Changes are sent to backend via API
+
+---
+
+## 📌 Current Status (Sprint 1)
+
+- Editor layout implemented
+- Basic slide navigation
+- Text editing functionality
+- Initial UI structure
+
+---
+
+## 🔜 Next Steps
+
+- Implement drag & drop functionality
+- Integrate backend API
+- Add reveal.js preview
+- Improve UI/UX
+
+---
+
+## 📄 Notes
+
+- The focus of Sprint 1 is functionality, not final design
+- Mock data can be used before backend integration
+- Code should remain modular and maintainable
