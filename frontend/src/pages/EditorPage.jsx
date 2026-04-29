@@ -58,10 +58,7 @@ export default function EditorPage() {
       </div>
 
       {isPreviewOpen && selectedSlide && (
-        <PreviewModal
-          slide={selectedSlide}
-          onClose={() => setIsPreviewOpen(false)}
-        />
+        <PreviewModal slides={slides} onClose={() => setIsPreviewOpen(false)} />
       )}
     </div>
   );
