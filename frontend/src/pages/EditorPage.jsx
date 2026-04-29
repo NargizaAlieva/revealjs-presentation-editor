@@ -5,22 +5,32 @@ import EditorCanvas from "../components/EditorCanvas";
 import "./EditorPage.css";
 
 export default function EditorPage() {
-  const [slides] = useState([
+  const [slides, setSlides] = useState([
     {
-        id: 1,
-        title: "Slide 1",
-        text: "Click here to edit text",
+      id: 1,
+      title: "Slide 1",
+      text: "Click here to edit text",
     },
     {
-        id: 2,
-        title: "Slide 2",
-        text: "Second slide content",
+      id: 2,
+      title: "Slide 2",
+      text: "Second slide content",
     },
-  ]); 
+  ]);
 
   const [selectedSlideId, setSelectedSlideId] = useState(1);
 
   const selectedSlide = slides.find((slide) => slide.id === selectedSlideId);
+
+  const updateSlideText = (newText) => {
+    setSlides((prevSlides) =>
+      prevSlides.map((slide) =>
+        slide.id === selectedSlideId
+          ? { ...slide, text: newText }
+          : slide
+      )
+    );
+  };
 
   return (
     <div className="editor-page">
@@ -32,7 +42,10 @@ export default function EditorPage() {
 
       <div className="editor-main">
         <Toolbar />
-        <EditorCanvas slide={selectedSlide} />
+        <EditorCanvas
+          slide={selectedSlide}
+          onChangeText={updateSlideText}
+        />
       </div>
     </div>
   );
