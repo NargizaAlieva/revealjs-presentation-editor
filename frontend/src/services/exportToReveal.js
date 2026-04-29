@@ -1,8 +1,13 @@
 export function exportToReveal(slides) {
   const slideSections = slides
     .map((slide) => {
-      const title = slide.placeholders.find((p) => p.id === "title")?.content;
-      const body = slide.placeholders.find((p) => p.id === "body")?.content;
+      const title = escapeHtml(
+        slide.placeholders.find((p) => p.id === "title")?.content,
+      );
+
+      const body = escapeHtml(
+        slide.placeholders.find((p) => p.id === "body")?.content,
+      );
 
       return `
         <section>
@@ -12,6 +17,15 @@ export function exportToReveal(slides) {
       `;
     })
     .join("");
+
+  const escapeHtml = (value = "") => {
+    return value
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  };
 
   const htmlContent = `
 <!doctype html>
