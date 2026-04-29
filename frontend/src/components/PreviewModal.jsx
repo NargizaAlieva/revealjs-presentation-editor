@@ -33,7 +33,6 @@ export default function PreviewModal({ slides, onClose }) {
               const title = slide.placeholders.find(
                 (p) => p.id === "title",
               )?.content;
-
               const body = slide.placeholders.find(
                 (p) => p.id === "body",
               )?.content;

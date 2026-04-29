@@ -5,6 +5,7 @@ import EditorCanvas from "../components/EditorCanvas";
 import { useSlides } from "../hooks/useSlides";
 import "./EditorPage.css";
 import PreviewModal from "../components/PreviewModal";
+import { exportToReveal } from "../services/exportToReveal";
 
 export default function EditorPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -28,6 +29,10 @@ export default function EditorPage() {
     (slide) => slide.id === selectedSlideId,
   );
 
+  const exportPresentation = () => {
+    exportToReveal(slides);
+  };
+
   return (
     <div className="editor-page">
       <SlideList
@@ -44,6 +49,7 @@ export default function EditorPage() {
           onMoveSlideUp={moveSlideUp}
           onMoveSlideDown={moveSlideDown}
           onSavePresentation={savePresentation}
+          onExportPresentation={exportPresentation}
           onOpenPreview={() => setIsPreviewOpen(true)}
           canDelete={slides.length > 1}
           canMoveUp={selectedSlideIndex > 0}

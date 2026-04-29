@@ -11,6 +11,7 @@ export default function Toolbar({
   canDelete,
   canMoveUp,
   canMoveDown,
+  onExportPresentation,
 }) {
   return (
     <header className="toolbar">
@@ -32,6 +33,7 @@ export default function Toolbar({
 
       <button onClick={onSavePresentation}>Save</button>
       <button onClick={onOpenPreview}>Preview</button>
+      <button onClick={onExportPresentation}>Export</button>
     </header>
   );
 }
