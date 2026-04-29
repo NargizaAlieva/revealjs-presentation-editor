@@ -4,6 +4,7 @@ import Toolbar from "../components/Toolbar";
 import EditorCanvas from "../components/EditorCanvas";
 import { useSlides } from "../hooks/useSlides";
 import "./EditorPage.css";
+import PreviewModal from "../components/PreviewModal";
 
 export default function EditorPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -25,14 +26,6 @@ export default function EditorPage() {
 
   const selectedSlideIndex = slides.findIndex(
     (slide) => slide.id === selectedSlideId,
-  );
-
-  const titlePlaceholder = selectedSlide?.placeholders.find(
-    (placeholder) => placeholder.id === "title",
-  );
-
-  const bodyPlaceholder = selectedSlide?.placeholders.find(
-    (placeholder) => placeholder.id === "body",
   );
 
   return (
@@ -65,14 +58,10 @@ export default function EditorPage() {
       </div>
 
       {isPreviewOpen && selectedSlide && (
-        <div className="preview-overlay">
-          <div className="preview-window">
-            <button onClick={() => setIsPreviewOpen(false)}>Close</button>
-
-            <h2>{titlePlaceholder?.content}</h2>
-            <p>{bodyPlaceholder?.content}</p>
-          </div>
-        </div>
+        <PreviewModal
+          slide={selectedSlide}
+          onClose={() => setIsPreviewOpen(false)}
+        />
       )}
     </div>
   );
