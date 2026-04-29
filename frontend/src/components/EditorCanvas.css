@@ -21,3 +21,19 @@
   font-size: 16px;
   padding: 8px;
 }
+
+.title-editor {
+  width: 100%;
+  font-size: 28px;
+  font-weight: bold;
+  border: none;
+  outline: none;
+  margin-bottom: 20px;
+}
+
+.text-editor {
+  width: 100%;
+  height: 120px;
+  font-size: 16px;
+  padding: 8px;
+}

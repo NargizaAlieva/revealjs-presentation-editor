@@ -1,10 +1,14 @@
 import "./EditorCanvas.css";
 
-export default function EditorCanvas({ slide, onChangeText }) {
+export default function EditorCanvas({ slide, onChangeTitle, onChangeText }) {
   return (
     <main className="canvas-wrapper">
       <section className="editor-slide">
-        <h2>{slide.title}</h2>
+        <input
+          value={slide.title}
+          onChange={(e) => onChangeTitle(e.target.value)}
+          className="title-editor"
+        />
 
         <textarea
           value={slide.text}

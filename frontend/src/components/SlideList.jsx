@@ -15,7 +15,12 @@ export default function SlideList({ slides, selectedSlideId, onSelectSlide }) {
           }
           onClick={() => onSelectSlide(slide.id)}
         >
-          Slide {index + 1}
+          <div className="slide-number">Slide {index + 1}</div>
+
+          <div className="slide-thumbnail">
+            <strong>{slide.title}</strong>
+            <p>{slide.text}</p>
+          </div>
         </div>
       ))}
     </aside>

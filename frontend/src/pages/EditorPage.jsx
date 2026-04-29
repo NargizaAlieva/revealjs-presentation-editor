@@ -1,39 +1,53 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import SlideList from "../components/SlideList";
 import Toolbar from "../components/Toolbar";
 import EditorCanvas from "../components/EditorCanvas";
 import "./EditorPage.css";
 
-export default function EditorPage() {
-  const [slides, setSlides] = useState([
-    {
-      id: 1,
-      title: "Slide 1",
-      text: "Click here to edit text",
-    },
-    {
-      id: 2,
-      title: "Slide 2",
-      text: "Second slide content",
-    },
-  ]);
+const defaultSlides = [
+  {
+    id: 1,
+    title: "Slide 1",
+    text: "Click here to edit text",
+  },
+  {
+    id: 2,
+    title: "Slide 2",
+    text: "Second slide content",
+  },
+];
 
-  useEffect(() => {
-    const savedSlides = localStorage.getItem("presentation-slides");
+const getInitialSlides = () => {
+  const savedSlides = localStorage.getItem("presentation-slides");
 
-    if (savedSlides) {
-      const parsedSlides = JSON.parse(savedSlides);
-      setSlides(parsedSlides);
-
-      if (parsedSlides.length > 0) {
-        setSelectedSlideId(parsedSlides[0].id);
-      }
+  if (savedSlides) {
+    try {
+      return JSON.parse(savedSlides);
+    } catch {
+      return defaultSlides;
     }
-  }, []);
+  }
 
-  const [selectedSlideId, setSelectedSlideId] = useState(1);
+  return defaultSlides;
+};
+
+export default function EditorPage() {
+  const initialSlides = getInitialSlides();
+
+  const [slides, setSlides] = useState(initialSlides);
+  const [selectedSlideId, setSelectedSlideId] = useState(initialSlides[0].id);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const selectedSlide = slides.find((slide) => slide.id === selectedSlideId);
+
+  useEffect(() => {
+    const autoSaveTimer = setInterval(() => {
+      localStorage.setItem("presentation-slides", JSON.stringify(slides));
+      console.log("Presentation auto-saved.");
+    }, 30000);
+
+    return () => clearInterval(autoSaveTimer);
+  }, [slides]);
 
   const updateSlideText = (newText) => {
     setSlides((prevSlides) =>
@@ -98,6 +112,7 @@ export default function EditorPage() {
     if (currentIndex <= 0) return;
 
     const updatedSlides = [...slides];
+
     [updatedSlides[currentIndex - 1], updatedSlides[currentIndex]] = [
       updatedSlides[currentIndex],
       updatedSlides[currentIndex - 1],
@@ -114,6 +129,7 @@ export default function EditorPage() {
     if (currentIndex === -1 || currentIndex === slides.length - 1) return;
 
     const updatedSlides = [...slides];
+
     [updatedSlides[currentIndex], updatedSlides[currentIndex + 1]] = [
       updatedSlides[currentIndex + 1],
       updatedSlides[currentIndex],
@@ -125,6 +141,14 @@ export default function EditorPage() {
   const savePresentation = () => {
     localStorage.setItem("presentation-slides", JSON.stringify(slides));
     alert("Presentation saved successfully.");
+  };
+
+  const updateSlideTitle = (newTitle) => {
+    setSlides((prevSlides) =>
+      prevSlides.map((slide) =>
+        slide.id === selectedSlideId ? { ...slide, title: newTitle } : slide,
+      ),
+    );
   };
 
   return (
@@ -143,9 +167,32 @@ export default function EditorPage() {
           onMoveSlideUp={moveSlideUp}
           onMoveSlideDown={moveSlideDown}
           onSavePresentation={savePresentation}
+          onOpenPreview={() => setIsPreviewOpen(true)}
+          canDelete={slides.length > 1}
+          canMoveUp={
+            slides.findIndex((slide) => slide.id === selectedSlideId) > 0
+          }
+          canMoveDown={
+            slides.findIndex((slide) => slide.id === selectedSlideId) <
+            slides.length - 1
+          }
         />
-        <EditorCanvas slide={selectedSlide} onChangeText={updateSlideText} />
+        <EditorCanvas
+          slide={selectedSlide}
+          onChangeTitle={updateSlideTitle}
+          onChangeText={updateSlideText}
+        />{" "}
       </div>
+
+      {isPreviewOpen && (
+        <div className="preview-overlay">
+          <div className="preview-window">
+            <button onClick={() => setIsPreviewOpen(false)}>Close</button>
+            <h2>{selectedSlide.title}</h2>
+            <p>{selectedSlide.text}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

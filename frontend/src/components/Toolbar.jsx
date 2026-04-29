@@ -1,3 +1,5 @@
+import "./Toolbar.css";
+
 export default function Toolbar({
   onAddSlide,
   onDeleteSlide,
@@ -5,16 +7,31 @@ export default function Toolbar({
   onMoveSlideUp,
   onMoveSlideDown,
   onSavePresentation,
+  onOpenPreview,
+  canDelete,
+  canMoveUp,
+  canMoveDown,
 }) {
   return (
     <header className="toolbar">
       <button onClick={onAddSlide}>New Slide</button>
-      <button onClick={onDeleteSlide}>Delete Slide</button>
+
+      <button onClick={onDeleteSlide} disabled={!canDelete}>
+        Delete Slide
+      </button>
+
       <button onClick={onDuplicateSlide}>Duplicate Slide</button>
-      <button onClick={onMoveSlideUp}>↑</button>
-      <button onClick={onMoveSlideDown}>↓</button>
+
+      <button onClick={onMoveSlideUp} disabled={!canMoveUp}>
+        ↑
+      </button>
+
+      <button onClick={onMoveSlideDown} disabled={!canMoveDown}>
+        ↓
+      </button>
+
       <button onClick={onSavePresentation}>Save</button>
-      <button>Preview</button>
+      <button onClick={onOpenPreview}>Preview</button>
     </header>
   );
 }
