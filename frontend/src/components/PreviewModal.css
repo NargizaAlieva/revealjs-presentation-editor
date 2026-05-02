@@ -1,0 +1,24 @@
+.preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.preview-window {
+  width: 900px;
+  height: 550px;
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  position: relative;
+}
+
+.preview-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
