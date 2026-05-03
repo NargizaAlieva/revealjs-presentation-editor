@@ -12,8 +12,8 @@ import java.util.List;
 @AllArgsConstructor
 public class SlideContent {
 
-//    private List<TextElement> text = new ArrayList<>();
-//    private List<MediaElement> media = new ArrayList<>();
+    private List<TextElement> text = new ArrayList<>();
+    private List<MediaElement> media = new ArrayList<>();
 
     private String background;
     private String transition;
