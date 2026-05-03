@@ -21,6 +21,6 @@ public class Slideset {
 
     private Master master;
     private List<Font> fonts = new ArrayList<>();
-//    private List<Layout> layouts = new ArrayList<>();
-//    private List<Slide> slides = new ArrayList<>();
+    private List<Layout> layouts = new ArrayList<>();
+    private List<Slide> slides = new ArrayList<>();
 }
