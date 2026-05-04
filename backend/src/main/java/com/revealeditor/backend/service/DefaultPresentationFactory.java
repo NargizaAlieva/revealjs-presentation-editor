@@ -9,6 +9,7 @@ import java.util.UUID;
 
 @Component
 public class DefaultPresentationFactory {
+    LayoutTemplateFactory layoutTemplate = new LayoutTemplateFactory();
 
     public Slideset createDefaultPresentation() {
         String id = UUID.randomUUID().toString();
@@ -21,7 +22,7 @@ public class DefaultPresentationFactory {
         slideset.setCreationDate(LocalDate.now());
 
         slideset.setMaster(createDefaultMaster());
-        slideset.setLayouts(List.of(createTitleLayout()));
+        slideset.setLayouts(List.of(layoutTemplate.createTitleLayout()));
         slideset.setSlides(List.of(createTitleSlide()));
 
         return slideset;
@@ -37,25 +38,6 @@ public class DefaultPresentationFactory {
         return master;
     }
 
-    private Layout createTitleLayout() {
-        Placeholder title = new Placeholder();
-        title.setPlaceholderId("title");
-        title.setPosition(new Position(80.0, 80.0));
-        title.setWidth(800.0);
-        title.setHeight(80.0);
-        title.setType("text");
-        title.setRole("title");
-        title.setPadding("10px");
-        title.setBackground("transparent");
-        title.setFormatting(new Formatting());
-
-        Layout layout = new Layout();
-        layout.setLayoutId("title-layout");
-        layout.setPlaceholders(List.of(title));
-
-        return layout;
-    }
-
     private Slide createTitleSlide() {
         Run titleRun = new Run();
         titleRun.setText("Click to add title");
@@ -64,6 +46,21 @@ public class DefaultPresentationFactory {
         titleParagraph.setId("paragraph-1");
         titleParagraph.setRuns(List.of(titleRun));
 
+        TextElement titleText = getTextElement(titleParagraph);
+
+        SlideContent content = new SlideContent();
+        content.setText(List.of(titleText));
+
+        Slide slide = new Slide();
+        slide.setTitle("Title Slide");
+        slide.setLayoutId("title-layout");
+        slide.setHidden(false);
+        slide.setContents(content);
+
+        return slide;
+    }
+
+    private static TextElement getTextElement(Paragraph titleParagraph) {
         TextElement titleText = new TextElement();
         titleText.setId("text-1");
         titleText.setPlaceholderId("title");
@@ -76,16 +73,6 @@ public class DefaultPresentationFactory {
         titleText.setZIndex(1);
         titleText.setBackground("transparent");
         titleText.setParagraphs(List.of(titleParagraph));
-
-        SlideContent content = new SlideContent();
-        content.setText(List.of(titleText));
-
-        Slide slide = new Slide();
-        slide.setTitle("Title Slide");
-        slide.setLayoutId("title-layout");
-        slide.setHidden(false);
-        slide.setContents(content);
-
-        return slide;
+        return titleText;
     }
 }
