@@ -45,10 +45,133 @@ The backend provides the following endpoints:
 
 - `POST /api/presentations` — create a new presentation
 - `GET /api/presentations/{id}` — load a presentation
-- `PUT /api/presentations/{id}` — save/update a presentation
-- `GET /api/presentations` — list all presentations
+- `PUT /api/presentations/{id}` — save/update a presentation 
+- `GET /api/presentations` — list all presentations (summary: id, title)
 
-The frontend sends the full presentation JSON, which is validated and stored by the backend.
+---
+
+### Important
+
+The frontend must send the full slideset JSON when updating a presentation (PUT).
+Partial updates are not supported in Sprint 1.
+
+---
+
+Example Response (GET /api/presentations/{id})
+```
+{
+    "id": "9dfd4527-c349-4eda-a08d-9e3ee572cb09",
+    "filename": "presentation",
+    "title": "New Presentation",
+    "author": "unknown",
+    "creationDate": "2026-05-04",
+    "master": {
+        "aspectRatio": "16:9",
+        "slideDimensions": {
+            "width": 960,
+            "height": 540
+        },
+        "dimensionUnits": "px",
+        "formatting": {
+            "font": null,
+            "size": null,
+            "color": null,
+            "weight": null,
+            "italics": null,
+            "textDecoration": null,
+            "lineSpacing": null,
+            "listType": null,
+            "listStyle": null,
+            "indentLevel": null,
+            "margin": null,
+            "align": null,
+            "verticalAlign": null
+        },
+        "colorTheme": []
+    },
+    "fonts": [],
+    "layouts": [
+        {
+            "layoutId": "title-layout",
+            "placeholders": [
+                {
+                    "placeholderId": "title",
+                    "width": 800.0,
+                    "height": 80.0,
+                    "padding": "10px",
+                    "type": "text",
+                    "role": "title",
+                    "background": "transparent",
+                    "position": {
+                        "x": 80.0,
+                        "y": 80.0
+                    },
+                    "formatting": {
+                        "font": null,
+                        "size": null,
+                        "color": null,
+                        "weight": null,
+                        "italics": null,
+                        "textDecoration": null,
+                        "lineSpacing": null,
+                        "listType": null,
+                        "listStyle": null,
+                        "indentLevel": null,
+                        "margin": null,
+                        "align": null,
+                        "verticalAlign": null
+                    }
+                }
+            ]
+        }
+    ],
+    "slides": [
+        {
+            "title": "Title Slide",
+            "layoutId": "title-layout",
+            "hidden": false,
+            "contents": {
+                "text": [
+                    {
+                        "id": "text-1",
+                        "placeholderId": "title",
+                        "position": {
+                            "x": 80.0,
+                            "y": 80.0
+                        },
+                        "posType": "relative",
+                        "width": 800.0,
+                        "height": 80.0,
+                        "rotation": 0.0,
+                        "overflow": "none",
+                        "background": "transparent",
+                        "paragraphs": [
+                            {
+                                "id": "paragraph-1",
+                                "formatting": null,
+                                "bullets": null,
+                                "runs": [
+                                    {
+                                        "formatting": null,
+                                        "superSubScript": null,
+                                        "text": "Click to add title",
+                                        "link": null
+                                    }
+                                ]
+                            }
+                        ],
+                        "zindex": 1
+                    }
+                ],
+                "media": [],
+                "background": null,
+                "transition": null,
+                "notes": null
+            }
+        }
+    ]
+}
+```
 
 ---
 
@@ -59,6 +182,7 @@ The frontend sends the full presentation JSON, which is validated and stored by 
 - `model` — slideset data model
 - `storage` — file-based persistence
 - `validation` — slideset validation
+- `exception` — error handling
 
 ---
 
@@ -70,6 +194,16 @@ The frontend sends the full presentation JSON, which is validated and stored by 
 - Image assets are stored separately:
 `storage/presentations/{id}/assets/images/`
 - JSON contains references to image paths
+
+---
+
+## Error Handling
+
+The API returns standard HTTP status codes:
+
+400 Bad Request — invalid slideset data
+404 Not Found — presentation does not exist
+500 Internal Server Error — unexpected error
 
 ---
 

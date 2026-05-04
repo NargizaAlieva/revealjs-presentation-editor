@@ -1,15 +1,17 @@
 package com.revealeditor.backend.service;
 
 import com.revealeditor.backend.model.*;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+@RequiredArgsConstructor
 @Component
 public class DefaultPresentationFactory {
-    LayoutTemplateFactory layoutTemplate = new LayoutTemplateFactory();
+    private final LayoutTemplateFactory layoutTemplate;
 
     public Slideset createDefaultPresentation() {
         String id = UUID.randomUUID().toString();
@@ -22,7 +24,11 @@ public class DefaultPresentationFactory {
         slideset.setCreationDate(LocalDate.now());
 
         slideset.setMaster(createDefaultMaster());
-        slideset.setLayouts(List.of(layoutTemplate.createTitleLayout()));
+        slideset.setLayouts(List.of(
+                layoutTemplate.createTitleLayout(),
+                layoutTemplate.createTitleAndContentLayout(),
+                layoutTemplate.createImageTextLayout()
+        ));
         slideset.setSlides(List.of(createTitleSlide()));
 
         return slideset;
