@@ -1,8 +1,11 @@
 package com.revealeditor.backend.controller;
 
+import com.revealeditor.backend.dto.PresentationSummary;
 import com.revealeditor.backend.model.Slideset;
 import com.revealeditor.backend.service.PresentationService;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/presentations")
@@ -15,19 +18,19 @@ public class PresentationController {
         this.presentationService = presentationService;
     }
 
-    @PostMapping
-    public Slideset createPresentation() {
-        return presentationService.createPresentation();
-    }
-
     @GetMapping("/{id}")
     public Slideset getPresentation(@PathVariable String id) {
         return presentationService.getPresentation(id);
     }
 
-    @GetMapping()
-    public Slideset getAllPresentations() {
-        return presentationService.getAllPresentations();
+    @GetMapping
+    public List<PresentationSummary> listPresentations() {
+        return presentationService.listPresentations();
+    }
+
+    @PostMapping
+    public Slideset createPresentation() {
+        return presentationService.createPresentation();
     }
 
     @PutMapping("/{id}")

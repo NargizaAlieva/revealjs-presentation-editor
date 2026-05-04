@@ -1,6 +1,7 @@
 package com.revealeditor.backend.storage;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.revealeditor.backend.dto.PresentationSummary;
 import com.revealeditor.backend.model.Slideset;
 import org.springframework.stereotype.Service;
 
@@ -57,6 +58,34 @@ public class PresentationStorageService {
 
         } catch (IOException e) {
             throw new RuntimeException("Failed to load presentation: " + id, e);
+        }
+    }
+
+    public List<PresentationSummary> listPresentationSummaries() {
+        try {
+            Files.createDirectories(storageRoot);
+
+            try (var stream = Files.list(storageRoot)) {
+                return stream
+                        .filter(Files::isDirectory)
+                        .map(path -> path.resolve("slideset.json"))
+                        .filter(Files::exists)
+                        .map(path -> {
+                            try {
+                                Slideset slideset = objectMapper.readValue(path.toFile(), Slideset.class);
+                                return new PresentationSummary(
+                                        slideset.getId(),
+                                        slideset.getTitle()
+                                );
+                            } catch (IOException e) {
+                                throw new RuntimeException("Failed to read presentation file: " + path, e);
+                            }
+                        })
+                        .toList();
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to list presentations", e);
         }
     }
 }

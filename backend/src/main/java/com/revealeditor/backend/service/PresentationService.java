@@ -1,11 +1,12 @@
 package com.revealeditor.backend.service;
 
+import com.revealeditor.backend.dto.PresentationSummary;
 import com.revealeditor.backend.model.Slideset;
 import com.revealeditor.backend.storage.PresentationStorageService;
 import com.revealeditor.backend.validation.SlidesetValidator;
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
+import java.util.List;
 
 @Service
 public class PresentationService {
@@ -43,5 +44,9 @@ public class PresentationService {
         storageService.save(slideset);
 
         return slideset;
+    }
+
+    public List<PresentationSummary> listPresentations() {
+        return storageService.listPresentationSummaries();
     }
 }
