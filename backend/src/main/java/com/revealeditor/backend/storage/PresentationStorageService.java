@@ -2,6 +2,7 @@ package com.revealeditor.backend.storage;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.revealeditor.backend.dto.PresentationSummary;
+import com.revealeditor.backend.exception.InvalidSlidesetException;
 import com.revealeditor.backend.model.Slideset;
 import org.springframework.stereotype.Service;
 
@@ -23,11 +24,11 @@ public class PresentationStorageService {
     public void save(Slideset slideset) {
         try {
             if (slideset == null) {
-                throw new RuntimeException("Slideset must not be null");
+                throw new InvalidSlidesetException("Slideset must not be null");
             }
 
             if (slideset.getId() == null || slideset.getId().isBlank()) {
-                throw new RuntimeException("Slideset ID must not be null or empty");
+                throw new InvalidSlidesetException("Slideset ID must not be null or empty");
             }
 
             Path presentationDir = storageRoot.resolve(slideset.getId());
@@ -51,7 +52,7 @@ public class PresentationStorageService {
             Path filePath = presentationDir.resolve("slideset.json");
 
             if (!Files.exists(filePath)) {
-                throw new RuntimeException("Presentation not found: " + id);
+                throw new ProviderNotFoundException(id);
             }
 
             return objectMapper.readValue(filePath.toFile(), Slideset.class);
