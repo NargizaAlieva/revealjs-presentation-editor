@@ -1,5 +1,6 @@
 package com.revealeditor.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,9 +14,11 @@ import java.util.List;
 public class TextElement {
 
     private String id;
+    @JsonProperty("placeholder-id")
     private String placeholderId;
 
     private Position position;
+    @JsonProperty("pos-type")
     private String posType;
 
     private Double width;
@@ -23,6 +26,8 @@ public class TextElement {
     private Double rotation;
 
     private String overflow;
+
+    @JsonProperty("z-index")
     private Integer zIndex;
     private String background;
 

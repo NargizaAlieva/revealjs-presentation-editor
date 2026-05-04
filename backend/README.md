@@ -64,38 +64,38 @@ Example Response (GET /api/presentations/{id})
     "filename": "presentation",
     "title": "New Presentation",
     "author": "unknown",
-    "creationDate": "2026-05-04",
+    "creation-date": "2026-05-04",
     "master": {
-        "aspectRatio": "16:9",
-        "slideDimensions": {
+        "aspect-ratio": "16:9",
+        "slide-dimensions": {
             "width": 960,
             "height": 540
         },
-        "dimensionUnits": "px",
+        "dimension-units": "px",
         "formatting": {
             "font": null,
             "size": null,
             "color": null,
             "weight": null,
             "italics": null,
-            "textDecoration": null,
-            "lineSpacing": null,
-            "listType": null,
-            "listStyle": null,
-            "indentLevel": null,
+            "text-decoration": null,
+            "line-spacing": null,
+            "list-type": null,
+            "list-style": null,
+            "indent-level": null,
             "margin": null,
             "align": null,
-            "verticalAlign": null
+            "vertical-align": null
         },
-        "colorTheme": []
+        "color-theme": []
     },
     "fonts": [],
     "layouts": [
         {
-            "layoutId": "title-layout",
+            "layout-id": "title-layout",
             "placeholders": [
                 {
-                    "placeholderId": "title",
+                    "placeholder-id": "title",
                     "width": 800.0,
                     "height": 80.0,
                     "padding": "10px",
@@ -112,14 +112,14 @@ Example Response (GET /api/presentations/{id})
                         "color": null,
                         "weight": null,
                         "italics": null,
-                        "textDecoration": null,
-                        "lineSpacing": null,
-                        "listType": null,
-                        "listStyle": null,
-                        "indentLevel": null,
+                        "text-decoration": null,
+                        "line-spacing": null,
+                        "list-type": null,
+                        "list-style": null,
+                        "indent-level": null,
                         "margin": null,
                         "align": null,
-                        "verticalAlign": null
+                        "vertical-align": null
                     }
                 }
             ]
@@ -128,18 +128,18 @@ Example Response (GET /api/presentations/{id})
     "slides": [
         {
             "title": "Title Slide",
-            "layoutId": "title-layout",
+            "layout-id": "title-layout",
             "hidden": false,
             "contents": {
                 "text": [
                     {
                         "id": "text-1",
-                        "placeholderId": "title",
+                        "placeholder-id": "title",
                         "position": {
                             "x": 80.0,
                             "y": 80.0
                         },
-                        "posType": "relative",
+                        "pos-type": "relative",
                         "width": 800.0,
                         "height": 80.0,
                         "rotation": 0.0,
@@ -153,14 +153,14 @@ Example Response (GET /api/presentations/{id})
                                 "runs": [
                                     {
                                         "formatting": null,
-                                        "superSubScript": null,
+                                        "super-sub-script": null,
                                         "text": "Click to add title",
                                         "link": null
                                     }
                                 ]
                             }
                         ],
-                        "zindex": 1
+                        "z-index": 1
                     }
                 ],
                 "media": [],

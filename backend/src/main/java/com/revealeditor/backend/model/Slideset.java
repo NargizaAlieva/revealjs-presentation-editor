@@ -1,5 +1,6 @@
 package com.revealeditor.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,6 +18,8 @@ public class Slideset {
     private String filename;
     private String title;
     private String author;
+
+    @JsonProperty("creation-date")
     private LocalDate creationDate;
 
     private Master master;
