@@ -1,6 +1,6 @@
 import { createDefaultPresentation } from "../model/presentation";
 import { EditorEventType } from "../events/editorEvents";
-import { deserializePresentation } from "../operations/serializationOperations";
+import { deserializePresentation } from "../export/serializationOperations";
 import {
   updateTextElement,
   moveElement,
