@@ -7,43 +7,30 @@ const createTextElementFromPlaceholder = (
   id: createId(),
 
   "placeholder-id": placeholder["placeholder-id"],
-
   position: {
     ...placeholder.position,
   },
 
   "pos-type": "relative-to-placeholder",
-
   width: placeholder.width,
-
   height: placeholder.height,
-
   rotation: 0,
-
   overflow: "shrink-on-overflow",
-
   "z-index": 1,
-
   background: placeholder.background ?? "transparent",
-
   paragraphs: [
     {
       id: createId(),
-
       formatting: {
         ...placeholder.formatting,
       },
 
       bullets: "none",
-
       runs: [
         {
           formatting: {},
-
           "super-sub-script": "normal",
-
           text: defaultText,
-
           link: null,
         },
       ],
@@ -62,9 +49,7 @@ export const createSlideFromLayout = (layout, slideNumber) => {
     },
 
     "layout-id": layout["layout-id"],
-
     hidden: false,
-
     contents: {
       text: textPlaceholders.map((placeholder) =>
         createTextElementFromPlaceholder(
@@ -76,19 +61,12 @@ export const createSlideFromLayout = (layout, slideNumber) => {
       ),
 
       media: [],
-
       shapes: [],
-
       tables: [],
-
       groups: [],
-
       animations: [],
-
       background: "var(--bg-light)",
-
       transition: "slide",
-
       notes: "",
     },
   };
@@ -115,7 +93,6 @@ export const addSlide = (
 
   return {
     ...presentation,
-
     slideset: {
       ...slideset,
 
@@ -136,7 +113,6 @@ export const deleteSlide = (
 
   return {
     ...presentation,
-
     slideset: {
       ...presentation.slideset,
 
@@ -151,7 +127,6 @@ const cloneTextElementWithNewIds = (textElement) => ({
   ...structuredClone(textElement),
 
   id: createId(),
-
   paragraphs: textElement.paragraphs.map((paragraph) => ({
     ...structuredClone(paragraph),
 
@@ -181,23 +156,18 @@ export const duplicateSlide = (
 
     contents: {
       ...structuredClone(slideToDuplicate.contents),
-
       text: slideToDuplicate.contents.text.map(
         cloneTextElementWithNewIds
       ),
 
       media:
         slideToDuplicate.contents.media ?? [],
-
       shapes:
         slideToDuplicate.contents.shapes ?? [],
-
       tables:
         slideToDuplicate.contents.tables ?? [],
-
       groups:
         slideToDuplicate.contents.groups ?? [],
-
       animations:
         slideToDuplicate.contents.animations ?? [],
     },
@@ -216,7 +186,6 @@ export const duplicateSlide = (
         ),
 
         duplicatedSlide,
-
         ...presentation.slideset.slides.slice(
           slideIndex + 1
         ),

@@ -1,20 +1,19 @@
 import { createDefaultPresentation } from "../model/presentation";
 import { EditorEventType } from "../events/editorEvents";
+import { updateTextElement } from "../operations/contentOperations";
 import {
   addSlide,
   deleteSlide,
   duplicateSlide,
-} from "../model/slideOperations";
+} from "../operations/slideOperations";
 
 export const createInitialEditorState = () => {
   const presentation = createDefaultPresentation();
 
   return {
     presentation,
-
     selectedSlideIndex: 0,
     selectedElementId: null,
-
     lastEvent: null,
     lastUpdated: Date.now(),
   };
@@ -88,6 +87,22 @@ export const editorReducer = (state, event) => {
         presentation: updatedPresentation,
         selectedSlideIndex: state.selectedSlideIndex + 1,
         selectedElementId: null,
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+    }
+
+    case EditorEventType.CONTENT.UPDATE_TEXT: {
+      const updatedPresentation = updateTextElement(
+        state.presentation,
+        state.selectedSlideIndex,
+        event.payload.textElementId,
+        event.payload.text
+      );
+
+      return {
+        ...state,
+        presentation: updatedPresentation,
         lastEvent: event,
         lastUpdated: Date.now(),
       };
