@@ -1,3 +1,5 @@
+import { validatePresentation } from "../model/presentationValidation";
+
 export const serializePresentation = (presentation) => {
   return JSON.stringify(presentation, null, 2);
 };
@@ -5,11 +7,10 @@ export const serializePresentation = (presentation) => {
 export const deserializePresentation = (jsonString) => {
   try {
     const parsedPresentation = JSON.parse(jsonString);
-
-    if (!parsedPresentation?.slideset) {
-      throw new Error(
-        "Invalid presentation format: missing slideset"
-      );
+    const validationErrors = validatePresentation(parsedPresentation);
+    
+    if (validationErrors.length > 0) {
+      throw new Error(validationErrors.join("; "));
     }
 
     return parsedPresentation;
