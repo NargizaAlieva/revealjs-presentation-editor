@@ -1,6 +1,10 @@
 import { createDefaultPresentation } from "../model/presentation";
 import { EditorEventType } from "../events/editorEvents";
-import { updateTextElement } from "../operations/contentOperations";
+import {
+  updateTextElement,
+  moveElement,
+  resizeElement,
+} from "../operations/contentOperations";
 import {
   addSlide,
   deleteSlide,
@@ -98,6 +102,38 @@ export const editorReducer = (state, event) => {
         state.selectedSlideIndex,
         event.payload.textElementId,
         event.payload.text
+      );
+
+      return {
+        ...state,
+        presentation: updatedPresentation,
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+    }
+
+    case EditorEventType.CONTENT.MOVE_ELEMENT: {
+      const updatedPresentation = moveElement(
+        state.presentation,
+        state.selectedSlideIndex,
+        event.payload.elementId,
+        event.payload.position
+      );
+
+      return {
+        ...state,
+        presentation: updatedPresentation,
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+    }
+
+    case EditorEventType.CONTENT.RESIZE_ELEMENT: {
+      const updatedPresentation = resizeElement(
+        state.presentation,
+        state.selectedSlideIndex,
+        event.payload.elementId,
+        event.payload.size
       );
 
       return {

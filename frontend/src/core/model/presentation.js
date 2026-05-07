@@ -33,7 +33,7 @@ const createTextElement = ({
   zIndex,
   text,
   formatting,
-  posType = "placeholder",
+  posType = "relative-to-placeholder",
 }) => ({
   id: createId(),
   "placeholder-id": placeholderId,

@@ -127,7 +127,7 @@ const cloneTextElementWithNewIds = (textElement) => ({
   ...structuredClone(textElement),
 
   id: createId(),
-  paragraphs: textElement.paragraphs.map((paragraph) => ({
+  paragraphs: (textElement.paragraphs ?? []).map((paragraph) => ({
     ...structuredClone(paragraph),
 
     id: createId(),
@@ -156,7 +156,7 @@ export const duplicateSlide = (
 
     contents: {
       ...structuredClone(slideToDuplicate.contents),
-      text: slideToDuplicate.contents.text.map(
+      text: (slideToDuplicate.contents.text ?? []).map(
         cloneTextElementWithNewIds
       ),
 
