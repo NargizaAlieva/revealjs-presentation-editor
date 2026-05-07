@@ -147,7 +147,7 @@ export const createDefaultPresentation = () => {
               "placeholder-id": "body-placeholder",
 
               position: {
-                x: 160,
+                x: 120,
                 y: 220,
               },
 

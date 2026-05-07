@@ -10,6 +10,7 @@ import {
   addSlide,
   deleteSlide,
   duplicateSlide,
+  reorderSlides,
 } from "../operations/slideOperations";
 import {
   applyLayoutToSlide,
@@ -95,6 +96,23 @@ export const editorReducer = (state, event) => {
         ...state,
         presentation: updatedPresentation,
         selectedSlideIndex: state.selectedSlideIndex + 1,
+        selectedElementId: null,
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+    }
+
+    case EditorEventType.SLIDE.REORDER: {
+      const updatedPresentation = reorderSlides(
+        state.presentation,
+        event.payload.fromIndex,
+        event.payload.toIndex
+      );
+
+      return {
+        ...state,
+        presentation: updatedPresentation,
+        selectedSlideIndex: event.payload.toIndex,
         selectedElementId: null,
         lastEvent: event,
         lastUpdated: Date.now(),

@@ -193,3 +193,33 @@ export const duplicateSlide = (
     },
   };
 };
+
+export const reorderSlides = (
+  presentation,
+  fromIndex,
+  toIndex
+) => {
+  const slides = [...presentation.slideset.slides];
+
+  if (
+    fromIndex < 0 ||
+    toIndex < 0 ||
+    fromIndex >= slides.length ||
+    toIndex >= slides.length ||
+    fromIndex === toIndex
+  ) {
+    return presentation;
+  }
+
+  const [movedSlide] = slides.splice(fromIndex, 1);
+
+  slides.splice(toIndex, 0, movedSlide);
+
+  return {
+    ...presentation,
+    slideset: {
+      ...presentation.slideset,
+      slides,
+    },
+  };
+};
