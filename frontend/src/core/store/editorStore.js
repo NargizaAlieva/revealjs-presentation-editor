@@ -10,6 +10,10 @@ import {
   deleteSlide,
   duplicateSlide,
 } from "../operations/slideOperations";
+import {
+  applyLayoutToSlide,
+  propagateLayoutChanges,
+} from "../operations/layoutOperations";
 
 export const createInitialEditorState = () => {
   const presentation = createDefaultPresentation();
@@ -134,6 +138,36 @@ export const editorReducer = (state, event) => {
         state.selectedSlideIndex,
         event.payload.elementId,
         event.payload.size
+      );
+
+      return {
+        ...state,
+        presentation: updatedPresentation,
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+    }
+
+    case EditorEventType.LAYOUT.APPLY: {
+      const updatedPresentation = applyLayoutToSlide(
+        state.presentation,
+        state.selectedSlideIndex,
+        event.payload.layoutId
+      );
+
+      return {
+        ...state,
+        presentation: updatedPresentation,
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+    }
+
+    case EditorEventType.LAYOUT.UPDATE: {
+      const updatedPresentation = propagateLayoutChanges(
+        state.presentation,
+        event.payload.layoutId,
+        event.payload.placeholders
       );
 
       return {

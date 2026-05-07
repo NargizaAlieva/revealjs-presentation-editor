@@ -5,7 +5,7 @@ import EditorCanvas from "../components/EditorCanvas";
 import { useSlides } from "../hooks/useSlides";
 import "./EditorPage.css";
 import PreviewModal from "../components/PreviewModal";
-import { exportToReveal } from "../services/exportToReveal";
+import { exportToReveal } from "../core/export/exportToReveal";
 
 export default function EditorPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
