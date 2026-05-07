@@ -1,5 +1,6 @@
 import { createDefaultPresentation } from "../model/presentation";
 import { EditorEventType } from "../events/editorEvents";
+import { deserializePresentation } from "../operations/serializationOperations";
 import {
   updateTextElement,
   moveElement,
@@ -173,6 +174,20 @@ export const editorReducer = (state, event) => {
       return {
         ...state,
         presentation: updatedPresentation,
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+    }
+
+    case EditorEventType.PRESENTATION.LOAD: {
+      return {
+        ...state,
+        presentation: deserializePresentation(
+          event.payload.jsonString
+        ),
+
+        selectedSlideIndex: 0,
+        selectedElementId: null,
         lastEvent: event,
         lastUpdated: Date.now(),
       };
