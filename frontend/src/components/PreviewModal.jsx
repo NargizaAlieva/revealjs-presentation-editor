@@ -75,7 +75,7 @@ export default function PreviewModal({ slides, onClose }) {
 
         <div className="reveal">
           <div className="slides">
-            {slides
+            {(slides || [])
               .filter((slide) => !slide.hidden)
               .map((slide, slideIndex) => (
                 <section
@@ -83,6 +83,8 @@ export default function PreviewModal({ slides, onClose }) {
                   data-transition={slide.contents?.transition || "slide"}
                   style={{
                     position: "relative",
+                    width: "960px",
+                    height: "540px",
                     background: slide.contents?.background || "white",
                   }}
                 >

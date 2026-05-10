@@ -27,8 +27,6 @@ export default function EditorPage() {
     resetPresentation,
   } = useSlides();
 
-  console.log("slides:", slides);
-  console.log("selectedSlide:", selectedSlide);
 
   const exportPresentation = () => {
     exportToReveal({
