@@ -15,7 +15,34 @@ function getTextFromElement(textElement) {
 }
 
 function getTextElements(slide) {
-  return slide?.contents?.text || [];
+  if (slide?.contents?.text?.length) {
+    return slide.contents.text;
+  }
+
+  if (slide?.placeholders?.length) {
+    return slide.placeholders.map((placeholder) => ({
+      id: placeholder.id,
+      position: placeholder.position || { x: 80, y: 80 },
+      width: placeholder.width || 800,
+      height: placeholder.height || 80,
+      rotation: 0,
+      overflow: "hidden",
+      background: "transparent",
+      paragraphs: [
+        {
+          id: `${placeholder.id}-paragraph`,
+          runs: [
+            {
+              text: placeholder.content || "",
+            },
+          ],
+        },
+      ],
+      "z-index": 1,
+    }));
+  }
+
+  return [];
 }
 
 function getMediaElements(slide) {
