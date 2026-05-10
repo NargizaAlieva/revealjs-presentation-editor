@@ -13,27 +13,30 @@ export function exportToReveal(presentation) {
 
   const slideSections = slides
     .map((slide) => {
-      const textElementsHtml = getTextElements(slide)
-        .map((textElement) => {
-          const text = escapeHtml(getTextFromTextElement(textElement));
+      const textElementsHtml = `
+        <div style="
+          padding: 80px 120px;
+          color: black;
+          text-align: left;
+        ">
+          ${getTextElements(slide)
+          .map((textElement, index) => {
+            const text = escapeHtml(getTextFromTextElement(textElement));
 
-          return `
-            <div style="
-              position: absolute;
-              left: ${textElement.position?.x || 0}px;
-              top: ${textElement.position?.y || 0}px;
-              width: ${textElement.width || 300}px;
-              height: ${textElement.height || 80}px;
-              background: ${textElement.background || "transparent"};
-              overflow: ${textElement.overflow || "hidden"};
-              z-index: ${textElement["z-index"] || textElement.zindex || 1};
-              transform: rotate(${textElement.rotation || 0}deg);
-            ">
-              ${text}
-            </div>
-          `;
-        })
-        .join("");
+            return `
+                <div style="
+                  font-size: ${index === 0 ? "34px" : "26px"};
+                  font-weight: ${index === 0 ? "bold" : "normal"};
+                  margin-bottom: 40px;
+                  line-height: 1.3;
+                ">
+                  ${text}
+                </div>
+              `;
+          })
+          .join("")}
+        </div>
+      `;
 
       const mediaElementsHtml = getMediaElements(slide)
         .map((media) => {
@@ -42,14 +45,11 @@ export function exportToReveal(presentation) {
               src="${escapeHtml(media["file-link"] || "")}"
               alt=""
               style="
-                position: absolute;
-                left: ${media.position?.x || 0}px;
-                top: ${media.position?.y || 0}px;
-                width: ${media.width || 200}px;
-                height: ${media.height || 120}px;
+                max-width: 80%;
+                max-height: 60%;
                 object-fit: contain;
-                z-index: ${media["z-index"] || media.zindex || 1};
-                transform: rotate(${media.rotation || 0}deg);
+                display: block;
+                margin: 20px auto;
               "
             />
           `;
@@ -60,9 +60,6 @@ export function exportToReveal(presentation) {
         <section
           data-transition="${slide.contents?.transition || "slide"}"
           style="
-            position: relative;
-            width: ${width}px;
-            height: ${height}px;
             background: ${slide.contents?.background || "white"};
           "
         >
