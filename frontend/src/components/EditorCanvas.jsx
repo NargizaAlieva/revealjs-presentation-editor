@@ -6,6 +6,7 @@ export default function EditorCanvas({
   onChangeTextElement,
   onMoveTextElement,
   onResizeTextElement,
+  onFormatTextElement,
 }) {
   const [selectedElementId, setSelectedElementId] = useState(null);
   const [draggingElementId, setDraggingElementId] = useState(null);
@@ -29,6 +30,7 @@ export default function EditorCanvas({
       const element = textElements.find(
         (item) => item.id === resizingElementId,
       );
+
       if (!element) return;
 
       const newWidth = e.clientX - canvasRect.left - element.position.x;
@@ -66,6 +68,7 @@ export default function EditorCanvas({
       >
         {textElements.map((textElement) => {
           const text = textElement.paragraphs?.[0]?.runs?.[0]?.text ?? "";
+          const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
           const isTitle = textElement["placeholder-id"] === "title-placeholder";
           const isSelected = selectedElementId === textElement.id;
 
@@ -93,12 +96,48 @@ export default function EditorCanvas({
                 });
               }}
             >
+              {isSelected && (
+                <div className="format-toolbar">
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onFormatTextElement(textElement.id, {
+                        weight:
+                          formatting.weight === "bold" ? "normal" : "bold",
+                      });
+                    }}
+                  >
+                    B
+                  </button>
+
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onFormatTextElement(textElement.id, {
+                        size: formatting.size === "32px" ? "24px" : "32px",
+                      });
+                    }}
+                  >
+                    {formatting.size === "32px" ? "24px" : "32px"}
+                  </button>
+                </div>
+              )}
+
               {isTitle ? (
                 <input
                   value={text}
                   onChange={(e) =>
                     onChangeTextElement(textElement.id, e.target.value)
                   }
+                  style={{
+                    fontSize: formatting.size ?? "24px",
+                    fontWeight: formatting.weight ?? "normal",
+                    textAlign: formatting.align ?? "left",
+                  }}
                 />
               ) : (
                 <textarea
@@ -106,6 +145,11 @@ export default function EditorCanvas({
                   onChange={(e) =>
                     onChangeTextElement(textElement.id, e.target.value)
                   }
+                  style={{
+                    fontSize: formatting.size ?? "24px",
+                    fontWeight: formatting.weight ?? "normal",
+                    textAlign: formatting.align ?? "left",
+                  }}
                 />
               )}
 

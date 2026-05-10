@@ -140,6 +140,15 @@ export function useSlides() {
     window.location.reload();
   };
 
+  const updateTextElementFormatting = (textElementId, formatting) => {
+    dispatch(
+      createEditorEvent(EditorEventType.CONTENT.UPDATE_TEXT_FORMATTING, {
+        textElementId,
+        formatting,
+      }),
+    );
+  };
+
   return {
     presentation: state.presentation,
 
@@ -162,5 +171,6 @@ export function useSlides() {
     updateTextElementContent,
     updateTextElementPosition,
     updateTextElementSize,
+    updateTextElementFormatting,
   };
 }

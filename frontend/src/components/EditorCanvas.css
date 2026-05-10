@@ -53,3 +53,21 @@
   border-radius: 50%;
   cursor: nwse-resize;
 }
+
+.format-toolbar {
+  position: absolute;
+  top: -36px;
+  left: 0;
+  display: flex;
+  gap: 4px;
+  background: white;
+  border: 1px solid #d1d5db;
+  padding: 4px;
+  border-radius: 4px;
+  z-index: 10;
+}
+
+.format-toolbar button {
+  font-size: 12px;
+  cursor: pointer;
+}

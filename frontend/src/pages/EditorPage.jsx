@@ -25,6 +25,7 @@ export default function EditorPage() {
     updateTextElementPosition,
     resetPresentation,
     updateTextElementSize,
+    updateTextElementFormatting,
   } = useSlides();
 
   const exportPresentation = () => {
@@ -71,6 +72,7 @@ export default function EditorPage() {
             onChangeTextElement={updateTextElementContent}
             onMoveTextElement={updateTextElementPosition}
             onResizeTextElement={updateTextElementSize}
+            onFormatTextElement={updateTextElementFormatting}
           />
         )}
       </div>

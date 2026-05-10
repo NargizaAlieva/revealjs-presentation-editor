@@ -5,6 +5,7 @@ import {
   updateTextElement,
   moveElement,
   resizeElement,
+  updateTextFormatting,
 } from "../operations/contentOperations";
 import {
   addSlide,
@@ -201,6 +202,23 @@ export const editorReducer = (state, event) => {
         presentation: deserializePresentation(event.payload.jsonString),
         selectedSlideIndex: 0,
         selectedElementId: null,
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+    }
+
+    case EditorEventType.CONTENT.UPDATE_TEXT_FORMATTING: {
+      const updatedPresentation = updateTextFormatting(
+        state.presentation,
+        state.selectedSlideIndex,
+        event.payload.textElementId,
+        event.payload.formatting,
+      );
+
+      return {
+        ...state,
+        presentation: updatedPresentation,
+        selectedElementId: event.payload.textElementId,
         lastEvent: event,
         lastUpdated: Date.now(),
       };

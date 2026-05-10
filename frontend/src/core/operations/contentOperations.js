@@ -132,3 +132,57 @@ export const resizeElement = (presentation, slideIndex, elementId, newSize) => {
     slides,
   };
 };
+
+export const updateTextFormatting = (
+  presentation,
+  slideIndex,
+  textElementId,
+  formattingUpdate,
+) => {
+  const slides = [...(presentation.slides ?? [])];
+  const slide = slides[slideIndex];
+
+  if (!slide) {
+    return presentation;
+  }
+
+  const updatedTextElements = (slide.contents?.text ?? []).map(
+    (textElement) => {
+      if (textElement.id !== textElementId) {
+        return textElement;
+      }
+
+      const updatedParagraphs = [...(textElement.paragraphs ?? [])];
+
+      if (updatedParagraphs.length === 0) {
+        return textElement;
+      }
+
+      updatedParagraphs[0] = {
+        ...updatedParagraphs[0],
+        formatting: {
+          ...(updatedParagraphs[0].formatting ?? {}),
+          ...formattingUpdate,
+        },
+      };
+
+      return {
+        ...textElement,
+        paragraphs: updatedParagraphs,
+      };
+    },
+  );
+
+  slides[slideIndex] = {
+    ...slide,
+    contents: {
+      ...slide.contents,
+      text: updatedTextElements,
+    },
+  };
+
+  return {
+    ...presentation,
+    slides,
+  };
+};
