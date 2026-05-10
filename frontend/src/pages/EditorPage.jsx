@@ -7,7 +7,6 @@ import "./EditorPage.css";
 import PreviewModal from "../components/PreviewModal";
 import { exportToReveal } from "../core/export/exportToReveal";
 
-
 export default function EditorPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
@@ -25,8 +24,8 @@ export default function EditorPage() {
     updateTextElementContent,
     updateTextElementPosition,
     resetPresentation,
+    updateTextElementSize,
   } = useSlides();
-
 
   const exportPresentation = () => {
     exportToReveal({
@@ -68,10 +67,10 @@ export default function EditorPage() {
             slide={selectedSlide}
             onChangeTextElement={updateTextElementContent}
             onMoveTextElement={updateTextElementPosition}
+            onResizeTextElement={updateTextElementSize}
           />
         )}
       </div>
-
 
       {isPreviewOpen && (
         <PreviewModal slides={slides} onClose={() => setIsPreviewOpen(false)} />

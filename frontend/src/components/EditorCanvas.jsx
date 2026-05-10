@@ -5,9 +5,12 @@ export default function EditorCanvas({
   slide,
   onChangeTextElement,
   onMoveTextElement,
+  onResizeTextElement,
 }) {
+  const [selectedElementId, setSelectedElementId] = useState(null);
   const [draggingElementId, setDraggingElementId] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [resizingElementId, setResizingElementId] = useState(null);
 
   if (!slide) {
     return (
@@ -20,9 +23,27 @@ export default function EditorCanvas({
   const textElements = slide.contents?.text ?? [];
 
   const handleMouseMove = (e) => {
-    if (!draggingElementId) return;
-
     const canvasRect = e.currentTarget.getBoundingClientRect();
+
+    if (resizingElementId) {
+      const element = textElements.find(
+        (item) => item.id === resizingElementId,
+      );
+      if (!element) return;
+
+      const newWidth = e.clientX - canvasRect.left - element.position.x;
+      const newHeight = e.clientY - canvasRect.top - element.position.y;
+
+      onResizeTextElement(
+        resizingElementId,
+        Math.max(100, newWidth),
+        Math.max(40, newHeight),
+      );
+
+      return;
+    }
+
+    if (!draggingElementId) return;
 
     const newX = e.clientX - canvasRect.left - dragOffset.x;
     const newY = e.clientY - canvasRect.top - dragOffset.y;
@@ -30,8 +51,9 @@ export default function EditorCanvas({
     onMoveTextElement(draggingElementId, newX, newY);
   };
 
-  const stopDragging = () => {
+  const stopInteraction = () => {
     setDraggingElementId(null);
+    setResizingElementId(null);
   };
 
   return (
@@ -39,17 +61,18 @@ export default function EditorCanvas({
       <section
         className="editor-slide"
         onMouseMove={handleMouseMove}
-        onMouseUp={stopDragging}
-        onMouseLeave={stopDragging}
+        onMouseUp={stopInteraction}
+        onMouseLeave={stopInteraction}
       >
         {textElements.map((textElement) => {
           const text = textElement.paragraphs?.[0]?.runs?.[0]?.text ?? "";
+          const isTitle = textElement["placeholder-id"] === "title-placeholder";
+          const isSelected = selectedElementId === textElement.id;
 
-const isTitle = textElement["placeholder-id"] === "title-placeholder";
           return (
             <div
               key={textElement.id}
-              className="draggable"
+              className={isSelected ? "draggable selected" : "draggable"}
               style={{
                 position: "absolute",
                 left: `${textElement.position?.x ?? 0}px`,
@@ -62,6 +85,7 @@ const isTitle = textElement["placeholder-id"] === "title-placeholder";
               onMouseDown={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
 
+                setSelectedElementId(textElement.id);
                 setDraggingElementId(textElement.id);
                 setDragOffset({
                   x: e.clientX - rect.left,
@@ -82,6 +106,16 @@ const isTitle = textElement["placeholder-id"] === "title-placeholder";
                   onChange={(e) =>
                     onChangeTextElement(textElement.id, e.target.value)
                   }
+                />
+              )}
+
+              {isSelected && (
+                <div
+                  className="resize-handle"
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    setResizingElementId(textElement.id);
+                  }}
                 />
               )}
             </div>

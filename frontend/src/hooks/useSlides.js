@@ -119,6 +119,15 @@ export function useSlides() {
     );
   };
 
+  const updateTextElementSize = (textElementId, width, height) => {
+    dispatch(
+      createEditorEvent(EditorEventType.CONTENT.RESIZE_ELEMENT, {
+        elementId: textElementId,
+        size: { width, height },
+      }),
+    );
+  };
+
   const savePresentation = () => {
     localStorage.setItem(
       STORAGE_KEY,
@@ -152,5 +161,6 @@ export function useSlides() {
 
     updateTextElementContent,
     updateTextElementPosition,
+    updateTextElementSize,
   };
 }

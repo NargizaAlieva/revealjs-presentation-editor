@@ -90,9 +90,11 @@ export const deleteSlide = (presentation, slideIndex) => {
     return presentation;
   }
 
+  const updatedSlides = slides.filter((_, index) => index !== slideIndex);
+
   return {
     ...presentation,
-    slides: slides.filter((_, index) => index !== slideIndex),
+    slides: updatedSlides,
   };
 };
 

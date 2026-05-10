@@ -68,12 +68,16 @@ export const editorReducer = (state, event) => {
         state.selectedSlideIndex,
       );
 
-      const lastSlideIndex = updatedPresentation.slides.length - 1;
+      const slides = updatedPresentation.slides ?? [];
+      const lastSlideIndex = slides.length - 1;
 
       return {
         ...state,
         presentation: updatedPresentation,
-        selectedSlideIndex: Math.min(state.selectedSlideIndex, lastSlideIndex),
+        selectedSlideIndex: Math.max(
+          0,
+          Math.min(state.selectedSlideIndex, lastSlideIndex),
+        ),
         selectedElementId: null,
         lastEvent: event,
         lastUpdated: Date.now(),
