@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import Reveal from "reveal.js";
-import "reveal.js/dist/reveal.css";
-import "reveal.js/dist/theme/white.css";
+import "reveal.js/reveal.css";
+import "reveal.js/theme/white.css";
 
 import {
   getSlideSize,
