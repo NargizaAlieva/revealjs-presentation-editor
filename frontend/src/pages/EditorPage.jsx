@@ -116,6 +116,10 @@ export default function EditorPage() {
           />
         )}
       </div>
+      <div style={{ marginTop: "24px" }}>
+        <h3>Presentation Preview</h3>
+        <RevealPreview presentation={mockPresentation} />
+      </div>
 
       {isPreviewOpen && (
         <PreviewModal slides={slides} onClose={() => setIsPreviewOpen(false)} />
