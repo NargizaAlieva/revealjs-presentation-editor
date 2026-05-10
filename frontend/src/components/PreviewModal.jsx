@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Reveal from "reveal.js";
 import "reveal.js/reveal.css";
 import "reveal.js/theme/white.css";
@@ -20,26 +20,58 @@ function getTextElements(slide) {
   }
 
   if (slide?.placeholders?.length) {
-    return slide.placeholders.map((placeholder) => ({
-      id: placeholder.id,
-      position: placeholder.position || { x: 80, y: 80 },
-      width: placeholder.width || 800,
-      height: placeholder.height || 80,
-      rotation: 0,
-      overflow: "hidden",
-      background: "transparent",
-      paragraphs: [
-        {
-          id: `${placeholder.id}-paragraph`,
-          runs: [
-            {
-              text: placeholder.content || "",
-            },
-          ],
+    return slide.placeholders.map((placeholder, index) => {
+      const isTitle = placeholder.id === "title" || placeholder.role === "title";
+
+      return {
+        id: placeholder.id || `placeholder-${index}`,
+        position: placeholder.position || {
+          x: 80,
+          y: isTitle ? 80 : 180,
         },
-      ],
-      "z-index": 1,
-    }));
+        width: placeholder.width || 800,
+        height: placeholder.height || (isTitle ? 80 : 200),
+        rotation: 0,
+        overflow: "hidden",
+        background: "transparent",
+        paragraphs: [
+          {
+            id: `${placeholder.id || index}-paragraph`,
+            runs: [{ text: placeholder.content || "" }],
+          },
+        ],
+        "z-index": index + 1,
+        formatting: {
+          size: isTitle ? 36 : 24,
+          weight: isTitle ? "bold" : "normal",
+        },
+      };
+    });
+  }
+
+  if (slide?.title) {
+    return [
+      {
+        id: "fallback-title",
+        position: { x: 80, y: 80 },
+        width: 800,
+        height: 80,
+        rotation: 0,
+        overflow: "hidden",
+        background: "transparent",
+        paragraphs: [
+          {
+            id: "fallback-title-paragraph",
+            runs: [{ text: slide.title }],
+          },
+        ],
+        "z-index": 1,
+        formatting: {
+          size: 36,
+          weight: "bold",
+        },
+      },
+    ];
   }
 
   return [];
@@ -50,16 +82,27 @@ function getMediaElements(slide) {
 }
 
 export default function PreviewModal({ slides, onClose }) {
+  const deckRef = useRef(null);
+
   useEffect(() => {
-    const deck = new Reveal({
+    if (!deckRef.current) return;
+
+    const deck = new Reveal(deckRef.current, {
       controls: true,
       progress: true,
       center: false,
       hash: false,
       embedded: true,
+      width: 960,
+      height: 540,
+      margin: 0,
+      minScale: 1,
+      maxScale: 1,
     });
 
-    deck.initialize();
+    deck.initialize().then(() => {
+      deck.layout();
+    });
 
     return () => {
       deck.destroy();
@@ -73,7 +116,7 @@ export default function PreviewModal({ slides, onClose }) {
           Close
         </button>
 
-        <div className="reveal">
+        <div className="reveal" ref={deckRef}>
           <div className="slides">
             {(slides || [])
               .filter((slide) => !slide.hidden)
@@ -82,31 +125,29 @@ export default function PreviewModal({ slides, onClose }) {
                   key={`${slide.title || "slide"}-${slideIndex}`}
                   data-transition={slide.contents?.transition || "slide"}
                   style={{
-                    position: "relative",
-                    width: "960px",
-                    height: "540px",
                     background: slide.contents?.background || "white",
                   }}
                 >
-                  {getTextElements(slide).map((textElement) => (
-                    <div
-                      key={textElement.id}
-                      style={{
-                        position: "absolute",
-                        left: `${textElement.position?.x || 0}px`,
-                        top: `${textElement.position?.y || 0}px`,
-                        width: `${textElement.width || 300}px`,
-                        height: `${textElement.height || 80}px`,
-                        background: textElement.background || "transparent",
-                        overflow: textElement.overflow || "hidden",
-                        zIndex:
-                          textElement["z-index"] || textElement.zindex || 1,
-                        transform: `rotate(${textElement.rotation || 0}deg)`,
-                      }}
-                    >
-                      {getTextFromElement(textElement)}
-                    </div>
-                  ))}
+                  <div
+                    style={{
+                      padding: "80px 120px",
+                      color: "black",
+                      textAlign: "left",
+                    }}
+                  >
+                    {getTextElements(slide).map((textElement, index) => (
+                      <div
+                        key={textElement.id || index}
+                        style={{
+                          fontSize: index === 0 ? "34px" : "26px",
+                          fontWeight: index === 0 ? "bold" : "normal",
+                          marginBottom: "40px",
+                        }}
+                      >
+                        {getTextFromElement(textElement)}
+                      </div>
+                    ))}
+                  </div>
 
                   {getMediaElements(slide).map((media) => (
                     <img
