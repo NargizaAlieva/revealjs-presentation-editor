@@ -35,18 +35,18 @@ export function useSlides() {
   const [state, dispatch] = useReducer(
     editorReducer,
     undefined,
-    loadInitialState
+    loadInitialState,
   );
 
-  const slides = state.presentation.slideset.slides;
-  const selectedSlideIndex = state.selectedSlideIndex;
-  const selectedSlide = slides[selectedSlideIndex];
+  const slides = state.presentation?.slides ?? [];
+  const selectedSlideIndex = state.selectedSlideIndex ?? 0;
+  const selectedSlide = slides[selectedSlideIndex] ?? null;
 
   useEffect(() => {
     const timer = setInterval(() => {
       localStorage.setItem(
         STORAGE_KEY,
-        serializePresentation(state.presentation)
+        serializePresentation(state.presentation),
       );
     }, 30000);
 
@@ -57,7 +57,7 @@ export function useSlides() {
     dispatch(
       createEditorEvent(EditorEventType.SLIDE.SELECT, {
         slideIndex,
-      })
+      }),
     );
   };
 
@@ -80,7 +80,7 @@ export function useSlides() {
       createEditorEvent(EditorEventType.SLIDE.REORDER, {
         fromIndex: selectedSlideIndex,
         toIndex: selectedSlideIndex - 1,
-      })
+      }),
     );
   };
 
@@ -91,52 +91,60 @@ export function useSlides() {
       createEditorEvent(EditorEventType.SLIDE.REORDER, {
         fromIndex: selectedSlideIndex,
         toIndex: selectedSlideIndex + 1,
-      })
+      }),
     );
   };
 
-  const updatePlaceholderContent = (textElementId, newText) => {
+  const updateTextElementContent = (textElementId, newText) => {
     dispatch(
       createEditorEvent(EditorEventType.CONTENT.UPDATE_TEXT, {
         textElementId,
         text: newText,
-      })
+      }),
     );
   };
 
-  const updatePlaceholderPosition = (elementId, x, y) => {
+  const updateTextElementPosition = (textElementId, x, y) => {
     dispatch(
       createEditorEvent(EditorEventType.CONTENT.MOVE_ELEMENT, {
-        elementId,
+        elementId: textElementId,
         position: { x, y },
-      })
+      }),
     );
   };
 
   const savePresentation = () => {
     localStorage.setItem(
       STORAGE_KEY,
-      serializePresentation(state.presentation)
+      serializePresentation(state.presentation),
     );
   };
 
-  return {
-    presentation: state.presentation,
-    slides,
-    selectedSlide,
-    selectedSlideIndex,
-
-    selectedSlideId: selectedSlideIndex,
-    setSelectedSlideId,
-
-    addSlide,
-    deleteSlide,
-    duplicateSlide,
-    moveSlideUp,
-    moveSlideDown,
-
-    savePresentation,
-    updatePlaceholderContent,
-    updatePlaceholderPosition,
+  const resetPresentation = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    window.location.reload();
   };
+
+return {
+  presentation: state.presentation,
+
+  slides,
+  selectedSlide,
+  selectedSlideIndex,
+
+  selectedSlideId: selectedSlideIndex,
+  setSelectedSlideId,
+
+  addSlide,
+  deleteSlide,
+  duplicateSlide,
+  moveSlideUp,
+  moveSlideDown,
+
+  savePresentation,
+  resetPresentation,
+
+  updateTextElementContent,
+  updateTextElementPosition,
+};
 }

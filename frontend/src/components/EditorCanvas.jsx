@@ -1,53 +1,10 @@
-// import "./EditorCanvas.css";
-
-// export default function EditorCanvas({
-//   slide,
-//   onChangePlaceholder,
-//   onMovePlaceholder,
-// }) {
-//   return (
-//     <main className="canvas-wrapper">
-//       <section className="editor-slide">
-//         {slide.placeholders.map((p) => (
-//           <div
-//             key={p.id}
-//             className="draggable"
-//             style={{
-//               position: "absolute",
-//               left: p.position?.x || 0,
-//               top: p.position?.y || 0,
-//             }}
-//             draggable
-//             onDragEnd={(e) =>
-//               onMovePlaceholder(p.id, e.clientX - 300, e.clientY - 100)
-//             }
-//           >
-//             {p.id === "title" ? (
-//               <input
-//                 value={p.content}
-//                 onChange={(e) => onChangePlaceholder(p.id, e.target.value)}
-//               />
-//             ) : (
-//               <textarea
-//                 value={p.content}
-//                 onChange={(e) => onChangePlaceholder(p.id, e.target.value)}
-//               />
-//             )}
-//           </div>
-//         ))}
-//       </section>
-//     </main>
-//   );
-// }
-
-
 import { useState } from "react";
 import "./EditorCanvas.css";
 
 export default function EditorCanvas({
   slide,
-  onChangePlaceholder,
-  onMovePlaceholder,
+  onChangeTextElement,
+  onMoveTextElement,
 }) {
   const [draggingElementId, setDraggingElementId] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -70,7 +27,7 @@ export default function EditorCanvas({
     const newX = e.clientX - canvasRect.left - dragOffset.x;
     const newY = e.clientY - canvasRect.top - dragOffset.y;
 
-    onMovePlaceholder(draggingElementId, newX, newY);
+    onMoveTextElement(draggingElementId, newX, newY);
   };
 
   const stopDragging = () => {
@@ -86,11 +43,9 @@ export default function EditorCanvas({
         onMouseLeave={stopDragging}
       >
         {textElements.map((textElement) => {
-          const text =
-            textElement.paragraphs?.[0]?.runs?.[0]?.text ?? "";
+          const text = textElement.paragraphs?.[0]?.runs?.[0]?.text ?? "";
 
-          const isTitle =
-            textElement["placeholder-id"] === "title-placeholder";
+          const isTitle = textElement.role === "title";
 
           return (
             <div
@@ -100,6 +55,10 @@ export default function EditorCanvas({
                 position: "absolute",
                 left: `${textElement.position?.x ?? 0}px`,
                 top: `${textElement.position?.y ?? 0}px`,
+                width: `${textElement.width ?? 300}px`,
+                height: `${textElement.height ?? 80}px`,
+                background: textElement.background ?? "transparent",
+                zIndex: textElement["z-index"] ?? textElement.zindex ?? 1,
               }}
               onMouseDown={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -115,14 +74,14 @@ export default function EditorCanvas({
                 <input
                   value={text}
                   onChange={(e) =>
-                    onChangePlaceholder(textElement.id, e.target.value)
+                    onChangeTextElement(textElement.id, e.target.value)
                   }
                 />
               ) : (
                 <textarea
                   value={text}
                   onChange={(e) =>
-                    onChangePlaceholder(textElement.id, e.target.value)
+                    onChangeTextElement(textElement.id, e.target.value)
                   }
                 />
               )}
