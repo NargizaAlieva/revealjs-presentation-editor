@@ -40,7 +40,6 @@ export const editorReducer = (state, event) => {
     case EditorEventType.SLIDE.SELECT:
       return {
         ...state,
-
         selectedSlideIndex: event.payload.slideIndex,
         selectedElementId: null,
         lastEvent: event,
@@ -50,14 +49,13 @@ export const editorReducer = (state, event) => {
     case EditorEventType.SLIDE.ADD: {
       const updatedPresentation = addSlide(
         state.presentation,
-        event.payload.layoutId
+        event.payload.layoutId,
       );
 
       return {
         ...state,
         presentation: updatedPresentation,
-        selectedSlideIndex:
-          updatedPresentation.slideset.slides.length - 1,
+        selectedSlideIndex: updatedPresentation.slides.length - 1,
         selectedElementId: null,
         lastEvent: event,
         lastUpdated: Date.now(),
@@ -67,19 +65,15 @@ export const editorReducer = (state, event) => {
     case EditorEventType.SLIDE.DELETE: {
       const updatedPresentation = deleteSlide(
         state.presentation,
-        state.selectedSlideIndex
+        state.selectedSlideIndex,
       );
 
-      const lastSlideIndex =
-        updatedPresentation.slideset.slides.length - 1;
+      const lastSlideIndex = updatedPresentation.slides.length - 1;
 
       return {
         ...state,
         presentation: updatedPresentation,
-        selectedSlideIndex: Math.min(
-          state.selectedSlideIndex,
-          lastSlideIndex
-        ),
+        selectedSlideIndex: Math.min(state.selectedSlideIndex, lastSlideIndex),
         selectedElementId: null,
         lastEvent: event,
         lastUpdated: Date.now(),
@@ -89,7 +83,7 @@ export const editorReducer = (state, event) => {
     case EditorEventType.SLIDE.DUPLICATE: {
       const updatedPresentation = duplicateSlide(
         state.presentation,
-        state.selectedSlideIndex
+        state.selectedSlideIndex,
       );
 
       return {
@@ -106,7 +100,7 @@ export const editorReducer = (state, event) => {
       const updatedPresentation = reorderSlides(
         state.presentation,
         event.payload.fromIndex,
-        event.payload.toIndex
+        event.payload.toIndex,
       );
 
       return {
@@ -124,7 +118,7 @@ export const editorReducer = (state, event) => {
         state.presentation,
         state.selectedSlideIndex,
         event.payload.textElementId,
-        event.payload.text
+        event.payload.text,
       );
 
       return {
@@ -140,7 +134,7 @@ export const editorReducer = (state, event) => {
         state.presentation,
         state.selectedSlideIndex,
         event.payload.elementId,
-        event.payload.position
+        event.payload.position,
       );
 
       return {
@@ -156,7 +150,7 @@ export const editorReducer = (state, event) => {
         state.presentation,
         state.selectedSlideIndex,
         event.payload.elementId,
-        event.payload.size
+        event.payload.size,
       );
 
       return {
@@ -171,7 +165,7 @@ export const editorReducer = (state, event) => {
       const updatedPresentation = applyLayoutToSlide(
         state.presentation,
         state.selectedSlideIndex,
-        event.payload.layoutId
+        event.payload.layoutId,
       );
 
       return {
@@ -186,7 +180,7 @@ export const editorReducer = (state, event) => {
       const updatedPresentation = propagateLayoutChanges(
         state.presentation,
         event.payload.layoutId,
-        event.payload.placeholders
+        event.payload.placeholders,
       );
 
       return {
@@ -200,10 +194,7 @@ export const editorReducer = (state, event) => {
     case EditorEventType.PRESENTATION.LOAD: {
       return {
         ...state,
-        presentation: deserializePresentation(
-          event.payload.jsonString
-        ),
-
+        presentation: deserializePresentation(event.payload.jsonString),
         selectedSlideIndex: 0,
         selectedElementId: null,
         lastEvent: event,

@@ -1,9 +1,6 @@
 const createId = () => crypto.randomUUID();
 
-const createTextElementFromPlaceholder = (
-  placeholder,
-  defaultText = ""
-) => ({
+const createTextElementFromPlaceholder = (placeholder, defaultText = "") => ({
   id: createId(),
 
   "placeholder-id": placeholder["placeholder-id"],
@@ -39,15 +36,12 @@ const createTextElementFromPlaceholder = (
 });
 
 export const createSlideFromLayout = (layout, slideNumber) => {
-  const textPlaceholders = layout.placeholders.filter(
-    (placeholder) => placeholder.type === "text"
+  const textPlaceholders = (layout.placeholders ?? []).filter(
+    (placeholder) => placeholder.type === "text",
   );
 
   return {
-    title: {
-      content: `Slide ${slideNumber}`,
-    },
-
+    title: `Slide ${slideNumber}`,
     "layout-id": layout["layout-id"],
     hidden: false,
     contents: {
@@ -56,10 +50,9 @@ export const createSlideFromLayout = (layout, slideNumber) => {
           placeholder,
           placeholder.role === "title"
             ? `Slide ${slideNumber}`
-            : "Click to edit text"
-        )
+            : "Click to edit text",
+        ),
       ),
-
       media: [],
       shapes: [],
       tables: [],
@@ -72,40 +65,26 @@ export const createSlideFromLayout = (layout, slideNumber) => {
   };
 };
 
-export const addSlide = (
-  presentation,
-  layoutId = "title-content"
-) => {
-  const slideset = presentation.slideset;
+export const addSlide = (presentation, layoutId = "title-content") => {
+  const layouts = presentation.layouts ?? [];
+  const slides = presentation.slides ?? [];
 
-  const layout = slideset.layouts.find(
-    (item) => item["layout-id"] === layoutId
-  );
+  const layout = layouts.find((item) => item["layout-id"] === layoutId);
 
   if (!layout) {
     throw new Error(`Layout not found: ${layoutId}`);
   }
 
-  const newSlide = createSlideFromLayout(
-    layout,
-    slideset.slides.length + 1
-  );
+  const newSlide = createSlideFromLayout(layout, slides.length + 1);
 
   return {
     ...presentation,
-    slideset: {
-      ...slideset,
-
-      slides: [...slideset.slides, newSlide],
-    },
+    slides: [...slides, newSlide],
   };
 };
 
-export const deleteSlide = (
-  presentation,
-  slideIndex
-) => {
-  const slides = presentation.slideset.slides;
+export const deleteSlide = (presentation, slideIndex) => {
+  const slides = presentation.slides ?? [];
 
   if (slides.length <= 1) {
     return presentation;
@@ -113,13 +92,7 @@ export const deleteSlide = (
 
   return {
     ...presentation,
-    slideset: {
-      ...presentation.slideset,
-
-      slides: slides.filter(
-        (_, index) => index !== slideIndex
-      ),
-    },
+    slides: slides.filter((_, index) => index !== slideIndex),
   };
 };
 
@@ -129,17 +102,13 @@ const cloneTextElementWithNewIds = (textElement) => ({
   id: createId(),
   paragraphs: (textElement.paragraphs ?? []).map((paragraph) => ({
     ...structuredClone(paragraph),
-
     id: createId(),
   })),
 });
 
-export const duplicateSlide = (
-  presentation,
-  slideIndex
-) => {
-  const slideToDuplicate =
-    presentation.slideset.slides[slideIndex];
+export const duplicateSlide = (presentation, slideIndex) => {
+  const slides = presentation.slides ?? [];
+  const slideToDuplicate = slides[slideIndex];
 
   if (!slideToDuplicate) {
     return presentation;
@@ -148,58 +117,33 @@ export const duplicateSlide = (
   const duplicatedSlide = {
     ...structuredClone(slideToDuplicate),
 
-    title: {
-      content: `${
-        slideToDuplicate.title?.content ?? "Slide"
-      } Copy`,
-    },
+    title: `${slideToDuplicate.title ?? "Slide"} Copy`,
 
     contents: {
       ...structuredClone(slideToDuplicate.contents),
-      text: (slideToDuplicate.contents.text ?? []).map(
-        cloneTextElementWithNewIds
+      text: (slideToDuplicate.contents?.text ?? []).map(
+        cloneTextElementWithNewIds,
       ),
-
-      media:
-        slideToDuplicate.contents.media ?? [],
-      shapes:
-        slideToDuplicate.contents.shapes ?? [],
-      tables:
-        slideToDuplicate.contents.tables ?? [],
-      groups:
-        slideToDuplicate.contents.groups ?? [],
-      animations:
-        slideToDuplicate.contents.animations ?? [],
+      media: slideToDuplicate.contents?.media ?? [],
+      shapes: slideToDuplicate.contents?.shapes ?? [],
+      tables: slideToDuplicate.contents?.tables ?? [],
+      groups: slideToDuplicate.contents?.groups ?? [],
+      animations: slideToDuplicate.contents?.animations ?? [],
     },
   };
 
   return {
     ...presentation,
-
-    slideset: {
-      ...presentation.slideset,
-
-      slides: [
-        ...presentation.slideset.slides.slice(
-          0,
-          slideIndex + 1
-        ),
-
-        duplicatedSlide,
-        ...presentation.slideset.slides.slice(
-          slideIndex + 1
-        ),
-      ],
-    },
+    slides: [
+      ...slides.slice(0, slideIndex + 1),
+      duplicatedSlide,
+      ...slides.slice(slideIndex + 1),
+    ],
   };
 };
 
-export const reorderSlides = (
-  presentation,
-  fromIndex,
-  toIndex
-) => {
-  const slides = [...presentation.slideset.slides];
+export const reorderSlides = (presentation, fromIndex, toIndex) => {
+  const slides = [...(presentation.slides ?? [])];
 
   if (
     fromIndex < 0 ||
@@ -212,14 +156,10 @@ export const reorderSlides = (
   }
 
   const [movedSlide] = slides.splice(fromIndex, 1);
-
   slides.splice(toIndex, 0, movedSlide);
 
   return {
     ...presentation,
-    slideset: {
-      ...presentation.slideset,
-      slides,
-    },
+    slides,
   };
 };

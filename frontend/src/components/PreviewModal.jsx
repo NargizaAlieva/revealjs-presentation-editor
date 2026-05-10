@@ -4,6 +4,10 @@ import "../../node_modules/reveal.js/dist/reveal.css";
 import "../../node_modules/reveal.js/dist/theme/white.css";
 import "./PreviewModal.css";
 
+const getTextFromElement = (textElement) => {
+  return textElement.paragraphs?.[0]?.runs?.[0]?.text ?? "";
+};
+
 export default function PreviewModal({ slides, onClose }) {
   useEffect(() => {
     const deck = new Reveal({
@@ -14,6 +18,7 @@ export default function PreviewModal({ slides, onClose }) {
     });
 
     deck.initialize();
+    deck.sync();
 
     return () => {
       deck.destroy();
@@ -29,18 +34,22 @@ export default function PreviewModal({ slides, onClose }) {
 
         <div className="reveal">
           <div className="slides">
-            {slides.map((slide) => {
-              const title = slide.placeholders.find(
-                (p) => p.id === "title",
-              )?.content;
-              const body = slide.placeholders.find(
-                (p) => p.id === "body",
-              )?.content;
+            {(slides ?? []).map((slide, slideIndex) => {
+              const textElements = slide.contents?.text ?? [];
 
               return (
-                <section key={slide.id}>
-                  <h2>{title}</h2>
-                  <p>{body}</p>
+                <section key={slideIndex}>
+                  {textElements.map((textElement) => {
+                    const text = getTextFromElement(textElement);
+                    const isTitle =
+                      textElement["placeholder-id"] === "title-placeholder";
+
+                    return isTitle ? (
+                      <h2 key={textElement.id}>{text}</h2>
+                    ) : (
+                      <p key={textElement.id}>{text}</p>
+                    );
+                  })}
                 </section>
               );
             })}

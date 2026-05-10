@@ -45,8 +45,7 @@ export default function EditorCanvas({
         {textElements.map((textElement) => {
           const text = textElement.paragraphs?.[0]?.runs?.[0]?.text ?? "";
 
-          const isTitle = textElement.role === "title";
-
+const isTitle = textElement["placeholder-id"] === "title-placeholder";
           return (
             <div
               key={textElement.id}

@@ -2,49 +2,51 @@ export const updateTextElement = (
   presentation,
   slideIndex,
   textElementId,
-  newText
+  newText,
 ) => {
-  const slides = [...presentation.slideset.slides];
+  const slides = [...(presentation.slides ?? [])];
   const slide = slides[slideIndex];
 
   if (!slide) {
     return presentation;
   }
 
-  const updatedTextElements = (slide.contents.text ?? []).map((textElement) => {
-    if (textElement.id !== textElementId) {
-      return textElement;
-    }
+  const updatedTextElements = (slide.contents?.text ?? []).map(
+    (textElement) => {
+      if (textElement.id !== textElementId) {
+        return textElement;
+      }
 
-    const updatedParagraphs = [...(textElement.paragraphs ?? [])];
+      const updatedParagraphs = [...(textElement.paragraphs ?? [])];
 
-    if (updatedParagraphs.length === 0) {
-      return textElement;
-    }
+      if (updatedParagraphs.length === 0) {
+        return textElement;
+      }
 
-    const firstParagraph = {
-      ...updatedParagraphs[0],
-    };
+      const firstParagraph = {
+        ...updatedParagraphs[0],
+      };
 
-    const updatedRuns = [...(firstParagraph.runs ?? [])];
+      const updatedRuns = [...(firstParagraph.runs ?? [])];
 
-    if (updatedRuns.length === 0) {
-      return textElement;
-    }
+      if (updatedRuns.length === 0) {
+        return textElement;
+      }
 
-    updatedRuns[0] = {
-      ...updatedRuns[0],
-      text: newText,
-    };
+      updatedRuns[0] = {
+        ...updatedRuns[0],
+        text: newText,
+      };
 
-    firstParagraph.runs = updatedRuns;
-    updatedParagraphs[0] = firstParagraph;
+      firstParagraph.runs = updatedRuns;
+      updatedParagraphs[0] = firstParagraph;
 
-    return {
-      ...textElement,
-      paragraphs: updatedParagraphs,
-    };
-  });
+      return {
+        ...textElement,
+        paragraphs: updatedParagraphs,
+      };
+    },
+  );
 
   slides[slideIndex] = {
     ...slide,
@@ -56,10 +58,7 @@ export const updateTextElement = (
 
   return {
     ...presentation,
-    slideset: {
-      ...presentation.slideset,
-      slides,
-    },
+    slides,
   };
 };
 
@@ -67,10 +66,9 @@ export const moveElement = (
   presentation,
   slideIndex,
   elementId,
-  newPosition
+  newPosition,
 ) => {
-  const slides = [...presentation.slideset.slides];
-
+  const slides = [...(presentation.slides ?? [])];
   const slide = slides[slideIndex];
 
   if (!slide) {
@@ -81,7 +79,6 @@ export const moveElement = (
     element.id === elementId
       ? {
           ...element,
-
           position: {
             x: newPosition.x,
             y: newPosition.y,
@@ -91,37 +88,21 @@ export const moveElement = (
 
   slides[slideIndex] = {
     ...slide,
-
     contents: {
       ...slide.contents,
-
-      text: (slide.contents.text ?? []).map(
-        updatePosition
-      ),
-      media: (slide.contents.media ?? []).map(
-        updatePosition
-      ),
+      text: (slide.contents?.text ?? []).map(updatePosition),
+      media: (slide.contents?.media ?? []).map(updatePosition),
     },
   };
 
   return {
     ...presentation,
-
-    slideset: {
-      ...presentation.slideset,
-
-      slides,
-    },
+    slides,
   };
 };
 
-export const resizeElement = (
-  presentation,
-  slideIndex,
-  elementId,
-  newSize
-) => {
-  const slides = [...presentation.slideset.slides];
+export const resizeElement = (presentation, slideIndex, elementId, newSize) => {
+  const slides = [...(presentation.slides ?? [])];
   const slide = slides[slideIndex];
 
   if (!slide) {
@@ -139,25 +120,15 @@ export const resizeElement = (
 
   slides[slideIndex] = {
     ...slide,
-
     contents: {
       ...slide.contents,
-
-      text: (slide.contents.text ?? []).map(
-        updateSize
-      ),
-      media: (slide.contents.media ?? []).map(
-        updateSize
-      ),
+      text: (slide.contents?.text ?? []).map(updateSize),
+      media: (slide.contents?.media ?? []).map(updateSize),
     },
   };
 
   return {
     ...presentation,
-
-    slideset: {
-      ...presentation.slideset,
-      slides,
-    },
+    slides,
   };
 };

@@ -1,12 +1,8 @@
-export const applyLayoutToSlide = (
-  presentation,
-  slideIndex,
-  layoutId
-) => {
-  const slides = [...presentation.slideset.slides];
+export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
+  const slides = [...(presentation.slides ?? [])];
 
-  const layoutExists = presentation.slideset.layouts.some(
-    (layout) => layout["layout-id"] === layoutId
+  const layoutExists = (presentation.layouts ?? []).some(
+    (layout) => layout["layout-id"] === layoutId,
   );
 
   if (!layoutExists || !slides[slideIndex]) {
@@ -20,27 +16,24 @@ export const applyLayoutToSlide = (
 
   return {
     ...presentation,
-    slideset: {
-      ...presentation.slideset,
-      slides,
-    },
+    slides,
   };
 };
 
 export const propagateLayoutChanges = (
   presentation,
   layoutId,
-  updatedPlaceholders
+  updatedPlaceholders,
 ) => {
-  const slides = presentation.slideset.slides.map((slide) => {
+  const slides = (presentation.slides ?? []).map((slide) => {
     if (slide["layout-id"] !== layoutId) {
       return slide;
     }
 
-    const updatedText = (slide.contents.text ?? []).map((textElement) => {
+    const updatedText = (slide.contents?.text ?? []).map((textElement) => {
       const matchingPlaceholder = updatedPlaceholders.find(
         (placeholder) =>
-          placeholder["placeholder-id"] === textElement["placeholder-id"]
+          placeholder["placeholder-id"] === textElement["placeholder-id"],
       );
 
       if (!matchingPlaceholder) {
@@ -66,21 +59,18 @@ export const propagateLayoutChanges = (
     };
   });
 
-  const updatedLayouts = presentation.slideset.layouts.map((layout) =>
+  const updatedLayouts = (presentation.layouts ?? []).map((layout) =>
     layout["layout-id"] === layoutId
       ? {
           ...layout,
           placeholders: updatedPlaceholders,
         }
-      : layout
+      : layout,
   );
 
   return {
     ...presentation,
-    slideset: {
-      ...presentation.slideset,
-      layouts: updatedLayouts,
-      slides,
-    },
+    layouts: updatedLayouts,
+    slides,
   };
 };
