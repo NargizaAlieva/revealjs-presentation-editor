@@ -4,10 +4,6 @@ import "reveal.js/reveal.css";
 import "reveal.js/theme/white.css";
 import "./PreviewModal.css";
 
-const getTextFromElement = (textElement) => {
-  return textElement.paragraphs?.[0]?.runs?.[0]?.text ?? "";
-};
-
 function getTextFromElement(textElement) {
   return (
     textElement?.paragraphs
@@ -31,17 +27,17 @@ export default function PreviewModal({ slides, onClose }) {
     const deck = new Reveal({
       controls: true,
       progress: true,
-      center: true,
+      center: false,
       hash: false,
+      embedded: true,
     });
 
     deck.initialize();
-    deck.sync();
 
     return () => {
       deck.destroy();
     };
-  }, []);
+  }, [slides]);
 
   return (
     <div className="preview-overlay">
@@ -52,25 +48,56 @@ export default function PreviewModal({ slides, onClose }) {
 
         <div className="reveal">
           <div className="slides">
-            {(slides ?? []).map((slide, slideIndex) => {
-              const textElements = slide.contents?.text ?? [];
+            {slides
+              .filter((slide) => !slide.hidden)
+              .map((slide, slideIndex) => (
+                <section
+                  key={`${slide.title || "slide"}-${slideIndex}`}
+                  data-transition={slide.contents?.transition || "slide"}
+                  style={{
+                    position: "relative",
+                    background: slide.contents?.background || "white",
+                  }}
+                >
+                  {getTextElements(slide).map((textElement) => (
+                    <div
+                      key={textElement.id}
+                      style={{
+                        position: "absolute",
+                        left: `${textElement.position?.x || 0}px`,
+                        top: `${textElement.position?.y || 0}px`,
+                        width: `${textElement.width || 300}px`,
+                        height: `${textElement.height || 80}px`,
+                        background: textElement.background || "transparent",
+                        overflow: textElement.overflow || "hidden",
+                        zIndex:
+                          textElement["z-index"] || textElement.zindex || 1,
+                        transform: `rotate(${textElement.rotation || 0}deg)`,
+                      }}
+                    >
+                      {getTextFromElement(textElement)}
+                    </div>
+                  ))}
 
-              return (
-                <section key={slideIndex}>
-                  {textElements.map((textElement) => {
-                    const text = getTextFromElement(textElement);
-                    const isTitle =
-                      textElement["placeholder-id"] === "title-placeholder";
-
-                    return isTitle ? (
-                      <h2 key={textElement.id}>{text}</h2>
-                    ) : (
-                      <p key={textElement.id}>{text}</p>
-                    );
-                  })}
+                  {getMediaElements(slide).map((media) => (
+                    <img
+                      key={media.id}
+                      src={media["file-link"]}
+                      alt=""
+                      style={{
+                        position: "absolute",
+                        left: `${media.position?.x || 0}px`,
+                        top: `${media.position?.y || 0}px`,
+                        width: `${media.width || 200}px`,
+                        height: `${media.height || 120}px`,
+                        objectFit: "contain",
+                        zIndex: media["z-index"] || media.zindex || 1,
+                        transform: `rotate(${media.rotation || 0}deg)`,
+                      }}
+                    />
+                  ))}
                 </section>
-              );
-            })}
+              ))}
           </div>
         </div>
       </div>
