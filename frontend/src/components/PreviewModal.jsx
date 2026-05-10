@@ -130,7 +130,9 @@ export default function PreviewModal({ slides, onClose }) {
                 >
                   <div
                     style={{
-                      padding: "80px 120px",
+                      position: "relative",
+                      width: "960px",
+                      height: "540px",
                       color: "black",
                       textAlign: "left",
                     }}
@@ -139,9 +141,20 @@ export default function PreviewModal({ slides, onClose }) {
                       <div
                         key={textElement.id || index}
                         style={{
-                          fontSize: index === 0 ? "34px" : "26px",
-                          fontWeight: index === 0 ? "bold" : "normal",
-                          marginBottom: "40px",
+                          position: "absolute",
+                          left: `${textElement.position?.x || 0}px`,
+                          top: `${textElement.position?.y || 0}px`,
+                          width: `${textElement.width || 300}px`,
+                          height: `${textElement.height || 80}px`,
+                          background: textElement.background || "transparent",
+                          overflow: textElement.overflow || "hidden",
+                          zIndex: textElement["z-index"] || textElement.zindex || index + 1,
+                          transform: `rotate(${textElement.rotation || 0}deg)`,
+                          fontSize: `${textElement.formatting?.size || (index === 0 ? 34 : 26)}px`,
+                          fontWeight:
+                            textElement.formatting?.weight || (index === 0 ? "bold" : "normal"),
+                          color: textElement.formatting?.color || "black",
+                          boxSizing: "border-box",
                         }}
                       >
                         {getTextFromElement(textElement)}
