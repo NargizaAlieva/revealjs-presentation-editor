@@ -6,6 +6,7 @@ import { useSlides } from "../hooks/useSlides";
 import "./EditorPage.css";
 import PreviewModal from "../components/PreviewModal";
 import RevealPreview from "../components/preview/RevealPreview";
+import { exportToReveal } from "../core/export/exportToReveal";
 
 const mockPresentation = {
   id: "test-presentation",
@@ -116,10 +117,17 @@ export default function EditorPage() {
           />
         )}
       </div>
+      
       <div style={{ marginTop: "24px" }}>
         <h3>Presentation Preview</h3>
+
+        <button onClick={() => exportToReveal(mockPresentation)}>
+          Export HTML
+        </button>
+
         <RevealPreview presentation={mockPresentation} />
       </div>
+
 
       {isPreviewOpen && (
         <PreviewModal slides={slides} onClose={() => setIsPreviewOpen(false)} />
