@@ -1,12 +1,30 @@
 import { useEffect } from "react";
 import Reveal from "reveal.js";
-import "../../node_modules/reveal.js/dist/reveal.css";
-import "../../node_modules/reveal.js/dist/theme/white.css";
+import "reveal.js/reveal.css";
+import "reveal.js/theme/white.css";
 import "./PreviewModal.css";
 
 const getTextFromElement = (textElement) => {
   return textElement.paragraphs?.[0]?.runs?.[0]?.text ?? "";
 };
+
+function getTextFromElement(textElement) {
+  return (
+    textElement?.paragraphs
+      ?.map((paragraph) =>
+        paragraph?.runs?.map((run) => run?.text || "").join("")
+      )
+      .join("\n") || ""
+  );
+}
+
+function getTextElements(slide) {
+  return slide?.contents?.text || [];
+}
+
+function getMediaElements(slide) {
+  return slide?.contents?.media || [];
+}
 
 export default function PreviewModal({ slides, onClose }) {
   useEffect(() => {
