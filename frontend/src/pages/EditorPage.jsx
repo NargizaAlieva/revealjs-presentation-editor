@@ -5,6 +5,61 @@ import EditorCanvas from "../components/EditorCanvas";
 import { useSlides } from "../hooks/useSlides";
 import "./EditorPage.css";
 import PreviewModal from "../components/PreviewModal";
+import RevealPreview from "../components/preview/RevealPreview";
+
+const mockPresentation = {
+  id: "test-presentation",
+  filename: "presentation-1",
+  title: "New Presentation",
+  author: "unknown",
+  master: {
+    "slide-dimensions": null,
+  },
+  slides: [
+    {
+      title: "Title Slide",
+      hidden: false,
+      contents: {
+        text: [
+          {
+            id: "text-1",
+            position: { x: 80, y: 80 },
+            width: 800,
+            height: 80,
+            rotation: 0,
+            overflow: "none",
+            background: "transparent",
+            paragraphs: [
+              {
+                id: "paragraph-1",
+                formatting: null,
+                bullets: null,
+                runs: [
+                  {
+                    formatting: null,
+                    text: "Click to add title",
+                    link: null,
+                    "super-sub-script": null,
+                  },
+                ],
+              },
+            ],
+            zindex: 1,
+            "placeholder-id": null,
+            "pos-type": null,
+            "z-index": 1,
+          },
+        ],
+        media: [],
+        background: null,
+        transition: null,
+        notes: null,
+      },
+      "layout-id": null,
+    },
+  ],
+  "creation-date": null,
+};
 
 export default function EditorPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
