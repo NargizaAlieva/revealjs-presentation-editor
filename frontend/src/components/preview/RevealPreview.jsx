@@ -1,3 +1,8 @@
+import { useEffect, useRef } from "react";
+import Reveal from "reveal.js";
+import "reveal.js/dist/reveal.css";
+import "reveal.js/dist/theme/white.css";
+
 import {
   getSlideSize,
   getVisibleSlides,
@@ -6,8 +11,40 @@ import {
 } from "../../utils/slidesetRenderUtils";
 
 export default function RevealPreview({ presentation }) {
+  const deckRef = useRef(null);
+  const revealInstanceRef = useRef(null);
+
   const { width, height } = getSlideSize(presentation);
   const slides = getVisibleSlides(presentation);
+
+  useEffect(() => {
+    if (!deckRef.current) return;
+
+    if (revealInstanceRef.current) {
+      revealInstanceRef.current.destroy();
+      revealInstanceRef.current = null;
+    }
+
+    const deck = new Reveal(deckRef.current, {
+      embedded: true,
+      controls: true,
+      progress: true,
+      center: false,
+      width,
+      height,
+      transition: "slide",
+    });
+
+    deck.initialize();
+    revealInstanceRef.current = deck;
+
+    return () => {
+      if (revealInstanceRef.current) {
+        revealInstanceRef.current.destroy();
+        revealInstanceRef.current = null;
+      }
+    };
+  }, [presentation, width, height]);
 
   return (
     <div
@@ -18,7 +55,7 @@ export default function RevealPreview({ presentation }) {
         background: "#f5f5f5",
       }}
     >
-      <div className="reveal">
+      <div className="reveal" ref={deckRef}>
         <div className="slides">
           {slides.map((slide, slideIndex) => (
             <section
@@ -29,6 +66,7 @@ export default function RevealPreview({ presentation }) {
                 height: `${height}px`,
                 background: slide.contents?.background || "white",
               }}
+              data-transition={slide.contents?.transition || "slide"}
             >
               {getTextElements(slide).map((textElement) => (
                 <div
