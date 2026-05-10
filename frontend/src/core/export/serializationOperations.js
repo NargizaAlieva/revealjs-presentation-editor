@@ -8,16 +8,17 @@ export const deserializePresentation = (jsonString) => {
   try {
     const parsedPresentation = JSON.parse(jsonString);
     const validationErrors = validatePresentation(parsedPresentation);
-    
+
     if (validationErrors.length > 0) {
-      throw new Error(validationErrors.join("; "));
+      console.warn("Presentation validation errors:", validationErrors);
     }
 
     return parsedPresentation;
   } catch (error) {
-    throw new Error(
-      `Failed to load presentation: ${error.message}`
-    );
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("Failed to load presentation:", message);
+
+    return null;
   }
 };
 
@@ -32,9 +33,7 @@ export const downloadPresentationAsJson = (presentation) => {
   const link = document.createElement("a");
 
   link.href = url;
-  link.download =
-    presentation.slideset.filename ??
-    "untitled-presentation.json";
+  link.download = presentation.filename ?? "untitled-presentation.json";
 
   link.click();
 

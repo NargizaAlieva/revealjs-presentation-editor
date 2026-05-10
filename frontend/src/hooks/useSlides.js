@@ -19,9 +19,15 @@ const loadInitialState = () => {
   }
 
   try {
+    const loadedPresentation = deserializePresentation(savedPresentation);
+
+    if (!loadedPresentation) {
+      return createInitialEditorState();
+    }
+
     return {
       ...createInitialEditorState(),
-      presentation: deserializePresentation(savedPresentation),
+      presentation: loadedPresentation,
       selectedSlideIndex: 0,
       selectedElementId: null,
       lastUpdated: Date.now(),
@@ -125,26 +131,26 @@ export function useSlides() {
     window.location.reload();
   };
 
-return {
-  presentation: state.presentation,
+  return {
+    presentation: state.presentation,
 
-  slides,
-  selectedSlide,
-  selectedSlideIndex,
+    slides,
+    selectedSlide,
+    selectedSlideIndex,
 
-  selectedSlideId: selectedSlideIndex,
-  setSelectedSlideId,
+    selectedSlideId: selectedSlideIndex,
+    setSelectedSlideId,
 
-  addSlide,
-  deleteSlide,
-  duplicateSlide,
-  moveSlideUp,
-  moveSlideDown,
+    addSlide,
+    deleteSlide,
+    duplicateSlide,
+    moveSlideUp,
+    moveSlideDown,
 
-  savePresentation,
-  resetPresentation,
+    savePresentation,
+    resetPresentation,
 
-  updateTextElementContent,
-  updateTextElementPosition,
-};
+    updateTextElementContent,
+    updateTextElementPosition,
+  };
 }
