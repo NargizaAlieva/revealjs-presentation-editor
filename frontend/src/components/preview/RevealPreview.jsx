@@ -8,6 +8,7 @@ import {
   getVisibleSlides,
   getTextElements,
   getTextFromTextElement,
+  getMediaElements,
 } from "../../utils/slidesetRenderUtils";
 
 export default function RevealPreview({ presentation }) {
@@ -78,10 +79,31 @@ export default function RevealPreview({ presentation }) {
                     width: `${textElement.width || 300}px`,
                     height: `${textElement.height || 80}px`,
                     background: textElement.background || "transparent",
+                    overflow: textElement.overflow || "hidden",
+                    zIndex: textElement["z-index"] || textElement.zindex || 1,
+                    transform: `rotate(${textElement.rotation || 0}deg)`,
                   }}
                 >
                   {getTextFromTextElement(textElement)}
                 </div>
+              ))}
+
+              {getMediaElements(slide).map((media) => (
+                <img
+                  key={media.id}
+                  src={media["file-link"]}
+                  alt=""
+                  style={{
+                    position: "absolute",
+                    left: `${media.position?.x || 0}px`,
+                    top: `${media.position?.y || 0}px`,
+                    width: `${media.width || 200}px`,
+                    height: `${media.height || 120}px`,
+                    objectFit: "contain",
+                    zIndex: media["z-index"] || media.zindex || 1,
+                    transform: `rotate(${media.rotation || 0}deg)`,
+                  }}
+                />
               ))}
             </section>
           ))}
