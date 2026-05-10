@@ -28,6 +28,9 @@ export default function EditorPage() {
   } = useSlides();
 
   const exportPresentation = () => {
+    console.log("Export slides:", slides);
+    console.log("Number of slides:", slides.length);
+
     exportToReveal({
       filename: "presentation-1",
       title: "New Presentation",
