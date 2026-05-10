@@ -5,62 +5,8 @@ import EditorCanvas from "../components/EditorCanvas";
 import { useSlides } from "../hooks/useSlides";
 import "./EditorPage.css";
 import PreviewModal from "../components/PreviewModal";
-import RevealPreview from "../components/preview/RevealPreview";
 import { exportToReveal } from "../core/export/exportToReveal";
 
-const mockPresentation = {
-  id: "test-presentation",
-  filename: "presentation-1",
-  title: "New Presentation",
-  author: "unknown",
-  master: {
-    "slide-dimensions": null,
-  },
-  slides: [
-    {
-      title: "Title Slide",
-      hidden: false,
-      contents: {
-        text: [
-          {
-            id: "text-1",
-            position: { x: 80, y: 80 },
-            width: 800,
-            height: 80,
-            rotation: 0,
-            overflow: "none",
-            background: "transparent",
-            paragraphs: [
-              {
-                id: "paragraph-1",
-                formatting: null,
-                bullets: null,
-                runs: [
-                  {
-                    formatting: null,
-                    text: "Click to add title",
-                    link: null,
-                    "super-sub-script": null,
-                  },
-                ],
-              },
-            ],
-            zindex: 1,
-            "placeholder-id": null,
-            "pos-type": null,
-            "z-index": 1,
-          },
-        ],
-        media: [],
-        background: null,
-        transition: null,
-        notes: null,
-      },
-      "layout-id": null,
-    },
-  ],
-  "creation-date": null,
-};
 
 export default function EditorPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -85,7 +31,14 @@ export default function EditorPage() {
   console.log("selectedSlide:", selectedSlide);
 
   const exportPresentation = () => {
-    console.log("Export is handled by the rendering/export layer.");
+    exportToReveal({
+      filename: "presentation-1",
+      title: "New Presentation",
+      master: {
+        "slide-dimensions": null,
+      },
+      slides,
+    });
   };
 
   return (
@@ -119,16 +72,6 @@ export default function EditorPage() {
             onMoveTextElement={updateTextElementPosition}
           />
         )}
-      </div>
-      
-      <div style={{ marginTop: "24px" }}>
-        <h3>Presentation Preview</h3>
-
-        <button onClick={() => exportToReveal(mockPresentation)}>
-          Export HTML
-        </button>
-
-        <RevealPreview presentation={mockPresentation} />
       </div>
 
 
