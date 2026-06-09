@@ -28,6 +28,8 @@ export default function EditorPage() {
     updateTextElementSize,
     updateTextElementFormatting,
     addMedia,
+    deleteElement,
+    toggleSlideHidden,
   } = useSlides();
 
   const exportPresentation = () => {
@@ -81,6 +83,8 @@ export default function EditorPage() {
           canMoveDown={selectedSlideIndex < slides.length - 1}
           onResetPresentation={resetPresentation}
           onImageUpload={handleImageUpload}
+          onToggleSlideHidden={() => toggleSlideHidden(selectedSlideIndex)}
+          isSlideHidden={selectedSlide?.hidden}
         />
 
         {selectedSlide && (
@@ -90,12 +94,19 @@ export default function EditorPage() {
             onMoveTextElement={updateTextElementPosition}
             onResizeTextElement={updateTextElementSize}
             onFormatTextElement={updateTextElementFormatting}
+            onMoveMediaElement={updateTextElementPosition}
+            onResizeMediaElement={updateTextElementSize}
+            onDeleteTextElement={deleteElement}
           />
         )}
       </div>
 
       {isPreviewOpen && (
-        <PreviewModal slides={slides} presentation={presentation} onClose={() => setIsPreviewOpen(false)} />
+        <PreviewModal
+          slides={slides}
+          presentation={presentation}
+          onClose={() => setIsPreviewOpen(false)}
+        />
       )}
     </div>
   );
