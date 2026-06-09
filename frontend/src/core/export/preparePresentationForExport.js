@@ -11,6 +11,7 @@ export const preparePresentationForExport = (presentation) => {
       title: slideset.title ?? "Untitled Presentation",
       author: slideset.author ?? "",
       creationDate: slideset["creation-date"] ?? "",
+      fonts: slideset.fonts ?? [],
     },
 
     master: {
@@ -26,26 +27,21 @@ export const preparePresentationForExport = (presentation) => {
 
     layouts: slideset.layouts ?? [],
 
-    slides: (slideset.slides ?? [])
-      .filter((slide) => !slide.hidden)
-      .map((slide, slideIndex) => ({
-        index: slideIndex,
-        title: slide.title?.content ?? `Slide ${slideIndex + 1}`,
-        layoutId: slide["layout-id"],
-        background: slide.contents?.background ?? "var(--bg-light)",
-        transition: slide.contents?.transition ?? "slide",
-        notes: slide.contents?.notes ?? "",
+    slides: (slideset.slides ?? []).map((slide, slideIndex) => ({
+      index: slideIndex,
+      title: slide.title ?? { content: `Slide ${slideIndex + 1}` },
+      layoutId: slide["layout-id"],
+      hidden: slide.hidden ?? false,
+      background: slide.contents?.background ?? "var(--bg-light)",
+      transition: slide.contents?.transition ?? "slide",
+      notes: slide.contents?.notes ?? "",
 
-        textElements: slide.contents?.text ?? [],
-        mediaElements: slide.contents?.media ?? [],
-
-        animations: slide.contents?.animations ?? [],
-
-        unsupportedElements: {
-          shapes: slide.contents?.shapes ?? [],
-          tables: slide.contents?.tables ?? [],
-          groups: slide.contents?.groups ?? [],
-        },
-      })),
+      textElements: slide.contents?.text ?? [],
+      mediaElements: slide.contents?.media ?? [],
+      shapes: slide.contents?.shapes ?? [],
+      tables: slide.contents?.tables ?? [],
+      groups: slide.contents?.groups ?? [],
+      animations: slide.contents?.animations ?? [],
+    })),
   };
 };
