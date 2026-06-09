@@ -92,6 +92,7 @@ export default function EditorPage() {
         {selectedSlide && (
           <EditorCanvas
             slide={selectedSlide}
+            presentation={presentation}
             onChangeTextElement={updateTextElementContent}
             onMoveTextElement={updateTextElementPosition}
             onResizeTextElement={updateTextElementSize}

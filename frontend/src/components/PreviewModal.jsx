@@ -33,7 +33,15 @@ export default function PreviewModal({ slides, presentation, onClose }) {
 
   return (
     <div className="preview-overlay" style={colorThemeStyle}>
-      <div className="preview-window">
+      <div
+        className="preview-window"
+        style={{
+          width: `${width}px`,
+          height: `${height}px`,
+          maxWidth: "95vw",
+          maxHeight: "95vh",
+        }}
+      >
         <button className="preview-close" onClick={onClose}>
           Close
         </button>
@@ -47,7 +55,7 @@ export default function PreviewModal({ slides, presentation, onClose }) {
               return (
                 <section
                   key={`slide-${slideIndex}`}
-                  data-transition={getSlideTransition(slide)} 
+                  data-transition={getSlideTransition(slide)}
                   style={{ background: slide.contents?.background ?? "white" }}
                 >
                   <div style={buildSlideContainerStyle(width, height)}>
