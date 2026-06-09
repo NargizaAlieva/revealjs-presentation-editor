@@ -100,3 +100,12 @@ export function buildColorThemeStyle(presentation) {
   });
   return cssVars;
 }
+
+export function getSlideTransition(slide, defaultTransition = "slide") {
+  const transition = slide?.contents?.transition;
+  const validTransitions = ["fade", "slide", "convex", "concave", "zoom", "none"];
+  if (transition && validTransitions.includes(transition)) {
+    return transition;
+  }
+  return defaultTransition;
+}

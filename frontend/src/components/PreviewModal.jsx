@@ -13,6 +13,7 @@ import {
   getSlideTextElements,
   getSlideMediaElements,
   getSlideDimensions,
+  getSlideTransition,
 } from "../core/render/revealRenderer";
 
 export default function PreviewModal({ slides, presentation, onClose }) {
@@ -46,7 +47,7 @@ export default function PreviewModal({ slides, presentation, onClose }) {
               return (
                 <section
                   key={`slide-${slideIndex}`}
-                  data-transition={slide.contents?.transition ?? "slide"}
+                  data-transition={getSlideTransition(slide)} 
                   style={{ background: slide.contents?.background ?? "white" }}
                 >
                   <div style={buildSlideContainerStyle(width, height)}>
