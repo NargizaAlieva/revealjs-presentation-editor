@@ -8,6 +8,30 @@ import { useEditorActions } from "../hooks/useEditorActions";
 import "./EditorPage.css";
 import PreviewModal from "../components/PreviewModal";
 import { exportToReveal } from "../core/export/exportToReveal";
+// import GlobalSettingsPanel from "../components/GlobalSettingsPanel";
+
+const fileToBase64 = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Could not read image file"));
+
+    reader.readAsDataURL(file);
+  });
+
+const createMediaElement = (base64, file) => ({
+  id: crypto.randomUUID(),
+  "file-link": base64,
+  "media-type": "image",
+  position: { x: 60, y: 60 },
+  width: 300,
+  height: 200,
+  rotation: 0,
+  "z-index": 1,
+  scale: 1,
+  name: file.name,
+});
 
 export default function EditorPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -44,7 +68,7 @@ export default function EditorPage() {
         onSelectSlide={actions.setSelectedSlideId}
       />
 
-      <div className="editor-main">
+      <div className="editor-main" style={{ display: "flex", flex: 1 }}>
         <Toolbar
           onAddSlide={actions.addSlide}
           onDeleteSlide={actions.deleteSlide}
@@ -72,9 +96,18 @@ export default function EditorPage() {
             onMoveTextElement={actions.updateTextElementPosition}
             onResizeTextElement={actions.updateTextElementSize}
             onFormatTextElement={actions.updateTextElementFormatting}
-            onDeleteElement={actions.deleteElement}
+            onMoveMediaElement={actions.updateTextElementPosition}
+            onResizeMediaElement={actions.updateTextElementSize}
+            onDeleteTextElement={actions.deleteElement}
+            onDeleteMedia={actions.deleteMedia}
           />
         )}
+
+        {/* <GlobalSettingsPanel
+          presentation={presentation}
+          updateMasterDimensions={actions.updateMasterDimensions}
+          updateSlideTransition={actions.updateSlideTransition}
+        /> */}
       </div>
 
       {isPreviewOpen && (
