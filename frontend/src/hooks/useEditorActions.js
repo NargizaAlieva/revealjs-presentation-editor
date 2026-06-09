@@ -152,6 +152,25 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     [eventBus]
   );
 
+  const updateMasterTheme = useCallback(
+    (colorTheme) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.MASTER.UPDATE_THEME, { colorTheme }),
+      ),
+    [eventBus],
+  );
+
+  const updateMasterDimensions = useCallback(
+    (slideDimensions, aspectRatio) =>
+        eventBus.dispatch(
+        createEditorEvent(EditorEventType.MASTER.UPDATE_DIMENSIONS, {
+            slideDimensions,
+            aspectRatio,
+        }),
+        ),
+    [eventBus],
+    );
+
   const savePresentation = useCallback(
     () =>
       eventBus.dispatch(createEditorEvent(EditorEventType.PRESENTATION.SAVE)),
@@ -174,8 +193,6 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     updateSlideBackground,
     updateSlideTransition,
     updateSlideNotes,
-    savePresentation,
-    resetPresentation,
     updateTextElementContent,
     updateTextElementFormatting,
     updateTextElementPosition,
@@ -183,5 +200,9 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     deleteElement,
     addMedia,
     deleteMedia,
+    updateMasterTheme,
+    updateMasterDimensions,
+    savePresentation,
+    resetPresentation,
   };
 }
