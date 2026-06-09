@@ -11,30 +11,10 @@ function getTextFromTextElement(textElement) {
 }
 
 function getExportTextElements(slide) {
-  if (slide?.contents?.text?.length) {
-    return slide.contents.text.map((textElement, index) => ({
-      text: getTextFromTextElement(textElement),
-      isTitle: index === 0,
-    }));
-  }
-
-  if (slide?.placeholders?.length) {
-    return slide.placeholders.map((placeholder, index) => ({
-      text: placeholder.content || "",
-      isTitle: placeholder.id === "title" || placeholder.role === "title" || index === 0,
-    }));
-  }
-
-  if (slide?.title) {
-    return [
-      {
-        text: slide.title,
-        isTitle: true,
-      },
-    ];
-  }
-
-  return [];
+  return (slide?.contents?.text ?? []).map((textElement, index) => ({
+    text: getTextFromTextElement(textElement),
+    isTitle: textElement["placeholder-id"]?.includes("title") ?? index === 0,
+  }));
 }
 
 export function exportToReveal(presentation) {
@@ -46,33 +26,25 @@ export function exportToReveal(presentation) {
       const textElements = getExportTextElements(slide);
 
       const textElementsHtml = textElements
-        .map((textElement) => {
-          return `
-            <div style="
-              font-size: ${textElement.isTitle ? "34px" : "26px"};
-              font-weight: ${textElement.isTitle ? "bold" : "normal"};
-              margin-bottom: 36px;
-              line-height: 1.3;
-              color: black;
-            ">
-              ${escapeHtml(textElement.text)}
-            </div>
-          `;
-        })
+        .map((textElement) => `
+          <div style="
+            font-size: ${textElement.isTitle ? "34px" : "26px"};
+            font-weight: ${textElement.isTitle ? "bold" : "normal"};
+            margin-bottom: 36px;
+            line-height: 1.3;
+            color: black;
+          ">
+            ${escapeHtml(textElement.text)}
+          </div>
+        `)
         .join("");
 
       return `
         <section
           data-transition="${slide.contents?.transition || "slide"}"
-          style="
-            background: ${slide.contents?.background || "white"};
-          "
+          style="background: ${slide.contents?.background || "white"};"
         >
-          <div style="
-            padding: 80px 120px;
-            text-align: left;
-            color: black;
-          ">
+          <div style="padding: 80px 120px; text-align: left; color: black;">
             ${textElementsHtml}
           </div>
         </section>
@@ -85,14 +57,11 @@ export function exportToReveal(presentation) {
 <html>
 <head>
   <meta charset="utf-8">
-  <title>${escapeHtml(presentation?.title || "Presentation")}</title>
+  <title>${escapeHtml(presentation?.slideset?.title || "Presentation")}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js/dist/theme/white.css">
-
   <style>
-    .reveal section {
-      text-align: left;
-    }
+    .reveal section { text-align: left; }
   </style>
 </head>
 <body>
@@ -101,7 +70,6 @@ export function exportToReveal(presentation) {
       ${slideSections}
     </div>
   </div>
-
   <script src="https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.js"></script>
   <script>
     Reveal.initialize({
@@ -121,8 +89,11 @@ export function exportToReveal(presentation) {
 
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${presentation?.filename || "presentation"}.html`;
-  link.click();
+  link.download = `${presentation?.slideset?.filename || "presentation"}.html`;
 
-  URL.revokeObjectURL(url);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }
