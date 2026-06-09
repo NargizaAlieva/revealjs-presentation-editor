@@ -37,9 +37,14 @@ export {
 } from "./operations/layoutOperations";
 
 export {
+  moveMedia,
+  resizeMedia,
+  updateMedia,
+  rotateMedia,
+} from "./operations/mediaOperations";
+
+export {
   serializePresentation,
   deserializePresentation,
   downloadPresentationAsJson,
 } from "./export/serializationOperations";
-
-export { preparePresentationForExport } from "./export/preparePresentationForExport";

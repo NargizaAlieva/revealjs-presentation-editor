@@ -17,6 +17,13 @@ import {
   applyLayoutToSlide,
   propagateLayoutChanges,
 } from "../operations/layoutOperations";
+import {
+  addMedia,
+  deleteMedia,
+  updateMedia,
+  moveMedia,
+  resizeMedia,
+} from "../operations/mediaOperations";
 
 export const createInitialEditorState = () => ({
   presentation: createDefaultPresentation(),
@@ -324,53 +331,40 @@ export const editorReducer = (state, event) => {
       };
     }
 
-    case EditorEventType.MEDIA.ADD: {
-      const slides = [...(state.presentation.slideset?.slides ?? [])];
-      const slide = slides[state.selectedSlideIndex];
-      if (!slide) return state;
-      slides[state.selectedSlideIndex] = {
-        ...slide,
-        contents: {
-          ...slide.contents,
-          media: [...(slide.contents?.media ?? []), event.payload.mediaElement],
-        },
-      };
+    case EditorEventType.MEDIA.ADD:
       return {
         ...state,
-        presentation: {
-          ...state.presentation,
-          slideset: { ...state.presentation.slideset, slides },
-        },
-        selectedElementId: event.payload.mediaElement.id,
-        lastEvent: event,
+        presentation: addMedia(
+          state.presentation,
+          state.selectedSlideIndex,
+          event.payload.mediaElement
+        ),
         lastUpdated: Date.now(),
       };
-    }
 
-    case EditorEventType.MEDIA.DELETE: {
-      const slides = [...(state.presentation.slideset?.slides ?? [])];
-      const slide = slides[state.selectedSlideIndex];
-      if (!slide) return state;
-      slides[state.selectedSlideIndex] = {
-        ...slide,
-        contents: {
-          ...slide.contents,
-          media: (slide.contents?.media ?? []).filter(
-            (el) => el.id !== event.payload.mediaId,
-          ),
-        },
-      };
+    case EditorEventType.MEDIA.DELETE:
       return {
         ...state,
-        presentation: {
-          ...state.presentation,
-          slideset: { ...state.presentation.slideset, slides },
-        },
-        selectedElementId: null,
+        presentation: deleteMedia(
+          state.presentation,
+          state.selectedSlideIndex,
+          event.payload.mediaId
+        ),
+        lastUpdated: Date.now(),
+      };
+
+    case EditorEventType.MEDIA.UPDATE:
+      return {
+        ...state,
+        presentation: updateMedia(
+          state.presentation,
+          state.selectedSlideIndex,
+          event.payload.mediaId,
+          event.payload.updates
+        ),
         lastEvent: event,
         lastUpdated: Date.now(),
       };
-    }
 
     case EditorEventType.LAYOUT.APPLY: {
       const updatedPresentation = applyLayoutToSlide(
