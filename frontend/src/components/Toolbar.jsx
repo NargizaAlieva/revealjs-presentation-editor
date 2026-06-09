@@ -14,6 +14,8 @@ export default function Toolbar({
   onExportPresentation,
   onResetPresentation,
   onImageUpload,
+  onToggleSlideHidden,
+  isSlideHidden,
 }) {
   return (
     <header className="toolbar">
@@ -22,6 +24,9 @@ export default function Toolbar({
         Delete Slide
       </button>
       <button onClick={onDuplicateSlide}>Duplicate Slide</button>
+      <button onClick={onToggleSlideHidden}>
+        {isSlideHidden ? "Show Slide" : "Hide Slide"}
+      </button>
       <button onClick={onMoveSlideUp} disabled={!canMoveUp}>
         ↑
       </button>
