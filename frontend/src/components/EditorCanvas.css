@@ -55,6 +55,16 @@
   cursor: nwse-resize;
 }
 
+.element-delete-button {
+  position: absolute;
+  top: -32px;
+  right: 0;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  z-index: 10;
+}
+
 .format-toolbar {
   position: absolute;
   top: -36px;
@@ -124,4 +134,27 @@
   top: 8px;
   bottom: 8px;
   width: 10px;
+}
+
+.canvas-media-wrapper {
+  cursor: pointer;
+}
+
+.canvas-media-wrapper.selected {
+  outline: 2px solid #4a90e2;
+}
+
+.canvas-media {
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+
+.media-delete-button {
+  position: absolute;
+  top: -32px;
+  right: 0;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
 }

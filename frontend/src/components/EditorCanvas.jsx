@@ -7,11 +7,17 @@ export default function EditorCanvas({
   onMoveTextElement,
   onResizeTextElement,
   onFormatTextElement,
+  onDeleteMedia,
+  onMoveMediaElement,
+  onResizeMediaElement,
+  onDeleteTextElement,
 }) {
   const [selectedElementId, setSelectedElementId] = useState(null);
   const [draggingElementId, setDraggingElementId] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [resizingElementId, setResizingElementId] = useState(null);
+  const [draggingMediaId, setDraggingMediaId] = useState(null);
+  const [resizingMediaId, setResizingMediaId] = useState(null);
 
   if (!slide) {
     return (
@@ -22,9 +28,43 @@ export default function EditorCanvas({
   }
 
   const textElements = slide.contents?.text ?? [];
+  const mediaElements = slide.contents?.media ?? [];
 
   const handleMouseMove = (e) => {
     const canvasRect = e.currentTarget.getBoundingClientRect();
+    if (draggingMediaId) {
+      const newX =
+        ((e.clientX - canvasRect.left - dragOffset.x) / canvasRect.width) * 100;
+      const newY =
+        ((e.clientY - canvasRect.top - dragOffset.y) / canvasRect.height) * 100;
+
+      onMoveMediaElement(
+        draggingMediaId,
+        Math.max(0, Math.min(100, newX)),
+        Math.max(0, Math.min(100, newY)),
+      );
+
+      return;
+    }
+
+    if (resizingMediaId) {
+      const media = mediaElements.find((item) => item.id === resizingMediaId);
+      if (!media) return;
+
+      const mediaX = ((media.position?.x ?? 0) / 100) * canvasRect.width;
+      const mediaY = ((media.position?.y ?? 0) / 100) * canvasRect.height;
+
+      const newWidth = e.clientX - canvasRect.left - mediaX;
+      const newHeight = e.clientY - canvasRect.top - mediaY;
+
+      onResizeMediaElement(
+        resizingMediaId,
+        Math.max(80, newWidth),
+        Math.max(60, newHeight),
+      );
+
+      return;
+    }
 
     if (resizingElementId) {
       const element = textElements.find(
@@ -53,7 +93,9 @@ export default function EditorCanvas({
 
   const stopInteraction = () => {
     setDraggingElementId(null);
+    setDraggingMediaId(null);
     setResizingElementId(null);
+    setResizingMediaId(null);
   };
 
   return (
@@ -90,7 +132,6 @@ export default function EditorCanvas({
             >
               {/* Drag handle — only visible when selected */}
               {isSelected && (
-
                 <>
                   {["top", "right", "bottom", "left"].map((side) => (
                     <div
@@ -113,6 +154,21 @@ export default function EditorCanvas({
               )}
 
               {isSelected && (
+                <button
+                  type="button"
+                  className="element-delete-button"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteTextElement(textElement.id);
+                    setSelectedElementId(null);
+                  }}
+                >
+                  Delete
+                </button>
+              )}
+              
+              {isSelected && (
                 <div className="format-toolbar">
                   <button
                     type="button"
@@ -120,10 +176,10 @@ export default function EditorCanvas({
                     onClick={(e) => {
                       e.stopPropagation();
                       onFormatTextElement(textElement.id, {
-                        weight: formatting.weight === "bold" ? "normal" : "bold",
+                        weight:
+                          formatting.weight === "bold" ? "normal" : "bold",
                       });
                     }}
-
                     style={{
                       fontWeight:
                         formatting.weight === "bold" ? "bold" : "normal",
@@ -198,6 +254,75 @@ export default function EditorCanvas({
                   onMouseDown={(e) => {
                     e.stopPropagation();
                     setResizingElementId(textElement.id);
+                  }}
+                />
+              )}
+            </div>
+          );
+        })}
+        {mediaElements.map((media) => {
+          const isSelected = selectedElementId === media.id;
+
+          return (
+            <div
+              key={media.id}
+              className={
+                isSelected
+                  ? "canvas-media-wrapper selected"
+                  : "canvas-media-wrapper"
+              }
+              style={{
+                position: "absolute",
+                left: `${media.position?.x ?? 0}%`,
+                top: `${media.position?.y ?? 0}%`,
+                width: `${media.width ?? 300}px`,
+                height: `${media.height ?? 200}px`,
+                zIndex: media["z-index"] ?? 1,
+              }}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                setSelectedElementId(media.id);
+
+                const rect = e.currentTarget.getBoundingClientRect();
+                setDraggingMediaId(media.id);
+                setDragOffset({
+                  x: e.clientX - rect.left,
+                  y: e.clientY - rect.top,
+                });
+              }}
+            >
+              <img
+                src={media["file-link"]}
+                alt=""
+                className="canvas-media"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  transform: `rotate(${media.rotation ?? 0}deg)`,
+                }}
+              />
+
+              {isSelected && (
+                <button
+                  type="button"
+                  className="media-delete-button"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteMedia(media.id);
+                    setSelectedElementId(null);
+                  }}
+                >
+                  Delete
+                </button>
+              )}
+
+              {isSelected && (
+                <div
+                  className="resize-handle"
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    setResizingMediaId(media.id);
                   }}
                 />
               )}

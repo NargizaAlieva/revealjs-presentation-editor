@@ -13,6 +13,9 @@ export default function Toolbar({
   canMoveDown,
   onExportPresentation,
   onResetPresentation,
+  onImageUpload,
+  onToggleSlideHidden,
+  isSlideHidden,
 }) {
   return (
     <header className="toolbar">
@@ -21,6 +24,9 @@ export default function Toolbar({
         Delete Slide
       </button>
       <button onClick={onDuplicateSlide}>Duplicate Slide</button>
+      <button onClick={onToggleSlideHidden}>
+        {isSlideHidden ? "Show Slide" : "Hide Slide"}
+      </button>
       <button onClick={onMoveSlideUp} disabled={!canMoveUp}>
         ↑
       </button>
@@ -30,6 +36,15 @@ export default function Toolbar({
       <button onClick={onSavePresentation}>Save</button>{" "}
       <button onClick={onOpenPreview}>Preview</button>
       <button onClick={onExportPresentation}>Export</button>
+      <label className="toolbar-upload">
+        Upload Image
+        <input
+          type="file"
+          accept="image/*"
+          onChange={onImageUpload}
+          style={{ display: "none" }}
+        />
+      </label>
       <button onClick={onResetPresentation}>Reset</button>
     </header>
   );

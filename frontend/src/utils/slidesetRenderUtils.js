@@ -1,5 +1,5 @@
 export function getSlideSize(presentation) {
-    const dimensions = presentation?.master?.["slide-dimensions"];
+    const dimensions = presentation?.slideset?.master?.["slide-dimensions"];
 
     return {
         width: dimensions?.width || 960,
@@ -8,7 +8,7 @@ export function getSlideSize(presentation) {
 }
 
 export function getVisibleSlides(presentation) {
-    return presentation?.slides?.filter((slide) => !slide.hidden) || [];
+    return presentation?.slideset?.slides?.filter((slide) => !slide.hidden) || [];
 }
 
 export function getTextElements(slide) {
@@ -63,7 +63,7 @@ export function getTextElements(slide) {
                 paragraphs: [
                     {
                         id: "fallback-title-paragraph",
-                        runs: [{ text: slide.title }],
+                        runs: [{ text: slide.title?.content ?? "" }],
                     },
                 ],
                 "z-index": 1,

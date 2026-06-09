@@ -1,98 +1,162 @@
-import { getSlideSize, getVisibleSlides, escapeHtml } from "../../utils/slidesetRenderUtils";
+import {
+  getSlideSize,
+  getVisibleSlides,
+  escapeHtml,
+  getTextElements,
+  getMediaElements,
+} from "../../utils/slidesetRenderUtils";
 
-function getTextFromTextElement(textElement) {
-  return (
-    textElement?.paragraphs
-      ?.map((paragraph) =>
-        paragraph?.runs?.map((run) => run?.text || "").join("")
-      )
-      .join("\n") || ""
-  );
+function buildColorThemeCss(presentation) {
+  const colorTheme =
+    presentation?.slideset?.master?.["color-theme"] ?? [];
+  if (colorTheme.length === 0) return "";
+  const vars = colorTheme
+    .map((entry) => `  --${entry["css-variable-name"]}: ${entry.color};`)
+    .join("\n");
+  return `:root {\n${vars}\n}`;
 }
 
-function getExportTextElements(slide) {
-  if (slide?.contents?.text?.length) {
-    return slide.contents.text.map((textElement, index) => ({
-      text: getTextFromTextElement(textElement),
-      isTitle: index === 0,
-    }));
-  }
+function buildTextElementStyle(textElement, index) {
+  const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
+  return [
+    "position: absolute",
+    `left: ${textElement.position?.x ?? 0}px`,
+    `top: ${textElement.position?.y ?? 0}px`,
+    `width: ${textElement.width ?? 300}px`,
+    `height: ${textElement.height ?? 80}px`,
+    `background: ${textElement.background ?? "transparent"}`,
+    `overflow: hidden`,
+    `z-index: ${textElement["z-index"] ?? index + 1}`,
+    `transform: rotate(${textElement.rotation ?? 0}deg)`,
+    `font-size: ${formatting.size ?? (index === 0 ? "44px" : "28px")}`,
+    `font-weight: ${formatting.weight ?? (index === 0 ? "bold" : "normal")}`,
+    `font-style: ${formatting.italics ? "italic" : "normal"}`,
+    `color: ${formatting.color ?? "var(--text-dark, black)"}`,
+    `text-align: ${formatting.align ?? "left"}`,
+    `line-height: ${formatting["line-spacing"] ?? "1.4"}`,
+    "box-sizing: border-box",
+  ].join("; ");
+}
 
-  if (slide?.placeholders?.length) {
-    return slide.placeholders.map((placeholder, index) => ({
-      text: placeholder.content || "",
-      isTitle: placeholder.id === "title" || placeholder.role === "title" || index === 0,
-    }));
-  }
+function buildTextElementContent(textElement) {
+  if (!textElement.paragraphs?.length) return "";
 
-  if (slide?.title) {
-    return [
-      {
-        text: slide.title,
-        isTitle: true,
-      },
-    ];
-  }
+  return textElement.paragraphs
+    .map((paragraph) => {
+      const paragraphFormatting = paragraph.formatting ?? {};
+      const runsHtml = (paragraph.runs ?? [])
+        .map((run) => {
+          const runFormatting = run.formatting ?? {};
+          const style = [
+            runFormatting.weight ? `font-weight: ${runFormatting.weight}` : "",
+            runFormatting.italics ? "font-style: italic" : "",
+            runFormatting.color ? `color: ${runFormatting.color}` : "",
+            runFormatting.size ? `font-size: ${runFormatting.size}` : "",
+            runFormatting["text-decoration"]
+              ? `text-decoration: ${runFormatting["text-decoration"]}`
+              : "",
+          ]
+            .filter(Boolean)
+            .join("; ");
 
-  return [];
+          const text = escapeHtml(run.text ?? "");
+          if (run.link?.href) {
+            return `<a href="${escapeHtml(run.link.href)}" target="${run.link.target ?? "_blank"}" style="${style}">${text}</a>`;
+          }
+          return style ? `<span style="${style}">${text}</span>` : text;
+        })
+        .join("");
+
+      const pStyle = [
+        paragraphFormatting.align
+          ? `text-align: ${paragraphFormatting.align}`
+          : "",
+        paragraphFormatting.margin
+          ? `margin: ${paragraphFormatting.margin}`
+          : "margin: 0 0 4px 0",
+      ]
+        .filter(Boolean)
+        .join("; ");
+
+      return `<p style="${pStyle}">${runsHtml}</p>`;
+    })
+    .join("");
+}
+
+function buildSlideSection(slide, width, height) {
+  const textElements = getTextElements(slide);
+  const mediaElements = getMediaElements(slide);
+  const transition = slide.contents?.transition ?? "slide";
+  const background = slide.contents?.background ?? "var(--bg-light, white)";
+
+  const textElementsHtml = textElements
+    .map(
+      (textElement, index) => `
+      <div style="${buildTextElementStyle(textElement, index)}">
+        ${buildTextElementContent(textElement)}
+      </div>`
+    )
+    .join("");
+
+  const mediaElementsHtml = mediaElements
+    .map(
+      (media, index) => `
+      <img
+        src="${escapeHtml(media["file-link"] ?? "")}"
+        alt=""
+        style="
+          position: absolute;
+          left: ${media.position?.x ?? 0}px;
+          top: ${media.position?.y ?? 0}px;
+          width: ${media.width ?? 200}px;
+          height: ${media.height ?? 120}px;
+          object-fit: contain;
+          z-index: ${media["z-index"] ?? index + 1};
+          transform: rotate(${media.rotation ?? 0}deg);
+        "
+      />`
+    )
+    .join("");
+
+  return `
+    <section
+      data-transition="${escapeHtml(transition)}"
+      style="background: ${background};"
+    >
+      <div style="
+        position: relative;
+        width: ${width}px;
+        height: ${height}px;
+        overflow: hidden;
+      ">
+        ${textElementsHtml}
+        ${mediaElementsHtml}
+      </div>
+    </section>`;
 }
 
 export function exportToReveal(presentation) {
   const { width, height } = getSlideSize(presentation);
   const slides = getVisibleSlides(presentation);
+  const colorThemeCss = buildColorThemeCss(presentation);
+  const title = escapeHtml(presentation?.slideset?.title ?? "Presentation");
+  const filename = presentation?.slideset?.filename ?? "presentation";
 
   const slideSections = slides
-    .map((slide) => {
-      const textElements = getExportTextElements(slide);
+    .map((slide) => buildSlideSection(slide, width, height))
+    .join("\n");
 
-      const textElementsHtml = textElements
-        .map((textElement) => {
-          return `
-            <div style="
-              font-size: ${textElement.isTitle ? "34px" : "26px"};
-              font-weight: ${textElement.isTitle ? "bold" : "normal"};
-              margin-bottom: 36px;
-              line-height: 1.3;
-              color: black;
-            ">
-              ${escapeHtml(textElement.text)}
-            </div>
-          `;
-        })
-        .join("");
-
-      return `
-        <section
-          data-transition="${slide.contents?.transition || "slide"}"
-          style="
-            background: ${slide.contents?.background || "white"};
-          "
-        >
-          <div style="
-            padding: 80px 120px;
-            text-align: left;
-            color: black;
-          ">
-            ${textElementsHtml}
-          </div>
-        </section>
-      `;
-    })
-    .join("");
-
-  const htmlContent = `
-<!doctype html>
+  const htmlContent = `<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>${escapeHtml(presentation?.title || "Presentation")}</title>
+  <title>${title}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js/dist/theme/white.css">
-
   <style>
-    .reveal section {
-      text-align: left;
-    }
+    ${colorThemeCss}
+    .reveal .slides section { text-align: left; }
+    .reveal .slides section p { margin: 0 0 4px 0; }
   </style>
 </head>
 <body>
@@ -101,28 +165,32 @@ export function exportToReveal(presentation) {
       ${slideSections}
     </div>
   </div>
-
   <script src="https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.js"></script>
   <script>
     Reveal.initialize({
       controls: true,
       progress: true,
       center: false,
+      hash: false,
       width: ${width},
-      height: ${height}
+      height: ${height},
+      margin: 0,
+      minScale: 0.5,
+      maxScale: 2.0,
     });
   </script>
 </body>
-</html>
-`;
+</html>`;
 
   const blob = new Blob([htmlContent], { type: "text/html" });
   const url = URL.createObjectURL(blob);
 
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${presentation?.filename || "presentation"}.html`;
+  link.download = `${filename}.html`;
+  document.body.appendChild(link);
   link.click();
+  document.body.removeChild(link);
 
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }
