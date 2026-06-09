@@ -27,7 +27,9 @@ export default function EditorCanvas({
     const canvasRect = e.currentTarget.getBoundingClientRect();
 
     if (resizingElementId) {
-      const element = textElements.find((item) => item.id === resizingElementId);
+      const element = textElements.find(
+        (item) => item.id === resizingElementId,
+      );
       if (!element) return;
 
       const newWidth = e.clientX - canvasRect.left - element.position.x;
@@ -88,25 +90,27 @@ export default function EditorCanvas({
             >
               {/* Drag handle — only visible when selected */}
               {isSelected && (
-  <>
-                {["top", "right", "bottom", "left"].map((side) => (
-                  <div
-                    key={side}
-                    className={`drag-border drag-border-${side}`}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const rect = e.currentTarget.parentElement.getBoundingClientRect();
-                      setDraggingElementId(textElement.id);
-                      setDragOffset({
-                        x: e.clientX - rect.left,
-                        y: e.clientY - rect.top,
-                      });
-                    }}
-                  />
-                ))}
-              </>
-            )}
+
+                <>
+                  {["top", "right", "bottom", "left"].map((side) => (
+                    <div
+                      key={side}
+                      className={`drag-border drag-border-${side}`}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const rect =
+                          e.currentTarget.parentElement.getBoundingClientRect();
+                        setDraggingElementId(textElement.id);
+                        setDragOffset({
+                          x: e.clientX - rect.left,
+                          y: e.clientY - rect.top,
+                        });
+                      }}
+                    />
+                  ))}
+                </>
+              )}
 
               {isSelected && (
                 <div className="format-toolbar">
@@ -119,7 +123,11 @@ export default function EditorCanvas({
                         weight: formatting.weight === "bold" ? "normal" : "bold",
                       });
                     }}
-                    style={{ fontWeight: formatting.weight === "bold" ? "bold" : "normal" }}
+
+                    style={{
+                      fontWeight:
+                        formatting.weight === "bold" ? "bold" : "normal",
+                    }}
                   >
                     B
                   </button>
@@ -133,7 +141,9 @@ export default function EditorCanvas({
                         italics: !formatting.italics,
                       });
                     }}
-                    style={{ fontStyle: formatting.italics ? "italic" : "normal" }}
+                    style={{
+                      fontStyle: formatting.italics ? "italic" : "normal",
+                    }}
                   >
                     I
                   </button>

@@ -36,7 +36,8 @@ export default function SlideList({ slides, selectedSlideId, onSelectSlide }) {
 
             <div className="slide-thumbnail">
               {textElements.map((textElement) => {
-                const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
+                const formatting =
+                  textElement.paragraphs?.[0]?.formatting ?? {};
                 const fontSize = parseInt(formatting.size ?? "16", 10);
 
                 return (
