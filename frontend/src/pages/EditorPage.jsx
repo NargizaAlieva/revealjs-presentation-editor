@@ -2,62 +2,37 @@ import { useState } from "react";
 import SlideList from "../components/SlideList";
 import Toolbar from "../components/Toolbar";
 import EditorCanvas from "../components/EditorCanvas";
+import { useEditorState } from "../hooks/useEditorState";
 import { useSlides } from "../hooks/useSlides";
+import { useEditorActions } from "../hooks/useEditorActions";
 import "./EditorPage.css";
 import PreviewModal from "../components/PreviewModal";
 import { exportToReveal } from "../core/export/exportToReveal";
-import GlobalSettingsPanel from "../components/GlobalSettingsPanel";
 
 export default function EditorPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  const {
-    presentation,
-    slides,
-    selectedSlide,
-    selectedSlideIndex,
-    setSelectedSlideId,
-    addSlide,
-    deleteSlide,
-    duplicateSlide,
-    moveSlideUp,
-    moveSlideDown,
-    savePresentation,
-    resetPresentation,
-    updateTextElementContent,
-    updateTextElementPosition,
-    updateTextElementSize,
-    updateTextElementFormatting,
-    addMedia,
-    deleteElement,
-    toggleSlideHidden,
-  } = useSlides();
+  const { state, eventBus } = useEditorState();
+  const { presentation, slides, selectedSlide, selectedSlideIndex } =
+    useSlides(state);
+  const actions = useEditorActions(eventBus, selectedSlideIndex, slides.length);
 
   const exportPresentation = () => {
     exportToReveal(presentation);
   };
 
-  const handleImageUpload = (event) => {
+  const handleImageUpload = async (event) => {
     const file = event.target.files?.[0];
-    if (!file || !file.type.startsWith("image/")) return;
+    if (!file) return;
 
-    const reader = new FileReader();
+    try {
+      const base64 = await fileToBase64(file);
+      const mediaElement = createMediaElement(base64, file);
+      actions.addMedia(mediaElement);
+    } catch (error) {
+      console.error("Image upload failed:", error.message);
+    }
 
-    reader.onload = () => {
-      addMedia({
-        id: crypto.randomUUID(),
-        "file-link": reader.result,
-        "media-type": "image",
-        position: { x: 10, y: 10 },
-        width: 300,
-        height: 200,
-        rotation: 0,
-        "z-index": 1,
-        scale: 1,
-      });
-    };
-
-    reader.readAsDataURL(file);
     event.target.value = "";
   };
 
@@ -66,41 +41,40 @@ export default function EditorPage() {
       <SlideList
         slides={slides}
         selectedSlideId={selectedSlideIndex}
-        onSelectSlide={setSelectedSlideId}
+        onSelectSlide={actions.setSelectedSlideId}
       />
 
-      <div className="editor-main" style={{ display: "flex", flex: 1 }}>
+      <div className="editor-main">
         <Toolbar
-          onAddSlide={addSlide}
-          onDeleteSlide={deleteSlide}
-          onDuplicateSlide={duplicateSlide}
-          onMoveSlideUp={moveSlideUp}
-          onMoveSlideDown={moveSlideDown}
-          onSavePresentation={savePresentation}
+          onAddSlide={actions.addSlide}
+          onDeleteSlide={actions.deleteSlide}
+          onDuplicateSlide={actions.duplicateSlide}
+          onMoveSlideUp={actions.moveSlideUp}
+          onMoveSlideDown={actions.moveSlideDown}
+          onSavePresentation={actions.savePresentation}
           onExportPresentation={exportPresentation}
           onOpenPreview={() => setIsPreviewOpen(true)}
           canDelete={slides.length > 1}
           canMoveUp={selectedSlideIndex > 0}
           canMoveDown={selectedSlideIndex < slides.length - 1}
-          onResetPresentation={resetPresentation}
+          onResetPresentation={actions.resetPresentation}
           onImageUpload={handleImageUpload}
-          onToggleSlideHidden={() => toggleSlideHidden(selectedSlideIndex)}
+          onToggleSlideHidden={() =>
+            actions.toggleSlideHidden(selectedSlideIndex)
+          }
           isSlideHidden={selectedSlide?.hidden}
         />
 
         {selectedSlide && (
           <EditorCanvas
             slide={selectedSlide}
-            onChangeTextElement={updateTextElementContent}
-            onMoveTextElement={updateTextElementPosition}
-            onResizeTextElement={updateTextElementSize}
-            onFormatTextElement={updateTextElementFormatting}
-            onMoveMediaElement={updateTextElementPosition}
-            onResizeMediaElement={updateTextElementSize}
-            onDeleteTextElement={deleteElement}
+            onChangeTextElement={actions.updateTextElementContent}
+            onMoveTextElement={actions.updateTextElementPosition}
+            onResizeTextElement={actions.updateTextElementSize}
+            onFormatTextElement={actions.updateTextElementFormatting}
+            onDeleteElement={actions.deleteElement}
           />
         )}
-        <GlobalSettingsPanel />
       </div>
 
       {isPreviewOpen && (
