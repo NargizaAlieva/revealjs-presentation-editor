@@ -1,13 +1,20 @@
 const createId = () => crypto.randomUUID();
 
+const getSlides = (presentation) => presentation.slideset?.slides ?? [];
+const getLayouts = (presentation) => presentation.slideset?.layouts ?? [];
+
+const setSlides = (presentation, slides) => ({
+  ...presentation,
+  slideset: {
+    ...presentation.slideset,
+    slides,
+  },
+});
+
 const createTextElementFromPlaceholder = (placeholder, defaultText = "") => ({
   id: createId(),
-
   "placeholder-id": placeholder["placeholder-id"],
-  position: {
-    ...placeholder.position,
-  },
-
+  position: { ...placeholder.position },
   "pos-type": "relative-to-placeholder",
   width: placeholder.width,
   height: placeholder.height,
@@ -18,10 +25,7 @@ const createTextElementFromPlaceholder = (placeholder, defaultText = "") => ({
   paragraphs: [
     {
       id: createId(),
-      formatting: {
-        ...placeholder.formatting,
-      },
-
+      formatting: { ...placeholder.formatting },
       bullets: "none",
       runs: [
         {
@@ -41,7 +45,7 @@ export const createSlideFromLayout = (layout, slideNumber) => {
   );
 
   return {
-    title: `Slide ${slideNumber}`,
+    title: { content: `Slide ${slideNumber}` },
     "layout-id": layout["layout-id"],
     hidden: false,
     contents: {
@@ -66,8 +70,8 @@ export const createSlideFromLayout = (layout, slideNumber) => {
 };
 
 export const addSlide = (presentation, layoutId = "title-content") => {
-  const layouts = presentation.layouts ?? [];
-  const slides = presentation.slides ?? [];
+  const layouts = getLayouts(presentation);
+  const slides = getSlides(presentation);
 
   const layout = layouts.find((item) => item["layout-id"] === layoutId);
 
@@ -77,30 +81,22 @@ export const addSlide = (presentation, layoutId = "title-content") => {
 
   const newSlide = createSlideFromLayout(layout, slides.length + 1);
 
-  return {
-    ...presentation,
-    slides: [...slides, newSlide],
-  };
+  return setSlides(presentation, [...slides, newSlide]);
 };
 
 export const deleteSlide = (presentation, slideIndex) => {
-  const slides = presentation.slides ?? [];
+  const slides = getSlides(presentation);
 
-  if (slides.length <= 1) {
-    return presentation;
-  }
+  if (slides.length <= 1) return presentation;
 
-  const updatedSlides = slides.filter((_, index) => index !== slideIndex);
-
-  return {
-    ...presentation,
-    slides: updatedSlides,
-  };
+  return setSlides(
+    presentation,
+    slides.filter((_, index) => index !== slideIndex),
+  );
 };
 
 const cloneTextElementWithNewIds = (textElement) => ({
   ...structuredClone(textElement),
-
   id: createId(),
   paragraphs: (textElement.paragraphs ?? []).map((paragraph) => ({
     ...structuredClone(paragraph),
@@ -109,23 +105,19 @@ const cloneTextElementWithNewIds = (textElement) => ({
 });
 
 export const duplicateSlide = (presentation, slideIndex) => {
-  const slides = presentation.slides ?? [];
+  const slides = getSlides(presentation);
   const slideToDuplicate = slides[slideIndex];
 
-  if (!slideToDuplicate) {
-    return presentation;
-  }
+  if (!slideToDuplicate) return presentation;
 
   const duplicatedSlide = {
     ...structuredClone(slideToDuplicate),
-
-    title: `${slideToDuplicate.title ?? "Slide"} Copy`,
-
+    title: {
+      content: `${slideToDuplicate.title?.content ?? "Slide"} Copy`,
+    },
     contents: {
       ...structuredClone(slideToDuplicate.contents),
-      text: (slideToDuplicate.contents?.text ?? []).map(
-        cloneTextElementWithNewIds,
-      ),
+      text: (slideToDuplicate.contents?.text ?? []).map(cloneTextElementWithNewIds),
       media: slideToDuplicate.contents?.media ?? [],
       shapes: slideToDuplicate.contents?.shapes ?? [],
       tables: slideToDuplicate.contents?.tables ?? [],
@@ -134,18 +126,15 @@ export const duplicateSlide = (presentation, slideIndex) => {
     },
   };
 
-  return {
-    ...presentation,
-    slides: [
-      ...slides.slice(0, slideIndex + 1),
-      duplicatedSlide,
-      ...slides.slice(slideIndex + 1),
-    ],
-  };
+  return setSlides(presentation, [
+    ...slides.slice(0, slideIndex + 1),
+    duplicatedSlide,
+    ...slides.slice(slideIndex + 1),
+  ]);
 };
 
 export const reorderSlides = (presentation, fromIndex, toIndex) => {
-  const slides = [...(presentation.slides ?? [])];
+  const slides = [...getSlides(presentation)];
 
   if (
     fromIndex < 0 ||
@@ -160,8 +149,5 @@ export const reorderSlides = (presentation, fromIndex, toIndex) => {
   const [movedSlide] = slides.splice(fromIndex, 1);
   slides.splice(toIndex, 0, movedSlide);
 
-  return {
-    ...presentation,
-    slides,
-  };
+  return setSlides(presentation, slides);
 };

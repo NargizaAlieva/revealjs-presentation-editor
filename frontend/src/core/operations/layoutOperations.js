@@ -1,7 +1,19 @@
-export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
-  const slides = [...(presentation.slides ?? [])];
+const getSlides = (presentation) => presentation.slideset?.slides ?? [];
+const getLayouts = (presentation) => presentation.slideset?.layouts ?? [];
 
-  const layoutExists = (presentation.layouts ?? []).some(
+const setSlidesAndLayouts = (presentation, slides, layouts) => ({
+  ...presentation,
+  slideset: {
+    ...presentation.slideset,
+    slides,
+    layouts,
+  },
+});
+
+export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
+  const slides = [...getSlides(presentation)];
+
+  const layoutExists = getLayouts(presentation).some(
     (layout) => layout["layout-id"] === layoutId,
   );
 
@@ -16,7 +28,10 @@ export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
 
   return {
     ...presentation,
-    slides,
+    slideset: {
+      ...presentation.slideset,
+      slides,
+    },
   };
 };
 
@@ -25,10 +40,8 @@ export const propagateLayoutChanges = (
   layoutId,
   updatedPlaceholders,
 ) => {
-  const slides = (presentation.slides ?? []).map((slide) => {
-    if (slide["layout-id"] !== layoutId) {
-      return slide;
-    }
+  const slides = getSlides(presentation).map((slide) => {
+    if (slide["layout-id"] !== layoutId) return slide;
 
     const updatedText = (slide.contents?.text ?? []).map((textElement) => {
       const matchingPlaceholder = updatedPlaceholders.find(
@@ -36,15 +49,11 @@ export const propagateLayoutChanges = (
           placeholder["placeholder-id"] === textElement["placeholder-id"],
       );
 
-      if (!matchingPlaceholder) {
-        return textElement;
-      }
+      if (!matchingPlaceholder) return textElement;
 
       return {
         ...textElement,
-        position: {
-          ...matchingPlaceholder.position,
-        },
+        position: { ...matchingPlaceholder.position },
         width: matchingPlaceholder.width,
         height: matchingPlaceholder.height,
       };
@@ -59,18 +68,11 @@ export const propagateLayoutChanges = (
     };
   });
 
-  const updatedLayouts = (presentation.layouts ?? []).map((layout) =>
+  const updatedLayouts = getLayouts(presentation).map((layout) =>
     layout["layout-id"] === layoutId
-      ? {
-          ...layout,
-          placeholders: updatedPlaceholders,
-        }
+      ? { ...layout, placeholders: updatedPlaceholders }
       : layout,
   );
 
-  return {
-    ...presentation,
-    layouts: updatedLayouts,
-    slides,
-  };
+  return setSlidesAndLayouts(presentation, slides, updatedLayouts);
 };
