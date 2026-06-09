@@ -11,6 +11,7 @@ export default function EditorPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const {
+    presentation,
     slides,
     selectedSlide,
     selectedSlideIndex,
@@ -21,25 +22,15 @@ export default function EditorPage() {
     moveSlideUp,
     moveSlideDown,
     savePresentation,
+    resetPresentation,
     updateTextElementContent,
     updateTextElementPosition,
-    resetPresentation,
     updateTextElementSize,
     updateTextElementFormatting,
   } = useSlides();
 
   const exportPresentation = () => {
-    console.log("Export slides:", slides);
-    console.log("Number of slides:", slides.length);
-
-    exportToReveal({
-      filename: "presentation-1",
-      title: "New Presentation",
-      master: {
-        "slide-dimensions": null,
-      },
-      slides,
-    });
+    exportToReveal(presentation);
   };
 
   return (
@@ -78,7 +69,10 @@ export default function EditorPage() {
       </div>
 
       {isPreviewOpen && (
-        <PreviewModal slides={slides} onClose={() => setIsPreviewOpen(false)} />
+        <PreviewModal
+          slides={slides}
+          onClose={() => setIsPreviewOpen(false)}
+        />
       )}
     </div>
   );
