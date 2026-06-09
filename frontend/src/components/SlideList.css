@@ -41,9 +41,14 @@
 .slide-thumbnail-element {
   overflow: hidden;
   font-size: 8px;
-  line-height: 1.1;
+  line-height: 1;
   color: #111827;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  white-space: nowrap;
 }
+
 .slide-thumbnail strong {
   display: block;
   font-size: 12px;

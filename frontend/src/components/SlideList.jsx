@@ -59,6 +59,11 @@ export default function SlideList({ slides, selectedSlideId, onSelectSlide }) {
                       height: `${(textElement.height ?? 80) * SCALE_Y}px`,
                       fontSize: `${fontSize * SCALE_Y}px`,
                       fontWeight: formatting.weight ?? "normal",
+                      textAlign: formatting.align ?? "left",
+                      margin: 0,
+                      padding: 0,
+                      lineHeight: 1,
+                      boxSizing: "border-box",
                       overflow: "hidden",
                       whiteSpace: "nowrap",
                     }}
