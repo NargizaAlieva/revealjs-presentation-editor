@@ -22,6 +22,7 @@ export default function EditorCanvas({
   }
 
   const textElements = slide.contents?.text ?? [];
+  const mediaElements = slide.contents?.media ?? [];
 
   const handleMouseMove = (e) => {
     const canvasRect = e.currentTarget.getBoundingClientRect();
@@ -90,7 +91,6 @@ export default function EditorCanvas({
             >
               {/* Drag handle — only visible when selected */}
               {isSelected && (
-
                 <>
                   {["top", "right", "bottom", "left"].map((side) => (
                     <div
@@ -120,10 +120,10 @@ export default function EditorCanvas({
                     onClick={(e) => {
                       e.stopPropagation();
                       onFormatTextElement(textElement.id, {
-                        weight: formatting.weight === "bold" ? "normal" : "bold",
+                        weight:
+                          formatting.weight === "bold" ? "normal" : "bold",
                       });
                     }}
-
                     style={{
                       fontWeight:
                         formatting.weight === "bold" ? "bold" : "normal",
@@ -204,6 +204,23 @@ export default function EditorCanvas({
             </div>
           );
         })}
+        {mediaElements.map((media) => (
+          <img
+            key={media.id}
+            src={media["file-link"]}
+            alt=""
+            className="canvas-media"
+            style={{
+              position: "absolute",
+              left: `${media.position?.x ?? 0}%`,
+              top: `${media.position?.y ?? 0}%`,
+              width: `${media.width ?? 300}px`,
+              height: `${media.height ?? 200}px`,
+              transform: `rotate(${media.rotation ?? 0}deg)`,
+              zIndex: media["z-index"] ?? 1,
+            }}
+          />
+        ))}
       </section>
     </main>
   );

@@ -27,10 +27,35 @@ export default function EditorPage() {
     updateTextElementPosition,
     updateTextElementSize,
     updateTextElementFormatting,
+    addMedia,
   } = useSlides();
 
   const exportPresentation = () => {
     exportToReveal(presentation);
+  };
+
+  const handleImageUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      addMedia({
+        id: crypto.randomUUID(),
+        "file-link": reader.result,
+        "media-type": "image",
+        position: { x: 10, y: 10 },
+        width: 300,
+        height: 200,
+        rotation: 0,
+        "z-index": 1,
+        scale: 1,
+      });
+    };
+
+    reader.readAsDataURL(file);
+    event.target.value = "";
   };
 
   return (
@@ -55,6 +80,7 @@ export default function EditorPage() {
           canMoveUp={selectedSlideIndex > 0}
           canMoveDown={selectedSlideIndex < slides.length - 1}
           onResetPresentation={resetPresentation}
+          onImageUpload={handleImageUpload}
         />
 
         {selectedSlide && (
@@ -69,10 +95,7 @@ export default function EditorPage() {
       </div>
 
       {isPreviewOpen && (
-        <PreviewModal
-          slides={slides}
-          onClose={() => setIsPreviewOpen(false)}
-        />
+        <PreviewModal slides={slides} onClose={() => setIsPreviewOpen(false)} />
       )}
     </div>
   );

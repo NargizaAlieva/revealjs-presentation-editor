@@ -125,3 +125,9 @@
   bottom: 8px;
   width: 10px;
 }
+
+.canvas-media {
+  object-fit: contain;
+  user-select: none;
+  cursor: pointer;
+}

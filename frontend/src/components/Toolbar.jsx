@@ -13,6 +13,7 @@ export default function Toolbar({
   canMoveDown,
   onExportPresentation,
   onResetPresentation,
+  onImageUpload,
 }) {
   return (
     <header className="toolbar">
@@ -30,6 +31,15 @@ export default function Toolbar({
       <button onClick={onSavePresentation}>Save</button>{" "}
       <button onClick={onOpenPreview}>Preview</button>
       <button onClick={onExportPresentation}>Export</button>
+      <label className="toolbar-upload">
+        Upload Image
+        <input
+          type="file"
+          accept="image/*"
+          onChange={onImageUpload}
+          style={{ display: "none" }}
+        />
+      </label>
       <button onClick={onResetPresentation}>Reset</button>
     </header>
   );

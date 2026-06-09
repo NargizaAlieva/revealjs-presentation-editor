@@ -18,7 +18,9 @@ const loadInitialState = () => {
     const result = deserializePresentation(saved);
 
     if (!result || !result.data || !result.data.slideset) {
-      console.warn("[useSlides] Invalid or outdated data in localStorage, resetting.");
+      console.warn(
+        "[useSlides] Invalid or outdated data in localStorage, resetting.",
+      );
       localStorage.removeItem(STORAGE_KEY);
       return createInitialEditorState();
     }
@@ -44,7 +46,7 @@ export function useSlides() {
   const [state, reactDispatch] = useReducer(
     editorReducer,
     undefined,
-    loadInitialState
+    loadInitialState,
   );
 
   const stateRef = useRef(state);
@@ -52,7 +54,7 @@ export function useSlides() {
 
   const eventBus = useMemo(
     () => createEventBus(reactDispatch, () => stateRef.current),
-    []
+    [reactDispatch],
   );
 
   const slides = state.presentation?.slideset?.slides ?? [];
@@ -62,24 +64,24 @@ export function useSlides() {
   const setSelectedSlideId = useCallback(
     (slideIndex) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.SLIDE.SELECT, { slideIndex })
+        createEditorEvent(EditorEventType.SLIDE.SELECT, { slideIndex }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const addSlide = useCallback(
     () => eventBus.dispatch(createEditorEvent(EditorEventType.SLIDE.ADD)),
-    [eventBus]
+    [eventBus],
   );
 
   const deleteSlide = useCallback(
     () => eventBus.dispatch(createEditorEvent(EditorEventType.SLIDE.DELETE)),
-    [eventBus]
+    [eventBus],
   );
 
   const duplicateSlide = useCallback(
     () => eventBus.dispatch(createEditorEvent(EditorEventType.SLIDE.DUPLICATE)),
-    [eventBus]
+    [eventBus],
   );
 
   const moveSlideUp = useCallback(() => {
@@ -88,7 +90,7 @@ export function useSlides() {
       createEditorEvent(EditorEventType.SLIDE.REORDER, {
         fromIndex: selectedSlideIndex,
         toIndex: selectedSlideIndex - 1,
-      })
+      }),
     );
   }, [eventBus, selectedSlideIndex]);
 
@@ -98,40 +100,44 @@ export function useSlides() {
       createEditorEvent(EditorEventType.SLIDE.REORDER, {
         fromIndex: selectedSlideIndex,
         toIndex: selectedSlideIndex + 1,
-      })
+      }),
     );
   }, [eventBus, selectedSlideIndex, slides.length]);
 
   const toggleSlideHidden = useCallback(
     (slideIndex) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.SLIDE.TOGGLE_HIDDEN, { slideIndex })
+        createEditorEvent(EditorEventType.SLIDE.TOGGLE_HIDDEN, { slideIndex }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const updateSlideBackground = useCallback(
     (background) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.SLIDE.UPDATE_BACKGROUND, { background })
+        createEditorEvent(EditorEventType.SLIDE.UPDATE_BACKGROUND, {
+          background,
+        }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const updateSlideTransition = useCallback(
     (transition) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.SLIDE.UPDATE_TRANSITION, { transition })
+        createEditorEvent(EditorEventType.SLIDE.UPDATE_TRANSITION, {
+          transition,
+        }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const updateSlideNotes = useCallback(
     (notes) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.SLIDE.UPDATE_NOTES, { notes })
+        createEditorEvent(EditorEventType.SLIDE.UPDATE_NOTES, { notes }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const updateTextElementContent = useCallback(
@@ -140,9 +146,9 @@ export function useSlides() {
         createEditorEvent(EditorEventType.CONTENT.UPDATE_TEXT, {
           textElementId,
           text: newText,
-        })
+        }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const updateTextElementFormatting = useCallback(
@@ -151,9 +157,9 @@ export function useSlides() {
         createEditorEvent(EditorEventType.CONTENT.UPDATE_TEXT_FORMATTING, {
           textElementId,
           formatting,
-        })
+        }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const updateTextElementPosition = useCallback(
@@ -162,9 +168,9 @@ export function useSlides() {
         createEditorEvent(EditorEventType.CONTENT.MOVE_ELEMENT, {
           elementId: textElementId,
           position: { x, y },
-        })
+        }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const updateTextElementSize = useCallback(
@@ -173,39 +179,41 @@ export function useSlides() {
         createEditorEvent(EditorEventType.CONTENT.RESIZE_ELEMENT, {
           elementId: textElementId,
           size: { width, height },
-        })
+        }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const deleteElement = useCallback(
     (elementId) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.CONTENT.DELETE_ELEMENT, { elementId })
+        createEditorEvent(EditorEventType.CONTENT.DELETE_ELEMENT, {
+          elementId,
+        }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const addMedia = useCallback(
     (mediaElement) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.MEDIA.ADD, { mediaElement })
+        createEditorEvent(EditorEventType.MEDIA.ADD, { mediaElement }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const deleteMedia = useCallback(
     (mediaId) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.MEDIA.DELETE, { mediaId })
+        createEditorEvent(EditorEventType.MEDIA.DELETE, { mediaId }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const savePresentation = useCallback(
     () =>
       eventBus.dispatch(createEditorEvent(EditorEventType.PRESENTATION.SAVE)),
-    [eventBus]
+    [eventBus],
   );
 
   const resetPresentation = useCallback(() => {
