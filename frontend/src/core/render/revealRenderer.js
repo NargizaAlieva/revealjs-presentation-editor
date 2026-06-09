@@ -91,3 +91,12 @@ export function initRevealDeck(containerElement, width, height) {
 
   return deck;
 }
+
+export function buildColorThemeStyle(presentation) {
+  const colorTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
+  const cssVars = {};
+  colorTheme.forEach((entry) => {
+    cssVars[`--${entry["css-variable-name"]}`] = entry.color;
+  });
+  return cssVars;
+}

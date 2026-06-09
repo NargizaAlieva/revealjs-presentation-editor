@@ -7,6 +7,7 @@ import {
   buildTextElementStyle,
   buildMediaElementStyle,
   buildSlideContainerStyle,
+  buildColorThemeStyle,
   getTextContent,
   getVisibleSlidesForPreview,
   getSlideTextElements,
@@ -17,6 +18,7 @@ import {
 export default function PreviewModal({ slides, presentation, onClose }) {
   const deckRef = useRef(null);
   const { width, height } = getSlideDimensions(presentation);
+  const colorThemeStyle = buildColorThemeStyle(presentation);
 
   useEffect(() => {
     if (!deckRef.current) return;
@@ -29,7 +31,7 @@ export default function PreviewModal({ slides, presentation, onClose }) {
   const visibleSlides = getVisibleSlidesForPreview(slides);
 
   return (
-    <div className="preview-overlay">
+    <div className="preview-overlay" style={colorThemeStyle}>
       <div className="preview-window">
         <button className="preview-close" onClick={onClose}>
           Close
