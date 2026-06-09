@@ -221,6 +221,27 @@ export function useSlides() {
     window.location.reload();
   }, []);
 
+  const updateMasterTheme = useCallback(
+    (colorTheme) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.MASTER.UPDATE_THEME, { colorTheme }),
+      ),
+    [eventBus],
+  );
+
+  const updateMasterDimensions = useCallback(
+    (width, height, aspectRatio) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.MASTER.UPDATE_DIMENSIONS, {
+          width,
+          height,
+          aspectRatio,
+        }),
+      ),
+    [eventBus],
+  );
+
+
   return {
     presentation: state.presentation,
     slides,
@@ -246,5 +267,7 @@ export function useSlides() {
     deleteElement,
     addMedia,
     deleteMedia,
+    updateMasterTheme,
+    updateMasterDimensions,
   };
 }
