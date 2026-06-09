@@ -4,7 +4,13 @@ const getTextFromElement = (textElement) => {
   return textElement?.paragraphs?.[0]?.runs?.[0]?.text ?? "";
 };
 
-const THUMBNAIL_SCALE = 0.16;
+const SLIDE_WIDTH = 960;
+const SLIDE_HEIGHT = 540;
+const THUMBNAIL_WIDTH = 160;
+const THUMBNAIL_HEIGHT = 90;
+
+const SCALE_X = THUMBNAIL_WIDTH / SLIDE_WIDTH;
+const SCALE_Y = THUMBNAIL_HEIGHT / SLIDE_HEIGHT;
 
 export default function SlideList({ slides, selectedSlideId, onSelectSlide }) {
   return (
@@ -13,6 +19,7 @@ export default function SlideList({ slides, selectedSlideId, onSelectSlide }) {
 
       {(slides ?? []).map((slide, index) => {
         const textElements = slide.contents?.text ?? [];
+        const mediaElements = slide.contents?.media ?? [];
         const slideTitle = slide.title?.content ?? `Slide ${index + 1}`;
         const isHidden = slide.hidden ?? false;
 
@@ -46,11 +53,11 @@ export default function SlideList({ slides, selectedSlideId, onSelectSlide }) {
                     className="slide-thumbnail-element"
                     style={{
                       position: "absolute",
-                      left: `${(textElement.position?.x ?? 0) * THUMBNAIL_SCALE}px`,
-                      top: `${(textElement.position?.y ?? 0) * THUMBNAIL_SCALE}px`,
-                      width: `${(textElement.width ?? 300) * THUMBNAIL_SCALE}px`,
-                      height: `${(textElement.height ?? 80) * THUMBNAIL_SCALE}px`,
-                      fontSize: `${fontSize * THUMBNAIL_SCALE}px`,
+                      left: `${(textElement.position?.x ?? 0) * SCALE_X}px`,
+                      top: `${(textElement.position?.y ?? 0) * SCALE_Y}px`,
+                      width: `${(textElement.width ?? 300) * SCALE_X}px`,
+                      height: `${(textElement.height ?? 80) * SCALE_Y}px`,
+                      fontSize: `${fontSize * SCALE_Y}px`,
                       fontWeight: formatting.weight ?? "normal",
                       overflow: "hidden",
                       whiteSpace: "nowrap",
@@ -60,6 +67,22 @@ export default function SlideList({ slides, selectedSlideId, onSelectSlide }) {
                   </div>
                 );
               })}
+              {mediaElements.map((media) => (
+                <img
+                  key={media.id}
+                  src={media["file-link"]}
+                  alt=""
+                  className="slide-thumbnail-media"
+                  style={{
+                    position: "absolute",
+                    left: `${(media.position?.x ?? 0) * SCALE_X}px`,
+                    top: `${(media.position?.y ?? 0) * SCALE_Y}px`,
+                    width: `${(media.width ?? 300) * SCALE_X}px`,
+                    height: `${(media.height ?? 200) * SCALE_Y}px`,
+                    objectFit: "contain",
+                  }}
+                />
+              ))}
             </div>
           </div>
         );

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./EditorCanvas.css";
 
 export default function EditorCanvas({
@@ -19,6 +19,47 @@ export default function EditorCanvas({
   const [draggingMediaId, setDraggingMediaId] = useState(null);
   const [resizingMediaId, setResizingMediaId] = useState(null);
 
+  const textElements = slide?.contents?.text ?? [];
+  const mediaElements = slide?.contents?.media ?? [];
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key !== "Delete" && event.key !== "Backspace") return;
+
+      const tagName = event.target.tagName;
+      if (tagName === "INPUT" || tagName === "TEXTAREA") return;
+
+      if (!selectedElementId) return;
+
+      const isTextElement = textElements.some(
+        (element) => element.id === selectedElementId,
+      );
+
+      const isMediaElement = mediaElements.some(
+        (element) => element.id === selectedElementId,
+      );
+
+      if (isTextElement) {
+        onDeleteTextElement(selectedElementId);
+        setSelectedElementId(null);
+      }
+
+      if (isMediaElement) {
+        onDeleteMedia(selectedElementId);
+        setSelectedElementId(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    selectedElementId,
+    textElements,
+    mediaElements,
+    onDeleteTextElement,
+    onDeleteMedia,
+  ]);
+
   if (!slide) {
     return (
       <main className="canvas-wrapper">
@@ -27,22 +68,13 @@ export default function EditorCanvas({
     );
   }
 
-  const textElements = slide.contents?.text ?? [];
-  const mediaElements = slide.contents?.media ?? [];
-
   const handleMouseMove = (e) => {
     const canvasRect = e.currentTarget.getBoundingClientRect();
     if (draggingMediaId) {
-      const newX =
-        ((e.clientX - canvasRect.left - dragOffset.x) / canvasRect.width) * 100;
-      const newY =
-        ((e.clientY - canvasRect.top - dragOffset.y) / canvasRect.height) * 100;
+      const newX = e.clientX - canvasRect.left - dragOffset.x;
+      const newY = e.clientY - canvasRect.top - dragOffset.y;
 
-      onMoveMediaElement(
-        draggingMediaId,
-        Math.max(0, Math.min(100, newX)),
-        Math.max(0, Math.min(100, newY)),
-      );
+      onMoveMediaElement(draggingMediaId, Math.max(0, newX), Math.max(0, newY));
 
       return;
     }
@@ -51,8 +83,8 @@ export default function EditorCanvas({
       const media = mediaElements.find((item) => item.id === resizingMediaId);
       if (!media) return;
 
-      const mediaX = ((media.position?.x ?? 0) / 100) * canvasRect.width;
-      const mediaY = ((media.position?.y ?? 0) / 100) * canvasRect.height;
+      const mediaX = media.position?.x ?? 0;
+      const mediaY = media.position?.y ?? 0;
 
       const newWidth = e.clientX - canvasRect.left - mediaX;
       const newHeight = e.clientY - canvasRect.top - mediaY;
@@ -167,7 +199,7 @@ export default function EditorCanvas({
                   Delete
                 </button>
               )}
-              
+
               {isSelected && (
                 <div className="format-toolbar">
                   <button
@@ -273,8 +305,8 @@ export default function EditorCanvas({
               }
               style={{
                 position: "absolute",
-                left: `${media.position?.x ?? 0}%`,
-                top: `${media.position?.y ?? 0}%`,
+                left: `${media.position?.x ?? 0}px`,
+                top: `${media.position?.y ?? 0}px`,
                 width: `${media.width ?? 300}px`,
                 height: `${media.height ?? 200}px`,
                 zIndex: media["z-index"] ?? 1,

@@ -6,6 +6,7 @@ import { useSlides } from "../hooks/useSlides";
 import "./EditorPage.css";
 import PreviewModal from "../components/PreviewModal";
 import { exportToReveal } from "../core/export/exportToReveal";
+import GlobalSettingsPanel from "../components/GlobalSettingsPanel";
 
 export default function EditorPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -68,7 +69,7 @@ export default function EditorPage() {
         onSelectSlide={setSelectedSlideId}
       />
 
-      <div className="editor-main">
+      <div className="editor-main" style={{ display: "flex", flex: 1 }}>
         <Toolbar
           onAddSlide={addSlide}
           onDeleteSlide={deleteSlide}
@@ -99,6 +100,7 @@ export default function EditorPage() {
             onDeleteTextElement={deleteElement}
           />
         )}
+        <GlobalSettingsPanel />
       </div>
 
       {isPreviewOpen && (
