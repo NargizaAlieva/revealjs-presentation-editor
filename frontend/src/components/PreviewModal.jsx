@@ -7,16 +7,19 @@ import {
   buildTextElementStyle,
   buildMediaElementStyle,
   buildSlideContainerStyle,
+  buildColorThemeStyle,
   getTextContent,
   getVisibleSlidesForPreview,
   getSlideTextElements,
   getSlideMediaElements,
   getSlideDimensions,
+  getSlideTransition,
 } from "../core/render/revealRenderer";
 
 export default function PreviewModal({ slides, presentation, onClose }) {
   const deckRef = useRef(null);
   const { width, height } = getSlideDimensions(presentation);
+  const colorThemeStyle = buildColorThemeStyle(presentation);
 
   useEffect(() => {
     if (!deckRef.current) return;
@@ -29,7 +32,7 @@ export default function PreviewModal({ slides, presentation, onClose }) {
   const visibleSlides = getVisibleSlidesForPreview(slides);
 
   return (
-    <div className="preview-overlay">
+    <div className="preview-overlay" style={colorThemeStyle}>
       <div className="preview-window">
         <button className="preview-close" onClick={onClose}>
           Close
@@ -44,7 +47,7 @@ export default function PreviewModal({ slides, presentation, onClose }) {
               return (
                 <section
                   key={`slide-${slideIndex}`}
-                  data-transition={slide.contents?.transition ?? "slide"}
+                  data-transition={getSlideTransition(slide)} 
                   style={{ background: slide.contents?.background ?? "white" }}
                 >
                   <div style={buildSlideContainerStyle(width, height)}>

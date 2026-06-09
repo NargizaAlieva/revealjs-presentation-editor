@@ -91,3 +91,21 @@ export function initRevealDeck(containerElement, width, height) {
 
   return deck;
 }
+
+export function buildColorThemeStyle(presentation) {
+  const colorTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
+  const cssVars = {};
+  colorTheme.forEach((entry) => {
+    cssVars[`--${entry["css-variable-name"]}`] = entry.color;
+  });
+  return cssVars;
+}
+
+export function getSlideTransition(slide, defaultTransition = "slide") {
+  const transition = slide?.contents?.transition;
+  const validTransitions = ["fade", "slide", "convex", "concave", "zoom", "none"];
+  if (transition && validTransitions.includes(transition)) {
+    return transition;
+  }
+  return defaultTransition;
+}
