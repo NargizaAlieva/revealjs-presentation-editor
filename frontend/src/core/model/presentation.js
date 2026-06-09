@@ -37,10 +37,7 @@ const createTextElement = ({
 }) => ({
   id: createId(),
   "placeholder-id": placeholderId,
-  position: {
-    x,
-    y,
-  },
+  position: { x, y },
   "pos-type": posType,
   width,
   height,
@@ -83,106 +80,103 @@ export const createDefaultPresentation = () => {
   });
 
   return {
-    id: createId(),
-    filename: "untitled-presentation.json",
-    title: "Untitled Presentation",
-    author: "",
-    "creation-date": new Date().toISOString().split("T")[0],
+    slideset: {
+      filename: "untitled-presentation.json",
+      title: "Untitled Presentation",
+      author: "",
+      "creation-date": new Date().toISOString().split("T")[0],
 
-    fonts: [],
+      fonts: [],
 
-    master: {
-      formatting: {},
-      "aspect-ratio": "16:9",
-      "slide-dimensions": {
-        width: 1280,
-        height: 720,
+      master: {
+        formatting: {},
+        "aspect-ratio": "16:9",
+        "slide-dimensions": {
+          width: 1280,
+          height: 720,
+        },
+        "dimension-units": "px",
+        "color-theme": [
+          { "css-variable-name": "bg-light",      color: "#FFFFFFFF" },
+          { "css-variable-name": "bg-dark",        color: "#1E1E2EFF" },
+          { "css-variable-name": "text-dark",      color: "#111111FF" },
+          { "css-variable-name": "text-light",     color: "#F8F8F8FF" },
+          { "css-variable-name": "accent1",        color: "#4F46E5FF" },
+          { "css-variable-name": "accent2",        color: "#7C3AEDFF" },
+          { "css-variable-name": "link",           color: "#2563EBFF" },
+          { "css-variable-name": "link-visited",   color: "#7C3AEDFF" },
+        ],
       },
-      "dimension-units": "px",
-      "color-theme": [
+
+      layouts: [
         {
-          "css-variable-name": "bg-light",
-          color: "#FFFFFFFF",
+          "layout-id": "title-content",
+          placeholders: [
+            {
+              "placeholder-id": "title-placeholder",
+              position: { x: 120, y: 80 },
+              width: 1040,
+              height: 90,
+              padding: { css: "8px" },
+              type: "text",
+              role: "title",
+              background: "transparent",
+              formatting: titleFormatting,
+            },
+            {
+              "placeholder-id": "body-placeholder",
+              position: { x: 120, y: 220 },
+              width: 960,
+              height: 360,
+              padding: { css: "12px" },
+              type: "text",
+              role: "body",
+              background: "transparent",
+              formatting: bodyFormatting,
+            },
+          ],
         },
+      ],
+
+      slides: [
         {
-          "css-variable-name": "text-dark",
-          color: "#111111FF",
-        },
-        {
-          "css-variable-name": "accent1",
-          color: "#4F46E5FF",
+          title: { content: "First Slide" },
+          "layout-id": "title-content",
+          hidden: false,
+          contents: {
+            text: [
+              createTextElement({
+                placeholderId: "title-placeholder",
+                x: 120,
+                y: 80,
+                width: 1040,
+                height: 90,
+                zIndex: 1,
+                text: "My First Slide",
+                formatting: titleFormatting,
+              }),
+              createTextElement({
+                placeholderId: "body-placeholder",
+                x: 160,
+                y: 220,
+                width: 960,
+                height: 360,
+                zIndex: 2,
+                text: "Start editing your presentation.",
+                formatting: bodyFormatting,
+              }),
+            ],
+            media: [],
+            shapes: [],
+            tables: [],
+            groups: [],
+            animations: [],
+            background: "var(--bg-light)",
+            transition: "slide",
+            notes: "",
+          },
         },
       ],
     },
-
-    layouts: [
-      {
-        "layout-id": "title-content",
-        placeholders: [
-          {
-            "placeholder-id": "title-placeholder",
-            position: { x: 120, y: 80 },
-            width: 1040,
-            height: 90,
-            padding: { css: "8px" },
-            type: "text",
-            role: "title",
-            background: "transparent",
-            formatting: titleFormatting,
-          },
-          {
-            "placeholder-id": "body-placeholder",
-            position: { x: 120, y: 220 },
-            width: 960,
-            height: 360,
-            padding: { css: "12px" },
-            type: "text",
-            role: "body",
-            background: "transparent",
-            formatting: bodyFormatting,
-          },
-        ],
-      },
-    ],
-
-    slides: [
-      {
-        title: "First Slide",
-        "layout-id": "title-content",
-        hidden: false,
-        contents: {
-          text: [
-            createTextElement({
-              placeholderId: "title-placeholder",
-              x: 120,
-              y: 80,
-              width: 1040,
-              height: 90,
-              zIndex: 1,
-              text: "My First Slide",
-              formatting: titleFormatting,
-            }),
-            createTextElement({
-              placeholderId: "body-placeholder",
-              x: 160,
-              y: 220,
-              width: 960,
-              height: 360,
-              zIndex: 2,
-              text: "Start editing your presentation.",
-              formatting: bodyFormatting,
-            }),
-          ],
-          media: [],
-          shapes: [],
-          tables: [],
-          groups: [],
-          animations: [],
-          background: "var(--bg-light)",
-          transition: "slide",
-          notes: "",
-        },
-      },
-    ],
   };
 };
