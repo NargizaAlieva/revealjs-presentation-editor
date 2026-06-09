@@ -1,9 +1,10 @@
 export { createDefaultPresentation } from "./model/presentation";
+export { createEventBus } from "./events/eventBus";
 
 export {
-  validatePresentation,
-  isPresentationValid,
-} from "./model/presentationValidation";
+  validateSlideset,
+  isSlidesetValid,
+} from "./model/slidesetValidation";
 
 export {
   EditorEventType,
@@ -19,14 +20,16 @@ export {
   addSlide,
   deleteSlide,
   duplicateSlide,
+  reorderSlides,
   createSlideFromLayout,
 } from "./operations/slideOperations";
 
 export {
   updateTextElement,
+  updateTextFormatting,
   moveElement,
   resizeElement,
-} from "./operations/contentOperations";
+} from "./operations/elementOperations";
 
 export {
   applyLayoutToSlide,
@@ -39,6 +42,4 @@ export {
   downloadPresentationAsJson,
 } from "./export/serializationOperations";
 
-export {
-  preparePresentationForExport,
-} from "./export/preparePresentationForExport";
+export { preparePresentationForExport } from "./export/preparePresentationForExport";
