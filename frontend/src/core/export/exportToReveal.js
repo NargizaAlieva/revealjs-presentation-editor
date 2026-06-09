@@ -5,10 +5,10 @@ import {
   getTextElements,
   getMediaElements,
 } from "../../utils/slidesetRenderUtils";
+import { downloadHtml } from "./downloadHtml";
 
 function buildColorThemeCss(presentation) {
-  const colorTheme =
-    presentation?.slideset?.master?.["color-theme"] ?? [];
+  const colorTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
   if (colorTheme.length === 0) return "";
   const vars = colorTheme
     .map((entry) => `  --${entry["css-variable-name"]}: ${entry.color};`)
@@ -182,15 +182,5 @@ export function exportToReveal(presentation) {
 </body>
 </html>`;
 
-  const blob = new Blob([htmlContent], { type: "text/html" });
-  const url = URL.createObjectURL(blob);
-
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `${filename}.html`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-
-  setTimeout(() => URL.revokeObjectURL(url), 0);
+  downloadHtml(htmlContent, `${filename}.html`);
 }
