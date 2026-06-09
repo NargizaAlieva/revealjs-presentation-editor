@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import "./EditorCanvas.css";
+import { getSlideSize } from "../utils/slidesetRenderUtils";
 
 export default function EditorCanvas({
   slide,
+  presentation,
   onChangeTextElement,
   onMoveTextElement,
   onResizeTextElement,
@@ -18,6 +20,7 @@ export default function EditorCanvas({
   const [resizingElementId, setResizingElementId] = useState(null);
   const [draggingMediaId, setDraggingMediaId] = useState(null);
   const [resizingMediaId, setResizingMediaId] = useState(null);
+  const { width, height } = getSlideSize(presentation);
 
   const textElements = slide?.contents?.text ?? [];
   const mediaElements = slide?.contents?.media ?? [];
@@ -134,6 +137,8 @@ export default function EditorCanvas({
     <main className="canvas-wrapper">
       <section
         className="editor-slide"
+        className="editor-slide"
+        style={{ width: `${width}px`, height: `${height}px` }}
         onMouseMove={handleMouseMove}
         onMouseUp={stopInteraction}
         onMouseLeave={stopInteraction}

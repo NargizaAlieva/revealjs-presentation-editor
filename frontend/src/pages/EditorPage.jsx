@@ -100,6 +100,8 @@ export default function EditorPage() {
             onResizeMediaElement={actions.updateTextElementSize}
             onDeleteTextElement={actions.deleteElement}
             onDeleteMedia={actions.deleteMedia}
+            slide={selectedSlide}
+            presentation={presentation}
           />
         )}
 
