@@ -14,73 +14,6 @@ function getTextFromElement(textElement) {
   );
 }
 
-function getTextElements(slide) {
-  if (slide?.contents?.text?.length) {
-    return slide.contents.text;
-  }
-
-  if (slide?.placeholders?.length) {
-    return slide.placeholders.map((placeholder, index) => {
-      const isTitle = placeholder.id === "title" || placeholder.role === "title";
-
-      return {
-        id: placeholder.id || `placeholder-${index}`,
-        position: placeholder.position || {
-          x: 80,
-          y: isTitle ? 80 : 180,
-        },
-        width: placeholder.width || 800,
-        height: placeholder.height || (isTitle ? 80 : 200),
-        rotation: 0,
-        overflow: "hidden",
-        background: "transparent",
-        paragraphs: [
-          {
-            id: `${placeholder.id || index}-paragraph`,
-            runs: [{ text: placeholder.content || "" }],
-          },
-        ],
-        "z-index": index + 1,
-        formatting: {
-          size: isTitle ? 36 : 24,
-          weight: isTitle ? "bold" : "normal",
-        },
-      };
-    });
-  }
-
-  if (slide?.title) {
-    return [
-      {
-        id: "fallback-title",
-        position: { x: 80, y: 80 },
-        width: 800,
-        height: 80,
-        rotation: 0,
-        overflow: "hidden",
-        background: "transparent",
-        paragraphs: [
-          {
-            id: "fallback-title-paragraph",
-            runs: [{ text: slide.title }],
-          },
-        ],
-        "z-index": 1,
-        formatting: {
-          size: 36,
-          weight: "bold",
-        },
-      },
-    ];
-  }
-
-  return [];
-}
-
-function getMediaElements(slide) {
-  return slide?.contents?.media || [];
-}
-
 export default function PreviewModal({ slides, onClose }) {
   const deckRef = useRef(null);
 
@@ -120,67 +53,78 @@ export default function PreviewModal({ slides, onClose }) {
           <div className="slides">
             {(slides || [])
               .filter((slide) => !slide.hidden)
-              .map((slide, slideIndex) => (
-                <section
-                  key={`${slide.title || "slide"}-${slideIndex}`}
-                  data-transition={slide.contents?.transition || "slide"}
-                  style={{
-                    background: slide.contents?.background || "white",
-                  }}
-                >
-                  <div
+              .map((slide, slideIndex) => {
+                const textElements = slide.contents?.text ?? [];
+                const mediaElements = slide.contents?.media ?? [];
+
+                return (
+                  <section
+                    key={`slide-${slideIndex}`}
+                    data-transition={slide.contents?.transition || "slide"}
                     style={{
-                      position: "relative",
-                      width: "960px",
-                      height: "540px",
-                      color: "black",
-                      textAlign: "left",
+                      background: slide.contents?.background || "white",
                     }}
                   >
-                    {getTextElements(slide).map((textElement, index) => (
-                      <div
-                        key={textElement.id || index}
-                        style={{
-                          position: "absolute",
-                          left: `${textElement.position?.x || 0}px`,
-                          top: `${textElement.position?.y || 0}px`,
-                          width: `${textElement.width || 300}px`,
-                          height: `${textElement.height || 80}px`,
-                          background: textElement.background || "transparent",
-                          overflow: textElement.overflow || "hidden",
-                          zIndex: textElement["z-index"] || textElement.zindex || index + 1,
-                          transform: `rotate(${textElement.rotation || 0}deg)`,
-                          fontSize: `${textElement.formatting?.size || (index === 0 ? 34 : 26)}px`,
-                          fontWeight:
-                            textElement.formatting?.weight || (index === 0 ? "bold" : "normal"),
-                          color: textElement.formatting?.color || "black",
-                          boxSizing: "border-box",
-                        }}
-                      >
-                        {getTextFromElement(textElement)}
-                      </div>
-                    ))}
-                  </div>
-
-                  {getMediaElements(slide).map((media) => (
-                    <img
-                      key={media.id}
-                      src={media["file-link"]}
-                      alt=""
+                    <div
                       style={{
-                        position: "absolute",
-                        left: `${media.position?.x || 0}px`,
-                        top: `${media.position?.y || 0}px`,
-                        width: `${media.width || 200}px`,
-                        height: `${media.height || 120}px`,
-                        objectFit: "contain",
-                        zIndex: media["z-index"] || media.zindex || 1,
-                        transform: `rotate(${media.rotation || 0}deg)`,
+                        position: "relative",
+                        width: "960px",
+                        height: "540px",
+                        color: "black",
+                        textAlign: "left",
                       }}
-                    />
-                  ))}
-                </section>
-              ))}
+                    >
+                      {textElements.map((textElement, index) => {
+                        const formatting =
+                          textElement.paragraphs?.[0]?.formatting ?? {};
+
+                        return (
+                          <div
+                            key={textElement.id || index}
+                            style={{
+                              position: "absolute",
+                              left: `${textElement.position?.x ?? 0}px`,
+                              top: `${textElement.position?.y ?? 0}px`,
+                              width: `${textElement.width ?? 300}px`,
+                              height: `${textElement.height ?? 80}px`,
+                              background: textElement.background ?? "transparent",
+                              overflow: textElement.overflow ?? "hidden",
+                              zIndex: textElement["z-index"] ?? index + 1,
+                              transform: `rotate(${textElement.rotation ?? 0}deg)`,
+                              fontSize: formatting.size ?? (index === 0 ? "34px" : "26px"),
+                              fontWeight: formatting.weight ?? (index === 0 ? "bold" : "normal"),
+                              fontStyle: formatting.italics ? "italic" : "normal",
+                              color: formatting.color ?? "black",
+                              textAlign: formatting.align ?? "left",
+                              boxSizing: "border-box",
+                            }}
+                          >
+                            {getTextFromElement(textElement)}
+                          </div>
+                        );
+                      })}
+
+                      {mediaElements.map((media, index) => (
+                        <img
+                          key={media.id || index}
+                          src={media["file-link"]}
+                          alt=""
+                          style={{
+                            position: "absolute",
+                            left: `${media.position?.x ?? 0}px`,
+                            top: `${media.position?.y ?? 0}px`,
+                            width: `${media.width ?? 200}px`,
+                            height: `${media.height ?? 120}px`,
+                            objectFit: "contain",
+                            zIndex: media["z-index"] ?? index + 1,
+                            transform: `rotate(${media.rotation ?? 0}deg)`,
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
           </div>
         </div>
       </div>
