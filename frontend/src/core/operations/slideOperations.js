@@ -1,7 +1,13 @@
-const createId = () => crypto.randomUUID();
+const createId = () => {
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
 
-const getSlides = (presentation) => presentation.slideset?.slides ?? [];
-const getLayouts = (presentation) => presentation.slideset?.layouts ?? [];
+  return `id-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+};
+
+const getSlides = (presentation) => presentation?.slideset?.slides ?? [];
+const getLayouts = (presentation) => presentation?.slideset?.layouts ?? [];
 
 const setSlides = (presentation, slides) => ({
   ...presentation,
@@ -25,7 +31,7 @@ const createTextElementFromPlaceholder = (placeholder, defaultText = "") => ({
   paragraphs: [
     {
       id: createId(),
-      formatting: { ...placeholder.formatting },
+      formatting: { ...(placeholder.formatting ?? {}) },
       bullets: "none",
       runs: [
         {
@@ -39,9 +45,32 @@ const createTextElementFromPlaceholder = (placeholder, defaultText = "") => ({
   ],
 });
 
+const createMediaElementFromPlaceholder = (placeholder) => ({
+  id: createId(),
+  "placeholder-id": placeholder["placeholder-id"],
+  "file-link": "",
+  "media-type": placeholder.type === "video" ? "video" : "image",
+  position: { ...placeholder.position },
+  width: placeholder.width,
+  height: placeholder.height,
+  rotation: 0,
+  "z-index": 1,
+  scale: 1,
+  crop: null,
+  effects: {},
+  playback: {},
+});
+
 export const createSlideFromLayout = (layout, slideNumber) => {
-  const textPlaceholders = (layout.placeholders ?? []).filter(
+  const placeholders = layout.placeholders ?? [];
+
+  const textPlaceholders = placeholders.filter(
     (placeholder) => placeholder.type === "text",
+  );
+
+  const mediaPlaceholders = placeholders.filter(
+    (placeholder) =>
+      placeholder.type === "image" || placeholder.type === "video",
   );
 
   return {
@@ -57,7 +86,7 @@ export const createSlideFromLayout = (layout, slideNumber) => {
             : "Click to edit text",
         ),
       ),
-      media: [],
+      media: mediaPlaceholders.map(createMediaElementFromPlaceholder),
       shapes: [],
       tables: [],
       groups: [],
@@ -104,6 +133,30 @@ const cloneTextElementWithNewIds = (textElement) => ({
   })),
 });
 
+const cloneMediaElementWithNewId = (mediaElement) => ({
+  ...structuredClone(mediaElement),
+  id: createId(),
+});
+
+const cloneShapeElementWithNewId = (shapeElement) => ({
+  ...structuredClone(shapeElement),
+  id: createId(),
+});
+
+const cloneTableElementWithNewId = (tableElement) => ({
+  ...structuredClone(tableElement),
+  id: createId(),
+});
+
+const cloneGroupElementWithNewId = (groupElement) => ({
+  ...structuredClone(groupElement),
+  id: createId(),
+});
+
+const cloneAnimationElement = (animationElement) => ({
+  ...structuredClone(animationElement),
+});
+
 export const duplicateSlide = (presentation, slideIndex) => {
   const slides = getSlides(presentation);
   const slideToDuplicate = slides[slideIndex];
@@ -117,12 +170,24 @@ export const duplicateSlide = (presentation, slideIndex) => {
     },
     contents: {
       ...structuredClone(slideToDuplicate.contents),
-      text: (slideToDuplicate.contents?.text ?? []).map(cloneTextElementWithNewIds),
-      media: slideToDuplicate.contents?.media ?? [],
-      shapes: slideToDuplicate.contents?.shapes ?? [],
-      tables: slideToDuplicate.contents?.tables ?? [],
-      groups: slideToDuplicate.contents?.groups ?? [],
-      animations: slideToDuplicate.contents?.animations ?? [],
+      text: (slideToDuplicate.contents?.text ?? []).map(
+        cloneTextElementWithNewIds,
+      ),
+      media: (slideToDuplicate.contents?.media ?? []).map(
+        cloneMediaElementWithNewId,
+      ),
+      shapes: (slideToDuplicate.contents?.shapes ?? []).map(
+        cloneShapeElementWithNewId,
+      ),
+      tables: (slideToDuplicate.contents?.tables ?? []).map(
+        cloneTableElementWithNewId,
+      ),
+      groups: (slideToDuplicate.contents?.groups ?? []).map(
+        cloneGroupElementWithNewId,
+      ),
+      animations: (slideToDuplicate.contents?.animations ?? []).map(
+        cloneAnimationElement,
+      ),
     },
   };
 

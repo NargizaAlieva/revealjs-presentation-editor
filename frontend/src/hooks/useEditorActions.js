@@ -16,7 +16,10 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
   );
 
   const addSlide = useCallback(
-    () => eventBus.dispatch(createEditorEvent(EditorEventType.SLIDE.ADD)),
+    (layoutId) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.SLIDE.ADD, { layoutId })
+      ),
     [eventBus]
   );
 
@@ -213,6 +216,14 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     [eventBus]
   );
 
+  const applyLayout = useCallback(
+  (layoutId) =>
+    eventBus.dispatch(
+      createEditorEvent(EditorEventType.LAYOUT.APPLY, { layoutId })
+    ),
+  [eventBus]
+);
+
   const toggleAutosave = useCallback(
     () =>
       eventBus.dispatch(
@@ -256,6 +267,7 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     updateMasterTheme,
     updateMasterDimensions,
     updateLayout,
+    applyLayout,
     toggleAutosave,
     savePresentation,
     resetPresentation,
