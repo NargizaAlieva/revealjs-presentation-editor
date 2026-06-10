@@ -23,6 +23,11 @@ import {
   updateMedia,
   rotateMedia
 } from "../operations/mediaOperations";
+import {
+  updateMasterTheme,
+  updateMasterDimensions,
+  updateMasterFormatting,
+} from "../operations/masterOperations";
 
 export const createInitialEditorState = () => ({
   presentation: createDefaultPresentation(),
@@ -352,6 +357,7 @@ export const editorReducer = (state, event) => {
           state.selectedSlideIndex,
           event.payload.mediaId
         ),
+        selectedElementId: null,
         lastEvent: event,
         lastUpdated: Date.now(),
       };
@@ -366,6 +372,7 @@ export const editorReducer = (state, event) => {
           event.payload.updates
         ),
         lastEvent: event,
+        selectedElementId: event.payload.mediaId,
         lastUpdated: Date.now(),
       };
 
@@ -400,16 +407,10 @@ export const editorReducer = (state, event) => {
     case EditorEventType.MASTER.UPDATE_THEME:
       return {
         ...state,
-        presentation: {
-          ...state.presentation,
-          slideset: {
-            ...state.presentation.slideset,
-            master: {
-              ...state.presentation.slideset.master,
-              "color-theme": event.payload.colorTheme,
-            },
-          },
-        },
+        presentation: updateMasterTheme(
+          state.presentation,
+          event.payload.colorTheme
+        ),
         lastEvent: event,
         lastUpdated: Date.now(),
       };
@@ -417,17 +418,11 @@ export const editorReducer = (state, event) => {
     case EditorEventType.MASTER.UPDATE_DIMENSIONS:
       return {
         ...state,
-        presentation: {
-          ...state.presentation,
-          slideset: {
-            ...state.presentation.slideset,
-            master: {
-              ...state.presentation.slideset.master,
-              "aspect-ratio": event.payload.aspectRatio,
-              "slide-dimensions": event.payload.slideDimensions,
-            },
-          },
-        },
+        presentation: updateMasterDimensions(
+          state.presentation,
+          event.payload.slideDimensions,
+          event.payload.aspectRatio
+        ),
         lastEvent: event,
         lastUpdated: Date.now(),
       };
@@ -435,24 +430,15 @@ export const editorReducer = (state, event) => {
     case EditorEventType.MASTER.UPDATE_FORMATTING:
       return {
         ...state,
-        presentation: {
-          ...state.presentation,
-          slideset: {
-            ...state.presentation.slideset,
-            master: {
-              ...state.presentation.slideset.master,
-              formatting: {
-                ...state.presentation.slideset.master.formatting,
-                ...event.payload.formatting,
-              },
-            },
-          },
-        },
+        presentation: updateMasterFormatting(
+          state.presentation,
+          event.payload.formatting
+        ),
         lastEvent: event,
         lastUpdated: Date.now(),
       };
 
-    default:
-      return state;
-  }
-};
+        default:
+          return state;
+      }
+    };

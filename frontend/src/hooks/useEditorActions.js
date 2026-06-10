@@ -170,6 +170,17 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
         ),
     [eventBus],
     );
+    
+  const updateLayout = useCallback(
+    (layoutId, placeholders) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.UPDATE, {
+          layoutId,
+          placeholders,
+        })
+      ),
+    [eventBus]
+  );
 
   const savePresentation = useCallback(
     () =>
@@ -202,6 +213,7 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     deleteMedia,
     updateMasterTheme,
     updateMasterDimensions,
+    updateLayout,
     savePresentation,
     resetPresentation,
   };

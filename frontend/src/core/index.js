@@ -48,3 +48,9 @@ export {
   deserializePresentation,
   downloadPresentationAsJson,
 } from "./persistence/serializationOperations";
+
+export {
+  updateMasterTheme,
+  updateMasterDimensions,
+  updateMasterFormatting,
+} from "./operations/masterOperations";
