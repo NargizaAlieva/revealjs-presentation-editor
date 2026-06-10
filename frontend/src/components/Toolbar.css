@@ -4,6 +4,9 @@
   background: #f3f4f6;
   border-bottom: 1px solid #cfcfcf;
   box-sizing: border-box;
+  position: relative;
+  z-index: 1000;
+  overflow: visible;
 }
 
 .toolbar-tabs {
@@ -49,7 +52,7 @@
   background: white;
   padding: 6px 10px 4px 10px;
   box-sizing: border-box;
-  overflow-x: auto;
+  overflow: visible;
 }
 
 .ribbon-group {
@@ -123,16 +126,11 @@
 
 .layout-popup {
   position: absolute;
-
   top: 70px;
   left: 0;
-
+  z-index: 9999;
   width: 320px;
-  height: 200px;
-
   background: white;
   border: 1px solid #ccc;
-  box-shadow: 0 4px 15px rgba(0,0,0,.15);
-
-  z-index: 1000;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
 }
