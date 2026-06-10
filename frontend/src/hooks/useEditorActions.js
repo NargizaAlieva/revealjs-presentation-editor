@@ -213,6 +213,14 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     [eventBus]
   );
 
+  const toggleAutosave = useCallback(
+    () =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.PRESENTATION.TOGGLE_AUTOSAVE)
+      ),
+    [eventBus]
+  );
+
   const savePresentation = useCallback(
     () =>
       eventBus.dispatch(createEditorEvent(EditorEventType.PRESENTATION.SAVE)),
@@ -248,6 +256,7 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     updateMasterTheme,
     updateMasterDimensions,
     updateLayout,
+    toggleAutosave,
     savePresentation,
     resetPresentation,
   };

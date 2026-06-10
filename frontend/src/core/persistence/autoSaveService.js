@@ -25,6 +25,10 @@ const AUTO_SAVE_EVENTS = new Set([
   EditorEventType.MEDIA.DELETE,
   EditorEventType.MEDIA.UPDATE,
 
+  EditorEventType.ANIMATION.ADD,
+  EditorEventType.ANIMATION.UPDATE,
+  EditorEventType.ANIMATION.DELETE,
+
   EditorEventType.LAYOUT.APPLY,
   EditorEventType.LAYOUT.UPDATE,
 

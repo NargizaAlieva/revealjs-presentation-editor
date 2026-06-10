@@ -8,5 +8,6 @@ export function useSlides(state) {
     slides,
     selectedSlide,
     selectedSlideIndex,
+    autosaveEnabled: state.autosaveEnabled,
   };
 }

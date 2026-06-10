@@ -16,9 +16,13 @@ export const createEventBus = (reactDispatch, getState) => {
 
       if (event.type === EditorEventType.PRESENTATION.SAVE) {
         autosave.saveImmediately();
-      } else if (autosave.shouldAutosave(event.type)) {
-        autosave.scheduleAutosave();
-        console.log(`[EventBus] Autosave scheduled at ${Date.now()}`);
+      } else {
+        const state = getState();
+
+        if (state.autosaveEnabled && autosave.shouldAutosave(event.type)) {
+          autosave.scheduleAutosave();
+          console.log(`[EventBus] Autosave scheduled at ${Date.now()}`);
+        }
       }
     },
   };

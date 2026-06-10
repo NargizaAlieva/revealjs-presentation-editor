@@ -38,6 +38,7 @@ export const createInitialEditorState = () => ({
   presentation: createDefaultPresentation(),
   selectedSlideIndex: 0,
   selectedElementId: null,
+  autosaveEnabled: true,
   lastEvent: null,
   lastUpdated: Date.now(),
 });
@@ -480,7 +481,17 @@ export const editorReducer = (state, event) => {
         lastUpdated: Date.now(),
       };
 
+      case EditorEventType.PRESENTATION.TOGGLE_AUTOSAVE:
+        return {
+          ...state,
+          autosaveEnabled: !state.autosaveEnabled,
+          lastEvent: event,
+          lastUpdated: Date.now(),
+        };
+
         default:
           return state;
       }
     };
+
+    
