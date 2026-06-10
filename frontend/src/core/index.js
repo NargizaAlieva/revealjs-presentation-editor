@@ -37,8 +37,8 @@ export {
 } from "./operations/layoutOperations";
 
 export {
-  moveMedia,
-  resizeMedia,
+  addMedia,
+  deleteMedia,
   updateMedia,
   rotateMedia,
 } from "./operations/mediaOperations";
@@ -47,4 +47,4 @@ export {
   serializePresentation,
   deserializePresentation,
   downloadPresentationAsJson,
-} from "./export/serializationOperations";
+} from "./persistence/serializationOperations";

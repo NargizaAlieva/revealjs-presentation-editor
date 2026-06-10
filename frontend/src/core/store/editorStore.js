@@ -1,6 +1,6 @@
 import { createDefaultPresentation } from "../model/presentation";
 import { EditorEventType } from "../events/editorEvents";
-import { deserializePresentation } from "../export/serializationOperations";
+import { deserializePresentation } from "../persistence/serializationOperations";
 import {
   updateTextElement,
   moveElement,
@@ -21,8 +21,7 @@ import {
   addMedia,
   deleteMedia,
   updateMedia,
-  moveMedia,
-  resizeMedia,
+  rotateMedia
 } from "../operations/mediaOperations";
 
 export const createInitialEditorState = () => ({
@@ -339,6 +338,9 @@ export const editorReducer = (state, event) => {
           state.selectedSlideIndex,
           event.payload.mediaElement
         ),
+
+        selectedElementId: event.payload.mediaElement.id,
+        lastEvent: event,
         lastUpdated: Date.now(),
       };
 
@@ -350,6 +352,7 @@ export const editorReducer = (state, event) => {
           state.selectedSlideIndex,
           event.payload.mediaId
         ),
+        lastEvent: event,
         lastUpdated: Date.now(),
       };
 

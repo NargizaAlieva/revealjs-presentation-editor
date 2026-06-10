@@ -1,4 +1,4 @@
-import { serializePresentation } from "../export/serializationOperations";
+import { serializePresentation } from "./serializationOperations";
 import { EditorEventType } from "../events/editorEvents";
 
 const DEFAULT_STORAGE_KEY = "presentation";

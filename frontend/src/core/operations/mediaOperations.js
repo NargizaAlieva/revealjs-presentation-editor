@@ -23,7 +23,7 @@ export const addMedia = (presentation, slideIndex, mediaData) => {
     id: mediaData.id ?? createId(),
     "file-link": mediaData["file-link"] ?? mediaData.fileLink ?? mediaData.src,
     "media-type": mediaData["media-type"] ?? mediaData.mediaType ?? "image",
-    position: mediaData.position ?? { x: 100, y: 100 },
+    position: mediaData.position ?? { x: 10, y: 10 },
     width: mediaData.width ?? 300,
     height: mediaData.height ?? 200,
     rotation: mediaData.rotation ?? 0,
@@ -82,17 +82,6 @@ export const updateMedia = (presentation, slideIndex, mediaId, updates) => {
 
   return setSlides(presentation, slides);
 };
-
-export const moveMedia = (presentation, slideIndex, mediaId, newPosition) =>
-  updateMedia(presentation, slideIndex, mediaId, {
-    position: { x: newPosition.x, y: newPosition.y },
-  });
-
-export const resizeMedia = (presentation, slideIndex, mediaId, newSize) =>
-  updateMedia(presentation, slideIndex, mediaId, {
-    width: newSize.width,
-    height: newSize.height,
-  });
 
 export const rotateMedia = (presentation, slideIndex, mediaId, rotation) =>
   updateMedia(presentation, slideIndex, mediaId, { rotation });
