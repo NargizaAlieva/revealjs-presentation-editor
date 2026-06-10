@@ -28,6 +28,11 @@ import {
   updateMasterDimensions,
   updateMasterFormatting,
 } from "../operations/masterOperations";
+import {
+  addAnimation,
+  updateAnimation,
+  deleteAnimation,
+} from "../operations/animationOperations";
 
 export const createInitialEditorState = () => ({
   presentation: createDefaultPresentation(),
@@ -373,6 +378,43 @@ export const editorReducer = (state, event) => {
         ),
         lastEvent: event,
         selectedElementId: event.payload.mediaId,
+        lastUpdated: Date.now(),
+      };
+
+    case EditorEventType.ANIMATION.ADD:
+      return {
+        ...state,
+        presentation: addAnimation(
+          state.presentation,
+          state.selectedSlideIndex,
+          event.payload.animation
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+
+    case EditorEventType.ANIMATION.UPDATE:
+      return {
+        ...state,
+        presentation: updateAnimation(
+          state.presentation,
+          state.selectedSlideIndex,
+          event.payload.animationId,
+          event.payload.updates
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+
+    case EditorEventType.ANIMATION.DELETE:
+      return {
+        ...state,
+        presentation: deleteAnimation(
+          state.presentation,
+          state.selectedSlideIndex,
+          event.payload.animationId
+        ),
+        lastEvent: event,
         lastUpdated: Date.now(),
       };
 

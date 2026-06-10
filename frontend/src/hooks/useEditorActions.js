@@ -136,6 +136,37 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     [eventBus]
   );
 
+  const addAnimation = useCallback(
+    (animation) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.ANIMATION.ADD, {
+          animation,
+        })
+      ),
+    [eventBus]
+  );
+
+  const updateAnimation = useCallback(
+    (animationId, updates) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.ANIMATION.UPDATE, {
+          animationId,
+          updates,
+        })
+      ),
+    [eventBus]
+  );
+
+  const deleteAnimation = useCallback(
+    (animationId) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.ANIMATION.DELETE, {
+          animationId,
+        })
+      ),
+    [eventBus]
+  );
+
   const addMedia = useCallback(
     (mediaElement) =>
       eventBus.dispatch(
@@ -211,6 +242,9 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     deleteElement,
     addMedia,
     deleteMedia,
+    addAnimation,
+    updateAnimation,
+    deleteAnimation,
     updateMasterTheme,
     updateMasterDimensions,
     updateLayout,

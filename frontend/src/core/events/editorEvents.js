@@ -51,6 +51,12 @@ export const EditorEventType = {
     UPDATE: "UPDATE_MEDIA",
     DELETE: "DELETE_MEDIA",
   },
+
+  ANIMATION: {
+    ADD: "ANIMATION.ADD",
+    UPDATE: "ANIMATION.UPDATE",
+    DELETE: "ANIMATION.DELETE",
+  },
 };
 
 export const createEditorEvent = (type, payload = {}) => ({
