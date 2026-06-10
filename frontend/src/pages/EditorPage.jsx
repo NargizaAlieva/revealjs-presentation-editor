@@ -26,8 +26,8 @@ export default function EditorPage() {
     savePresentation,
     resetPresentation,
     updateTextElementContent,
-    updateTextElementPosition,
-    updateTextElementSize,
+    updateElementPosition,
+    updateElementSize,
     updateTextElementFormatting,
     addMedia,
     deleteElement,
@@ -99,11 +99,11 @@ export default function EditorPage() {
             slide={selectedSlide}
             presentation={presentation}
             onChangeTextElement={updateTextElementContent}
-            onMoveTextElement={updateTextElementPosition}
-            onResizeTextElement={updateTextElementSize}
+            onMoveTextElement={updateElementPosition}
+            onResizeTextElement={updateElementSize}
             onFormatTextElement={updateTextElementFormatting}
-            onMoveMediaElement={updateTextElementPosition}
-            onResizeMediaElement={updateTextElementSize}
+            onMoveMediaElement={updateElementPosition}
+            onResizeMediaElement={updateElementSize}
             onDeleteTextElement={deleteElement}
             onDeleteMedia={deleteMedia}
             slideNotes={selectedSlide?.contents?.notes ?? ""}

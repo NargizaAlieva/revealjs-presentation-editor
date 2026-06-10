@@ -106,7 +106,7 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     [eventBus]
   );
 
-  const updateTextElementPosition = useCallback(
+  const updateElementPosition = useCallback(
     (textElementId, x, y) =>
       eventBus.dispatch(
         createEditorEvent(EditorEventType.CONTENT.MOVE_ELEMENT, {
@@ -117,7 +117,7 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     [eventBus]
   );
 
-  const updateTextElementSize = useCallback(
+  const updateElementSize = useCallback(
     (textElementId, width, height) =>
       eventBus.dispatch(
         createEditorEvent(EditorEventType.CONTENT.RESIZE_ELEMENT, {
@@ -195,8 +195,8 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     updateSlideNotes,
     updateTextElementContent,
     updateTextElementFormatting,
-    updateTextElementPosition,
-    updateTextElementSize,
+    updateElementPosition,
+    updateElementSize,
     deleteElement,
     addMedia,
     deleteMedia,
