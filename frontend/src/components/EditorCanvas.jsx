@@ -13,6 +13,8 @@ export default function EditorCanvas({
   onMoveMediaElement,
   onResizeMediaElement,
   onDeleteTextElement,
+  slideNotes,
+  onUpdateSlideNotes,
 }) {
   const [selectedElementId, setSelectedElementId] = useState(null);
   const [draggingElementId, setDraggingElementId] = useState(null);
@@ -74,10 +76,20 @@ export default function EditorCanvas({
   const handleMouseMove = (e) => {
     const canvasRect = e.currentTarget.getBoundingClientRect();
     if (draggingMediaId) {
+      const media = mediaElements.find((item) => item.id === draggingMediaId);
+      if (!media) return;
+
+      const canvasWidth = canvasRect.width;
+      const canvasHeight = canvasRect.height;
+
       const newX = e.clientX - canvasRect.left - dragOffset.x;
       const newY = e.clientY - canvasRect.top - dragOffset.y;
 
-      onMoveMediaElement(draggingMediaId, Math.max(0, newX), Math.max(0, newY));
+      onMoveMediaElement(
+        draggingMediaId,
+        Math.max(0, Math.min(canvasWidth - (media.width ?? 300), newX)),
+        Math.max(0, Math.min(canvasHeight - (media.height ?? 200), newY)),
+      );
 
       return;
     }
@@ -94,8 +106,8 @@ export default function EditorCanvas({
 
       onResizeMediaElement(
         resizingMediaId,
-        Math.max(80, newWidth),
-        Math.max(60, newHeight),
+        Math.max(80, Math.min(canvasRect.width - mediaX, newWidth)),
+        Math.max(60, Math.min(canvasRect.height - mediaY, newHeight)),
       );
 
       return;
@@ -112,18 +124,34 @@ export default function EditorCanvas({
 
       onResizeTextElement(
         resizingElementId,
-        Math.max(100, newWidth),
-        Math.max(40, newHeight),
+        Math.max(
+          100,
+          Math.min(canvasRect.width - element.position.x, newWidth),
+        ),
+        Math.max(
+          40,
+          Math.min(canvasRect.height - element.position.y, newHeight),
+        ),
       );
       return;
     }
 
     if (!draggingElementId) return;
 
+    const element = textElements.find((item) => item.id === draggingElementId);
+    if (!element) return;
+
+    const canvasWidth = canvasRect.width;
+    const canvasHeight = canvasRect.height;
+
     const newX = e.clientX - canvasRect.left - dragOffset.x;
     const newY = e.clientY - canvasRect.top - dragOffset.y;
 
-    onMoveTextElement(draggingElementId, newX, newY);
+    onMoveTextElement(
+      draggingElementId,
+      Math.max(0, Math.min(canvasWidth - (element.width ?? 300), newX)),
+      Math.max(0, Math.min(canvasHeight - (element.height ?? 80), newY)),
+    );
   };
 
   const stopInteraction = () => {
@@ -136,7 +164,6 @@ export default function EditorCanvas({
   return (
     <main className="canvas-wrapper">
       <section
-        className="editor-slide"
         className="editor-slide"
         style={{ width: `${width}px`, height: `${height}px` }}
         onMouseMove={handleMouseMove}
@@ -239,6 +266,45 @@ export default function EditorCanvas({
                     }}
                   >
                     I
+                  </button>
+
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onFormatTextElement(textElement.id, {
+                        align: "left",
+                      });
+                    }}
+                  >
+                    L
+                  </button>
+
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onFormatTextElement(textElement.id, {
+                        align: "center",
+                      });
+                    }}
+                  >
+                    C
+                  </button>
+
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onFormatTextElement(textElement.id, {
+                        align: "right",
+                      });
+                    }}
+                  >
+                    R
                   </button>
 
                   <input
@@ -367,6 +433,14 @@ export default function EditorCanvas({
           );
         })}
       </section>
+      <div className="slide-notes">
+        <label>Slide Notes</label>
+        <textarea
+          value={slideNotes}
+          onChange={(e) => onUpdateSlideNotes(e.target.value)}
+          placeholder="Add speaker notes..."
+        />
+      </div>
     </main>
   );
 }

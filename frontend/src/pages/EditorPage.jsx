@@ -32,6 +32,7 @@ export default function EditorPage() {
     deleteElement,
     toggleSlideHidden,
     deleteMedia,
+    updateSlideNotes,
   } = useEditorActions(eventBus, selectedSlideIndex, slides.length);
 
   const exportPresentation = () => {
@@ -92,6 +93,7 @@ export default function EditorPage() {
         {selectedSlide && (
           <EditorCanvas
             slide={selectedSlide}
+            presentation={presentation}
             onChangeTextElement={updateTextElementContent}
             onMoveTextElement={updateTextElementPosition}
             onResizeTextElement={updateTextElementSize}
@@ -100,6 +102,8 @@ export default function EditorPage() {
             onResizeMediaElement={updateTextElementSize}
             onDeleteTextElement={deleteElement}
             onDeleteMedia={deleteMedia}
+            slideNotes={selectedSlide?.contents?.notes ?? ""}
+            onUpdateSlideNotes={updateSlideNotes}
           />
         )}
       </div>

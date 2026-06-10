@@ -2,8 +2,11 @@
   flex: 1;
   background-color: #eeeeee;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
+  justify-content: flex-start;
+  padding: 24px;
+  overflow: auto;
 }
 
 .editor-slide {
@@ -11,6 +14,7 @@
   border: 1px solid #ccc;
   position: relative;
 }
+
 
 .text-editor {
   width: 100%;
@@ -155,4 +159,25 @@
   padding: 4px 8px;
   font-size: 12px;
   cursor: pointer;
+}
+
+.slide-notes {
+  width: 960px;
+  margin-top: 12px;
+}
+
+.slide-notes label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.slide-notes textarea {
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+  padding: 8px;
+  box-sizing: border-box;
+  font: inherit;
 }
