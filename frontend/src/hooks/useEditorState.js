@@ -7,6 +7,7 @@ import {
 } from "../core";
 
 const STORAGE_KEY = "presentation";
+const AUTOSAVE_SETTING_KEY = "autosaveEnabled";
 
 const loadInitialState = () => {
   const saved = localStorage.getItem(STORAGE_KEY);
@@ -25,9 +26,17 @@ const loadInitialState = () => {
       console.warn("[useEditorState] Loaded with validation errors:", result.errors);
     }
 
+    const savedAutosaveEnabled = localStorage.getItem(AUTOSAVE_SETTING_KEY);
+
+    const autosaveEnabled =
+      savedAutosaveEnabled === null
+        ? true
+        : savedAutosaveEnabled === "true";
+
     return {
       ...createInitialEditorState(),
       presentation: result.data,
+      autosaveEnabled,
       selectedSlideIndex: 0,
       selectedElementId: null,
       lastUpdated: Date.now(),

@@ -481,13 +481,18 @@ export const editorReducer = (state, event) => {
         lastUpdated: Date.now(),
       };
 
-      case EditorEventType.PRESENTATION.TOGGLE_AUTOSAVE:
+      case EditorEventType.PRESENTATION.TOGGLE_AUTOSAVE: {
+        const autosaveEnabled = !state.autosaveEnabled;
+
+        localStorage.setItem("autosaveEnabled", String(autosaveEnabled));
+
         return {
           ...state,
-          autosaveEnabled: !state.autosaveEnabled,
+          autosaveEnabled,
           lastEvent: event,
           lastUpdated: Date.now(),
         };
+      }
 
         default:
           return state;
