@@ -85,6 +85,8 @@ export default function EditorPage() {
         onImageUpload={handleImageUpload}
         onToggleSlideHidden={() => toggleSlideHidden(selectedSlideIndex)}
         isSlideHidden={selectedSlide?.hidden}
+        onTransitionChange={updateSlideTransition}
+        currentTransition={selectedSlide?.contents?.transition ?? "none"}
       />
 
       <div className="editor-body">

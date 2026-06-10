@@ -27,6 +27,7 @@ import {
   MdPalette,
   MdSearch,
   MdTextFields,
+  MdSlideshow,
 } from "react-icons/md";
 
 const TABS = [
@@ -38,6 +39,15 @@ const TABS = [
   "Animations",
   "Slide Show",
   "View",
+];
+
+const TRANSITIONS = [
+  { value: "none", label: "None" },
+  { value: "fade", label: "Fade" },
+  { value: "slide", label: "Slide" },
+  { value: "convex", label: "Convex" },
+  { value: "concave", label: "Concave" },
+  { value: "zoom", label: "Zoom" },
 ];
 
 export default function Toolbar({
@@ -55,6 +65,8 @@ export default function Toolbar({
   onImageUpload,
   onToggleSlideHidden,
   isSlideHidden,
+  onTransitionChange,
+  currentTransition,
 }) {
   const [activeTab, setActiveTab] = useState("Home");
   const [showLayouts, setShowLayouts] = useState(false);
@@ -337,9 +349,33 @@ export default function Toolbar({
         )}
 
         {activeTab === "Transitions" && (
-          <div className="toolbar-placeholder">
-            Slide transitions can be changed in the Presentation Settings panel.
-          </div>
+          <>
+            <div className="ribbon-group transitions-preview-group">
+              <button className="toolbar-item large" onClick={onOpenPreview}>
+                <MdPreview />
+                <span>Preview</span>
+              </button>
+              <div className="ribbon-group-title">Preview</div>
+            </div>
+
+            <div className="ribbon-group ribbon-group--transitions">
+              {TRANSITIONS.map((t) => (
+                <button
+                  key={t.value}
+                  className={`transition-card ${currentTransition === t.value ? "active" : ""}`}
+                  onClick={() => onTransitionChange?.(t.value)}
+                  title={t.label}
+                >
+                  <div className={`transition-preview transition-preview--${t.value}`}>
+                    <span className="preview-square preview-square--a" />
+                    <span className="preview-square preview-square--b" />
+                  </div>
+                  <span className="transition-card-label">{t.label}</span>
+                </button>
+              ))}
+              <div className="ribbon-group-title">Transition to This Slide</div>
+            </div>
+          </>
         )}
 
         {activeTab === "Animations" && (

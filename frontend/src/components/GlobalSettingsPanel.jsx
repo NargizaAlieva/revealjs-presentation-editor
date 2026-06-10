@@ -1,6 +1,5 @@
 import "./GlobalSettingsPanel.css";
 
-const TRANSITIONS = ["slide", "fade", "convex", "concave", "zoom", "none"];
 const ASPECT_RATIOS = [
     { label: "16:9", width: 1280, height: 720 },
     { label: "4:3", width: 1024, height: 768 },
@@ -40,10 +39,6 @@ export default function GlobalSettingsPanel({
         }
     };
 
-    const handleTransitionChange = (e) => {
-        updateSlideTransition(e.target.value);
-    };
-
     const handleColorChange = (cssVariableName, newColor) => {
         if (!updateMasterTheme) return;
         const color6 = newColor.length === 9
@@ -71,21 +66,6 @@ export default function GlobalSettingsPanel({
                     {ASPECT_RATIOS.map((ratio) => (
                         <option key={ratio.label} value={ratio.label}>
                             {ratio.label} ({ratio.width}×{ratio.height})
-                        </option>
-                    ))}
-                </select>
-            </div>
-
-            <div className="global-settings-row">
-                <label className="global-settings-label">Slide Transition</label>
-                <select
-                    className="global-settings-select"
-                    defaultValue="slide"
-                    onChange={handleTransitionChange}
-                >
-                    {TRANSITIONS.map((t) => (
-                        <option key={t} value={t}>
-                            {t.charAt(0).toUpperCase() + t.slice(1)}
                         </option>
                     ))}
                 </select>
