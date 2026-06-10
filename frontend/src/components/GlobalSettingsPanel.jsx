@@ -1,4 +1,3 @@
-import { useSlides } from "../hooks/useSlides";
 import "./GlobalSettingsPanel.css";
 
 const TRANSITIONS = ["slide", "fade", "convex", "concave", "zoom", "none"];
@@ -7,10 +6,7 @@ const ASPECT_RATIOS = [
   { label: "4:3", width: 1024, height: 768 },
 ];
 
-export default function GlobalSettingsPanel() {
-  const { presentation, updateMasterDimensions, updateSlideTransition } =
-    useSlides();
-
+export default function GlobalSettingsPanel({ presentation, updateMasterDimensions, updateSlideTransition }) {
   const master = presentation?.slideset?.master ?? {};
   const currentAspectRatio = master["aspect-ratio"] ?? "16:9";
   const currentWidth = master["slide-dimensions"]?.width ?? 1280;
@@ -18,8 +14,11 @@ export default function GlobalSettingsPanel() {
 
   const handleAspectRatioChange = (e) => {
     const selected = ASPECT_RATIOS.find((r) => r.label === e.target.value);
-    if (selected && updateMasterDimensions) {
-      updateMasterDimensions(selected.width, selected.height, selected.label);
+    if (selected) {
+      updateMasterDimensions(
+        { width: selected.width, height: selected.height },
+        selected.label
+      );
     }
   };
 

@@ -9,8 +9,6 @@
 }
 
 .preview-window {
-  width: 960px;
-  height: 600px;
   background: white;
   padding: 0;
   border-radius: 8px;
@@ -31,13 +29,10 @@
 }
 
 .preview-window .reveal .slides {
-  width: 960px !important;
-  height: 540px !important;
+  text-align: left;
 }
 
 .preview-window .reveal section {
-  width: 960px !important;
-  height: 540px !important;
   text-align: left;
 }
 
