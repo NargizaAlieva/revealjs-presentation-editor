@@ -1,14 +1,40 @@
-const getSlides = (presentation) => presentation.slideset?.slides ?? [];
-const getLayouts = (presentation) => presentation.slideset?.layouts ?? [];
+const getSlides = (presentation) => presentation?.slideset?.slides ?? [];
 
-const setSlidesAndLayouts = (presentation, slides, layouts) => ({
+const getLayouts = (presentation) =>
+  presentation?.slideset?.master?.layouts ??
+  presentation?.slideset?.layouts ??
+  [];
+
+const setSlides = (presentation, slides) => ({
   ...presentation,
   slideset: {
     ...presentation.slideset,
     slides,
-    layouts,
   },
 });
+
+const setLayouts = (presentation, layouts) => {
+  if (presentation?.slideset?.master?.layouts) {
+    return {
+      ...presentation,
+      slideset: {
+        ...presentation.slideset,
+        master: {
+          ...presentation.slideset.master,
+          layouts,
+        },
+      },
+    };
+  }
+
+  return {
+    ...presentation,
+    slideset: {
+      ...presentation.slideset,
+      layouts,
+    },
+  };
+};
 
 export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
   const slides = [...getSlides(presentation)];
@@ -26,13 +52,7 @@ export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
     "layout-id": layoutId,
   };
 
-  return {
-    ...presentation,
-    slideset: {
-      ...presentation.slideset,
-      slides,
-    },
-  };
+  return setSlides(presentation, slides);
 };
 
 export const propagateLayoutChanges = (
@@ -40,30 +60,31 @@ export const propagateLayoutChanges = (
   layoutId,
   updatedPlaceholders,
 ) => {
+  const updateElementFromPlaceholder = (element) => {
+    const matchingPlaceholder = updatedPlaceholders.find(
+      (placeholder) =>
+        placeholder["placeholder-id"] === element["placeholder-id"],
+    );
+
+    if (!matchingPlaceholder) return element;
+
+    return {
+      ...element,
+      position: { ...matchingPlaceholder.position },
+      width: matchingPlaceholder.width,
+      height: matchingPlaceholder.height,
+    };
+  };
+
   const slides = getSlides(presentation).map((slide) => {
     if (slide["layout-id"] !== layoutId) return slide;
-
-    const updatedText = (slide.contents?.text ?? []).map((textElement) => {
-      const matchingPlaceholder = updatedPlaceholders.find(
-        (placeholder) =>
-          placeholder["placeholder-id"] === textElement["placeholder-id"],
-      );
-
-      if (!matchingPlaceholder) return textElement;
-
-      return {
-        ...textElement,
-        position: { ...matchingPlaceholder.position },
-        width: matchingPlaceholder.width,
-        height: matchingPlaceholder.height,
-      };
-    });
 
     return {
       ...slide,
       contents: {
         ...slide.contents,
-        text: updatedText,
+        text: (slide.contents?.text ?? []).map(updateElementFromPlaceholder),
+        media: (slide.contents?.media ?? []).map(updateElementFromPlaceholder),
       },
     };
   });
@@ -74,5 +95,7 @@ export const propagateLayoutChanges = (
       : layout,
   );
 
-  return setSlidesAndLayouts(presentation, slides, updatedLayouts);
+  const presentationWithSlides = setSlides(presentation, slides);
+
+  return setLayouts(presentationWithSlides, updatedLayouts);
 };
