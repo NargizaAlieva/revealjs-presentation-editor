@@ -1,45 +1,72 @@
-  .editor-page {
-    display: flex;
-    height: 100vh;
-    width: 100vw;
-    overflow: auto;
-    font-family: Arial, sans-serif;
-    background: #f3f4f6;
-  }
+.editor-page {
+  width: 100vw;
+  height: 100vh;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
 
-  .editor-main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-  }
+  font-family: Arial, sans-serif;
+  background: #f3f4f6;
+}
 
-  .editor-slide {
-    position: relative;
-    overflow: hidden;
-  }
+.editor-body {
+  flex: 1;
+  min-height: 0;
 
-  .draggable {
-    cursor: move;
-    box-sizing: border-box;
-  }
+  display: flex;
+  overflow: hidden;
+}
 
-  .draggable input,
-  .draggable textarea {
-    width: 100%;
-    height: 100%;
-    box-sizing: border-box;
-    border: 1px dashed transparent;
-    background: transparent;
-    resize: none;
-    outline: none;
-    font-family: inherit;
-    font-size: 24px;
-    padding: 8px;
-  }
+.editor-main {
+  flex: 1;
+  min-width: 0;
 
-  .draggable input:focus,
-  .draggable textarea:focus {
-    border-color: #6366f1;
-    background: rgba(99, 102, 241, 0.05);
-  }
+  display: flex;
+  flex-direction: column;
+
+  background: #e9e9e9;
+  border-left: 1px solid #d8d8d8;
+  border-right: 1px solid #d8d8d8;
+}
+
+.editor-slide {
+  position: relative;
+  overflow: hidden;
+
+  background: white;
+  border: 1px solid #cfcfcf;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.draggable {
+  cursor: move;
+  box-sizing: border-box;
+}
+
+.draggable:hover {
+  outline: 1px solid #6366f1;
+}
+
+.draggable input,
+.draggable textarea {
+  width: 100%;
+  height: 100%;
+
+  box-sizing: border-box;
+
+  border: 1px dashed transparent;
+  background: transparent;
+  resize: none;
+  outline: none;
+
+  font-family: inherit;
+  font-size: 24px;
+
+  padding: 8px;
+}
+
+.draggable input:focus,
+.draggable textarea:focus {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.05);
+}

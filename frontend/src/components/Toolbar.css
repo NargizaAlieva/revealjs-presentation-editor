@@ -1,28 +1,138 @@
 .toolbar {
-  height: 60px;
-  border-bottom: 1px solid #ddd;
+  width: 100%;
+  min-height: 118px;
+  background: #f3f4f6;
+  border-bottom: 1px solid #cfcfcf;
+  box-sizing: border-box;
+}
+
+.toolbar-tabs {
+  height: 34px;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  margin: 0;
+  background: #eef0f3;
+}
+
+.toolbar-tab {
+  height: 34px;
+
+  padding: 0 18px;
+  margin: 0;
+
+  border: none;
+  background: transparent;
+
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 16px;
-  background-color: #ffffff;
-}
+  justify-content: center;
 
-.toolbar button,
-.toolbar-upload {
-  padding: 6px 12px;
-  border: 1px solid #ccc;
-  background-color: #fff;
+  font-size: 14px;
   cursor: pointer;
-  font: inherit;
 }
 
-.toolbar button:hover,
+.toolbar-tab:hover {
+  background: #e2e5ea;
+}
+
+.toolbar-tab.active {
+  background: white;
+  font-weight: 600;
+  border-bottom: 2px solid #d6452f;
+}
+
+.toolbar-ribbon {
+  height: 84px;
+  display: flex;
+  align-items: stretch;
+  background: white;
+  padding: 6px 10px 4px 10px;
+  box-sizing: border-box;
+  overflow-x: auto;
+}
+
+.ribbon-group {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 0 12px 16px 12px;
+  border-right: 1px solid #d8d8d8;
+}
+
+.ribbon-group-title {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+
+  text-align: center;
+  font-size: 11px;
+  color: #555;
+}
+
+.toolbar-item,
+.toolbar-upload {
+  width: 58px;
+  height: 58px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 3px;
+
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.toolbar-item:hover,
 .toolbar-upload:hover {
-  background-color: #f5f5f5;
+  background: #f1f1f1;
 }
 
-.toolbar button:disabled {
-  opacity: 0.4;
+.toolbar-item:disabled {
+  opacity: 0.35;
   cursor: not-allowed;
+}
+
+.toolbar-item svg,
+.toolbar-upload svg {
+  font-size: 22px;
+}
+
+.toolbar-item span,
+.toolbar-upload span {
+  font-size: 11px;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.toolbar-placeholder {
+  padding: 20px;
+  font-size: 13px;
+  color: #666;
+}
+
+.toolbar-dropdown-container {
+  position: relative;
+}
+
+.layout-popup {
+  position: absolute;
+
+  top: 70px;
+  left: 0;
+
+  width: 320px;
+  height: 200px;
+
+  background: white;
+  border: 1px solid #ccc;
+  box-shadow: 0 4px 15px rgba(0,0,0,.15);
+
+  z-index: 1000;
 }

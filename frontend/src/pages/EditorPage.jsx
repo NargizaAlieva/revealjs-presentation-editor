@@ -69,56 +69,58 @@ export default function EditorPage() {
 
   return (
     <div className="editor-page">
-      <SlideList
-        slides={slides}
-        selectedSlideId={selectedSlideIndex}
-        onSelectSlide={setSelectedSlideId}
+      <Toolbar
+        onAddSlide={addSlide}
+        onDeleteSlide={deleteSlide}
+        onDuplicateSlide={duplicateSlide}
+        onMoveSlideUp={moveSlideUp}
+        onMoveSlideDown={moveSlideDown}
+        onSavePresentation={savePresentation}
+        onExportPresentation={exportPresentation}
+        onOpenPreview={() => setIsPreviewOpen(true)}
+        canDelete={slides.length > 1}
+        canMoveUp={selectedSlideIndex > 0}
+        canMoveDown={selectedSlideIndex < slides.length - 1}
+        onResetPresentation={resetPresentation}
+        onImageUpload={handleImageUpload}
+        onToggleSlideHidden={() => toggleSlideHidden(selectedSlideIndex)}
+        isSlideHidden={selectedSlide?.hidden}
       />
 
-      <div className="editor-main">
-        <Toolbar
-          onAddSlide={addSlide}
-          onDeleteSlide={deleteSlide}
-          onDuplicateSlide={duplicateSlide}
-          onMoveSlideUp={moveSlideUp}
-          onMoveSlideDown={moveSlideDown}
-          onSavePresentation={savePresentation}
-          onExportPresentation={exportPresentation}
-          onOpenPreview={() => setIsPreviewOpen(true)}
-          canDelete={slides.length > 1}
-          canMoveUp={selectedSlideIndex > 0}
-          canMoveDown={selectedSlideIndex < slides.length - 1}
-          onResetPresentation={resetPresentation}
-          onImageUpload={handleImageUpload}
-          onToggleSlideHidden={() => toggleSlideHidden(selectedSlideIndex)}
-          isSlideHidden={selectedSlide?.hidden}
+      <div className="editor-body">
+        <SlideList
+          slides={slides}
+          selectedSlideId={selectedSlideIndex}
+          onSelectSlide={setSelectedSlideId}
         />
 
-        {selectedSlide && (
-          <EditorCanvas
-            slide={selectedSlide}
-            presentation={presentation}
-            onChangeTextElement={updateTextElementContent}
-            onMoveTextElement={updateElementPosition}
-            onResizeTextElement={updateElementSize}
-            onFormatTextElement={updateTextElementFormatting}
-            onMoveMediaElement={updateElementPosition}
-            onResizeMediaElement={updateElementSize}
-            onDeleteTextElement={deleteElement}
-            onDeleteMedia={deleteMedia}
-            slideNotes={selectedSlide?.contents?.notes ?? ""}
-            onUpdateSlideNotes={updateSlideNotes}
-          />
-        )}
+        <div className="editor-main">
+          {selectedSlide && (
+            <EditorCanvas
+              slide={selectedSlide}
+              presentation={presentation}
+              onChangeTextElement={updateTextElementContent}
+              onMoveTextElement={updateElementPosition}
+              onResizeTextElement={updateElementSize}
+              onFormatTextElement={updateTextElementFormatting}
+              onMoveMediaElement={updateElementPosition}
+              onResizeMediaElement={updateElementSize}
+              onDeleteTextElement={deleteElement}
+              onDeleteMedia={deleteMedia}
+              slideNotes={selectedSlide?.contents?.notes ?? ""}
+              onUpdateSlideNotes={updateSlideNotes}
+            />
+          )}
+        </div>
+
+        <GlobalSettingsPanel
+          presentation={presentation}
+          updateMasterDimensions={updateMasterDimensions}
+          updateSlideTransition={updateSlideTransition}
+          updateMasterTheme={updateMasterTheme}
+        />
       </div>
 
-      <GlobalSettingsPanel
-        presentation={presentation}
-        updateMasterDimensions={updateMasterDimensions}
-        updateSlideTransition={updateSlideTransition}
-        updateMasterTheme={updateMasterTheme}
-      />
-      
       {isPreviewOpen && (
         <PreviewModal
           slides={slides}

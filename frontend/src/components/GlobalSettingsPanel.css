@@ -1,14 +1,19 @@
 .global-settings-panel {
+  min-width: 220px;
+  height: calc(100vh - 72px);
   padding: 16px;
   border-left: 1px solid #e0e0e0;
   background: #fafafa;
-  min-width: 220px;
+
+  box-sizing: border-box;
 }
 
 .global-settings-title {
   font-size: 14px;
   font-weight: 600;
-  margin: 0 0 16px 0;
+
+  margin: 8px 0 16px 0;
+
   color: #333;
 }
 
