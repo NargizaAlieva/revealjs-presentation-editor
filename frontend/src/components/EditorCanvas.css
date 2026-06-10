@@ -10,7 +10,8 @@
 }
 
 .editor-slide {
-  background-color: white;
+  background-color: var(--bg-light, white);
+  color: var(--text-dark, black);
   border: 1px solid #ccc;
   position: relative;
   margin: 0 auto;

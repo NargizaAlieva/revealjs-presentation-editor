@@ -42,3 +42,24 @@
   font-size: 11px;
   color: #999;
 }
+
+.color-theme-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.color-theme-name {
+  font-size: 11px;
+  color: #555;
+}
+
+.color-theme-picker {
+  width: 36px;
+  height: 24px;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 4px;
+}
