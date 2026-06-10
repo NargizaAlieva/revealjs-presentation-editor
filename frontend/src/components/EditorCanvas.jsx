@@ -320,6 +320,27 @@ export default function EditorCanvas({
                     }
                     style={{ width: "52px" }}
                   />
+
+                  <label className="line-spacing-control">
+                    LS
+                    <select
+                      title="Line Spacing"
+                      value={formatting["line-spacing"] ?? 1.15}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onChange={(e) =>
+                        onFormatTextElement(textElement.id, {
+                          "line-spacing": Number(e.target.value),
+                        })
+                      }
+                    >
+                      <option value={1}>1.0</option>
+                      <option value={1.15}>1.15</option>
+                      <option value={1.5}>1.5</option>
+                      <option value={2}>2.0</option>
+                      <option value={2.5}>2.5</option>
+                      <option value={3}>3.0</option>
+                    </select>
+                  </label>
                 </div>
               )}
 
@@ -347,10 +368,10 @@ export default function EditorCanvas({
                     fontWeight: formatting.weight ?? "normal",
                     fontStyle: formatting.italics ? "italic" : "normal",
                     textAlign: formatting.align ?? "left",
+                    lineHeight: formatting["line-spacing"] ?? 1.2,
                   }}
                 />
               )}
-
               {isSelected && (
                 <div
                   className="resize-handle"

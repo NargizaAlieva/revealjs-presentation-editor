@@ -183,3 +183,15 @@
   box-sizing: border-box;
   font: inherit;
 }
+
+.line-spacing-control {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.line-spacing-control select {
+  width: 60px;
+  font-size: 12px;
+}
