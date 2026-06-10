@@ -8,6 +8,7 @@ import { useEditorActions } from "../hooks/useEditorActions";
 import "./EditorPage.css";
 import PreviewModal from "../components/PreviewModal";
 import { exportToReveal } from "../core/export/exportToReveal";
+import GlobalSettingsPanel from "../components/GlobalSettingsPanel";
 
 export default function EditorPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -33,6 +34,9 @@ export default function EditorPage() {
     toggleSlideHidden,
     deleteMedia,
     updateSlideNotes,
+    updateMasterTheme,
+    updateMasterDimensions,
+    updateSlideTransition,
   } = useEditorActions(eventBus, selectedSlideIndex, slides.length);
 
   const exportPresentation = () => {
@@ -108,6 +112,13 @@ export default function EditorPage() {
         )}
       </div>
 
+      <GlobalSettingsPanel
+        presentation={presentation}
+        updateMasterDimensions={updateMasterDimensions}
+        updateSlideTransition={updateSlideTransition}
+        updateMasterTheme={updateMasterTheme}
+      />
+      
       {isPreviewOpen && (
         <PreviewModal
           slides={slides}

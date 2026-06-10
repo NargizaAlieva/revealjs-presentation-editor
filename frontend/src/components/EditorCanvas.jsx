@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "./EditorCanvas.css";
 import { getSlideSize } from "../utils/slidesetRenderUtils";
+import { buildColorThemeStyle } from "../core/render/revealRenderer";
 
 export default function EditorCanvas({
   slide,
@@ -23,6 +24,7 @@ export default function EditorCanvas({
   const [draggingMediaId, setDraggingMediaId] = useState(null);
   const [resizingMediaId, setResizingMediaId] = useState(null);
   const { width, height } = getSlideSize(presentation);
+  const colorThemeStyle = buildColorThemeStyle(presentation);
 
   const textElements = slide?.contents?.text ?? [];
   const mediaElements = slide?.contents?.media ?? [];
@@ -67,7 +69,7 @@ export default function EditorCanvas({
 
   if (!slide) {
     return (
-      <main className="canvas-wrapper">
+      <main className="canvas-wrapper" style={colorThemeStyle}>
         <section className="editor-slide">No slide selected</section>
       </main>
     );
@@ -162,10 +164,10 @@ export default function EditorCanvas({
   };
 
   return (
-    <main className="canvas-wrapper">
+    <main className="canvas-wrapper" style={colorThemeStyle}>
       <section
         className="editor-slide"
-        style={{ width: `${width}px`, height: `${height}px` }}
+        style={{ width: `${width}px`, height: `${height}px`, background: "var(--bg-light, white)", color: "var(--text-dark, black)", }}
         onMouseMove={handleMouseMove}
         onMouseUp={stopInteraction}
         onMouseLeave={stopInteraction}
@@ -334,6 +336,7 @@ export default function EditorCanvas({
                     fontWeight: formatting.weight ?? "normal",
                     fontStyle: formatting.italics ? "italic" : "normal",
                     textAlign: formatting.align ?? "left",
+                    color: formatting.color ?? "var(--text-dark, black)",
                   }}
                 />
               ) : (
@@ -347,6 +350,7 @@ export default function EditorCanvas({
                     fontWeight: formatting.weight ?? "normal",
                     fontStyle: formatting.italics ? "italic" : "normal",
                     textAlign: formatting.align ?? "left",
+                    color: formatting.color ?? "var(--text-dark, black)",
                   }}
                 />
               )}
