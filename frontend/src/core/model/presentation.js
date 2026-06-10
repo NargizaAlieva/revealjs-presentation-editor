@@ -1,3 +1,6 @@
+
+import { createDefaultLayouts } from "./defaultLayouts";
+
 const createId = (prefix = "id") => {
   if (globalThis.crypto?.randomUUID) {
     return `${prefix}-${globalThis.crypto.randomUUID()}`;
@@ -70,29 +73,6 @@ const createTextElement = ({
   ],
 });
 
-const createLayoutPlaceholder = ({
-  placeholderId,
-  x,
-  y,
-  width,
-  height,
-  type = "text",
-  role = "body",
-  padding = "8px",
-  background = "transparent",
-  formatting = {},
-}) => ({
-  "placeholder-id": placeholderId,
-  position: { x, y },
-  width,
-  height,
-  padding: { css: padding },
-  type,
-  role,
-  background,
-  formatting,
-});
-
 const createDefaultSlideContents = ({
   text = [],
   media = [],
@@ -109,6 +89,22 @@ const createDefaultSlideContents = ({
   background,
   transition,
   notes,
+});
+
+const createMediaElement = (placeholder) => ({
+  id: createId("media"),
+  "placeholder-id": placeholder["placeholder-id"],
+  "file-link": "",
+  "media-type": placeholder.type === "video" ? "video" : "image",
+  position: { ...placeholder.position },
+  width: placeholder.width,
+  height: placeholder.height,
+  rotation: 0,
+  "z-index": 1,
+  scale: 1,
+  crop: null,
+  effects: {},
+  playback: {},
 });
 
 export const createDefaultPresentation = () => {
@@ -128,41 +124,26 @@ export const createDefaultPresentation = () => {
     lineSpacing: "1.4em",
   });
 
-  const titlePlaceholder = createLayoutPlaceholder({
-    placeholderId: "title-placeholder",
-    x: 120,
-    y: 80,
-    width: 1040,
-    height: 90,
-    type: "text",
-    role: "title",
-    padding: "8px",
-    formatting: titleFormatting,
+  const layouts = createDefaultLayouts({
+    titleFormatting,
+    bodyFormatting,
   });
 
-  const bodyPlaceholder = createLayoutPlaceholder({
-    placeholderId: "body-placeholder",
-    x: 120,
-    y: 220,
-    width: 560,
-    height: 360,
-    type: "text",
-    role: "body",
-    padding: "12px",
-    formatting: bodyFormatting,
-  });
+  const defaultLayout = layouts.find(
+    (layout) => layout["layout-id"] === "title-content-media"
+  );
 
-  const mediaPlaceholder = createLayoutPlaceholder({
-    placeholderId: "media-placeholder",
-    x: 760,
-    y: 220,
-    width: 360,
-    height: 240,
-    type: "image",
-    role: "body",
-    padding: "0px",
-    formatting: {},
-  });
+  const titlePlaceholder = defaultLayout.placeholders.find(
+    (p) => p["placeholder-id"] === "title-placeholder"
+  );
+
+  const bodyPlaceholder = defaultLayout.placeholders.find(
+    (p) => p["placeholder-id"] === "body-placeholder"
+  );
+
+  const mediaPlaceholder = defaultLayout.placeholders.find(
+    (p) => p["placeholder-id"] === "media-placeholder"
+  );
 
   return {
     slideset: {
@@ -197,16 +178,7 @@ export const createDefaultPresentation = () => {
         ],
       },
 
-      layouts: [
-        {
-          "layout-id": "title-content-media",
-          placeholders: [
-            titlePlaceholder,
-            bodyPlaceholder,
-            mediaPlaceholder,
-          ],
-        },
-      ],
+      layouts,
 
       slides: [
         {
@@ -238,6 +210,7 @@ export const createDefaultPresentation = () => {
                 formatting: bodyFormatting,
               }),
             ],
+            media: [createMediaElement(mediaPlaceholder)],
           }),
         },
       ],
