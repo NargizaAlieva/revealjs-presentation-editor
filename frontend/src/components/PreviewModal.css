@@ -39,3 +39,15 @@
 .preview-window .reveal section div {
   box-sizing: border-box;
 }
+
+.reveal .slides section .fragment {
+  transition-duration: 800ms;
+}
+
+.reveal .slides section .fragment[data-fragment-speed="fast"] {
+  transition-duration: 200ms;
+}
+
+.reveal .slides section .fragment[data-fragment-speed="slow"] {
+  transition-duration: 2200ms;
+}

@@ -16,8 +16,9 @@ export default function EditorCanvas({
   onDeleteTextElement,
   slideNotes,
   onUpdateSlideNotes,
+  selectedElementId,
+  onSelectElement,
 }) {
-  const [selectedElementId, setSelectedElementId] = useState(null);
   const [draggingElementId, setDraggingElementId] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [resizingElementId, setResizingElementId] = useState(null);
@@ -48,12 +49,12 @@ export default function EditorCanvas({
 
       if (isTextElement) {
         onDeleteTextElement(selectedElementId);
-        setSelectedElementId(null);
+        onSelectElement(null);
       }
 
       if (isMediaElement) {
         onDeleteMedia(selectedElementId);
-        setSelectedElementId(null);
+        onSelectElement(null);
       }
     };
 
@@ -65,6 +66,7 @@ export default function EditorCanvas({
     mediaElements,
     onDeleteTextElement,
     onDeleteMedia,
+    onSelectElement,
   ]);
 
   if (!slide) {
@@ -172,7 +174,7 @@ export default function EditorCanvas({
         onMouseUp={stopInteraction}
         onMouseLeave={stopInteraction}
         onClick={(e) => {
-          if (e.target === e.currentTarget) setSelectedElementId(null);
+          if (e.target === e.currentTarget) onSelectElement(null);
         }}
       >
         {textElements.map((textElement) => {
@@ -194,7 +196,7 @@ export default function EditorCanvas({
                 background: textElement.background ?? "transparent",
                 zIndex: textElement["z-index"] ?? 1,
               }}
-              onMouseDown={() => setSelectedElementId(textElement.id)}
+              onMouseDown={() => onSelectElement(textElement.id)}
             >
               {/* Drag handle — only visible when selected */}
               {isSelected && (
@@ -227,7 +229,7 @@ export default function EditorCanvas({
                   onClick={(e) => {
                     e.stopPropagation();
                     onDeleteTextElement(textElement.id);
-                    setSelectedElementId(null);
+                    onSelectElement(null);
                   }}
                 >
                   Delete
@@ -409,7 +411,7 @@ export default function EditorCanvas({
               }}
               onMouseDown={(e) => {
                 e.stopPropagation();
-                setSelectedElementId(media.id);
+                onSelectElement(media.id);
 
                 const rect = e.currentTarget.getBoundingClientRect();
                 setDraggingMediaId(media.id);
@@ -438,7 +440,7 @@ export default function EditorCanvas({
                   onClick={(e) => {
                     e.stopPropagation();
                     onDeleteMedia(media.id);
-                    setSelectedElementId(null);
+                    onSelectElement(null);
                   }}
                 >
                   Delete

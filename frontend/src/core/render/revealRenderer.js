@@ -3,6 +3,8 @@ import { getSlideSize, getTextElements, getMediaElements } from "../../utils/sli
 
 export function buildTextElementStyle(textElement, index) {
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
+  const rotation = textElement.rotation ?? 0;
+
   return {
     position: "absolute",
     left: `${textElement.position?.x ?? 0}px`,
@@ -12,7 +14,7 @@ export function buildTextElementStyle(textElement, index) {
     background: textElement.background ?? "transparent",
     overflow: "hidden",
     zIndex: textElement["z-index"] ?? index + 1,
-    transform: `rotate(${textElement.rotation ?? 0}deg)`,
+    ...(rotation ? { transform: `rotate(${rotation}deg)` } : {}),
     fontSize: formatting.size ?? (index === 0 ? "44px" : "28px"),
     fontWeight: formatting.weight ?? (index === 0 ? "bold" : "normal"),
     fontStyle: formatting.italics ? "italic" : "normal",
@@ -24,6 +26,8 @@ export function buildTextElementStyle(textElement, index) {
 }
 
 export function buildMediaElementStyle(media, index) {
+  const rotation = media.rotation ?? 0;
+
   return {
     position: "absolute",
     left: `${media.position?.x ?? 0}px`,
@@ -32,7 +36,7 @@ export function buildMediaElementStyle(media, index) {
     height: `${media.height ?? 120}px`,
     objectFit: "contain",
     zIndex: media["z-index"] ?? index + 1,
-    transform: `rotate(${media.rotation ?? 0}deg)`,
+    ...(rotation ? { transform: `rotate(${rotation}deg)` } : {}),
   };
 }
 
@@ -87,6 +91,7 @@ export function initRevealDeck(containerElement, width, height) {
 
   deck.initialize().then(() => {
     deck.layout();
+    deck.sync();
   });
 
   return deck;
@@ -108,4 +113,59 @@ export function getSlideTransition(slide, defaultTransition = "slide") {
     return transition;
   }
   return defaultTransition;
+}
+
+const FRAGMENT_EFFECT_CLASSES = new Set([
+  "grow",
+  "shrink",
+  "shrink-down",
+  "fade-out",
+  "fade-up",
+  "fade-down",
+  "fade-left",
+  "fade-right",
+  "fade-in-then-out",
+  "fade-in-then-semi-out",
+  "highlight-red",
+  "highlight-green",
+  "highlight-blue",
+  "highlight-current-red",
+  "highlight-current-green",
+  "highlight-current-blue",
+  "strike",
+]);
+
+const SPEED_MAP = {
+  0.5: "fast",
+  1: undefined,
+  2: "slow",
+};
+
+export function buildAnimationMap(slide) {
+  const animations = slide?.contents?.animations ?? [];
+  const map = new Map();
+  animations.forEach((animation) => {
+    if (animation?.id) map.set(animation.id, animation);
+  });
+  return map;
+}
+
+export function getFragmentProps(animation) {
+  if (!animation) return null;
+
+  const effect = animation.effect ?? "fade-in";
+  const sequence = animation.sequence;
+  const rawSpeed = animation["effect-options"]?.speed ?? animation.speed;
+  const speed = SPEED_MAP[rawSpeed];
+
+  const classes = ["fragment"];
+  if (effect !== "fade-in" && effect !== "none" && FRAGMENT_EFFECT_CLASSES.has(effect)) {
+    classes.push(effect);
+  }
+
+  return {
+    className: classes.join(" "),
+    "data-fragment-index": Number.isFinite(sequence) ? sequence : undefined,
+    "data-fragment-speed": speed,
+  };
 }

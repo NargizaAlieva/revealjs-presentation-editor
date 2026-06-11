@@ -27,7 +27,16 @@ import {
   MdPalette,
   MdSearch,
   MdTextFields,
-  MdSlideshow,
+  MdBlock,
+  MdOpacity,
+  MdNorth,
+  MdSouth,
+  MdWest,
+  MdEast,
+  MdZoomOutMap,
+  MdCloseFullscreen,
+  MdStrikethroughS,
+  MdSpeed,
 } from "react-icons/md";
 
 const TABS = [
@@ -50,6 +59,18 @@ const TRANSITIONS = [
   { value: "zoom", label: "Zoom" },
 ];
 
+const ANIMATION_EFFECTS = [
+  { value: "none", label: "None", icon: MdBlock },
+  { value: "fade-in", label: "Fade", icon: MdOpacity },
+  { value: "fade-up", label: "Fade Up", icon: MdNorth },
+  { value: "fade-down", label: "Fade Down", icon: MdSouth },
+  { value: "fade-left", label: "Fade Left", icon: MdWest },
+  { value: "fade-right", label: "Fade Right", icon: MdEast },
+  { value: "grow", label: "Grow", icon: MdZoomOutMap },
+  { value: "shrink", label: "Shrink", icon: MdCloseFullscreen },
+  { value: "strike", label: "Strike", icon: MdStrikethroughS },
+];
+
 export default function Toolbar({
   onDeleteSlide,
   onDuplicateSlide,
@@ -67,6 +88,11 @@ export default function Toolbar({
   isSlideHidden,
   onTransitionChange,
   currentTransition,
+  selectedElement,
+  animations,
+  onAddAnimation,
+  onUpdateAnimation,
+  onDeleteAnimation,
 }) {
   const [activeTab, setActiveTab] = useState("Home");
   const [showLayouts, setShowLayouts] = useState(false);
@@ -90,35 +116,33 @@ export default function Toolbar({
 
       <div className="toolbar-ribbon">
         {activeTab === "File" && (
-          <>
-            <div className="ribbon-group">
-              <button
-                className="toolbar-item large"
-                onClick={onSavePresentation}
-              >
-                <MdSave />
-                <span>Save</span>
-              </button>
+          <div className="ribbon-group">
+            <button
+              className="toolbar-item large"
+              onClick={onSavePresentation}
+            >
+              <MdSave />
+              <span>Save</span>
+            </button>
 
-              <button
-                className="toolbar-item large"
-                onClick={onExportPresentation}
-              >
-                <MdFileUpload />
-                <span>Export</span>
-              </button>
+            <button
+              className="toolbar-item large"
+              onClick={onExportPresentation}
+            >
+              <MdFileUpload />
+              <span>Export</span>
+            </button>
 
-              <button
-                className="toolbar-item large"
-                onClick={onResetPresentation}
-              >
-                <MdRestartAlt />
-                <span>Reset</span>
-              </button>
+            <button
+              className="toolbar-item large"
+              onClick={onResetPresentation}
+            >
+              <MdRestartAlt />
+              <span>Reset</span>
+            </button>
 
-              <div className="ribbon-group-title">File</div>
-            </div>
-          </>
+            <div className="ribbon-group-title">File</div>
+          </div>
         )}
 
         {activeTab === "Home" && (
@@ -318,33 +342,31 @@ export default function Toolbar({
         )}
 
         {activeTab === "Insert" && (
-          <>
-            <div className="ribbon-group">
-              <label className="toolbar-item large toolbar-upload">
-                <MdImage />
-                <span>Pictures</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={onImageUpload}
-                  hidden
-                />
-              </label>
+          <div className="ribbon-group">
+            <label className="toolbar-item large toolbar-upload">
+              <MdImage />
+              <span>Pictures</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={onImageUpload}
+                hidden
+              />
+            </label>
 
-              <button className="toolbar-item large" disabled>
-                <MdTextFields />
-                <span>Text Box</span>
-              </button>
+            <button className="toolbar-item large" disabled>
+              <MdTextFields />
+              <span>Text Box</span>
+            </button>
 
-              <div className="ribbon-group-title">Insert</div>
-            </div>
-          </>
+            <div className="ribbon-group-title">Insert</div>
+          </div>
         )}
 
         {activeTab === "Design" && (
           <div className="toolbar-placeholder">
             Use the Presentation Settings panel on the right to change aspect
-            ratio, transition, and color theme.
+            ratio and color theme.
           </div>
         )}
 
@@ -378,11 +400,124 @@ export default function Toolbar({
           </>
         )}
 
-        {activeTab === "Animations" && (
-          <div className="toolbar-placeholder">
-            Animation tools are not implemented in this version.
-          </div>
-        )}
+        {activeTab === "Animations" && (() => {
+          const animation = selectedElement
+            ? (animations ?? []).find((a) => a.id === selectedElement.id)
+            : null;
+          const currentEffect = animation?.effect ?? "none";
+
+          const handleEffectClick = (effectValue) => {
+            if (!selectedElement) return;
+
+            if (effectValue === "none") {
+              if (animation) onDeleteAnimation?.(animation.id);
+              return;
+            }
+            if (animation) {
+              onUpdateAnimation?.(animation.id, { effect: effectValue });
+            } else {
+              onAddAnimation?.({
+                id: selectedElement.id,
+                sequence: (animations?.length ?? 0) + 1,
+                effect: effectValue,
+                speed: 1,
+                "effect-options": {},
+              });
+            }
+          };
+
+          return (
+            <>
+              <div className="ribbon-group transitions-preview-group">
+                <button className="toolbar-item large" onClick={onOpenPreview}>
+                  <MdPreview />
+                  <span>Preview</span>
+                </button>
+                <div className="ribbon-group-title">Preview</div>
+              </div>
+
+              <div className={`ribbon-group ribbon-group--animations ${!selectedElement ? "is-disabled" : ""}`}>
+                {ANIMATION_EFFECTS.map((fx) => {
+                  const Icon = fx.icon;
+                  return (
+                    <button
+                      key={fx.value}
+                      className={`effect-card ${currentEffect === fx.value ? "active" : ""}`}
+                      onClick={() => handleEffectClick(fx.value)}
+                      disabled={!selectedElement}
+                      title={fx.label}
+                    >
+                      <Icon className="effect-card-icon" />
+                      <span className="effect-card-label">{fx.label}</span>
+                    </button>
+                  );
+                })}
+                <div className="ribbon-group-title">
+                  {selectedElement
+                    ? `${selectedElement.label} — Animation`
+                    : "Select an element on the slide"}
+                </div>
+              </div>
+
+              {animation && (
+                <div className="ribbon-group ribbon-group--timing">
+                  <div className="timing-button timing-button--order">
+                    <MdFormatListNumbered className="timing-icon" />
+                    <span className="timing-label">Order</span>
+                    <div className="timing-stepper">
+                      <button
+                        type="button"
+                        className="timing-step-btn"
+                        onClick={() =>
+                          onUpdateAnimation?.(animation.id, {
+                            sequence: Math.max(1, (animation.sequence ?? 1) - 1),
+                          })
+                        }
+                      >
+                        −
+                      </button>
+                      <span className="timing-value">{animation.sequence ?? 1}</span>
+                      <button
+                        type="button"
+                        className="timing-step-btn"
+                        onClick={() =>
+                          onUpdateAnimation?.(animation.id, {
+                            sequence: (animation.sequence ?? 1) + 1,
+                          })
+                        }
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="timing-button">
+                    <MdSpeed className="timing-icon" />
+                    <span className="timing-label">Speed</span>
+                    <span className="timing-value">
+                      {animation.speed === 0.5 ? "Fast" : animation.speed === 2 ? "Slow" : "Medium"}
+                    </span>
+                    <select
+                      className="timing-control"
+                      value={animation.speed ?? 1}
+                      onChange={(e) =>
+                        onUpdateAnimation?.(animation.id, {
+                          speed: Number(e.target.value),
+                        })
+                      }
+                    >
+                      <option value={0.5}>Fast</option>
+                      <option value={1}>Medium</option>
+                      <option value={2}>Slow</option>
+                    </select>
+                  </div>
+
+                  <div className="ribbon-group-title">Timing</div>
+                </div>
+              )}
+            </>
+          );
+        })()}
 
         {activeTab === "Slide Show" && (
           <div className="ribbon-group">
