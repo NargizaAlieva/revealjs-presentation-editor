@@ -1,3 +1,4 @@
+import { useState } from "react";
 import FormatToolbar from "./FormatToolbar";
 import "./TextElement.css";
 
@@ -7,12 +8,18 @@ export default function TextElement({
   onSelect,
   onChangeTextElement,
   onFormatTextElement,
-  onDeleteTextElement,
   onStartDrag,
   onStartResize,
   onStartRotate,
 }) {
-  const text = textElement.paragraphs?.[0]?.runs?.[0]?.text ?? "";
+  const [isFormatting, setIsFormatting] = useState(false);
+
+  // Сбрасываем режим форматирования когда элемент теряет выделение
+  if (!isSelected && isFormatting) setIsFormatting(false);
+
+  const text = (textElement.paragraphs ?? [])
+    .map((p) => p.runs?.[0]?.text ?? "")
+    .join("\n");
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
   const isTitle = textElement["placeholder-id"]?.includes("title");
 
@@ -32,6 +39,7 @@ export default function TextElement({
         transformOrigin: "center center",
       }}
       onMouseDown={() => onSelect(textElement.id)}
+      onDoubleClick={() => setIsFormatting(true)}
     >
       {isSelected &&
         ["top", "right", "bottom", "left"].map((side) => (
@@ -42,21 +50,7 @@ export default function TextElement({
           />
         ))}
 
-      {isSelected && (
-        <button
-          type="button"
-          className="element-delete-button"
-          onMouseDown={(event) => event.stopPropagation()}
-          onClick={(event) => {
-            event.stopPropagation();
-            onDeleteTextElement(textElement.id);
-          }}
-        >
-          Delete
-        </button>
-      )}
-
-      {isSelected && (
+      {isSelected && isFormatting && (
         <FormatToolbar
           elementId={textElement.id}
           formatting={formatting}
@@ -74,8 +68,11 @@ export default function TextElement({
             fontSize: formatting.size ?? "24px",
             fontWeight: formatting.weight ?? "normal",
             fontStyle: formatting.italics ? "italic" : "normal",
+            textDecoration: formatting["text-decoration"] ?? "none",
             textAlign: formatting.align ?? "left",
             color: formatting.color ?? "var(--text-dark, black)",
+            fontFamily: formatting.font ?? "inherit",
+            backgroundColor: formatting.highlight ?? "transparent",
           }}
         />
       ) : (
@@ -88,26 +85,29 @@ export default function TextElement({
             fontSize: formatting.size ?? "24px",
             fontWeight: formatting.weight ?? "normal",
             fontStyle: formatting.italics ? "italic" : "normal",
+            textDecoration: formatting["text-decoration"] ?? "none",
             textAlign: formatting.align ?? "left",
             lineHeight: formatting["line-spacing"] ?? 1.2,
             color: formatting.color ?? "var(--text-dark, black)",
+            fontFamily: formatting.font ?? "inherit",
+            backgroundColor: formatting.highlight ?? "transparent",
           }}
         />
       )}
 
       {isSelected && (
         <div
-          className="resize-handle"
+          className="text-resize-handle"
           onMouseDown={(event) => {
             event.stopPropagation();
-            onStartResize(textElement.id);
+            onStartResize(event, textElement.id);
           }}
         />
       )}
       {isSelected && (
         <button
           type="button"
-          className="rotate-handle"
+          className="text-rotate-handle"
           onMouseDown={(event) => {
             event.preventDefault();
             event.stopPropagation();

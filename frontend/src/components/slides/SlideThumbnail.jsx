@@ -1,70 +1,81 @@
 import "./SlideThumbnail.css";
 
-const SLIDE_WIDTH = 960;
-const SLIDE_HEIGHT = 540;
-const THUMBNAIL_WIDTH = 160;
-const THUMBNAIL_HEIGHT = 90;
-const SCALE_X = THUMBNAIL_WIDTH / SLIDE_WIDTH;
-const SCALE_Y = THUMBNAIL_HEIGHT / SLIDE_HEIGHT;
+const THUMB_W = 180;
+const THUMB_H = 101; // 16:9
 
-// Flatten all paragraphs/runs into a single string (consistent with TextElement.jsx)
 const getElementText = (textElement) =>
   (textElement?.paragraphs ?? [])
     .map((p) => (p.runs ?? []).map((r) => r.text ?? "").join(""))
     .join(" ");
 
-export default function SlideThumbnail({ slide }) {
+export default function SlideThumbnail({
+  slide,
+  slideWidth = 1280,
+  slideHeight = 720,
+}) {
   const textElements = slide?.contents?.text ?? [];
   const mediaElements = slide?.contents?.media ?? [];
+  const scale = THUMB_W / slideWidth;
 
   return (
-    <div className="slide-thumbnail">
-      {textElements.map((textElement) => {
-        const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
-        const fontSize = parseInt(formatting.size ?? "16", 10);
+    <div
+      className="slide-thumbnail"
+      style={{ width: THUMB_W, height: THUMB_H }}
+    >
+      {/* Inner div at full slide size, scaled down — matches EditorCanvas exactly */}
+      <div
+        className="slide-thumbnail-inner"
+        style={{
+          width: slideWidth,
+          height: slideHeight,
+          transform: `scale(${scale})`,
+          transformOrigin: "top left",
+        }}
+      >
+        {textElements.map((textElement) => {
+          const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
+          return (
+            <div
+              key={textElement.id}
+              style={{
+                position: "absolute",
+                left: textElement.position?.x ?? 0,
+                top: textElement.position?.y ?? 0,
+                width: textElement.width ?? 300,
+                height: textElement.height ?? 80,
+                fontSize: formatting.size ?? "16px",
+                fontWeight: formatting.weight ?? "normal",
+                fontStyle: formatting.italics ? "italic" : "normal",
+                textAlign: formatting.align ?? "left",
+                color: formatting.color ?? "#111",
+                lineHeight: formatting["line-spacing"] ?? 1.2,
+                overflow: "hidden",
+                boxSizing: "border-box",
+                padding: "8px",
+              }}
+            >
+              {getElementText(textElement)}
+            </div>
+          );
+        })}
 
-        return (
-          <div
-            key={textElement.id}
-            className="slide-thumbnail-element"
+        {mediaElements.map((media) => (
+          <img
+            key={media.id}
+            src={media["file-link"]}
+            alt=""
             style={{
               position: "absolute",
-              left: `${(textElement.position?.x ?? 0) * SCALE_X}px`,
-              top: `${(textElement.position?.y ?? 0) * SCALE_Y}px`,
-              width: `${(textElement.width ?? 300) * SCALE_X}px`,
-              height: `${(textElement.height ?? 80) * SCALE_Y}px`,
-              fontSize: `${fontSize * SCALE_Y}px`,
-              fontWeight: formatting.weight ?? "normal",
-              textAlign: formatting.align ?? "left",
-              lineHeight: 1,
-              overflow: "hidden",
-              whiteSpace: "nowrap",
-              boxSizing: "border-box",
-              margin: 0,
-              padding: 0,
+              left: media.position?.x ?? 0,
+              top: media.position?.y ?? 0,
+              width: media.width ?? 300,
+              height: media.height ?? 200,
+              objectFit: "contain",
+              pointerEvents: "none",
             }}
-          >
-            {getElementText(textElement)}
-          </div>
-        );
-      })}
-
-      {mediaElements.map((media) => (
-        <img
-          key={media.id}
-          src={media["file-link"]}
-          alt=""
-          className="slide-thumbnail-media"
-          style={{
-            position: "absolute",
-            left: `${(media.position?.x ?? 0) * SCALE_X}px`,
-            top: `${(media.position?.y ?? 0) * SCALE_Y}px`,
-            width: `${(media.width ?? 300) * SCALE_X}px`,
-            height: `${(media.height ?? 200) * SCALE_Y}px`,
-            objectFit: "contain",
-          }}
-        />
-      ))}
+          />
+        ))}
+      </div>
     </div>
   );
 }

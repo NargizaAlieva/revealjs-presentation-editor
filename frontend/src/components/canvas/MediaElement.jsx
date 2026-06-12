@@ -3,6 +3,7 @@ import "./MediaElement.css";
 export default function MediaElement({
   media,
   isSelected,
+  onSelect,
   onStartDrag,
   onDeleteMedia,
   onStartResize,
@@ -23,7 +24,10 @@ export default function MediaElement({
         transform: `rotate(${media.rotation ?? 0}deg)`,
         transformOrigin: "center center",
       }}
-      onMouseDown={(event) => onStartDrag(event, media.id)}
+      onMouseDown={(event) => {
+        onSelect(media.id);
+        onStartDrag(event, media.id);
+      }}
     >
       <img
         src={media["file-link"]}
@@ -51,17 +55,20 @@ export default function MediaElement({
 
       {isSelected && (
         <div
-          className="resize-handle-img"
+          className="media-resize-handle"
           onMouseDown={(event) => {
+            event.preventDefault();
             event.stopPropagation();
-            onStartResize(media.id);
+            onStartResize(event, media.id);
           }}
         />
       )}
+
       {isSelected && (
         <div
-          className="rotate-handle-img"
+          className="media-rotate-handle"
           onMouseDown={(event) => {
+            event.preventDefault();
             event.stopPropagation();
             onStartRotate(event, media.id);
           }}

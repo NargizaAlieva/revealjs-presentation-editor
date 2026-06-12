@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import "./EditorCanvas.css";
 import { getSlideSize } from "../utils/slidesetRenderUtils";
 import { buildColorThemeStyle } from "../core/render/revealRenderer";
@@ -24,8 +24,8 @@ export default function EditorCanvas({
   onCanvasZoom,
   selectedElementId: externalSelectedElementId,
   onSelectElement,
-  onRotateTextElement,
-  onRotateMediaElement,
+  updateElement,
+  updateMedia,
 }) {
   const [localSelectedElementId, setLocalSelectedElementId] = useState(null);
 
@@ -68,10 +68,12 @@ export default function EditorCanvas({
     stopInteraction,
     startDraggingText,
     startDraggingMedia,
-    setResizingElementId,
-    setResizingMediaId,
-    startRotatingMedia,
+    startResizingText,
+    startResizingMedia,
     startRotatingText,
+    startRotatingMedia,
+    snapInfo,
+    isRotating,
   } = useCanvasInteractions({
     width,
     height,
@@ -80,10 +82,12 @@ export default function EditorCanvas({
     mediaElements,
     onMoveTextElement,
     onResizeTextElement,
-    onRotateTextElement,
     onMoveMediaElement,
     onResizeMediaElement,
-    onRotateMediaElement,
+    onRotateTextElement: (textElementId, angle) =>
+      updateElement(textElementId, { rotation: angle }),
+    onRotateMediaElement: (mediaId, angle) =>
+      updateMedia(mediaId, { rotation: angle }),
     setSelectedElementId,
   });
 
@@ -126,15 +130,26 @@ export default function EditorCanvas({
     setSelectedElementId,
   ]);
 
-  const handleWorkspaceWheel = (event) => {
-    if (!event.ctrlKey) return;
+  const workspaceRef = useRef(null);
 
-    event.preventDefault();
-    event.stopPropagation();
+  useEffect(() => {
+    const el = workspaceRef.current;
+    if (!el) return;
 
-    const delta = event.deltaY < 0 ? 2 : -2;
-    onCanvasZoom?.(delta);
-  };
+    const handleWheel = (event) => {
+      if (!event.ctrlKey) return;
+      event.preventDefault();
+
+      // Use proportional delta for smooth touchpad pinch-to-zoom.
+      // Touchpad pinch fires many small events; mouse wheel fires few large ones.
+      const raw = event.deltaY;
+      const delta = -(raw * 0.3);
+      onCanvasZoom?.(delta);
+    };
+
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, [onCanvasZoom]);
 
   if (!slide) {
     return (
@@ -148,65 +163,174 @@ export default function EditorCanvas({
 
   return (
     <main className="canvas-wrapper" style={colorThemeStyle}>
-      <div className="slide-workspace" onWheel={handleWorkspaceWheel}>
-        <div
-          className="zoom-stage"
-          style={{
-            width: `${scaledWidth}px`,
-            height: `${scaledHeight}px`,
-          }}
-        >
+      <div className="slide-workspace" ref={workspaceRef}>
+        <div className="slide-workspace-inner">
           <div
-            className="editor-slide"
+            className="zoom-stage"
             style={{
-              width: `${width}px`,
-              height: `${height}px`,
-              background: "var(--bg-light, white)",
-              color: "var(--text-dark, black)",
-              transform: `scale(${zoomScale})`,
-              transformOrigin: "top left",
-            }}
-            onMouseMove={handleMouseMove}
-            onMouseUp={stopInteraction}
-            onMouseLeave={stopInteraction}
-            onClick={(event) => {
-              if (event.target === event.currentTarget) {
-                setSelectedElementId(null);
-              }
+              width: `${scaledWidth}px`,
+              height: `${scaledHeight}px`,
             }}
           >
-            {textElements.map((textElement) => (
-              <TextElement
-                key={textElement.id}
-                textElement={textElement}
-                isSelected={selectedElementId === textElement.id}
-                onSelect={setSelectedElementId}
-                onChangeTextElement={onChangeTextElement}
-                onFormatTextElement={onFormatTextElement}
-                onDeleteTextElement={(id) => {
-                  onDeleteTextElement(id);
+            <div
+              className="editor-slide"
+              style={{
+                width: `${width}px`,
+                height: `${height}px`,
+                background: "var(--bg-light, white)",
+                color: "var(--text-dark, black)",
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: `translate(-50%, -50%) scale(${zoomScale})`,
+                transformOrigin: "center center",
+              }}
+              onMouseMove={handleMouseMove}
+              onMouseUp={stopInteraction}
+              onMouseLeave={stopInteraction}
+              onClick={(event) => {
+                if (event.target === event.currentTarget) {
                   setSelectedElementId(null);
-                }}
-                onStartDrag={startDraggingText}
-                onStartResize={setResizingElementId}
-                onStartRotate={startRotatingText}
-              />
-            ))}
+                }
+              }}
+            >
+              {textElements.map((textElement) => (
+                <TextElement
+                  key={textElement.id}
+                  textElement={textElement}
+                  isSelected={selectedElementId === textElement.id}
+                  onSelect={setSelectedElementId}
+                  onChangeTextElement={onChangeTextElement}
+                  onFormatTextElement={onFormatTextElement}
+                  onDeleteTextElement={(id) => {
+                    onDeleteTextElement(id);
+                    setSelectedElementId(null);
+                  }}
+                  onStartDrag={startDraggingText}
+                  onStartResize={startResizingText}
+                  onStartRotate={startRotatingText}
+                />
+              ))}
 
-            {mediaElements.map((media) => (
-              <MediaElement
-                key={media.id}
-                media={media}
-                isSelected={selectedElementId === media.id}
-                onStartDrag={startDraggingMedia}
-                onDeleteMedia={(id) => {
-                  onDeleteMedia(id);
-                  setSelectedElementId(null);
-                }}
-                onStartResize={setResizingMediaId}
-                onStartRotate={startRotatingMedia}
-              />
-            ))}
+              {mediaElements.map((media) => (
+                <MediaElement
+                  key={media.id}
+                  media={media}
+                  isSelected={selectedElementId === media.id}
+                  onSelect={setSelectedElementId}
+                  onStartDrag={startDraggingMedia}
+                  onDeleteMedia={(id) => {
+                    onDeleteMedia(id);
+                    setSelectedElementId(null);
+                  }}
+                  onStartResize={startResizingMedia}
+                  onStartRotate={startRotatingMedia}
+                />
+              ))}
+
+              {/* Rotation guide — shows snap angle during rotation */}
+              {isRotating &&
+                snapInfo &&
+                (() => {
+                  const el =
+                    textElements.find((e) => e.id === snapInfo.elementId) ||
+                    mediaElements.find((e) => e.id === snapInfo.elementId);
+                  if (!el) return null;
+                  const cx = (el.position?.x ?? 0) + (el.width ?? 300) / 2;
+                  const cy = (el.position?.y ?? 0) + (el.height ?? 80) / 2;
+                  return (
+                    <>
+                      {/* Horizontal guide at 0° / 180° — passes through element center */}
+                      {(snapInfo.angle === 0 || snapInfo.angle === 180) && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: cy,
+                            left: 0,
+                            right: 0,
+                            height: 1,
+                            background: "#4f46e5",
+                            opacity: 0.7,
+                            pointerEvents: "none",
+                          }}
+                        />
+                      )}
+                      {/* Vertical guide at 90° / 270° — passes through element center */}
+                      {(snapInfo.angle === 90 || snapInfo.angle === 270) && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            left: cx,
+                            top: 0,
+                            bottom: 0,
+                            width: 1,
+                            background: "#4f46e5",
+                            opacity: 0.7,
+                            pointerEvents: "none",
+                          }}
+                        />
+                      )}
+                      {/* Diagonal guide at 45° / 135° / 225° / 315° */}
+                      {(snapInfo.angle === 45 ||
+                        snapInfo.angle === 135 ||
+                        snapInfo.angle === 225 ||
+                        snapInfo.angle === 315) && (
+                        <svg
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            height: "100%",
+                            pointerEvents: "none",
+                            overflow: "visible",
+                          }}
+                        >
+                          <line
+                            x1={cx - 2000}
+                            y1={
+                              cy +
+                              (snapInfo.angle === 45 || snapInfo.angle === 225
+                                ? 2000
+                                : -2000)
+                            }
+                            x2={cx + 2000}
+                            y2={
+                              cy +
+                              (snapInfo.angle === 45 || snapInfo.angle === 225
+                                ? -2000
+                                : 2000)
+                            }
+                            stroke="#4f46e5"
+                            strokeWidth="1"
+                            opacity="0.7"
+                          />
+                        </svg>
+                      )}
+                      {/* Angle badge near element center */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: cy - 32,
+                          left: cx,
+                          transform: "translateX(-50%)",
+                          background: snapInfo.snapped
+                            ? "#4f46e5"
+                            : "rgba(0,0,0,0.65)",
+                          color: "white",
+                          fontSize: 12,
+                          padding: "2px 8px",
+                          borderRadius: 4,
+                          pointerEvents: "none",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {snapInfo.angle}°
+                      </div>
+                    </>
+                  );
+                })()}
+            </div>
           </div>
         </div>
       </div>

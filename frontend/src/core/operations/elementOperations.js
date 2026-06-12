@@ -142,3 +142,23 @@ export const resizeElement = (presentation, slideIndex, elementId, newSize) => {
 
   return setSlides(presentation, slides);
 };
+
+export const updateElement = (presentation, slideIndex, elementId, updates) => {
+    const slides = [...getSlides(presentation)];
+    const slide = slides[slideIndex];
+    if (!slide) return presentation;
+
+    const applyUpdates = (element) =>
+      element.id === elementId ? { ...element, ...updates } : element;
+
+    slides[slideIndex] = {
+      ...slide,
+      contents: {
+        ...slide.contents,
+        text: (slide.contents?.text ?? []).map(applyUpdates),
+        media: (slide.contents?.media ?? []).map(applyUpdates),
+      },
+    };
+
+    return setSlides(presentation, slides);
+  };

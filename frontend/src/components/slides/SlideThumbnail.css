@@ -1,23 +1,11 @@
-/* ── Thumbnail container ───────────────────────────────── */
 .slide-thumbnail {
   position: relative;
-  width: 160px;
-  height: 90px;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
-/* ── Text element preview ──────────────────────────────── */
-.slide-thumbnail-element {
-  overflow: hidden;
-  color: #111827;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  white-space: nowrap;
-}
-
-/* ── Media element preview ─────────────────────────────── */
-.slide-thumbnail-media {
-  pointer-events: none;
-  user-select: none;
+.slide-thumbnail-inner {
+  position: absolute;
+  top: 0;
+  left: 0;
 }

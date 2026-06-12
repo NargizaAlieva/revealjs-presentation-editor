@@ -29,6 +29,7 @@ export {
   updateTextFormatting,
   moveElement,
   resizeElement,
+  updateElement,
 } from "./operations/elementOperations";
 
 export {

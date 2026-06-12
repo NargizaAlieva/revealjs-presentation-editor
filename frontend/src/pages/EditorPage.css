@@ -9,6 +9,43 @@
   background: #f3f4f6;
 }
 
+/* Toggle strip — thin clickable bar, no arrow */
+.ui-toggle-strip {
+  width: 100%;
+  height: 15px;
+  flex-shrink: 0;
+
+  background: #d1d5db;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+  z-index: 2000;
+}
+
+.ui-toggle-strip:hover {
+  background: #93c5fd;
+}
+
+/* Toolbar overlay — floats over content */
+.toolbar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1500;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* StatusBar overlay — floats over content at bottom */
+.statusbar-overlay {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1500;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .editor-body {
   flex: 1;
   min-height: 0;

@@ -14,15 +14,22 @@
   flex: 1;
   min-height: 0;
 
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-
   overflow: auto;
-  padding: 40px;
 
   background-color: #eeeeee;
   touch-action: none;
+}
+
+.slide-workspace-inner {
+  min-width: 100%;
+  min-height: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 80px;
+  box-sizing: border-box;
 }
 
 .zoom-stage {
@@ -40,7 +47,7 @@
   border: 1px solid #cfcfcf;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
 
-  overflow: hidden;
+  overflow: visible;
 }
 
 .slide-notes {
