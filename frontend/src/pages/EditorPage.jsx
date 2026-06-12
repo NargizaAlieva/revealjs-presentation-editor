@@ -9,6 +9,7 @@ import "./EditorPage.css";
 import PreviewModal from "../components/PreviewModal";
 import { exportToReveal } from "../core/export/exportToReveal";
 import GlobalSettingsPanel from "../components/GlobalSettingsPanel";
+import StatusBar from "../components/StatusBar";
 
 export default function EditorPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -66,6 +67,17 @@ export default function EditorPage() {
     reader.readAsDataURL(file);
     event.target.value = "";
   };
+  const [zoom, setZoom] = useState(100);
+  const [showNotes, setShowNotes] = useState(true);
+
+  const zoomIn = () => setZoom((z) => Math.min(200, z + 10));
+  const zoomOut = () => setZoom((z) => Math.max(25, z - 10));
+  const handleCanvasZoom = (delta) => {
+    setZoom((currentZoom) => {
+      const nextZoom = currentZoom + delta;
+      return Math.min(200, Math.max(25, nextZoom));
+    });
+  };
 
   return (
     <div className="editor-page">
@@ -109,6 +121,9 @@ export default function EditorPage() {
               onDeleteMedia={deleteMedia}
               slideNotes={selectedSlide?.contents?.notes ?? ""}
               onUpdateSlideNotes={updateSlideNotes}
+              zoom={zoom}
+              showNotes={showNotes}
+              onCanvasZoom={handleCanvasZoom}
             />
           )}
         </div>
@@ -128,6 +143,16 @@ export default function EditorPage() {
           onClose={() => setIsPreviewOpen(false)}
         />
       )}
+
+      <StatusBar
+        selectedSlideIndex={selectedSlideIndex}
+        totalSlides={slides.length}
+        zoom={zoom}
+        onZoomChange={setZoom}
+        onZoomIn={zoomIn}
+        onZoomOut={zoomOut}
+        onToggleNotes={() => setShowNotes((v) => !v)}
+      />
     </div>
   );
 }
