@@ -14,6 +14,8 @@ import { getSlideSize } from "../utils/slidesetRenderUtils";
 export default function EditorPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [showUI, setShowUI] = useState(false);
+  const [activeTab, setActiveTab] = useState("Home");
+  const [previewEffect, setPreviewEffect] = useState(null);
 
   const { state, eventBus } = useEditorState();
   const { presentation, slides, selectedSlide, selectedSlideIndex } =
@@ -39,13 +41,33 @@ export default function EditorPage() {
     toggleSlideHidden,
     deleteMedia,
     updateSlideNotes,
+    updateMasterTheme,
+    updateMasterDimensions,
     updateSlideTransition,
+    updateTransitionDuration,
+    applyTransitionToAll,
     addAnimation,
     updateAnimation,
     deleteAnimation,
   } = useEditorActions(eventBus, selectedSlideIndex, slides.length);
 
-  const exportPresentation = () => exportToReveal(presentation);
+  const exportPresentation = () => {
+    exportToReveal(presentation);
+  };
+
+  const triggerAnimationPreview = (elementId, effect, speed) => {
+    setPreviewEffect({
+      type: "animation",
+      elementId,
+      effect,
+      speed,
+      key: Date.now(),
+    });
+  };
+
+  const triggerTransitionPreview = (effect) => {
+    setPreviewEffect({ type: "transition", effect, key: Date.now() });
+  };
 
   const handleImageUpload = (event) => {
     const file = event.target.files?.[0];
@@ -96,9 +118,10 @@ export default function EditorPage() {
     return null;
   })();
 
+  const { width: slideWidth, height: slideHeight } = getSlideSize(presentation);
+
   return (
     <div className="editor-page" onDoubleClick={() => setShowUI(false)}>
-      {/* Thin strip — only visible when toolbar is hidden */}
       {!showUI && (
         <div
           className="ui-toggle-strip"
@@ -106,11 +129,9 @@ export default function EditorPage() {
             e.stopPropagation();
             setShowUI(true);
           }}
-          onDoubleClick={(e) => e.stopPropagation()}
         />
       )}
 
-      {/* Toolbar — fixed overlay, does not push content */}
       {showUI && (
         <div
           className="toolbar-overlay"
@@ -118,6 +139,8 @@ export default function EditorPage() {
           onDoubleClick={(e) => e.stopPropagation()}
         >
           <Toolbar
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
             onAddSlide={addSlide}
             onDeleteSlide={deleteSlide}
             onDuplicateSlide={duplicateSlide}
@@ -135,11 +158,24 @@ export default function EditorPage() {
             isSlideHidden={selectedSlide?.hidden}
             onTransitionChange={updateSlideTransition}
             currentTransition={selectedSlide?.contents?.transition ?? "none"}
+            currentDuration={
+              selectedSlide?.contents?.transitionDuration ?? 0.75
+            }
+            onDurationChange={updateTransitionDuration}
+            onApplyTransitionToAll={() =>
+              applyTransitionToAll(
+                selectedSlide?.contents?.transition ?? "none",
+                selectedSlide?.contents?.transitionDuration ?? 0.75,
+              )
+            }
             selectedElement={selectedElement}
             animations={selectedSlide?.contents?.animations ?? []}
             onAddAnimation={addAnimation}
             onUpdateAnimation={updateAnimation}
             onDeleteAnimation={deleteAnimation}
+            onAnimationPreview={triggerAnimationPreview}
+            onTransitionPreview={triggerTransitionPreview}
+            onPreviewEffect={setPreviewEffect}
           />
         </div>
       )}
@@ -149,8 +185,8 @@ export default function EditorPage() {
           slides={slides}
           selectedSlideId={selectedSlideIndex}
           onSelectSlide={setSelectedSlideId}
-          slideWidth={getSlideSize(presentation).width}
-          slideHeight={getSlideSize(presentation).height}
+          slideWidth={slideWidth}
+          slideHeight={slideHeight}
         />
 
         <div className="editor-main">
@@ -175,20 +211,14 @@ export default function EditorPage() {
               onSelectElement={setSelectedElementId}
               updateElement={updateElement}
               updateMedia={updateMedia}
+              previewEffect={previewEffect}
+              animations={selectedSlide?.contents?.animations ?? []}
+              showAnimationBadges={activeTab === "Animations"}
             />
           )}
         </div>
       </div>
 
-      {isPreviewOpen && (
-        <PreviewModal
-          slides={slides}
-          presentation={presentation}
-          onClose={() => setIsPreviewOpen(false)}
-        />
-      )}
-
-      {/* StatusBar — fixed overlay at bottom */}
       {showUI && (
         <div
           className="statusbar-overlay"
@@ -206,6 +236,14 @@ export default function EditorPage() {
             onToggleNotes={() => setShowNotes((v) => !v)}
           />
         </div>
+      )}
+
+      {isPreviewOpen && (
+        <PreviewModal
+          slides={slides}
+          presentation={presentation}
+          onClose={() => setIsPreviewOpen(false)}
+        />
       )}
     </div>
   );

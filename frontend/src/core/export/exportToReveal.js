@@ -16,6 +16,70 @@ function buildColorThemeCss(presentation) {
   return `:root {\n${vars}\n}`;
 }
 
+const FRAGMENT_EFFECT_CLASSES = new Set([
+  "grow",
+  "shrink",
+  "shrink-down",
+  "fade-out",
+  "fade-up",
+  "fade-down",
+  "fade-left",
+  "fade-right",
+  "fade-in-then-out",
+  "fade-in-then-semi-out",
+  "highlight-red",
+  "highlight-green",
+  "highlight-blue",
+  "highlight-current-red",
+  "highlight-current-green",
+  "highlight-current-blue",
+  "strike",
+]);
+
+const SPEED_MAP = { 0.5: "fast", 1: undefined, 2: "slow" };
+
+function buildAnimationMap(slide) {
+  const animations = slide.contents?.animations ?? [];
+  const map = new Map();
+  animations.forEach((animation) => {
+    if (animation?.id) map.set(animation.id, animation);
+  });
+  return map;
+}
+
+function fragmentClassesFor(effect) {
+  const classes = ["fragment"];
+  if (effect !== "fade-in" && effect !== "none" && FRAGMENT_EFFECT_CLASSES.has(effect)) {
+    classes.push(effect);
+  }
+  return classes.join(" ");
+}
+
+function fragmentDataAttrs(sequence, speedRaw) {
+  const speed = SPEED_MAP[speedRaw];
+  return [
+    Number.isFinite(sequence) ? `data-fragment-index="${sequence}"` : "",
+    speed ? `data-fragment-speed="${speed}"` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function applyFragment(innerHtml, wrapperStyle, animation) {
+  if (!animation) {
+    return `<div style="${wrapperStyle}">${innerHtml}</div>`;
+  }
+
+  const effect = animation.effect ?? "fade-in";
+  const sequence = animation.sequence;
+  const speedRaw = animation["effect-options"]?.speed ?? animation.speed;
+
+  const classes = fragmentClassesFor(effect);
+  const dataAttrs = fragmentDataAttrs(sequence, speedRaw);
+
+  return `<div class="${classes}" ${dataAttrs} style="${wrapperStyle}">${innerHtml}</div>`;
+}
+
 function buildTextElementStyle(textElement, index) {
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
   const rotation = textElement.rotation ?? 0;
@@ -40,106 +104,84 @@ function buildTextElementStyle(textElement, index) {
   ].join("; ");
 }
 
-function buildTextElementContent(textElement) {
+function buildPStyle(paragraphFormatting) {
+  return [
+    paragraphFormatting.align ? `text-align: ${paragraphFormatting.align}` : "",
+    paragraphFormatting.margin
+      ? `margin: ${paragraphFormatting.margin}`
+      : "margin: 0 0 4px 0",
+  ]
+    .filter(Boolean)
+    .join("; ");
+}
+
+function buildRunHtml(run) {
+  const runFormatting = run.formatting ?? {};
+  const style = [
+    runFormatting.weight ? `font-weight: ${runFormatting.weight}` : "",
+    runFormatting.italics ? "font-style: italic" : "",
+    runFormatting.color ? `color: ${runFormatting.color}` : "",
+    runFormatting.size ? `font-size: ${runFormatting.size}` : "",
+    runFormatting["text-decoration"]
+      ? `text-decoration: ${runFormatting["text-decoration"]}`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("; ");
+
+  const text = escapeHtml(run.text ?? "");
+  if (run.link?.href) {
+    return `<a href="${escapeHtml(run.link.href)}" target="${run.link.target ?? "_blank"}" style="${style}">${text}</a>`;
+  }
+  return style ? `<span style="${style}">${text}</span>` : text;
+}
+
+function buildTextElementContent(textElement, animation) {
   if (!textElement.paragraphs?.length) return "";
+
+  const sequenceMode = animation?.["effect-options"]?.sequence ?? "as-one-object";
+  const perLine = animation && sequenceMode !== "as-one-object";
 
   return textElement.paragraphs
     .map((paragraph) => {
       const paragraphFormatting = paragraph.formatting ?? {};
-      const runsHtml = (paragraph.runs ?? [])
-        .map((run) => {
-          const runFormatting = run.formatting ?? {};
-          const style = [
-            runFormatting.weight ? `font-weight: ${runFormatting.weight}` : "",
-            runFormatting.italics ? "font-style: italic" : "",
-            runFormatting.color ? `color: ${runFormatting.color}` : "",
-            runFormatting.size ? `font-size: ${runFormatting.size}` : "",
-            runFormatting["text-decoration"]
-              ? `text-decoration: ${runFormatting["text-decoration"]}`
-              : "",
-          ]
-            .filter(Boolean)
-            .join("; ");
+      const pStyle = buildPStyle(paragraphFormatting);
 
-          const text = escapeHtml(run.text ?? "");
-          if (run.link?.href) {
-            return `<a href="${escapeHtml(run.link.href)}" target="${run.link.target ?? "_blank"}" style="${style}">${text}</a>`;
-          }
-          return style ? `<span style="${style}">${text}</span>` : text;
+      const runsHtml = (paragraph.runs ?? []).map(buildRunHtml).join("");
+
+      if (!perLine) {
+        return `<p style="${pStyle}">${runsHtml}</p>`;
+      }
+
+      const lines = runsHtml.split("\n");
+
+      if (lines.length === 1) {
+        const classes = fragmentClassesFor(animation.effect ?? "fade-in");
+        const dataAttrs = fragmentDataAttrs(
+          animation.sequence,
+          animation["effect-options"]?.speed ?? animation.speed,
+        );
+        return `<p class="${classes}" ${dataAttrs} style="${pStyle}">${runsHtml}</p>`;
+      }
+
+      return lines
+        .map((line, lineIndex) => {
+          const fragIndex =
+            sequenceMode === "all-at-once"
+              ? animation.sequence
+              : animation.sequence + lineIndex;
+
+          const classes = fragmentClassesFor(animation.effect ?? "fade-in");
+          const dataAttrs = fragmentDataAttrs(
+            fragIndex,
+            animation["effect-options"]?.speed ?? animation.speed,
+          );
+
+          return `<p class="${classes}" ${dataAttrs} style="${pStyle}">${line}</p>`;
         })
         .join("");
-
-      const pStyle = [
-        paragraphFormatting.align
-          ? `text-align: ${paragraphFormatting.align}`
-          : "",
-        paragraphFormatting.margin
-          ? `margin: ${paragraphFormatting.margin}`
-          : "margin: 0 0 4px 0",
-      ]
-        .filter(Boolean)
-        .join("; ");
-
-      return `<p style="${pStyle}">${runsHtml}</p>`;
     })
     .join("");
-}
-
-const FRAGMENT_EFFECT_CLASSES = new Set([
-  "grow",
-  "shrink",
-  "shrink-down",
-  "fade-out",
-  "fade-up",
-  "fade-down",
-  "fade-left",
-  "fade-right",
-  "fade-in-then-out",
-  "fade-in-then-semi-out",
-  "highlight-red",
-  "highlight-green",
-  "highlight-blue",
-  "highlight-current-red",
-  "highlight-current-green",
-  "highlight-current-blue",
-  "strike",
-]);
-
-
-function buildAnimationMap(slide) {
-  const animations = slide.contents?.animations ?? [];
-  const map = new Map();
-  animations.forEach((animation) => {
-    if (animation?.id) map.set(animation.id, animation);
-  });
-  return map;
-}
-
-function applyFragment(innerHtml, wrapperStyle, animation) {
-  if (!animation) {
-    return `<div style="${wrapperStyle}">${innerHtml}</div>`;
-  }
-
-  const effect = animation.effect ?? "fade-in";
-  const sequence = animation.sequence;
-
-  const SPEED_MAP = { 0.5: "fast", 1: undefined, 2: "slow" };
-  const rawSpeed = animation["effect-options"]?.speed ?? animation.speed;
-  const speed = SPEED_MAP[rawSpeed];
-
-  const fragmentClasses = ["fragment"];
-  if (effect !== "fade-in" && effect !== "none" && FRAGMENT_EFFECT_CLASSES.has(effect)) {
-    fragmentClasses.push(effect);
-  }
-
-  const dataAttrs = [
-    Number.isFinite(sequence) ? `data-fragment-index="${sequence}"` : "",
-    speed ? `data-fragment-speed="${speed}"` : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  return `<div class="${fragmentClasses.join(" ")}" ${dataAttrs} style="${wrapperStyle}">${innerHtml}</div>`;
 }
 
 function buildSlideSection(slide, width, height) {
@@ -152,11 +194,14 @@ function buildSlideSection(slide, width, height) {
   const textElementsHtml = textElements
     .map((textElement, index) => {
       const animation = animationMap.get(textElement.id);
-      return applyFragment(
-        buildTextElementContent(textElement),
-        buildTextElementStyle(textElement, index),
-        animation
-      );
+      const sequenceMode = animation?.["effect-options"]?.sequence ?? "as-one-object";
+      const style = buildTextElementStyle(textElement, index);
+      const content = buildTextElementContent(textElement, animation);
+
+      if (!animation || sequenceMode === "as-one-object") {
+        return applyFragment(content, style, animation);
+      }
+      return `<div style="${style}">${content}</div>`;
     })
     .join("");
 

@@ -8,13 +8,15 @@ export default function TextElement({
   onSelect,
   onChangeTextElement,
   onFormatTextElement,
+  onDeleteTextElement,
   onStartDrag,
   onStartResize,
   onStartRotate,
+  previewClassName,
+  animationOrder,
 }) {
   const [isFormatting, setIsFormatting] = useState(false);
 
-  // Сбрасываем режим форматирования когда элемент теряет выделение
   if (!isSelected && isFormatting) setIsFormatting(false);
 
   const text = (textElement.paragraphs ?? [])
@@ -25,7 +27,9 @@ export default function TextElement({
 
   return (
     <div
-      className={isSelected ? "draggable selected" : "draggable"}
+      className={["draggable", isSelected ? "selected" : "", previewClassName]
+        .filter(Boolean)
+        .join(" ")}
       style={{
         position: "absolute",
         left: `${textElement.position?.x ?? 0}px`,
@@ -34,13 +38,16 @@ export default function TextElement({
         height: `${textElement.height ?? 80}px`,
         background: textElement.background ?? "transparent",
         zIndex: textElement["z-index"] ?? 1,
-
         transform: `rotate(${textElement.rotation ?? 0}deg)`,
         transformOrigin: "center center",
       }}
       onMouseDown={() => onSelect(textElement.id)}
       onDoubleClick={() => setIsFormatting(true)}
     >
+      {animationOrder != null && (
+        <span className="animation-order-badge">{animationOrder}</span>
+      )}
+
       {isSelected &&
         ["top", "right", "bottom", "left"].map((side) => (
           <div
@@ -49,6 +56,20 @@ export default function TextElement({
             onMouseDown={(event) => onStartDrag(event, textElement.id)}
           />
         ))}
+
+      {isSelected && (
+        <button
+          type="button"
+          className="element-delete-button"
+          onMouseDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            onDeleteTextElement(textElement.id);
+          }}
+        >
+          Delete
+        </button>
+      )}
 
       {isSelected && isFormatting && (
         <FormatToolbar
@@ -104,6 +125,7 @@ export default function TextElement({
           }}
         />
       )}
+
       {isSelected && (
         <button
           type="button"

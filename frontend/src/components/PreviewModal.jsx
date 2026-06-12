@@ -9,6 +9,7 @@ import {
   buildSlideContainerStyle,
   buildColorThemeStyle,
   getTextContent,
+  getTextLines,
   getVisibleSlidesForPreview,
   getSlideTextElements,
   getSlideMediaElements,
@@ -16,6 +17,7 @@ import {
   getSlideTransition,
   buildAnimationMap,
   getFragmentProps,
+  getPerLineFragments,
 } from "../core/render/revealRenderer";
 
 export default function PreviewModal({ slides, presentation, onClose }) {
@@ -64,11 +66,31 @@ export default function PreviewModal({ slides, presentation, onClose }) {
                   <div style={buildSlideContainerStyle(width, height)}>
 
                     {textElements.map((textElement, index) => {
-                      const fragmentProps = getFragmentProps(animationMap.get(textElement.id));
+                      const animation = animationMap.get(textElement.id);
+                      const baseStyle = buildTextElementStyle(textElement, index);
+                      const lines = getTextLines(textElement);
+                      const perLine = getPerLineFragments(textElement, animation, lines);
+
+                      if (perLine) {
+                        return (
+                          <div
+                            key={textElement.id || index}
+                            style={baseStyle}
+                          >
+                            {perLine.map((entry, lineIndex) => (
+                              <p key={lineIndex} {...entry.fragmentProps}>
+                                {entry.text}
+                              </p>
+                            ))}
+                          </div>
+                        );
+                      }
+
+                      const fragmentProps = getFragmentProps(animation);
                       return (
                         <div
                           key={textElement.id || index}
-                          style={buildTextElementStyle(textElement, index)}
+                          style={baseStyle}
                           {...fragmentProps}
                         >
                           {getTextContent(textElement)}

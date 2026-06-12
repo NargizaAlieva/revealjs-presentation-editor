@@ -1,29 +1,37 @@
 import { useState } from "react";
 import {
   MdAdd,
-  MdArrowDownward,
-  MdArrowUpward,
-  MdContentCopy,
-  MdContentCut,
-  MdContentPaste,
   MdDelete,
-  MdFormatAlignCenter,
-  MdFormatAlignLeft,
-  MdFormatAlignRight,
+  MdContentCopy,
+  MdVisibilityOff,
+  MdVisibility,
+  MdArrowUpward,
+  MdArrowDownward,
+  MdContentPaste,
+  MdContentCut,
   MdFormatBold,
   MdFormatItalic,
+  MdFormatUnderlined,
+  MdFormatAlignLeft,
+  MdFormatAlignCenter,
+  MdFormatAlignRight,
   MdFormatListBulleted,
   MdFormatListNumbered,
-  MdFormatUnderlined,
   MdPalette,
   MdSearch,
   MdTextFields,
-  MdVisibility,
-  MdVisibilityOff,
 } from "react-icons/md";
-import "./HomeTab.css";
+
+const LAYOUTS = [
+  { id: "title-content", label: "Title and Content" },
+  { id: "title-content-media", label: "Title, Content and Media" },
+  { id: "two-columns", label: "Two Columns" },
+  { id: "title-only", label: "Title Only" },
+  { id: "blank", label: "Blank" },
+];
 
 export default function HomeTab({
+  onAddSlide,
   onDeleteSlide,
   onDuplicateSlide,
   onMoveSlideUp,
@@ -35,6 +43,11 @@ export default function HomeTab({
   isSlideHidden,
 }) {
   const [showLayouts, setShowLayouts] = useState(false);
+
+  const handleLayoutSelect = (layoutId) => {
+    onAddSlide?.(layoutId);
+    setShowLayouts(false);
+  };
 
   return (
     <>
@@ -60,7 +73,7 @@ export default function HomeTab({
         <div className="toolbar-dropdown-container">
           <button
             className="toolbar-item large"
-            onClick={() => setShowLayouts(!showLayouts)}
+            onClick={() => setShowLayouts((v) => !v)}
           >
             <MdAdd />
             <span>New Slide</span>
@@ -70,33 +83,34 @@ export default function HomeTab({
             <div className="layout-popup">
               <h4>Layouts</h4>
 
-              <button className="layout-option">
-                <div className="layout-thumb title-layout" />
-                <span>Title Slide</span>
-              </button>
-
-              <button className="layout-option">
-                <div className="layout-thumb title-content-layout" />
-                <span>Title and Content</span>
-              </button>
-
-              <button className="layout-option">
-                <div className="layout-thumb two-content-layout" />
-                <span>Two Content</span>
-              </button>
-
-              <button className="layout-option">
-                <div className="layout-thumb blank-layout" />
-                <span>Blank</span>
-              </button>
+              {LAYOUTS.map((layout) => (
+                <button
+                  key={layout.id}
+                  className="layout-option"
+                  onClick={() => handleLayoutSelect(layout.id)}
+                >
+                  <div className={`layout-thumb layout-thumb--${layout.id}`}>
+                    {layout.id === "title-content-media" && (
+                      <div className="layout-thumb-media" />
+                    )}
+                  </div>
+                  <span>{layout.label}</span>
+                </button>
+              ))}
             </div>
           )}
         </div>
 
         <div className="mini-stack text-stack">
-          <button className="mini-text-command" disabled>Layout</button>
-          <button className="mini-text-command" disabled>Reset</button>
-          <button className="mini-text-command" disabled>Section</button>
+          <button className="mini-text-command" disabled>
+            Layout
+          </button>
+          <button className="mini-text-command" disabled>
+            Reset
+          </button>
+          <button className="mini-text-command" disabled>
+            Section
+          </button>
         </div>
 
         <button
@@ -132,11 +146,21 @@ export default function HomeTab({
         </div>
 
         <div className="font-row">
-          <button className="small-format" disabled><MdFormatBold /></button>
-          <button className="small-format" disabled><MdFormatItalic /></button>
-          <button className="small-format" disabled><MdFormatUnderlined /></button>
-          <button className="small-format" disabled>A</button>
-          <button className="small-format" disabled><MdPalette /></button>
+          <button className="small-format" disabled>
+            <MdFormatBold />
+          </button>
+          <button className="small-format" disabled>
+            <MdFormatItalic />
+          </button>
+          <button className="small-format" disabled>
+            <MdFormatUnderlined />
+          </button>
+          <button className="small-format" disabled>
+            A
+          </button>
+          <button className="small-format" disabled>
+            <MdPalette />
+          </button>
         </div>
 
         <div className="ribbon-group-title">Font</div>
@@ -144,16 +168,30 @@ export default function HomeTab({
 
       <div className="ribbon-group paragraph-group">
         <div className="font-row">
-          <button className="small-format" disabled><MdFormatListBulleted /></button>
-          <button className="small-format" disabled><MdFormatListNumbered /></button>
-          <button className="small-format" disabled><MdArrowUpward /></button>
-          <button className="small-format" disabled><MdArrowDownward /></button>
+          <button className="small-format" disabled>
+            <MdFormatListBulleted />
+          </button>
+          <button className="small-format" disabled>
+            <MdFormatListNumbered />
+          </button>
+          <button className="small-format" disabled>
+            <MdArrowUpward />
+          </button>
+          <button className="small-format" disabled>
+            <MdArrowDownward />
+          </button>
         </div>
 
         <div className="font-row">
-          <button className="small-format" disabled><MdFormatAlignLeft /></button>
-          <button className="small-format" disabled><MdFormatAlignCenter /></button>
-          <button className="small-format" disabled><MdFormatAlignRight /></button>
+          <button className="small-format" disabled>
+            <MdFormatAlignLeft />
+          </button>
+          <button className="small-format" disabled>
+            <MdFormatAlignCenter />
+          </button>
+          <button className="small-format" disabled>
+            <MdFormatAlignRight />
+          </button>
         </div>
 
         <div className="ribbon-group-title">Paragraph</div>

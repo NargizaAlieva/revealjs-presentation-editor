@@ -26,8 +26,14 @@ export default function EditorCanvas({
   onSelectElement,
   updateElement,
   updateMedia,
+  previewEffect,
+  animations = [],
+  showAnimationBadges = false,
 }) {
   const [localSelectedElementId, setLocalSelectedElementId] = useState(null);
+  const [playingElementId, setPlayingElementId] = useState(null);
+  const [playingEffect, setPlayingEffect] = useState(null);
+  const [playingTransition, setPlayingTransition] = useState(null);
 
   const selectedElementId =
     externalSelectedElementId !== undefined
@@ -63,6 +69,11 @@ export default function EditorCanvas({
     [slide?.contents?.media],
   );
 
+  const animationSequenceMap = useMemo(
+    () => new Map(animations.map((a) => [a.id, a.sequence])),
+    [animations],
+  );
+
   const {
     handleMouseMove,
     stopInteraction,
@@ -90,6 +101,54 @@ export default function EditorCanvas({
       updateMedia(mediaId, { rotation: angle }),
     setSelectedElementId,
   });
+
+  useEffect(() => {
+    if (!previewEffect) return;
+
+    if (previewEffect.type === "animation") {
+      setPlayingElementId(null);
+      setPlayingEffect(null);
+
+      const raf = requestAnimationFrame(() => {
+        setPlayingElementId(previewEffect.elementId);
+        setPlayingEffect(previewEffect.effect);
+      });
+
+      const duration =
+        previewEffect.speed === 0.5
+          ? 200
+          : previewEffect.speed === 2
+            ? 2200
+            : 800;
+
+      const timer = setTimeout(() => {
+        setPlayingElementId(null);
+        setPlayingEffect(null);
+      }, duration + 100);
+
+      return () => {
+        cancelAnimationFrame(raf);
+        clearTimeout(timer);
+      };
+    }
+
+    if (previewEffect.type === "transition") {
+      setPlayingTransition(null);
+
+      const raf = requestAnimationFrame(() => {
+        setPlayingTransition(previewEffect.effect);
+      });
+
+      const timer = setTimeout(() => {
+        setPlayingTransition(null);
+      }, 900);
+
+      return () => {
+        cancelAnimationFrame(raf);
+        clearTimeout(timer);
+      };
+    }
+  }, [previewEffect]);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -140,8 +199,6 @@ export default function EditorCanvas({
       if (!event.ctrlKey) return;
       event.preventDefault();
 
-      // Use proportional delta for smooth touchpad pinch-to-zoom.
-      // Touchpad pinch fires many small events; mouse wheel fires few large ones.
       const raw = event.deltaY;
       const delta = -(raw * 0.3);
       onCanvasZoom?.(delta);
@@ -161,6 +218,10 @@ export default function EditorCanvas({
     );
   }
 
+  const transitionClass = playingTransition
+    ? `play-transition play-transition-${playingTransition}`
+    : "";
+
   return (
     <main className="canvas-wrapper" style={colorThemeStyle}>
       <div className="slide-workspace" ref={workspaceRef}>
@@ -173,7 +234,9 @@ export default function EditorCanvas({
             }}
           >
             <div
-              className="editor-slide"
+              className={["editor-slide", transitionClass]
+                .filter(Boolean)
+                .join(" ")}
               style={{
                 width: `${width}px`,
                 height: `${height}px`,
@@ -194,53 +257,80 @@ export default function EditorCanvas({
                 }
               }}
             >
-              {textElements.map((textElement) => (
-                <TextElement
-                  key={textElement.id}
-                  textElement={textElement}
-                  isSelected={selectedElementId === textElement.id}
-                  onSelect={setSelectedElementId}
-                  onChangeTextElement={onChangeTextElement}
-                  onFormatTextElement={onFormatTextElement}
-                  onDeleteTextElement={(id) => {
-                    onDeleteTextElement(id);
-                    setSelectedElementId(null);
-                  }}
-                  onStartDrag={startDraggingText}
-                  onStartResize={startResizingText}
-                  onStartRotate={startRotatingText}
-                />
-              ))}
+              {textElements.map((textElement) => {
+                const playClass =
+                  playingElementId === textElement.id
+                    ? `play-effect play-${playingEffect}`
+                    : "";
 
-              {mediaElements.map((media) => (
-                <MediaElement
-                  key={media.id}
-                  media={media}
-                  isSelected={selectedElementId === media.id}
-                  onSelect={setSelectedElementId}
-                  onStartDrag={startDraggingMedia}
-                  onDeleteMedia={(id) => {
-                    onDeleteMedia(id);
-                    setSelectedElementId(null);
-                  }}
-                  onStartResize={startResizingMedia}
-                  onStartRotate={startRotatingMedia}
-                />
-              ))}
+                return (
+                  <TextElement
+                    key={textElement.id}
+                    textElement={textElement}
+                    isSelected={selectedElementId === textElement.id}
+                    onSelect={setSelectedElementId}
+                    onChangeTextElement={onChangeTextElement}
+                    onFormatTextElement={onFormatTextElement}
+                    onDeleteTextElement={(id) => {
+                      onDeleteTextElement(id);
+                      setSelectedElementId(null);
+                    }}
+                    onStartDrag={startDraggingText}
+                    onStartResize={startResizingText}
+                    onStartRotate={startRotatingText}
+                    previewClassName={playClass}
+                    animationOrder={
+                      showAnimationBadges
+                        ? animationSequenceMap.get(textElement.id)
+                        : undefined
+                    }
+                  />
+                );
+              })}
 
-              {/* Rotation guide — shows snap angle during rotation */}
+              {mediaElements.map((media) => {
+                const playClass =
+                  playingElementId === media.id
+                    ? `play-effect play-${playingEffect}`
+                    : "";
+
+                return (
+                  <MediaElement
+                    key={media.id}
+                    media={media}
+                    isSelected={selectedElementId === media.id}
+                    onSelect={setSelectedElementId}
+                    onStartDrag={startDraggingMedia}
+                    onDeleteMedia={(id) => {
+                      onDeleteMedia(id);
+                      setSelectedElementId(null);
+                    }}
+                    onStartResize={startResizingMedia}
+                    onStartRotate={startRotatingMedia}
+                    previewClassName={playClass}
+                    animationOrder={
+                      showAnimationBadges
+                        ? animationSequenceMap.get(media.id)
+                        : undefined
+                    }
+                  />
+                );
+              })}
+
               {isRotating &&
                 snapInfo &&
                 (() => {
                   const el =
                     textElements.find((e) => e.id === snapInfo.elementId) ||
                     mediaElements.find((e) => e.id === snapInfo.elementId);
+
                   if (!el) return null;
+
                   const cx = (el.position?.x ?? 0) + (el.width ?? 300) / 2;
                   const cy = (el.position?.y ?? 0) + (el.height ?? 80) / 2;
+
                   return (
                     <>
-                      {/* Horizontal guide at 0° / 180° — passes through element center */}
                       {(snapInfo.angle === 0 || snapInfo.angle === 180) && (
                         <div
                           style={{
@@ -255,7 +345,7 @@ export default function EditorCanvas({
                           }}
                         />
                       )}
-                      {/* Vertical guide at 90° / 270° — passes through element center */}
+
                       {(snapInfo.angle === 90 || snapInfo.angle === 270) && (
                         <div
                           style={{
@@ -270,7 +360,7 @@ export default function EditorCanvas({
                           }}
                         />
                       )}
-                      {/* Diagonal guide at 45° / 135° / 225° / 315° */}
+
                       {(snapInfo.angle === 45 ||
                         snapInfo.angle === 135 ||
                         snapInfo.angle === 225 ||
@@ -307,7 +397,7 @@ export default function EditorCanvas({
                           />
                         </svg>
                       )}
-                      {/* Angle badge near element center */}
+
                       <div
                         style={{
                           position: "absolute",

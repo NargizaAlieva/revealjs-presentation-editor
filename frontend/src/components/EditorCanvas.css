@@ -88,3 +88,313 @@
 .slide-notes textarea::placeholder {
   color: #666;
 }
+
+.play-effect {
+  animation-duration: 800ms;
+  animation-fill-mode: both;
+  animation-timing-function: ease-out;
+}
+
+.play-fade-in {
+  animation-name: previewFadeIn;
+}
+
+.play-fade-up {
+  animation-name: previewFadeUp;
+}
+
+.play-fade-down {
+  animation-name: previewFadeDown;
+}
+
+.play-fade-left {
+  animation-name: previewFadeLeft;
+}
+
+.play-fade-right {
+  animation-name: previewFadeRight;
+}
+
+.play-grow {
+  animation-name: previewGrow;
+}
+
+.play-shrink {
+  animation-name: previewShrink;
+}
+
+@keyframes previewFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes previewFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes previewFadeDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes previewFadeLeft {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes previewFadeRight {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes previewGrow {
+  from {
+    transform: scale(0.5);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes previewShrink {
+  from {
+    transform: scale(1);
+  }
+
+  to {
+    transform: scale(0.7);
+  }
+}
+
+.play-strike input,
+.play-strike textarea {
+  animation-name: previewStrike;
+  animation-duration: 800ms;
+  text-decoration-thickness: 2px;
+  animation-fill-mode: both;
+  animation-timing-function: ease-out;
+}
+
+@keyframes previewStrike {
+  0% { text-decoration: none; }
+  100% { text-decoration: line-through; }
+}
+
+/* shrink-down */
+.play-shrink-down {
+  animation-name: previewShrinkDown;
+}
+@keyframes previewShrinkDown {
+  from { transform: scale(1); opacity: 1; }
+  to   { transform: scale(0.5) translateY(40px); opacity: 0; }
+}
+
+/* fade-out */
+.play-fade-out {
+  animation-name: previewFadeOut;
+}
+@keyframes previewFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* fade-in-then-out */
+.play-fade-in-then-out {
+  animation-name: previewFadeInThenOut;
+}
+@keyframes previewFadeInThenOut {
+  0%   { opacity: 0; }
+  40%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* fade-in-then-semi-out */
+.play-fade-in-then-semi-out {
+  animation-name: previewFadeInThenSemiOut;
+}
+@keyframes previewFadeInThenSemiOut {
+  0%   { opacity: 0; }
+  40%  { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
+/* highlight-red */
+.play-highlight-red {
+  animation-name: previewHighlightRed;
+}
+@keyframes previewHighlightRed {
+  0%   { background-color: transparent; }
+  50%  { background-color: #ff000066; }
+  100% { background-color: #ff000066; }
+}
+
+/* highlight-green */
+.play-highlight-green {
+  animation-name: previewHighlightGreen;
+}
+@keyframes previewHighlightGreen {
+  0%   { background-color: transparent; }
+  50%  { background-color: #00cc0066; }
+  100% { background-color: #00cc0066; }
+}
+
+/* highlight-blue */
+.play-highlight-blue {
+  animation-name: previewHighlightBlue;
+}
+@keyframes previewHighlightBlue {
+  0%   { background-color: transparent; }
+  50%  { background-color: #0077ff66; }
+  100% { background-color: #0077ff66; }
+}
+
+/* highlight-current-red (flashes then fades) */
+.play-highlight-current-red {
+  animation-name: previewHighlightCurrentRed;
+}
+@keyframes previewHighlightCurrentRed {
+  0%   { background-color: transparent; }
+  40%  { background-color: #ff000066; }
+  100% { background-color: transparent; }
+}
+
+/* highlight-current-green */
+.play-highlight-current-green {
+  animation-name: previewHighlightCurrentGreen;
+}
+@keyframes previewHighlightCurrentGreen {
+  0%   { background-color: transparent; }
+  40%  { background-color: #00cc0066; }
+  100% { background-color: transparent; }
+}
+
+/* highlight-current-blue */
+.play-highlight-current-blue {
+  animation-name: previewHighlightCurrentBlue;
+}
+@keyframes previewHighlightCurrentBlue {
+  0%   { background-color: transparent; }
+  40%  { background-color: #0077ff66; }
+  100% { background-color: transparent; }
+}
+
+.editor-slide.play-transition {
+  animation-duration: 800ms;
+  animation-timing-function: ease-out;
+  animation-fill-mode: both;
+}
+
+/* Fade: просто появляется */
+.play-transition-fade {
+  animation-name: previewSlideFade;
+}
+
+/* Slide: въезжает справа */
+.play-transition-slide {
+  animation-name: previewSlideMove;
+}
+
+/* Convex: приходит маленьким с лёгким поворотом (выпуклость) */
+.play-transition-convex {
+  animation-name: previewSlideConvex;
+  transform-origin: center center;
+}
+
+/* Concave: приходит большим с лёгким поворотом (вогнутость) */
+.play-transition-concave {
+  animation-name: previewSlideConcave;
+  transform-origin: center center;
+}
+
+/* Zoom: появляется из центра */
+.play-transition-zoom {
+  animation-name: previewSlideZoom;
+  transform-origin: center center;
+}
+
+@keyframes previewSlideFade {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes previewSlideMove {
+  0%   { transform: translateX(60px); opacity: 0.3; }
+  100% { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes previewSlideConvex {
+  0%   { transform: scale(0.6) rotate(6deg) translate(30px, -20px); opacity: 0; }
+  100% { transform: scale(1)   rotate(0deg) translate(0, 0);        opacity: 1; }
+}
+
+@keyframes previewSlideConcave {
+  0%   { transform: scale(1.4) rotate(-6deg) translate(-30px, 20px); opacity: 0; }
+  100% { transform: scale(1)   rotate(0deg)  translate(0, 0);        opacity: 1; }
+}
+
+@keyframes previewSlideZoom {
+  0%   { transform: scale(0.4); opacity: 0; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+.animation-order-badge {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  z-index: 1000;
+
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #d6452f;
+  color: white;
+
+  font-size: 11px;
+  font-weight: 700;
+  font-family: Arial, sans-serif;
+
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+
+  pointer-events: none;
+}
