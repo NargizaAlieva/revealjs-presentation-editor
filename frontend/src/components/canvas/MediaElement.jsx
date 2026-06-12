@@ -6,6 +6,7 @@ export default function MediaElement({
   onStartDrag,
   onDeleteMedia,
   onStartResize,
+  onStartRotate,
 }) {
   return (
     <div
@@ -19,6 +20,8 @@ export default function MediaElement({
         width: `${media.width ?? 300}px`,
         height: `${media.height ?? 200}px`,
         zIndex: media["z-index"] ?? 1,
+        transform: `rotate(${media.rotation ?? 0}deg)`,
+        transformOrigin: "center center",
       }}
       onMouseDown={(event) => onStartDrag(event, media.id)}
     >
@@ -29,7 +32,6 @@ export default function MediaElement({
         style={{
           width: "100%",
           height: "100%",
-          transform: `rotate(${media.rotation ?? 0}deg)`,
         }}
       />
 
@@ -49,10 +51,19 @@ export default function MediaElement({
 
       {isSelected && (
         <div
-          className="resize-handle"
+          className="resize-handle-img"
           onMouseDown={(event) => {
             event.stopPropagation();
             onStartResize(media.id);
+          }}
+        />
+      )}
+      {isSelected && (
+        <div
+          className="rotate-handle-img"
+          onMouseDown={(event) => {
+            event.stopPropagation();
+            onStartRotate(event, media.id);
           }}
         />
       )}

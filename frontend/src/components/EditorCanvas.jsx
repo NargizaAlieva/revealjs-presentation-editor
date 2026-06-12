@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import "./EditorCanvas.css";
 import { getSlideSize } from "../utils/slidesetRenderUtils";
 import { buildColorThemeStyle } from "../core/render/revealRenderer";
@@ -24,6 +24,8 @@ export default function EditorCanvas({
   onCanvasZoom,
   selectedElementId: externalSelectedElementId,
   onSelectElement,
+  onRotateTextElement,
+  onRotateMediaElement,
 }) {
   const [localSelectedElementId, setLocalSelectedElementId] = useState(null);
 
@@ -32,14 +34,17 @@ export default function EditorCanvas({
       ? externalSelectedElementId
       : localSelectedElementId;
 
-  const setSelectedElementId = (id) => {
-    if (onSelectElement) {
-      onSelectElement(id);
-      return;
-    }
+  const setSelectedElementId = useCallback(
+    (id) => {
+      if (onSelectElement) {
+        onSelectElement(id);
+        return;
+      }
 
-    setLocalSelectedElementId(id);
-  };
+      setLocalSelectedElementId(id);
+    },
+    [onSelectElement],
+  );
 
   const { width, height } = getSlideSize(presentation);
   const colorThemeStyle = buildColorThemeStyle(presentation);
@@ -48,8 +53,15 @@ export default function EditorCanvas({
   const scaledWidth = width * zoomScale;
   const scaledHeight = height * zoomScale;
 
-  const textElements = slide?.contents?.text ?? [];
-  const mediaElements = slide?.contents?.media ?? [];
+  const textElements = useMemo(
+    () => slide?.contents?.text ?? [],
+    [slide?.contents?.text],
+  );
+
+  const mediaElements = useMemo(
+    () => slide?.contents?.media ?? [],
+    [slide?.contents?.media],
+  );
 
   const {
     handleMouseMove,
@@ -58,6 +70,8 @@ export default function EditorCanvas({
     startDraggingMedia,
     setResizingElementId,
     setResizingMediaId,
+    startRotatingMedia,
+    startRotatingText,
   } = useCanvasInteractions({
     width,
     height,
@@ -66,8 +80,10 @@ export default function EditorCanvas({
     mediaElements,
     onMoveTextElement,
     onResizeTextElement,
+    onRotateTextElement,
     onMoveMediaElement,
     onResizeMediaElement,
+    onRotateMediaElement,
     setSelectedElementId,
   });
 
@@ -107,6 +123,7 @@ export default function EditorCanvas({
     mediaElements,
     onDeleteTextElement,
     onDeleteMedia,
+    setSelectedElementId,
   ]);
 
   const handleWorkspaceWheel = (event) => {
@@ -172,6 +189,7 @@ export default function EditorCanvas({
                 }}
                 onStartDrag={startDraggingText}
                 onStartResize={setResizingElementId}
+                onStartRotate={startRotatingText}
               />
             ))}
 
@@ -186,6 +204,7 @@ export default function EditorCanvas({
                   setSelectedElementId(null);
                 }}
                 onStartResize={setResizingMediaId}
+                onStartRotate={startRotatingMedia}
               />
             ))}
           </div>

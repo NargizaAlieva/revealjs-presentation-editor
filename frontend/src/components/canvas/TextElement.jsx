@@ -10,6 +10,7 @@ export default function TextElement({
   onDeleteTextElement,
   onStartDrag,
   onStartResize,
+  onStartRotate,
 }) {
   const text = textElement.paragraphs?.[0]?.runs?.[0]?.text ?? "";
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
@@ -26,6 +27,9 @@ export default function TextElement({
         height: `${textElement.height ?? 80}px`,
         background: textElement.background ?? "transparent",
         zIndex: textElement["z-index"] ?? 1,
+
+        transform: `rotate(${textElement.rotation ?? 0}deg)`,
+        transformOrigin: "center center",
       }}
       onMouseDown={() => onSelect(textElement.id)}
     >
@@ -98,6 +102,18 @@ export default function TextElement({
             event.stopPropagation();
             onStartResize(textElement.id);
           }}
+        />
+      )}
+      {isSelected && (
+        <button
+          type="button"
+          className="rotate-handle"
+          onMouseDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onStartRotate(event, textElement.id);
+          }}
+          aria-label="Rotate text element"
         />
       )}
     </div>
