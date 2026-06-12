@@ -6,12 +6,18 @@ export default function MediaElement({
   onStartDrag,
   onDeleteMedia,
   onStartResize,
+  previewClassName,
+  animationOrder,
 }) {
   return (
     <div
-      className={
-        isSelected ? "canvas-media-wrapper selected" : "canvas-media-wrapper"
-      }
+      className={[
+        "canvas-media-wrapper",
+        isSelected ? "selected" : "",
+        previewClassName,
+      ]
+        .filter(Boolean)
+        .join(" ")}
       style={{
         position: "absolute",
         left: `${media.position?.x ?? 0}px`,
@@ -22,6 +28,10 @@ export default function MediaElement({
       }}
       onMouseDown={(event) => onStartDrag(event, media.id)}
     >
+      {animationOrder != null && (
+        <span className="animation-order-badge">{animationOrder}</span>
+      )}
+
       <img
         src={media["file-link"]}
         alt=""

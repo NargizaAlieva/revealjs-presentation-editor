@@ -81,3 +81,244 @@
 .slide-notes textarea::placeholder {
   color: #666;
 }
+
+.play-effect {
+  animation-duration: 800ms;
+  animation-fill-mode: both;
+  animation-timing-function: ease-out;
+}
+
+.play-fade-in {
+  animation-name: previewFadeIn;
+}
+
+.play-fade-up {
+  animation-name: previewFadeUp;
+}
+
+.play-fade-down {
+  animation-name: previewFadeDown;
+}
+
+.play-fade-left {
+  animation-name: previewFadeLeft;
+}
+
+.play-fade-right {
+  animation-name: previewFadeRight;
+}
+
+.play-grow {
+  animation-name: previewGrow;
+}
+
+.play-shrink {
+  animation-name: previewShrink;
+}
+
+@keyframes previewFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes previewFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes previewFadeDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes previewFadeLeft {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes previewFadeRight {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes previewGrow {
+  from {
+    transform: scale(0.5);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes previewShrink {
+  from {
+    transform: scale(1);
+  }
+
+  to {
+    transform: scale(0.7);
+  }
+}
+
+.play-strike input,
+.play-strike textarea {
+  animation-name: previewStrike;
+  animation-duration: 800ms;
+  text-decoration-thickness: 2px;
+  animation-fill-mode: both;
+  animation-timing-function: ease-out;
+}
+
+@keyframes previewStrike {
+  0% {
+    text-decoration: none;
+  }
+
+  100% {
+    text-decoration: line-through;
+  }
+}
+
+.editor-slide.play-transition {
+  animation-duration: 800ms;
+  animation-timing-function: ease-out;
+}
+
+.play-transition-fade {
+  animation-name: previewSlideFade;
+}
+
+.play-transition-slide {
+  animation-name: previewSlideMove;
+}
+
+.play-transition-convex {
+  animation-name: previewSlideConvex;
+}
+
+.play-transition-concave {
+  animation-name: previewSlideConcave;
+}
+
+.play-transition-zoom {
+  animation-name: previewSlideZoom;
+}
+
+@keyframes previewSlideFade {
+  0% {
+    opacity: 0.2;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes previewSlideMove {
+  0% {
+    transform: translateX(40px) scale(var(--zoom-scale, 1));
+    opacity: 0.4;
+  }
+
+  100% {
+    transform: translateX(0) scale(var(--zoom-scale, 1));
+    opacity: 1;
+  }
+}
+
+@keyframes previewSlideConvex {
+  0% {
+    transform: scale(calc(var(--zoom-scale, 1) * 0.85)) rotate(3deg);
+    opacity: 0.4;
+  }
+
+  100% {
+    transform: scale(var(--zoom-scale, 1)) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes previewSlideConcave {
+  0% {
+    transform: scale(calc(var(--zoom-scale, 1) * 1.15)) rotate(-3deg);
+    opacity: 0.4;
+  }
+
+  100% {
+    transform: scale(var(--zoom-scale, 1)) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes previewSlideZoom {
+  0% {
+    transform: scale(calc(var(--zoom-scale, 1) * 0.7));
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(var(--zoom-scale, 1));
+    opacity: 1;
+  }
+}
+
+.animation-order-badge {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  z-index: 1000;
+
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #d6452f;
+  color: white;
+
+  font-size: 11px;
+  font-weight: 700;
+  font-family: Arial, sans-serif;
+
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+
+  pointer-events: none;
+}

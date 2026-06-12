@@ -59,6 +59,15 @@ export function getTextContent(textElement) {
   );
 }
 
+export function getTextLines(textElement) {
+  if (!textElement?.paragraphs?.length) return [];
+
+  return textElement.paragraphs.flatMap((paragraph) => {
+    const text = paragraph?.runs?.map((run) => run?.text || "").join("") ?? "";
+    return text.split("\n");
+  });
+}
+
 export function getSlideDimensions(presentation) {
   return getSlideSize(presentation);
 }
@@ -150,22 +159,49 @@ export function buildAnimationMap(slide) {
   return map;
 }
 
-export function getFragmentProps(animation) {
-  if (!animation) return null;
-
-  const effect = animation.effect ?? "fade-in";
-  const sequence = animation.sequence;
-  const rawSpeed = animation["effect-options"]?.speed ?? animation.speed;
-  const speed = SPEED_MAP[rawSpeed];
-
+function fragmentClassNameFor(effect) {
   const classes = ["fragment"];
   if (effect !== "fade-in" && effect !== "none" && FRAGMENT_EFFECT_CLASSES.has(effect)) {
     classes.push(effect);
   }
+  return classes.join(" ");
+}
+
+function buildFragmentProps(animation, sequenceOverride) {
+  if (!animation) return null;
+
+  const effect = animation.effect ?? "fade-in";
+  const sequence = sequenceOverride ?? animation.sequence;
+  const rawSpeed = animation["effect-options"]?.speed ?? animation.speed;
+  const speed = SPEED_MAP[rawSpeed];
 
   return {
-    className: classes.join(" "),
+    className: fragmentClassNameFor(effect),
     "data-fragment-index": Number.isFinite(sequence) ? sequence : undefined,
     "data-fragment-speed": speed,
   };
+}
+
+export function getFragmentProps(animation) {
+  return buildFragmentProps(animation);
+}
+
+export function getPerLineFragments(textElement, animation, lines) {
+  if (!animation) return null;
+
+  const sequenceMode = animation["effect-options"]?.sequence ?? "as-one-object";
+  if (sequenceMode === "as-one-object") return null;
+  if (!lines || lines.length <= 1) return null;
+
+  return lines.map((line, index) => {
+    const fragIndex =
+      sequenceMode === "all-at-once"
+        ? animation.sequence
+        : animation.sequence + index;
+
+    return {
+      text: line,
+      fragmentProps: buildFragmentProps(animation, fragIndex),
+    };
+  });
 }

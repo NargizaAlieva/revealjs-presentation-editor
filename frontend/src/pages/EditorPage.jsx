@@ -48,6 +48,15 @@ export default function EditorPage() {
     exportToReveal(presentation);
   };
 
+  const [previewEffect, setPreviewEffect] = useState(null);
+  const triggerAnimationPreview = (elementId, effect, speed) => {
+    setPreviewEffect({ type: "animation", elementId, effect, speed, key: Date.now() });
+  };
+
+  const triggerTransitionPreview = (effect) => {
+    setPreviewEffect({ type: "transition", effect, key: Date.now() });
+  };
+
   const handleImageUpload = (event) => {
     const file = event.target.files?.[0];
     if (!file || !file.type.startsWith("image/")) return;
@@ -131,6 +140,8 @@ export default function EditorPage() {
         onAddAnimation={addAnimation}
         onUpdateAnimation={updateAnimation}
         onDeleteAnimation={deleteAnimation}
+        onAnimationPreview={triggerAnimationPreview}
+        onTransitionPreview={triggerTransitionPreview}
       />
 
       <div className="editor-body">
@@ -160,6 +171,8 @@ export default function EditorPage() {
               onCanvasZoom={handleCanvasZoom}
               selectedElementId={selectedElementId}
               onSelectElement={setSelectedElementId}
+              previewEffect={previewEffect}
+              animations={selectedSlide?.contents?.animations ?? []}
             />
           )}
         </div>
@@ -167,7 +180,6 @@ export default function EditorPage() {
         <GlobalSettingsPanel
           presentation={presentation}
           updateMasterDimensions={updateMasterDimensions}
-          updateSlideTransition={updateSlideTransition}
           updateMasterTheme={updateMasterTheme}
         />
       </div>

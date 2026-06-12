@@ -38,12 +38,14 @@ export default function Toolbar({
 
   onTransitionChange,
   currentTransition,
+  onTransitionPreview,
 
   selectedElement,
   animations,
   onAddAnimation,
   onUpdateAnimation,
   onDeleteAnimation,
+  onAnimationPreview,
 }) {
   const [activeTab, setActiveTab] = useState("Home");
 
@@ -98,6 +100,7 @@ export default function Toolbar({
           <TransitionsTab
             currentTransition={currentTransition}
             onTransitionChange={onTransitionChange}
+            onTransitionPreview={onTransitionPreview}
           />
         )}
 
@@ -108,6 +111,7 @@ export default function Toolbar({
             onAddAnimation={onAddAnimation}
             onUpdateAnimation={onUpdateAnimation}
             onDeleteAnimation={onDeleteAnimation}
+            onAnimationPreview={onAnimationPreview}
           />
         )}
 

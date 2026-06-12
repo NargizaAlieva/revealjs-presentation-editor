@@ -1,7 +1,5 @@
 import "./GlobalSettingsPanel.css";
 
-const TRANSITIONS = ["slide", "fade", "convex", "concave", "zoom", "none"];
-
 const ASPECT_RATIOS = [
   { label: "16:9", width: 1280, height: 720 },
   { label: "4:3", width: 1024, height: 768 },
@@ -25,15 +23,12 @@ const toHex6 = (color) =>
 export default function GlobalSettingsPanel({
   presentation,
   updateMasterDimensions,
-  updateSlideTransition,
   updateMasterTheme,
 }) {
   const master = presentation?.slideset?.master ?? {};
   const currentAspectRatio = master["aspect-ratio"] ?? "16:9";
   const currentWidth = master["slide-dimensions"]?.width ?? 1280;
   const currentHeight = master["slide-dimensions"]?.height ?? 720;
-  const currentTransition =
-    presentation?.slideset?.slides?.[0]?.contents?.transition ?? "slide";
 
   const colorTheme = (master["color-theme"] ?? DEFAULT_COLOR_THEME).map(
     (entry) => ({
@@ -53,9 +48,18 @@ export default function GlobalSettingsPanel({
   };
 
   const handleColorChange = (cssVariableName, newColor) => {
+    const originalRaw = (master["color-theme"] ?? DEFAULT_COLOR_THEME).find(
+      (entry) => entry["css-variable-name"] === cssVariableName,
+    )?.color;
+
+    const alpha =
+      typeof originalRaw === "string" && originalRaw.length === 9
+        ? originalRaw.slice(7)
+        : "FF";
+
     const updatedTheme = colorTheme.map((entry) =>
       entry["css-variable-name"] === cssVariableName
-        ? { ...entry, color: newColor }
+        ? { ...entry, color: `${newColor}${alpha}` }
         : entry,
     );
     updateMasterTheme(updatedTheme);
@@ -75,21 +79,6 @@ export default function GlobalSettingsPanel({
           {ASPECT_RATIOS.map((ratio) => (
             <option key={ratio.label} value={ratio.label}>
               {ratio.label} ({ratio.width}×{ratio.height})
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="global-settings-row">
-        <label className="global-settings-label">Slide Transition</label>
-        <select
-          className="global-settings-select"
-          value={currentTransition}
-          onChange={(e) => updateSlideTransition(e.target.value)}
-        >
-          {TRANSITIONS.map((t) => (
-            <option key={t} value={t}>
-              {t.charAt(0).toUpperCase() + t.slice(1)}
             </option>
           ))}
         </select>

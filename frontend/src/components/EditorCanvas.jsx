@@ -24,6 +24,8 @@ export default function EditorCanvas({
   onCanvasZoom,
   selectedElementId: externalSelectedElementId,
   onSelectElement,
+  previewEffect,
+  animations = [],
 }) {
   const [localSelectedElementId, setLocalSelectedElementId] = useState(null);
 
@@ -50,6 +52,9 @@ export default function EditorCanvas({
 
   const textElements = slide?.contents?.text ?? [];
   const mediaElements = slide?.contents?.media ?? [];
+  const animationSequenceMap = new Map(
+    animations.map((a) => [a.id, a.sequence]),
+  );
 
   const {
     handleMouseMove,
@@ -70,6 +75,58 @@ export default function EditorCanvas({
     onResizeMediaElement,
     setSelectedElementId,
   });
+
+  const [playingElementId, setPlayingElementId] = useState(null);
+  const [playingEffect, setPlayingEffect] = useState(null);
+  const [playingTransition, setPlayingTransition] = useState(null);
+
+  useEffect(() => {
+    if (!previewEffect) return;
+
+    if (previewEffect.type === "animation") {
+      setPlayingElementId(null);
+      setPlayingEffect(null);
+
+      const raf = requestAnimationFrame(() => {
+        setPlayingElementId(previewEffect.elementId);
+        setPlayingEffect(previewEffect.effect);
+      });
+
+      const duration =
+        previewEffect.speed === 0.5
+          ? 200
+          : previewEffect.speed === 2
+            ? 2200
+            : 800;
+
+      const timer = setTimeout(() => {
+        setPlayingElementId(null);
+        setPlayingEffect(null);
+      }, duration + 100);
+
+      return () => {
+        cancelAnimationFrame(raf);
+        clearTimeout(timer);
+      };
+    }
+
+    if (previewEffect.type === "transition") {
+      setPlayingTransition(null);
+
+      const raf = requestAnimationFrame(() => {
+        setPlayingTransition(previewEffect.effect);
+      });
+
+      const timer = setTimeout(() => {
+        setPlayingTransition(null);
+      }, 900);
+
+      return () => {
+        cancelAnimationFrame(raf);
+        clearTimeout(timer);
+      };
+    }
+  }, [previewEffect]);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -129,6 +186,10 @@ export default function EditorCanvas({
     );
   }
 
+  const transitionClass = playingTransition
+    ? `play-transition play-transition-${playingTransition}`
+    : "";
+
   return (
     <main className="canvas-wrapper" style={colorThemeStyle}>
       <div className="slide-workspace" onWheel={handleWorkspaceWheel}>
@@ -140,7 +201,9 @@ export default function EditorCanvas({
           }}
         >
           <div
-            className="editor-slide"
+            className={["editor-slide", transitionClass]
+              .filter(Boolean)
+              .join(" ")}
             style={{
               width: `${width}px`,
               height: `${height}px`,
@@ -148,6 +211,7 @@ export default function EditorCanvas({
               color: "var(--text-dark, black)",
               transform: `scale(${zoomScale})`,
               transformOrigin: "top left",
+              "--zoom-scale": zoomScale,
             }}
             onMouseMove={handleMouseMove}
             onMouseUp={stopInteraction}
@@ -158,36 +222,54 @@ export default function EditorCanvas({
               }
             }}
           >
-            {textElements.map((textElement) => (
-              <TextElement
-                key={textElement.id}
-                textElement={textElement}
-                isSelected={selectedElementId === textElement.id}
-                onSelect={setSelectedElementId}
-                onChangeTextElement={onChangeTextElement}
-                onFormatTextElement={onFormatTextElement}
-                onDeleteTextElement={(id) => {
-                  onDeleteTextElement(id);
-                  setSelectedElementId(null);
-                }}
-                onStartDrag={startDraggingText}
-                onStartResize={setResizingElementId}
-              />
-            ))}
+            {textElements.map((textElement) => {
+              const playClass =
+                playingElementId === textElement.id
+                  ? `play-effect play-${playingEffect}`
+                  : "";
 
-            {mediaElements.map((media) => (
-              <MediaElement
-                key={media.id}
-                media={media}
-                isSelected={selectedElementId === media.id}
-                onStartDrag={startDraggingMedia}
-                onDeleteMedia={(id) => {
-                  onDeleteMedia(id);
-                  setSelectedElementId(null);
-                }}
-                onStartResize={setResizingMediaId}
-              />
-            ))}
+              return (
+                <TextElement
+                  key={textElement.id}
+                  textElement={textElement}
+                  isSelected={selectedElementId === textElement.id}
+                  onSelect={setSelectedElementId}
+                  onChangeTextElement={onChangeTextElement}
+                  onFormatTextElement={onFormatTextElement}
+                  onDeleteTextElement={(id) => {
+                    onDeleteTextElement(id);
+                    setSelectedElementId(null);
+                  }}
+                  onStartDrag={startDraggingText}
+                  onStartResize={setResizingElementId}
+                  previewClassName={playClass}
+                  animationOrder={animationSequenceMap.get(textElement.id)}
+                />
+              );
+            })}
+
+            {mediaElements.map((media) => {
+              const playClass =
+                playingElementId === media.id
+                  ? `play-effect play-${playingEffect}`
+                  : "";
+
+              return (
+                <MediaElement
+                  key={media.id}
+                  media={media}
+                  isSelected={selectedElementId === media.id}
+                  onStartDrag={startDraggingMedia}
+                  onDeleteMedia={(id) => {
+                    onDeleteMedia(id);
+                    setSelectedElementId(null);
+                  }}
+                  onStartResize={setResizingMediaId}
+                  previewClassName={playClass}
+                  animationOrder={animationSequenceMap.get(media.id)}
+                />
+              );
+            })}
           </div>
         </div>
       </div>

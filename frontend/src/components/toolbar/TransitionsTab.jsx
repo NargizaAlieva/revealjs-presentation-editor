@@ -1,4 +1,3 @@
-import { MdPreview } from "react-icons/md";
 import "./TransitionsTab.css";
 
 const TRANSITIONS = [
@@ -11,41 +10,35 @@ const TRANSITIONS = [
 ];
 
 export default function TransitionsTab({
-  onOpenPreview,
   currentTransition,
   onTransitionChange,
+  onTransitionPreview,
 }) {
-  return (
-    <>
-      <div className="ribbon-group transitions-preview-group">
-        <button className="toolbar-item large" onClick={onOpenPreview}>
-          <MdPreview />
-          <span>Preview</span>
-        </button>
-        <div className="ribbon-group-title">Preview</div>
-      </div>
+  const handleClick = (value) => {
+    onTransitionChange?.(value);
+    onTransitionPreview?.(value);
+  };
 
-      <div className="ribbon-group ribbon-group--transitions">
-        {TRANSITIONS.map((transition) => (
-          <button
-            key={transition.value}
-            className={`transition-card ${
-              currentTransition === transition.value ? "active" : ""
+  return (
+    <div className="ribbon-group ribbon-group--transitions">
+      {TRANSITIONS.map((transition) => (
+        <button
+          key={transition.value}
+          className={`transition-card ${currentTransition === transition.value ? "active" : ""
             }`}
-            onClick={() => onTransitionChange?.(transition.value)}
-            title={transition.label}
+          onClick={() => handleClick(transition.value)}
+          title={transition.label}
+        >
+          <div
+            className={`transition-preview transition-preview--${transition.value}`}
           >
-            <div
-              className={`transition-preview transition-preview--${transition.value}`}
-            >
-              <span className="preview-square preview-square--a" />
-              <span className="preview-square preview-square--b" />
-            </div>
-            <span className="transition-card-label">{transition.label}</span>
-          </button>
-        ))}
-        <div className="ribbon-group-title">Transition to This Slide</div>
-      </div>
-    </>
+            <span className="preview-square preview-square--a" />
+            <span className="preview-square preview-square--b" />
+          </div>
+          <span className="transition-card-label">{transition.label}</span>
+        </button>
+      ))}
+      <div className="ribbon-group-title">Transition to This Slide</div>
+    </div>
   );
 }

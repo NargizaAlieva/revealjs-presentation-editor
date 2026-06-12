@@ -10,6 +10,8 @@ export default function TextElement({
   onDeleteTextElement,
   onStartDrag,
   onStartResize,
+  previewClassName,
+  animationOrder,
 }) {
   const text = textElement.paragraphs?.[0]?.runs?.[0]?.text ?? "";
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
@@ -17,7 +19,13 @@ export default function TextElement({
 
   return (
     <div
-      className={isSelected ? "draggable selected" : "draggable"}
+      className={[
+        "draggable",
+        isSelected ? "selected" : "",
+        previewClassName,
+      ]
+        .filter(Boolean)
+        .join(" ")}
       style={{
         position: "absolute",
         left: `${textElement.position?.x ?? 0}px`,
@@ -29,6 +37,10 @@ export default function TextElement({
       }}
       onMouseDown={() => onSelect(textElement.id)}
     >
+      {animationOrder != null && (
+        <span className="animation-order-badge">{animationOrder}</span>
+      )}
+
       {isSelected &&
         ["top", "right", "bottom", "left"].map((side) => (
           <div

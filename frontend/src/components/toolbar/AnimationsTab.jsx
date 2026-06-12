@@ -1,7 +1,7 @@
+import { useState } from "react";
 import {
   MdBlock,
   MdCloseFullscreen,
-  MdFormatListNumbered,
   MdNorth,
   MdOpacity,
   MdPreview,
@@ -11,6 +11,9 @@ import {
   MdWest,
   MdEast,
   MdZoomOutMap,
+  MdArrowUpward,
+  MdArrowDownward,
+  MdExpandMore,
 } from "react-icons/md";
 import "./AnimationsTab.css";
 
@@ -27,18 +30,25 @@ const ANIMATION_EFFECTS = [
 ];
 
 export default function AnimationsTab({
-  onOpenPreview,
   selectedElement,
   animations,
   onAddAnimation,
   onUpdateAnimation,
   onDeleteAnimation,
+  onAnimationPreview,
 }) {
+  const animationList = animations ?? [];
+
   const animation = selectedElement
-    ? (animations ?? []).find((item) => item.id === selectedElement.id)
+    ? animationList.find((item) => item.id === selectedElement.id)
     : null;
 
   const currentEffect = animation?.effect ?? "none";
+
+  const maxSequence = animationList.reduce(
+    (max, item) => Math.max(max, item.sequence ?? 1),
+    0,
+  );
 
   const handleEffectClick = (effectValue) => {
     if (!selectedElement) return;
@@ -48,24 +58,74 @@ export default function AnimationsTab({
       return;
     }
 
+    const speed = animation?.speed ?? 1;
+
     if (animation) {
       onUpdateAnimation?.(animation.id, { effect: effectValue });
-      return;
+    } else {
+      onAddAnimation?.({
+        id: selectedElement.id,
+        sequence: animationList.length + 1,
+        effect: effectValue,
+        speed: 1,
+        "effect-options": {},
+      });
     }
 
-    onAddAnimation?.({
-      id: selectedElement.id,
-      sequence: (animations?.length ?? 0) + 1,
-      effect: effectValue,
-      speed: 1,
-      "effect-options": {},
-    });
+    playPreview(selectedElement.id, effectValue, speed);
   };
+
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [showEffectOptions, setShowEffectOptions] = useState(false);
+
+  const playPreview = (elementId, effect, speed) => {
+    setIsPlaying(true);
+    onAnimationPreview?.(elementId, effect, speed);
+
+    const duration = speed === 0.5 ? 200 : speed === 2 ? 2200 : 800;
+    setTimeout(() => setIsPlaying(false), duration + 100);
+  };
+
+  const handlePlay = () => {
+    if (!animation || !selectedElement) return;
+    playPreview(selectedElement.id, animation.effect, animation.speed);
+  };
+
+  const swapSequence = (direction) => {
+    if (!animation) return;
+
+    const currentSeq = animation.sequence ?? 1;
+    const targetSeq = currentSeq + direction;
+
+    const neighbor = animationList.find(
+      (item) => (item.sequence ?? 1) === targetSeq,
+    );
+
+    onUpdateAnimation?.(animation.id, { sequence: targetSeq });
+
+    if (neighbor) {
+      onUpdateAnimation?.(neighbor.id, { sequence: currentSeq });
+    }
+  };
+
+  const canMoveEarlier = animation && (animation.sequence ?? 1) > 1;
+  const canMoveLater = animation && (animation.sequence ?? 1) < maxSequence;
+  const SEQUENCE_LABELS = {
+    "as-one-object": "As One Object",
+    "all-at-once": "All at Once",
+    "by-paragraph": "By Paragraph",
+  };
+
+  const currentSequence = animation?.["effect-options"]?.sequence ?? "as-one-object";
 
   return (
     <>
       <div className="ribbon-group transitions-preview-group">
-        <button className="toolbar-item large" onClick={onOpenPreview}>
+        <button
+          className={`toolbar-item large ${isPlaying ? "is-playing" : ""}`}
+          onClick={handlePlay}
+          disabled={!animation}
+        >
           <MdPreview />
           <span>Preview</span>
         </button>
@@ -73,9 +133,8 @@ export default function AnimationsTab({
       </div>
 
       <div
-        className={`ribbon-group ribbon-group--animations ${
-          !selectedElement ? "is-disabled" : ""
-        }`}
+        className={`ribbon-group ribbon-group--animations ${!selectedElement ? "is-disabled" : ""
+          }`}
       >
         {ANIMATION_EFFECTS.map((effect) => {
           const Icon = effect.icon;
@@ -83,9 +142,8 @@ export default function AnimationsTab({
           return (
             <button
               key={effect.value}
-              className={`effect-card ${
-                currentEffect === effect.value ? "active" : ""
-              }`}
+              className={`effect-card ${currentEffect === effect.value ? "active" : ""
+                }`}
               onClick={() => handleEffectClick(effect.value)}
               disabled={!selectedElement}
               title={effect.label}
@@ -97,75 +155,112 @@ export default function AnimationsTab({
         })}
 
         <div className="ribbon-group-title">
-          {selectedElement
-            ? `${selectedElement.label} — Animation`
-            : "Select an element on the slide"}
+          {selectedElement ? "Animation" : "Select an element on the slide"}
         </div>
       </div>
 
       {animation && (
-        <div className="ribbon-group ribbon-group--timing">
-          <div className="timing-button timing-button--order">
-            <MdFormatListNumbered className="timing-icon" />
-            <span className="timing-label">Order</span>
+        <div className="ribbon-group ribbon-group--effect-options">
+          <div className="effect-options-dropdown">
+            <button
+              type="button"
+              className="effect-options-trigger"
+              onClick={() => setShowEffectOptions((v) => !v)}
+            >
+              <span>{SEQUENCE_LABELS[currentSequence]}</span>
+              <MdExpandMore className="effect-options-chevron" />
+            </button>
 
-            <div className="timing-stepper">
+            {showEffectOptions && (
+              <div className="effect-options-menu">
+                <div className="effect-options-section-title">Sequence</div>
+
+                {[
+                  { value: "as-one-object", label: "As One Object" },
+                  { value: "all-at-once", label: "All at Once" },
+                  { value: "by-paragraph", label: "By Paragraph" },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`effect-options-item ${(animation["effect-options"]?.sequence ?? "as-one-object") === option.value
+                      ? "active"
+                      : ""
+                      }`}
+                    onClick={() => {
+                      onUpdateAnimation?.(animation.id, {
+                        "effect-options": {
+                          ...animation["effect-options"],
+                          sequence: option.value,
+                        },
+                      });
+                      setShowEffectOptions(false);
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="ribbon-group-title">Effect Options</div>
+        </div>
+      )}
+
+      {animation && (
+        <>
+          <div className="ribbon-group ribbon-group--reorder">
+            <div className="reorder-buttons">
               <button
                 type="button"
-                className="timing-step-btn"
-                onClick={() =>
-                  onUpdateAnimation?.(animation.id, {
-                    sequence: Math.max(1, (animation.sequence ?? 1) - 1),
-                  })
-                }
+                className="reorder-button"
+                onClick={() => swapSequence(-1)}
+                disabled={!canMoveEarlier}
               >
-                −
+                <MdArrowUpward className="reorder-icon" />
+                <span>Move Earlier</span>
               </button>
 
-              <span className="timing-value">{animation.sequence ?? 1}</span>
-
               <button
                 type="button"
-                className="timing-step-btn"
-                onClick={() =>
-                  onUpdateAnimation?.(animation.id, {
-                    sequence: (animation.sequence ?? 1) + 1,
-                  })
-                }
+                className="reorder-button"
+                onClick={() => swapSequence(1)}
+                disabled={!canMoveLater}
               >
-                +
+                <MdArrowDownward className="reorder-icon" />
+                <span>Move Later</span>
               </button>
             </div>
+
+            <div className="ribbon-group-title">Reorder Animation</div>
           </div>
 
-          <div className="timing-button">
-            <MdSpeed className="timing-icon" />
-            <span className="timing-label">Speed</span>
-            <span className="timing-value">
-              {animation.speed === 0.5
-                ? "Fast"
-                : animation.speed === 2
-                  ? "Slow"
-                  : "Medium"}
-            </span>
+          <div className="ribbon-group ribbon-group--timing">
+            <div className="speed-options">
+              {[
+                { value: 0.5, label: "Fast" },
+                { value: 1, label: "Medium" },
+                { value: 2, label: "Slow" },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={`speed-option ${(animation.speed ?? 1) === option.value ? "active" : ""
+                    }`}
+                  onClick={() =>
+                    onUpdateAnimation?.(animation.id, { speed: option.value })
+                  }
+                >
+                  <MdSpeed className="speed-option-icon" />
+                  <span>{option.label}</span>
+                </button>
+              ))}
+            </div>
 
-            <select
-              className="timing-control"
-              value={animation.speed ?? 1}
-              onChange={(event) =>
-                onUpdateAnimation?.(animation.id, {
-                  speed: Number(event.target.value),
-                })
-              }
-            >
-              <option value={0.5}>Fast</option>
-              <option value={1}>Medium</option>
-              <option value={2}>Slow</option>
-            </select>
+            <div className="ribbon-group-title">Speed</div>
           </div>
-
-          <div className="ribbon-group-title">Timing</div>
-        </div>
+        </>
       )}
     </>
   );
