@@ -1,11 +1,13 @@
 .global-settings-panel {
   min-width: 220px;
-  height: calc(100vh - 72px);
+  /* height: calc(100vh - 72px); */
   padding: 16px;
   border-left: 1px solid #e0e0e0;
   background: #fafafa;
 
   box-sizing: border-box;
+    height: 100%;
+  overflow-y: auto;
 }
 
 .global-settings-title {

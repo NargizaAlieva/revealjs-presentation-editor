@@ -1,0 +1,149 @@
+/* ── Font group ────────────────────────────────────────── */
+.font-group,
+.paragraph-group {
+  width: 190px;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.paragraph-group {
+  width: 160px;
+}
+
+.font-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.toolbar-select {
+  width: 118px;
+  height: 26px;
+  border: 1px solid #cfcfcf;
+  border-radius: 4px;
+  background: white;
+  font-size: 12px;
+}
+
+.toolbar-size {
+  width: 48px;
+  height: 26px;
+  border: 1px solid #cfcfcf;
+  border-radius: 4px;
+  background: white;
+  font-size: 12px;
+}
+
+.small-format {
+  width: 28px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  border-radius: 3px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.small-format svg {
+  font-size: 17px;
+}
+
+/* ── Layout popup ──────────────────────────────────────── */
+.toolbar-dropdown-container {
+  position: relative;
+}
+
+.layout-popup {
+  position: absolute;
+  top: 62px;
+  left: 0;
+  z-index: 9999;
+  width: 360px;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #bdbdbd;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.layout-popup h4 {
+  grid-column: 1 / -1;
+  margin: 0 0 4px 0;
+  font-size: 13px;
+  color: #111;
+}
+
+.layout-option {
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 6px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.layout-option:hover {
+  border-color: #777;
+  background: #f6f6f6;
+}
+
+.layout-option span {
+  font-size: 12px;
+}
+
+/* ── Layout thumbnails ─────────────────────────────────── */
+.layout-thumb {
+  height: 54px;
+  border: 1px solid #9aa4b2;
+  background: white;
+  margin-bottom: 5px;
+  position: relative;
+}
+
+.layout-thumb::before,
+.layout-thumb::after {
+  content: "";
+  position: absolute;
+  border: 1px dashed #9aa4b2;
+}
+
+.title-layout::before {
+  left: 16px;
+  right: 16px;
+  top: 18px;
+  height: 12px;
+}
+
+.title-content-layout::before {
+  left: 12px;
+  right: 12px;
+  top: 8px;
+  height: 10px;
+}
+
+.title-content-layout::after {
+  left: 12px;
+  right: 12px;
+  bottom: 8px;
+  height: 24px;
+}
+
+.two-content-layout::before {
+  left: 10px;
+  width: 62px;
+  top: 12px;
+  bottom: 10px;
+}
+
+.two-content-layout::after {
+  right: 10px;
+  width: 62px;
+  top: 12px;
+  bottom: 10px;
+}
+
+.blank-layout::before,
+.blank-layout::after {
+  display: none;
+}

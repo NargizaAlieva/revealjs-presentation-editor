@@ -1,0 +1,39 @@
+.format-toolbar {
+  position: absolute;
+  top: -36px;
+  left: 0;
+
+  display: flex;
+  gap: 4px;
+
+  background: white;
+  border: 1px solid #d1d5db;
+
+  padding: 4px;
+  border-radius: 4px;
+
+  z-index: 10;
+}
+
+.format-toolbar button {
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.format-toolbar input {
+  width: 52px;
+  font-size: 12px;
+}
+
+.line-spacing-control {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  font-size: 12px;
+}
+
+.line-spacing-control select {
+  width: 60px;
+  font-size: 12px;
+}

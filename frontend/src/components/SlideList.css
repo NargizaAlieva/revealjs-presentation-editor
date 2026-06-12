@@ -1,18 +1,15 @@
+/* ── Slide list panel ──────────────────────────────────── */
 .slide-list {
   width: 240px;
-  height: calc(100vh - 72px);
+  height: 100%;
   border-right: 1px solid #ddd;
   padding: 16px;
   background-color: #f8f8f8;
   overflow-y: auto;
-
   box-sizing: border-box;
 }
 
-.slide-list h3 {
-  margin: 8px 0 16px 0;
-}
-
+/* ── Slide item ────────────────────────────────────────── */
 .slide-list-item {
   padding: 8px;
   margin-bottom: 12px;
@@ -23,51 +20,29 @@
 }
 
 .slide-list-item.active {
-  border: 2px solid  #4f46e5;
+  border: 2px solid #4f46e5;
   background-color: #eef2ff;
 }
 
+.slide-list-item.hidden-slide .slide-thumbnail {
+  opacity: 0.5;
+}
+
+/* ── Slide number / title label ────────────────────────── */
 .slide-number {
   font-size: 12px;
   margin-bottom: 6px;
   color: #555;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.slide-thumbnail {
-  position: relative;
-  width: 160px;
-  height: 90px;
-  overflow: hidden;
-}
-
-.slide-thumbnail-element {
-  overflow: hidden;
-  font-size: 8px;
-  line-height: 1;
-  color: #111827;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  white-space: nowrap;
-}
-
-.slide-thumbnail strong {
-  display: block;
-  font-size: 12px;
-  margin-bottom: 6px;
-}
-
-.slide-thumbnail p {
+.hidden-badge {
   font-size: 10px;
-  margin: 0;
-  color: #666;
-}
-
-.slide-thumbnail-media {
-  pointer-events: none;
-  user-select: none;
-}
-
-.hidden-slide .slide-thumbnail {
-  opacity: 0.5;
+  color: #999;
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  padding: 1px 4px;
 }
