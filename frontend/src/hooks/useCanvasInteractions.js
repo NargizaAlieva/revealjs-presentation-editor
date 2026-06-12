@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 export function useCanvasInteractions({
   width,
@@ -10,6 +10,9 @@ export function useCanvasInteractions({
   onResizeTextElement,
   onMoveMediaElement,
   onResizeMediaElement,
+  createBeforeSnapshot,
+  onCommitMoveElement,
+  onCommitResizeElement,
 }) {
   const [selectedElementId, setSelectedElementId] = useState(null);
   const [draggingElementId, setDraggingElementId] = useState(null);
@@ -18,9 +21,22 @@ export function useCanvasInteractions({
   const [resizingMediaId, setResizingMediaId] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
+  const interactionSnapshot = useRef(null);
   const zoomScale = zoom / 100;
 
   const stopInteraction = () => {
+    if (interactionSnapshot.current) {
+      if (draggingElementId || draggingMediaId) {
+        onCommitMoveElement(interactionSnapshot.current);
+      }
+
+      if (resizingElementId || resizingMediaId) {
+        onCommitResizeElement(interactionSnapshot.current);
+      }
+
+      interactionSnapshot.current = null;
+    }
+
     setDraggingElementId(null);
     setDraggingMediaId(null);
     setResizingElementId(null);
@@ -31,9 +47,7 @@ export function useCanvasInteractions({
     const rect = event.currentTarget.getBoundingClientRect();
 
     if (draggingElementId) {
-      const element = textElements.find(
-        (item) => item.id === draggingElementId,
-      );
+      const element = textElements.find((item) => item.id === draggingElementId);
       if (!element) return;
 
       const newX = (event.clientX - rect.left) / zoomScale - dragOffset.x;
@@ -42,7 +56,7 @@ export function useCanvasInteractions({
       onMoveTextElement(
         draggingElementId,
         Math.max(0, Math.min(width - (element.width ?? 300), newX)),
-        Math.max(0, Math.min(height - (element.height ?? 80), newY)),
+        Math.max(0, Math.min(height - (element.height ?? 80), newY))
       );
     }
 
@@ -56,14 +70,12 @@ export function useCanvasInteractions({
       onMoveMediaElement(
         draggingMediaId,
         Math.max(0, Math.min(width - (media.width ?? 300), newX)),
-        Math.max(0, Math.min(height - (media.height ?? 200), newY)),
+        Math.max(0, Math.min(height - (media.height ?? 200), newY))
       );
     }
 
     if (resizingElementId) {
-      const element = textElements.find(
-        (item) => item.id === resizingElementId,
-      );
+      const element = textElements.find((item) => item.id === resizingElementId);
       if (!element) return;
 
       const x = element.position?.x ?? 0;
@@ -75,7 +87,7 @@ export function useCanvasInteractions({
       onResizeTextElement(
         resizingElementId,
         Math.max(100, Math.min(width - x, newWidth)),
-        Math.max(40, Math.min(height - y, newHeight)),
+        Math.max(40, Math.min(height - y, newHeight))
       );
     }
 
@@ -92,7 +104,7 @@ export function useCanvasInteractions({
       onResizeMediaElement(
         resizingMediaId,
         Math.max(80, Math.min(width - x, newWidth)),
-        Math.max(60, Math.min(height - y, newHeight)),
+        Math.max(60, Math.min(height - y, newHeight))
       );
     }
   };
@@ -100,6 +112,8 @@ export function useCanvasInteractions({
   const startDraggingText = (event, textElementId) => {
     event.preventDefault();
     event.stopPropagation();
+
+    interactionSnapshot.current = createBeforeSnapshot();
 
     const rect = event.currentTarget.parentElement.getBoundingClientRect();
 
@@ -113,6 +127,8 @@ export function useCanvasInteractions({
   const startDraggingMedia = (event, mediaId) => {
     event.stopPropagation();
 
+    interactionSnapshot.current = createBeforeSnapshot();
+
     const rect = event.currentTarget.getBoundingClientRect();
 
     setSelectedElementId(mediaId);
@@ -123,6 +139,22 @@ export function useCanvasInteractions({
     });
   };
 
+  const startResizingText = (event, textElementId) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    interactionSnapshot.current = createBeforeSnapshot();
+    setResizingElementId(textElementId);
+  };
+
+  const startResizingMedia = (event, mediaId) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    interactionSnapshot.current = createBeforeSnapshot();
+    setResizingMediaId(mediaId);
+  };
+
   return {
     selectedElementId,
     setSelectedElementId,
@@ -130,7 +162,7 @@ export function useCanvasInteractions({
     stopInteraction,
     startDraggingText,
     startDraggingMedia,
-    setResizingElementId,
-    setResizingMediaId,
+    startResizingText,
+    startResizingMedia,
   };
 }

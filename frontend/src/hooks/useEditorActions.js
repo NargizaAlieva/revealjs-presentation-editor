@@ -178,6 +178,17 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     [eventBus]
   );
 
+  const updateMedia = useCallback(
+    (mediaId, updates) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.MEDIA.UPDATE, {
+          mediaId,
+          updates,
+        })
+      ),
+    [eventBus]
+  );
+
   const deleteMedia = useCallback(
     (mediaId) =>
       eventBus.dispatch(
@@ -235,6 +246,56 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     window.location.reload();
   }, []);
 
+  const undo = useCallback(
+    () => eventBus.dispatch(createEditorEvent(EditorEventType.HISTORY.UNDO)),
+    [eventBus]
+  );
+
+  const redo = useCallback(
+    () => eventBus.dispatch(createEditorEvent(EditorEventType.HISTORY.REDO)),
+    [eventBus]
+  );
+
+  const commitMoveElement = useCallback(
+    (beforeSnapshot) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.CONTENT.MOVE_ELEMENT_COMMIT, {
+          beforeSnapshot,
+        })
+      ),
+    [eventBus]
+  );
+
+  const commitResizeElement = useCallback(
+    (beforeSnapshot) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.CONTENT.RESIZE_ELEMENT_COMMIT, {
+          beforeSnapshot,
+        })
+      ),
+    [eventBus]
+  );
+
+  const commitTextUpdate = useCallback(
+    (beforeSnapshot) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.CONTENT.UPDATE_TEXT_COMMIT, {
+          beforeSnapshot,
+        })
+      ),
+    [eventBus]
+  );
+
+  const commitMediaUpdate = useCallback(
+    (beforeSnapshot) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.MEDIA.UPDATE_COMMIT, {
+          beforeSnapshot,
+        })
+      ),
+    [eventBus]
+  );
+
   return {
     setSelectedSlideId,
     addSlide,
@@ -252,6 +313,7 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     updateElementSize,
     deleteElement,
     addMedia,
+    updateMedia,
     deleteMedia,
     addAnimation,
     updateAnimation,
@@ -262,5 +324,11 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     applyLayout,
     savePresentation,
     resetPresentation,
+    undo,
+    redo,
+    commitMoveElement,
+    commitResizeElement,
+    commitTextUpdate,
+    commitMediaUpdate,
   };
 }
