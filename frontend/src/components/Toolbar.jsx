@@ -49,8 +49,12 @@ export default function Toolbar({
   onUpdateAnimation,
   onDeleteAnimation,
   onAnimationPreview,
+  activeTab,
+  onTabChange,
 }) {
-  const [activeTab, setActiveTab] = useState("Home");
+  const [localActiveTab, setLocalActiveTab] = useState("Home");
+  const currentTab = activeTab ?? localActiveTab;
+  const setCurrentTab = onTabChange ?? setLocalActiveTab;
 
   return (
     <header className="toolbar">
@@ -58,8 +62,8 @@ export default function Toolbar({
         {TABS.map((tab) => (
           <button
             key={tab}
-            className={`toolbar-tab ${activeTab === tab ? "active" : ""}`}
-            onClick={() => setActiveTab(tab)}
+            className={`toolbar-tab ${currentTab === tab ? "active" : ""}`}
+            onClick={() => setCurrentTab(tab)}
           >
             {tab}
           </button>
@@ -67,7 +71,7 @@ export default function Toolbar({
       </nav>
 
       <div className="toolbar-ribbon">
-        {activeTab === "File" && (
+        {currentTab === "File" && (
           <FileTab
             onSavePresentation={onSavePresentation}
             onExportPresentation={onExportPresentation}
@@ -75,7 +79,7 @@ export default function Toolbar({
           />
         )}
 
-        {activeTab === "Home" && (
+        {currentTab === "Home" && (
           <HomeTab
             onAddSlide={onAddSlide}
             onDeleteSlide={onDeleteSlide}
@@ -90,16 +94,16 @@ export default function Toolbar({
           />
         )}
 
-        {activeTab === "Insert" && <InsertTab onImageUpload={onImageUpload} />}
+        {currentTab === "Insert" && <InsertTab onImageUpload={onImageUpload} />}
 
-        {activeTab === "Design" && (
+        {currentTab === "Design" && (
           <div className="toolbar-placeholder">
             Use the Presentation Settings panel on the right to change aspect
             ratio and color theme.
           </div>
         )}
 
-        {activeTab === "Transitions" && (
+        {currentTab === "Transitions" && (
           <TransitionsTab
             currentTransition={currentTransition}
             onTransitionChange={onTransitionChange}
@@ -110,7 +114,7 @@ export default function Toolbar({
           />
         )}
 
-        {activeTab === "Animations" && (
+        {currentTab === "Animations" && (
           <AnimationsTab
             selectedElement={selectedElement}
             animations={animations}
@@ -121,11 +125,11 @@ export default function Toolbar({
           />
         )}
 
-        {activeTab === "Slide Show" && (
+        {currentTab === "Slide Show" && (
           <SlideShowTab onOpenPreview={onOpenPreview} />
         )}
 
-        {activeTab === "View" && (
+        {currentTab === "View" && (
           <div className="toolbar-placeholder">
             Preview mode is available in the Slide Show tab.
           </div>

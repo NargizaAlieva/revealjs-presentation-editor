@@ -26,6 +26,7 @@ export default function EditorCanvas({
   onSelectElement,
   previewEffect,
   animations = [],
+  showAnimationBadges = false,
 }) {
   const [localSelectedElementId, setLocalSelectedElementId] = useState(null);
 
@@ -239,7 +240,11 @@ export default function EditorCanvas({
                   onStartDrag={startDraggingText}
                   onStartResize={setResizingElementId}
                   previewClassName={playClass}
-                  animationOrder={animationSequenceMap.get(textElement.id)}
+                  animationOrder={
+                    showAnimationBadges
+                      ? animationSequenceMap.get(textElement.id)
+                      : undefined
+                  }
                 />
               );
             })}
@@ -262,7 +267,11 @@ export default function EditorCanvas({
                   }}
                   onStartResize={setResizingMediaId}
                   previewClassName={playClass}
-                  animationOrder={animationSequenceMap.get(media.id)}
+                  animationOrder={
+                    showAnimationBadges
+                      ? animationSequenceMap.get(media.id)
+                      : undefined
+                  }
                 />
               );
             })}

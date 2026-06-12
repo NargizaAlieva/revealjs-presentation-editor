@@ -13,6 +13,7 @@ import StatusBar from "../components/StatusBar";
 
 export default function EditorPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("Home");
 
   const { state, eventBus } = useEditorState();
   const { presentation, slides, selectedSlide, selectedSlideIndex } =
@@ -122,6 +123,8 @@ export default function EditorPage() {
   return (
     <div className="editor-page">
       <Toolbar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
         onAddSlide={addSlide}
         onDeleteSlide={deleteSlide}
         onDuplicateSlide={duplicateSlide}
@@ -185,6 +188,7 @@ export default function EditorPage() {
               onSelectElement={setSelectedElementId}
               previewEffect={previewEffect}
               animations={selectedSlide?.contents?.animations ?? []}
+              showAnimationBadges={activeTab === "Animations"}
             />
           )}
         </div>
