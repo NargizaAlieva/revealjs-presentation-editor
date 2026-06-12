@@ -39,6 +39,8 @@ export default function EditorPage() {
     updateMasterTheme,
     updateMasterDimensions,
     updateSlideTransition,
+    updateTransitionDuration,
+    applyTransitionToAll,
     addAnimation,
     updateAnimation,
     deleteAnimation,
@@ -49,6 +51,7 @@ export default function EditorPage() {
   };
 
   const [previewEffect, setPreviewEffect] = useState(null);
+
   const triggerAnimationPreview = (elementId, effect, speed) => {
     setPreviewEffect({ type: "animation", elementId, effect, speed, key: Date.now() });
   };
@@ -80,6 +83,7 @@ export default function EditorPage() {
     reader.readAsDataURL(file);
     event.target.value = "";
   };
+
   const [zoom, setZoom] = useState(100);
   const [showNotes, setShowNotes] = useState(true);
 
@@ -135,6 +139,14 @@ export default function EditorPage() {
         isSlideHidden={selectedSlide?.hidden}
         onTransitionChange={updateSlideTransition}
         currentTransition={selectedSlide?.contents?.transition ?? "none"}
+        currentDuration={selectedSlide?.contents?.transitionDuration ?? 0.75}
+        onDurationChange={updateTransitionDuration}
+        onApplyTransitionToAll={() =>
+          applyTransitionToAll(
+            selectedSlide?.contents?.transition ?? "none",
+            selectedSlide?.contents?.transitionDuration ?? 0.75
+          )
+        }
         selectedElement={selectedElement}
         animations={selectedSlide?.contents?.animations ?? []}
         onAddAnimation={addAnimation}

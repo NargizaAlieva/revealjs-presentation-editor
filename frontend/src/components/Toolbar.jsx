@@ -38,6 +38,9 @@ export default function Toolbar({
 
   onTransitionChange,
   currentTransition,
+  currentDuration,
+  onDurationChange,
+  onApplyTransitionToAll,
   onTransitionPreview,
 
   selectedElement,
@@ -100,6 +103,9 @@ export default function Toolbar({
           <TransitionsTab
             currentTransition={currentTransition}
             onTransitionChange={onTransitionChange}
+            currentDuration={currentDuration}
+            onDurationChange={onDurationChange}
+            onApplyToAll={onApplyTransitionToAll}
             onTransitionPreview={onTransitionPreview}
           />
         )}

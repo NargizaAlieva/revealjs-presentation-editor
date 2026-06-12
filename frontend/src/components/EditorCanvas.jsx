@@ -39,7 +39,6 @@ export default function EditorCanvas({
       onSelectElement(id);
       return;
     }
-
     setLocalSelectedElementId(id);
   };
 
@@ -168,10 +167,8 @@ export default function EditorCanvas({
 
   const handleWorkspaceWheel = (event) => {
     if (!event.ctrlKey) return;
-
     event.preventDefault();
     event.stopPropagation();
-
     const delta = event.deltaY < 0 ? 2 : -2;
     onCanvasZoom?.(delta);
   };
@@ -198,6 +195,8 @@ export default function EditorCanvas({
           style={{
             width: `${scaledWidth}px`,
             height: `${scaledHeight}px`,
+            transform: `scale(${zoomScale})`,
+            transformOrigin: "top left",
           }}
         >
           <div
@@ -209,9 +208,6 @@ export default function EditorCanvas({
               height: `${height}px`,
               background: "var(--bg-light, white)",
               color: "var(--text-dark, black)",
-              transform: `scale(${zoomScale})`,
-              transformOrigin: "top left",
-              "--zoom-scale": zoomScale,
             }}
             onMouseMove={handleMouseMove}
             onMouseUp={stopInteraction}
