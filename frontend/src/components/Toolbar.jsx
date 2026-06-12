@@ -1,10 +1,11 @@
 import { useState } from "react";
 import "./Toolbar.css";
+
 import FileTab from "./toolbar/FileTab";
 import HomeTab from "./toolbar/HomeTab";
 import InsertTab from "./toolbar/InsertTab";
 import TransitionsTab from "./toolbar/TransitionsTab";
-import AnimationsTab from "./toolbar/AnimationsTab";  
+import AnimationsTab from "./toolbar/AnimationsTab";
 import SlideShowTab from "./toolbar/SlideShowTab";
 
 const TABS = [
@@ -19,6 +20,7 @@ const TABS = [
 ];
 
 export default function Toolbar({
+  onAddSlide,
   onDeleteSlide,
   onDuplicateSlide,
   onMoveSlideUp,
@@ -33,8 +35,10 @@ export default function Toolbar({
   onImageUpload,
   onToggleSlideHidden,
   isSlideHidden,
+
   onTransitionChange,
   currentTransition,
+
   selectedElement,
   animations,
   onAddAnimation,
@@ -68,6 +72,7 @@ export default function Toolbar({
 
         {activeTab === "Home" && (
           <HomeTab
+            onAddSlide={onAddSlide}
             onDeleteSlide={onDeleteSlide}
             onDuplicateSlide={onDuplicateSlide}
             onMoveSlideUp={onMoveSlideUp}
@@ -80,9 +85,7 @@ export default function Toolbar({
           />
         )}
 
-        {activeTab === "Insert" && (
-          <InsertTab onImageUpload={onImageUpload} />
-        )}
+        {activeTab === "Insert" && <InsertTab onImageUpload={onImageUpload} />}
 
         {activeTab === "Design" && (
           <div className="toolbar-placeholder">
@@ -93,7 +96,6 @@ export default function Toolbar({
 
         {activeTab === "Transitions" && (
           <TransitionsTab
-            onOpenPreview={onOpenPreview}
             currentTransition={currentTransition}
             onTransitionChange={onTransitionChange}
           />
@@ -101,7 +103,6 @@ export default function Toolbar({
 
         {activeTab === "Animations" && (
           <AnimationsTab
-            onOpenPreview={onOpenPreview}
             selectedElement={selectedElement}
             animations={animations}
             onAddAnimation={onAddAnimation}

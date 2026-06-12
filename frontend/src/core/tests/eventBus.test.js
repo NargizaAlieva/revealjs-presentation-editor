@@ -32,11 +32,12 @@ describe("createEventBus", () => {
 
     reactDispatch = vi.fn();
     getState = vi.fn(() => ({
-      presentation: {
-        slideset: {
-          slides: [],
+        autosaveEnabled: true,
+        presentation: {
+            slideset: {
+            slides: [],
+            },
         },
-      },
     }));
 
     eventBus = createEventBus(reactDispatch, getState);
@@ -114,4 +115,25 @@ describe("createEventBus", () => {
     expect(autosave.scheduleAutosave).not.toHaveBeenCalled();
     expect(autosave.saveImmediately).not.toHaveBeenCalled();
   });
+
+  test("dispatch does not autosave when autosave is disabled", async () => {
+    getState.mockReturnValue({
+        autosaveEnabled: false,
+        presentation: {
+        slideset: {
+            slides: [],
+        },
+    },
+    });
+
+    const event = {
+        type: EditorEventType.SLIDE.ADD,
+        payload: {},
+    };
+
+    await eventBus.dispatch(event);
+
+    expect(autosave.shouldAutosave).not.toHaveBeenCalled();
+    expect(autosave.scheduleAutosave).not.toHaveBeenCalled();
+    });
 });

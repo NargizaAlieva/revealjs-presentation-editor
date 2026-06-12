@@ -17,6 +17,7 @@ export default function EditorPage() {
   const { state, eventBus } = useEditorState();
   const { presentation, slides, selectedSlide, selectedSlideIndex } =
     useSlides(state);
+
   const {
     setSelectedSlideId,
     addSlide,
@@ -38,6 +39,9 @@ export default function EditorPage() {
     updateMasterTheme,
     updateMasterDimensions,
     updateSlideTransition,
+    addAnimation,
+    updateAnimation,
+    deleteAnimation,
   } = useEditorActions(eventBus, selectedSlideIndex, slides.length);
 
   const exportPresentation = () => {
@@ -79,6 +83,29 @@ export default function EditorPage() {
     });
   };
 
+  const [selectedElementId, setSelectedElementId] = useState(null);
+
+  const selectedElement = (() => {
+    if (!selectedElementId) return null;
+
+    const textEl = (selectedSlide?.contents?.text ?? []).find(
+      (t) => t.id === selectedElementId,
+    );
+    if (textEl) {
+      return {
+        id: textEl.id,
+        label: textEl.paragraphs?.[0]?.runs?.[0]?.text || "Text",
+      };
+    }
+
+    const mediaEl = (selectedSlide?.contents?.media ?? []).find(
+      (m) => m.id === selectedElementId,
+    );
+    if (mediaEl) return { id: mediaEl.id, label: "Image" };
+
+    return null;
+  })();
+
   return (
     <div className="editor-page">
       <Toolbar
@@ -97,6 +124,13 @@ export default function EditorPage() {
         onImageUpload={handleImageUpload}
         onToggleSlideHidden={() => toggleSlideHidden(selectedSlideIndex)}
         isSlideHidden={selectedSlide?.hidden}
+        onTransitionChange={updateSlideTransition}
+        currentTransition={selectedSlide?.contents?.transition ?? "none"}
+        selectedElement={selectedElement}
+        animations={selectedSlide?.contents?.animations ?? []}
+        onAddAnimation={addAnimation}
+        onUpdateAnimation={updateAnimation}
+        onDeleteAnimation={deleteAnimation}
       />
 
       <div className="editor-body">
@@ -124,6 +158,8 @@ export default function EditorPage() {
               zoom={zoom}
               showNotes={showNotes}
               onCanvasZoom={handleCanvasZoom}
+              selectedElementId={selectedElementId}
+              onSelectElement={setSelectedElementId}
             />
           )}
         </div>
@@ -151,6 +187,7 @@ export default function EditorPage() {
         onZoomChange={setZoom}
         onZoomIn={zoomIn}
         onZoomOut={zoomOut}
+        showNotes={showNotes}
         onToggleNotes={() => setShowNotes((v) => !v)}
       />
     </div>

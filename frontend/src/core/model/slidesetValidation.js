@@ -30,17 +30,46 @@ export const validateSlideset = (presentation) => {
   }
 
   if (!Array.isArray(slideset.layouts)) {
-    errors.push("slideset.layouts must be an array");
-  } else {
-    slideset.layouts.forEach((layout, index) => {
-      if (!layout["layout-id"]) {
-        errors.push(`Layout ${index + 1} is missing layout-id`);
-      }
-      if (!Array.isArray(layout.placeholders)) {
-        errors.push(`Layout ${index + 1} is missing placeholders array`);
-      }
-    });
-  }
+  errors.push("slideset.layouts must be an array");
+} else {
+  slideset.layouts.forEach((layout, index) => {
+    if (!layout["layout-id"]) {
+      errors.push(`Layout ${index + 1} is missing layout-id`);
+    }
+
+    if (!Array.isArray(layout.placeholders)) {
+      errors.push(`Layout ${index + 1} is missing placeholders array`);
+    } else {
+      layout.placeholders.forEach((placeholder, placeholderIndex) => {
+        const placeholderNumber = placeholderIndex + 1;
+
+        if (!placeholder["placeholder-id"]) {
+          errors.push(
+            `Layout ${index + 1} placeholder ${placeholderNumber} is missing placeholder-id`
+          );
+        }
+
+        if (!placeholder.position) {
+          errors.push(
+            `Layout ${index + 1} placeholder ${placeholderNumber} is missing position`
+          );
+        }
+
+        if (typeof placeholder.width !== "number") {
+          errors.push(
+            `Layout ${index + 1} placeholder ${placeholderNumber} width must be numeric`
+          );
+        }
+
+        if (typeof placeholder.height !== "number") {
+          errors.push(
+            `Layout ${index + 1} placeholder ${placeholderNumber} height must be numeric`
+          );
+        }
+      });
+    }
+  });
+}
 
   if (!Array.isArray(slideset.slides)) {
     errors.push("slideset.slides must be an array");
@@ -67,12 +96,20 @@ export const validateSlideset = (presentation) => {
       if (!slide.contents) {
         errors.push(`Slide ${num} is missing contents`);
       } else {
-        if (!Array.isArray(slide.contents.text)) {
-          errors.push(`Slide ${num} contents.text must be an array`);
-        }
-        if (!Array.isArray(slide.contents.media)) {
-          errors.push(`Slide ${num} contents.media must be an array`);
-        }
+        const requiredContentArrays = [
+          "text",
+          "media",
+          "shapes",
+          "tables",
+          "groups",
+          "animations",
+        ];
+
+        requiredContentArrays.forEach((key) => {
+          if (!Array.isArray(slide.contents[key])) {
+            errors.push(`Slide ${num} contents.${key} must be an array`);
+          }
+        });
       }
     });
   }

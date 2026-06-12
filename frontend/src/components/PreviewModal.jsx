@@ -14,6 +14,8 @@ import {
   getSlideMediaElements,
   getSlideDimensions,
   getSlideTransition,
+  buildAnimationMap,
+  getFragmentProps,
 } from "../core/render/revealRenderer";
 
 export default function PreviewModal({ slides, presentation, onClose }) {
@@ -51,6 +53,7 @@ export default function PreviewModal({ slides, presentation, onClose }) {
             {visibleSlides.map((slide, slideIndex) => {
               const textElements = getSlideTextElements(slide);
               const mediaElements = getSlideMediaElements(slide);
+              const animationMap = buildAnimationMap(slide);
 
               return (
                 <section
@@ -60,23 +63,31 @@ export default function PreviewModal({ slides, presentation, onClose }) {
                 >
                   <div style={buildSlideContainerStyle(width, height)}>
 
-                    {textElements.map((textElement, index) => (
-                      <div
-                        key={textElement.id || index}
-                        style={buildTextElementStyle(textElement, index)}
-                      >
-                        {getTextContent(textElement)}
-                      </div>
-                    ))}
+                    {textElements.map((textElement, index) => {
+                      const fragmentProps = getFragmentProps(animationMap.get(textElement.id));
+                      return (
+                        <div
+                          key={textElement.id || index}
+                          style={buildTextElementStyle(textElement, index)}
+                          {...fragmentProps}
+                        >
+                          {getTextContent(textElement)}
+                        </div>
+                      );
+                    })}
 
-                    {mediaElements.map((media, index) => (
-                      <img
-                        key={media.id || index}
-                        src={media["file-link"]}
-                        alt=""
-                        style={buildMediaElementStyle(media, index)}
-                      />
-                    ))}
+                    {mediaElements.map((media, index) => {
+                      const fragmentProps = getFragmentProps(animationMap.get(media.id));
+                      return (
+                        <img
+                          key={media.id || index}
+                          src={media["file-link"]}
+                          alt=""
+                          style={buildMediaElementStyle(media, index)}
+                          {...fragmentProps}
+                        />
+                      );
+                    })}
 
                   </div>
                 </section>

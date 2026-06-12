@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import "./EditorCanvas.css";
 import { getSlideSize } from "../utils/slidesetRenderUtils";
 import { buildColorThemeStyle } from "../core/render/revealRenderer";
@@ -22,7 +22,25 @@ export default function EditorCanvas({
   zoom = 100,
   showNotes = true,
   onCanvasZoom,
+  selectedElementId: externalSelectedElementId,
+  onSelectElement,
 }) {
+  const [localSelectedElementId, setLocalSelectedElementId] = useState(null);
+
+  const selectedElementId =
+    externalSelectedElementId !== undefined
+      ? externalSelectedElementId
+      : localSelectedElementId;
+
+  const setSelectedElementId = (id) => {
+    if (onSelectElement) {
+      onSelectElement(id);
+      return;
+    }
+
+    setLocalSelectedElementId(id);
+  };
+
   const { width, height } = getSlideSize(presentation);
   const colorThemeStyle = buildColorThemeStyle(presentation);
 
@@ -34,8 +52,6 @@ export default function EditorCanvas({
   const mediaElements = slide?.contents?.media ?? [];
 
   const {
-    selectedElementId,
-    setSelectedElementId,
     handleMouseMove,
     stopInteraction,
     startDraggingText,
@@ -52,6 +68,7 @@ export default function EditorCanvas({
     onResizeTextElement,
     onMoveMediaElement,
     onResizeMediaElement,
+    setSelectedElementId,
   });
 
   useEffect(() => {
@@ -90,7 +107,6 @@ export default function EditorCanvas({
     mediaElements,
     onDeleteTextElement,
     onDeleteMedia,
-    setSelectedElementId,
   ]);
 
   const handleWorkspaceWheel = (event) => {
