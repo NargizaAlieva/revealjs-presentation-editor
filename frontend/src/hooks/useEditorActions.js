@@ -131,6 +131,17 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     [eventBus]
   );
 
+  const updateElement = useCallback(
+  (elementId, updates) =>
+    eventBus.dispatch(
+      createEditorEvent(EditorEventType.CONTENT.UPDATE_ELEMENT, {
+        elementId,
+        updates,
+      })
+    ),
+  [eventBus]
+);
+
   const deleteElement = useCallback(
     (elementId) =>
       eventBus.dispatch(
@@ -311,6 +322,7 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     updateTextElementFormatting,
     updateElementPosition,
     updateElementSize,
+    updateElement,
     deleteElement,
     addMedia,
     updateMedia,

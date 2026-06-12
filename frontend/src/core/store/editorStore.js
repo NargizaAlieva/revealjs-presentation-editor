@@ -5,6 +5,7 @@ import {
   updateTextElement,
   moveElement,
   resizeElement,
+  updateElement,
   updateTextFormatting,
 } from "../operations/elementOperations";
 import {
@@ -483,6 +484,20 @@ export const editorReducer = (state, event) => {
       };
     }
 
+    case EditorEventType.CONTENT.UPDATE_ELEMENT: {
+      return {
+        ...state,
+        presentation: updateElement(
+          state.presentation,
+          state.selectedSlideIndex,
+          event.payload.elementId,
+          event.payload.updates
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+    }
+
     case EditorEventType.MEDIA.ADD: {
       const newState = {
         ...state,
@@ -667,6 +682,7 @@ export const editorReducer = (state, event) => {
       case EditorEventType.CONTENT.UPDATE_TEXT_COMMIT:
       case EditorEventType.CONTENT.MOVE_ELEMENT_COMMIT:
       case EditorEventType.CONTENT.RESIZE_ELEMENT_COMMIT:
+      case EditorEventType.CONTENT.UPDATE_ELEMENT_COMMIT:
       case EditorEventType.MEDIA.UPDATE_COMMIT: {
         return pushSnapshotToHistory(
           {
