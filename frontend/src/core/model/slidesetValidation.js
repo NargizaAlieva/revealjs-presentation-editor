@@ -17,6 +17,10 @@ export const validateSlideset = (presentation) => {
     errors.push("Missing slideset.filename");
   }
 
+  if (!slideset.title) {
+    errors.push("Missing slideset.title");
+  }
+
   if (!slideset.master) {
     errors.push("Missing slideset.master");
   } else {
@@ -24,60 +28,75 @@ export const validateSlideset = (presentation) => {
     if (!dims || typeof dims.width !== "number" || typeof dims.height !== "number") {
       errors.push("master.slide-dimensions must have numeric width and height");
     }
+
+    if (!slideset.master["aspect-ratio"]) {
+      errors.push("master.aspect-ratio is required");
+    }
+
+    if (!slideset.master["dimension-units"]) {
+      errors.push("master.dimension-units is required");
+    }
+
     if (!Array.isArray(slideset.master["color-theme"])) {
       errors.push("master.color-theme must be an array");
     }
   }
 
   if (!Array.isArray(slideset.layouts)) {
-  errors.push("slideset.layouts must be an array");
-} else {
-  slideset.layouts.forEach((layout, index) => {
-    if (!layout["layout-id"]) {
-      errors.push(`Layout ${index + 1} is missing layout-id`);
-    }
+    errors.push("slideset.layouts must be an array");
+  } else {
+    slideset.layouts.forEach((layout, index) => {
+      const layoutNum = index + 1;
 
-    if (!Array.isArray(layout.placeholders)) {
-      errors.push(`Layout ${index + 1} is missing placeholders array`);
-    } else {
-      layout.placeholders.forEach((placeholder, placeholderIndex) => {
-        const placeholderNumber = placeholderIndex + 1;
+      if (!layout["layout-id"]) {
+        errors.push(`Layout ${layoutNum} is missing layout-id`);
+      }
 
-        if (!placeholder["placeholder-id"]) {
-          errors.push(
-            `Layout ${index + 1} placeholder ${placeholderNumber} is missing placeholder-id`
-          );
-        }
+      if (!Array.isArray(layout.placeholders)) {
+        errors.push(`Layout ${layoutNum} is missing placeholders array`);
+      } else {
+        layout.placeholders.forEach((placeholder, placeholderIndex) => {
+          const placeholderNum = placeholderIndex + 1;
 
-        if (!placeholder.position) {
-          errors.push(
-            `Layout ${index + 1} placeholder ${placeholderNumber} is missing position`
-          );
-        }
+          if (!placeholder["placeholder-id"]) {
+            errors.push(
+              `Layout ${layoutNum} placeholder ${placeholderNum} is missing placeholder-id`
+            );
+          }
 
-        if (typeof placeholder.width !== "number") {
-          errors.push(
-            `Layout ${index + 1} placeholder ${placeholderNumber} width must be numeric`
-          );
-        }
+          if (!placeholder.position) {
+            errors.push(
+              `Layout ${layoutNum} placeholder ${placeholderNum} is missing position`
+            );
+          }
 
-        if (typeof placeholder.height !== "number") {
-          errors.push(
-            `Layout ${index + 1} placeholder ${placeholderNumber} height must be numeric`
-          );
-        }
-      });
-    }
-  });
-}
+          if (typeof placeholder.width !== "number") {
+            errors.push(
+              `Layout ${layoutNum} placeholder ${placeholderNum} width must be numeric`
+            );
+          }
+
+          if (typeof placeholder.height !== "number") {
+            errors.push(
+              `Layout ${layoutNum} placeholder ${placeholderNum} height must be numeric`
+            );
+          }
+        });
+      }
+    });
+  }
 
   if (!Array.isArray(slideset.slides)) {
     errors.push("slideset.slides must be an array");
   } else {
+    if (slideset.slides.length === 0) {
+      errors.push("Presentation must contain at least one slide");
+    }
+
     const layoutIds = new Set(
       (slideset.layouts ?? [])
         .filter((layout) => layout?.["layout-id"])
-        .map((layout) => layout["layout-id"]),
+        .map((layout) => layout["layout-id"])
     );
 
     slideset.slides.forEach((slide, index) => {
@@ -85,6 +104,10 @@ export const validateSlideset = (presentation) => {
 
       if (!slide.title || typeof slide.title.content !== "string") {
         errors.push(`Slide ${num} title must be an object with a content string`);
+      }
+
+      if (typeof slide.hidden !== "boolean") {
+        errors.push(`Slide ${num} hidden must be a boolean`);
       }
 
       if (!slide["layout-id"]) {

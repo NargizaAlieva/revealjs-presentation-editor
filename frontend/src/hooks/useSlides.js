@@ -1,13 +1,15 @@
 export function useSlides(state) {
-  const slides = state.presentation?.slideset?.slides ?? [];
+  const presentation = state.presentation;
+  const slides = presentation?.slideset?.slides ?? [];
   const selectedSlideIndex = state.selectedSlideIndex ?? 0;
   const selectedSlide = slides[selectedSlideIndex] ?? null;
+  const selectedElementId = state.selectedElementId ?? null;
 
   return {
-    presentation: state.presentation,
+    presentation,
     slides,
     selectedSlide,
     selectedSlideIndex,
-    autosaveEnabled: state.autosaveEnabled,
+    selectedElementId,
   };
 }

@@ -93,7 +93,6 @@ const createDefaultSlideContents = ({
 
 const createMediaElement = (placeholder) => ({
   id: createId("media"),
-  "placeholder-id": placeholder["placeholder-id"],
   "file-link": "",
   "media-type": placeholder.type === "video" ? "video" : "image",
   position: { ...placeholder.position },
@@ -102,7 +101,7 @@ const createMediaElement = (placeholder) => ({
   rotation: 0,
   "z-index": 1,
   scale: 1,
-  crop: null,
+  crop: [],
   effects: {},
   playback: {},
 });
@@ -132,6 +131,10 @@ export const createDefaultPresentation = () => {
   const defaultLayout = layouts.find(
     (layout) => layout["layout-id"] === "title-content-media"
   );
+
+  if (!defaultLayout) {
+    throw new Error("Default layout 'title-content-media' not found in createDefaultLayouts");
+  }
 
   const titlePlaceholder = defaultLayout.placeholders.find(
     (p) => p["placeholder-id"] === "title-placeholder"

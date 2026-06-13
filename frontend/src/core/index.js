@@ -22,11 +22,18 @@ export {
   duplicateSlide,
   reorderSlides,
   createSlideFromLayout,
+  toggleSlideHidden,
+  updateSlideNotes,
+  updateSlideTransition,
 } from "./operations/slideOperations";
 
 export {
   updateTextElement,
   updateTextFormatting,
+  deleteTextElement,
+} from "./operations/textOperations";
+
+export {
   moveElement,
   resizeElement,
   updateElement,
@@ -41,8 +48,13 @@ export {
   addMedia,
   deleteMedia,
   updateMedia,
-  rotateMedia,
 } from "./operations/mediaOperations";
+
+export {
+  addAnimation,
+  updateAnimation,
+  deleteAnimation,
+} from "./operations/animationOperations";
 
 export {
   serializePresentation,

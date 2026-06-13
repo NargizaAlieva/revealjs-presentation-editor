@@ -1,14 +1,360 @@
-import { useRef, useState} from "react";
+// import { useCallback, useRef, useState } from "react";
+
+// const SNAP_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315, 360];
+// const SNAP_THRESHOLD = 5;
+
+// function normalizeAngle(angle) {
+//   return ((angle % 360) + 360) % 360;
+// }
+
+// function snapAngle(angle) {
+//   const normalized = normalizeAngle(angle);
+
+//   for (const snap of SNAP_ANGLES) {
+//     if (Math.abs(normalized - snap) <= SNAP_THRESHOLD) {
+//       return snap % 360;
+//     }
+//   }
+
+//   return normalized;
+// }
+
+// export function useCanvasInteractions({
+//   width,
+//   height,
+//   zoom,
+//   textElements,
+//   mediaElements,
+
+//   onSelectElement,
+
+//   onMoveTextElement,
+//   onResizeTextElement,
+//   onRotateTextElement,
+
+//   onMoveMediaElement,
+//   onResizeMediaElement,
+//   onRotateMediaElement,
+
+//   createBeforeSnapshot,
+//   onCommitMoveElement,
+//   onCommitResizeElement,
+//   onCommitUpdateElement,
+// }) {
+//   const [draggingElementId, setDraggingElementId] = useState(null);
+//   const [draggingMediaId, setDraggingMediaId] = useState(null);
+//   const [resizingElementId, setResizingElementId] = useState(null);
+//   const [resizingMediaId, setResizingMediaId] = useState(null);
+//   const [rotatingElement, setRotatingElement] = useState(null);
+//   const [snapInfo, setSnapInfo] = useState(null);
+//   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+//   const interactionSnapshot = useRef(null);
+//   const zoomScale = zoom / 100;
+
+//   const getMousePosition = useCallback(
+//     (event, rect) => ({
+//       x: (event.clientX - rect.left) / zoomScale,
+//       y: (event.clientY - rect.top) / zoomScale,
+//     }),
+//     [zoomScale],
+//   );
+
+//   const getRotationAngle = useCallback((mouseX, mouseY, element) => {
+//     const x = element.position?.x ?? 0;
+//     const y = element.position?.y ?? 0;
+//     const elementWidth = element.width ?? 300;
+//     const elementHeight = element.height ?? 200;
+
+//     const centerX = x + elementWidth / 2;
+//     const centerY = y + elementHeight / 2;
+
+//     return Math.atan2(mouseY - centerY, mouseX - centerX) * (180 / Math.PI);
+//   }, []);
+
+//   const stopInteraction = useCallback(() => {
+//     if (interactionSnapshot.current) {
+//       if (draggingElementId || draggingMediaId) {
+//         onCommitMoveElement?.(interactionSnapshot.current);
+//       }
+
+//       if (resizingElementId || resizingMediaId) {
+//         onCommitResizeElement?.(interactionSnapshot.current);
+//       }
+
+//       if (rotatingElement) {
+//         onCommitUpdateElement?.(interactionSnapshot.current);
+//       }
+
+//       interactionSnapshot.current = null;
+//     }
+
+//     setDraggingElementId(null);
+//     setDraggingMediaId(null);
+//     setResizingElementId(null);
+//     setResizingMediaId(null);
+//     setRotatingElement(null);
+//     setSnapInfo(null);
+//   }, [
+//     draggingElementId,
+//     draggingMediaId,
+//     resizingElementId,
+//     resizingMediaId,
+//     rotatingElement,
+//     onCommitMoveElement,
+//     onCommitResizeElement,
+//     onCommitUpdateElement,
+//   ]);
+
+//   const handleMouseMove = useCallback(
+//     (event) => {
+//       const rect = event.currentTarget.getBoundingClientRect();
+//       const mouse = getMousePosition(event, rect);
+
+//       if (draggingElementId) {
+//         const element = textElements.find((item) => item.id === draggingElementId);
+//         if (!element) return;
+
+//         const newX = mouse.x - dragOffset.x;
+//         const newY = mouse.y - dragOffset.y;
+
+//         onMoveTextElement(
+//           draggingElementId,
+//           Math.max(0, Math.min(width - (element.width ?? 300), newX)),
+//           Math.max(0, Math.min(height - (element.height ?? 80), newY)),
+//         );
+//       }
+
+//       if (draggingMediaId) {
+//         const media = mediaElements.find((item) => item.id === draggingMediaId);
+//         if (!media) return;
+
+//         const newX = mouse.x - dragOffset.x;
+//         const newY = mouse.y - dragOffset.y;
+
+//         onMoveMediaElement(
+//           draggingMediaId,
+//           Math.max(0, Math.min(width - (media.width ?? 300), newX)),
+//           Math.max(0, Math.min(height - (media.height ?? 200), newY)),
+//         );
+//       }
+
+//       if (resizingElementId) {
+//         const element = textElements.find((item) => item.id === resizingElementId);
+//         if (!element) return;
+
+//         const x = element.position?.x ?? 0;
+//         const y = element.position?.y ?? 0;
+
+//         onResizeTextElement(
+//           resizingElementId,
+//           Math.max(100, Math.min(width - x, mouse.x - x)),
+//           Math.max(40, Math.min(height - y, mouse.y - y)),
+//         );
+//       }
+
+//       if (resizingMediaId) {
+//         const media = mediaElements.find((item) => item.id === resizingMediaId);
+//         if (!media) return;
+
+//         const x = media.position?.x ?? 0;
+//         const y = media.position?.y ?? 0;
+
+//         onResizeMediaElement(
+//           resizingMediaId,
+//           Math.max(80, Math.min(width - x, mouse.x - x)),
+//           Math.max(60, Math.min(height - y, mouse.y - y)),
+//         );
+//       }
+
+//       if (rotatingElement?.type === "text") {
+//         const element = textElements.find((item) => item.id === rotatingElement.id);
+//         if (!element) return;
+
+//         const rawAngle = getRotationAngle(mouse.x, mouse.y, element);
+//         const snapped = snapAngle(rawAngle);
+
+//         setSnapInfo({
+//           angle: Math.round(snapped),
+//           snapped: snapped !== normalizeAngle(rawAngle),
+//           elementId: rotatingElement.id,
+//         });
+
+//         onRotateTextElement?.(rotatingElement.id, snapped);
+//       }
+
+//       if (rotatingElement?.type === "media") {
+//         const media = mediaElements.find((item) => item.id === rotatingElement.id);
+//         if (!media) return;
+
+//         const rawAngle = getRotationAngle(mouse.x, mouse.y, media);
+//         const snapped = snapAngle(rawAngle);
+
+//         setSnapInfo({
+//           angle: Math.round(snapped),
+//           snapped: snapped !== normalizeAngle(rawAngle),
+//           elementId: rotatingElement.id,
+//         });
+
+//         onRotateMediaElement?.(rotatingElement.id, snapped);
+//       }
+//     },
+//     [
+//       draggingElementId,
+//       draggingMediaId,
+//       resizingElementId,
+//       resizingMediaId,
+//       rotatingElement,
+//       dragOffset,
+//       width,
+//       height,
+//       textElements,
+//       mediaElements,
+//       getMousePosition,
+//       getRotationAngle,
+//       onMoveTextElement,
+//       onResizeTextElement,
+//       onRotateTextElement,
+//       onMoveMediaElement,
+//       onResizeMediaElement,
+//       onRotateMediaElement,
+//     ],
+//   );
+
+//   const startDraggingText = useCallback(
+//     (event, textElementId) => {
+//       event.preventDefault();
+//       event.stopPropagation();
+
+//       const element = textElements.find((item) => item.id === textElementId);
+//       if (!element) return;
+
+//       interactionSnapshot.current = createBeforeSnapshot?.();
+//       onSelectElement?.(textElementId);
+
+//       const rect =
+//         event.currentTarget.parentElement.parentElement.getBoundingClientRect();
+
+//       setDraggingElementId(textElementId);
+//       setDragOffset({
+//         x: (event.clientX - rect.left) / zoomScale - (element.position?.x ?? 0),
+//         y: (event.clientY - rect.top) / zoomScale - (element.position?.y ?? 0),
+//       });
+//     },
+//     [textElements, createBeforeSnapshot, onSelectElement, zoomScale],
+//   );
+
+//   const startDraggingMedia = useCallback(
+//     (event, mediaId) => {
+//       event.preventDefault();
+//       event.stopPropagation();
+
+//       const media = mediaElements.find((item) => item.id === mediaId);
+//       if (!media) return;
+
+//       interactionSnapshot.current = createBeforeSnapshot?.();
+//       onSelectElement?.(mediaId);
+
+//       const rect = event.currentTarget.parentElement.getBoundingClientRect();
+
+//       setDraggingMediaId(mediaId);
+//       setDragOffset({
+//         x: (event.clientX - rect.left) / zoomScale - (media.position?.x ?? 0),
+//         y: (event.clientY - rect.top) / zoomScale - (media.position?.y ?? 0),
+//       });
+//     },
+//     [mediaElements, createBeforeSnapshot, onSelectElement, zoomScale],
+//   );
+
+//   const startResizingText = useCallback(
+//     (event, textElementId) => {
+//       event.preventDefault();
+//       event.stopPropagation();
+
+//       interactionSnapshot.current = createBeforeSnapshot?.();
+//       onSelectElement?.(textElementId);
+//       setResizingElementId(textElementId);
+//     },
+//     [createBeforeSnapshot, onSelectElement],
+//   );
+
+//   const startResizingMedia = useCallback(
+//     (event, mediaId) => {
+//       event.preventDefault();
+//       event.stopPropagation();
+
+//       interactionSnapshot.current = createBeforeSnapshot?.();
+//       onSelectElement?.(mediaId);
+//       setResizingMediaId(mediaId);
+//     },
+//     [createBeforeSnapshot, onSelectElement],
+//   );
+
+//   const startRotatingText = useCallback(
+//     (event, textElementId) => {
+//       event.preventDefault();
+//       event.stopPropagation();
+
+//       interactionSnapshot.current = createBeforeSnapshot?.();
+//       onSelectElement?.(textElementId);
+
+//       setRotatingElement({
+//         type: "text",
+//         id: textElementId,
+//       });
+//     },
+//     [createBeforeSnapshot, onSelectElement],
+//   );
+
+//   const startRotatingMedia = useCallback(
+//     (event, mediaId) => {
+//       event.preventDefault();
+//       event.stopPropagation();
+
+//       interactionSnapshot.current = createBeforeSnapshot?.();
+//       onSelectElement?.(mediaId);
+
+//       setRotatingElement({
+//         type: "media",
+//         id: mediaId,
+//       });
+//     },
+//     [createBeforeSnapshot, onSelectElement],
+//   );
+
+//   return {
+//     handleMouseMove,
+//     stopInteraction,
+//     startDraggingText,
+//     startDraggingMedia,
+//     startResizingText,
+//     startResizingMedia,
+//     startRotatingText,
+//     startRotatingMedia,
+//     snapInfo,
+//     isRotating: Boolean(rotatingElement),
+//   };
+// }
+
+
+import { useCallback, useState } from "react";
 
 const SNAP_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315, 360];
-const SNAP_THRESHOLD = 5; // degrees
+const SNAP_THRESHOLD = 5;
+
+function normalizeAngle(angle) {
+  return ((angle % 360) + 360) % 360;
+}
 
 function snapAngle(angle) {
-  // Normalize to 0–360
-  const normalized = ((angle % 360) + 360) % 360;
+  const normalized = normalizeAngle(angle);
+
   for (const snap of SNAP_ANGLES) {
-    if (Math.abs(normalized - snap) <= SNAP_THRESHOLD) return snap % 360;
+    if (Math.abs(normalized - snap) <= SNAP_THRESHOLD) {
+      return snap % 360;
+    }
   }
+
   return normalized;
 }
 
@@ -18,54 +364,47 @@ export function useCanvasInteractions({
   zoom,
   textElements,
   mediaElements,
+
+  onSelectElement,
+
   onMoveTextElement,
   onResizeTextElement,
   onRotateTextElement,
+
   onMoveMediaElement,
   onResizeMediaElement,
   onRotateMediaElement,
-  createBeforeSnapshot,
-  onCommitMoveElement,
-  onCommitResizeElement,
+
+  onBeginHistory,
+  onCommitHistory,
+  onCancelHistory,
 }) {
   const [draggingElementId, setDraggingElementId] = useState(null);
   const [draggingMediaId, setDraggingMediaId] = useState(null);
   const [resizingElementId, setResizingElementId] = useState(null);
   const [resizingMediaId, setResizingMediaId] = useState(null);
   const [rotatingElement, setRotatingElement] = useState(null);
-  const [snapInfo, setSnapInfo] = useState(null); // { angle, snapped, elementId }
+  const [snapInfo, setSnapInfo] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
-  const interactionSnapshot = useRef(null);
   const zoomScale = zoom / 100;
 
-  const stopInteraction = () => {
-    if (interactionSnapshot.current) {
-      if (draggingElementId || draggingMediaId) {
-        onCommitMoveElement?.(interactionSnapshot.current);
-      }
+  const hasActiveInteraction =
+    draggingElementId ||
+    draggingMediaId ||
+    resizingElementId ||
+    resizingMediaId ||
+    rotatingElement;
 
-      if (resizingElementId || resizingMediaId) {
-        onCommitResizeElement?.(interactionSnapshot.current);
-      }
+  const getMousePosition = useCallback(
+    (event, rect) => ({
+      x: (event.clientX - rect.left) / zoomScale,
+      y: (event.clientY - rect.top) / zoomScale,
+    }),
+    [zoomScale],
+  );
 
-      interactionSnapshot.current = null;
-    }
-
-    setDraggingElementId(null);
-    setDraggingMediaId(null);
-    setResizingElementId(null);
-    setResizingMediaId(null);
-    setRotatingElement(null);
-    setSnapInfo(null);
-  };
-
-  const getMousePosition = (event, rect) => ({
-    x: (event.clientX - rect.left) / zoomScale,
-    y: (event.clientY - rect.top) / zoomScale,
-  });
-
-  const getRotationAngle = (mouseX, mouseY, element) => {
+  const getRotationAngle = useCallback((mouseX, mouseY, element) => {
     const x = element.position?.x ?? 0;
     const y = element.position?.y ?? 0;
     const elementWidth = element.width ?? 300;
@@ -75,184 +414,254 @@ export function useCanvasInteractions({
     const centerY = y + elementHeight / 2;
 
     return Math.atan2(mouseY - centerY, mouseX - centerX) * (180 / Math.PI);
-  };
+  }, []);
 
-  const handleMouseMove = (event) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const mouse = getMousePosition(event, rect);
+  const stopInteraction = useCallback(() => {
+    if (hasActiveInteraction) {
+      onCommitHistory?.();
+    }
 
-    if (draggingElementId) {
-      const element = textElements.find(
-        (item) => item.id === draggingElementId,
-      );
+    setDraggingElementId(null);
+    setDraggingMediaId(null);
+    setResizingElementId(null);
+    setResizingMediaId(null);
+    setRotatingElement(null);
+    setSnapInfo(null);
+  }, [hasActiveInteraction, onCommitHistory]);
+
+  const cancelInteraction = useCallback(() => {
+    if (hasActiveInteraction) {
+      onCancelHistory?.();
+    }
+
+    setDraggingElementId(null);
+    setDraggingMediaId(null);
+    setResizingElementId(null);
+    setResizingMediaId(null);
+    setRotatingElement(null);
+    setSnapInfo(null);
+  }, [hasActiveInteraction, onCancelHistory]);
+
+  const handleMouseMove = useCallback(
+    (event) => {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const mouse = getMousePosition(event, rect);
+
+      if (draggingElementId) {
+        const element = textElements.find((item) => item.id === draggingElementId);
+        if (!element) return;
+
+        const newX = mouse.x - dragOffset.x;
+        const newY = mouse.y - dragOffset.y;
+
+        onMoveTextElement(
+          draggingElementId,
+          Math.max(0, Math.min(width - (element.width ?? 300), newX)),
+          Math.max(0, Math.min(height - (element.height ?? 80), newY)),
+        );
+      }
+
+      if (draggingMediaId) {
+        const media = mediaElements.find((item) => item.id === draggingMediaId);
+        if (!media) return;
+
+        const newX = mouse.x - dragOffset.x;
+        const newY = mouse.y - dragOffset.y;
+
+        onMoveMediaElement(
+          draggingMediaId,
+          Math.max(0, Math.min(width - (media.width ?? 300), newX)),
+          Math.max(0, Math.min(height - (media.height ?? 200), newY)),
+        );
+      }
+
+      if (resizingElementId) {
+        const element = textElements.find((item) => item.id === resizingElementId);
+        if (!element) return;
+
+        const x = element.position?.x ?? 0;
+        const y = element.position?.y ?? 0;
+
+        onResizeTextElement(
+          resizingElementId,
+          Math.max(100, Math.min(width - x, mouse.x - x)),
+          Math.max(40, Math.min(height - y, mouse.y - y)),
+        );
+      }
+
+      if (resizingMediaId) {
+        const media = mediaElements.find((item) => item.id === resizingMediaId);
+        if (!media) return;
+
+        const x = media.position?.x ?? 0;
+        const y = media.position?.y ?? 0;
+
+        onResizeMediaElement(
+          resizingMediaId,
+          Math.max(80, Math.min(width - x, mouse.x - x)),
+          Math.max(60, Math.min(height - y, mouse.y - y)),
+        );
+      }
+
+      if (rotatingElement?.type === "text") {
+        const element = textElements.find((item) => item.id === rotatingElement.id);
+        if (!element) return;
+
+        const rawAngle = getRotationAngle(mouse.x, mouse.y, element);
+        const snapped = snapAngle(rawAngle);
+
+        setSnapInfo({
+          angle: Math.round(snapped),
+          snapped: snapped !== normalizeAngle(rawAngle),
+          elementId: rotatingElement.id,
+        });
+
+        onRotateTextElement?.(rotatingElement.id, snapped);
+      }
+
+      if (rotatingElement?.type === "media") {
+        const media = mediaElements.find((item) => item.id === rotatingElement.id);
+        if (!media) return;
+
+        const rawAngle = getRotationAngle(mouse.x, mouse.y, media);
+        const snapped = snapAngle(rawAngle);
+
+        setSnapInfo({
+          angle: Math.round(snapped),
+          snapped: snapped !== normalizeAngle(rawAngle),
+          elementId: rotatingElement.id,
+        });
+
+        onRotateMediaElement?.(rotatingElement.id, snapped);
+      }
+    },
+    [
+      draggingElementId,
+      draggingMediaId,
+      resizingElementId,
+      resizingMediaId,
+      rotatingElement,
+      dragOffset,
+      width,
+      height,
+      textElements,
+      mediaElements,
+      getMousePosition,
+      getRotationAngle,
+      onMoveTextElement,
+      onResizeTextElement,
+      onRotateTextElement,
+      onMoveMediaElement,
+      onResizeMediaElement,
+      onRotateMediaElement,
+    ],
+  );
+
+  const startDraggingText = useCallback(
+    (event, textElementId) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const element = textElements.find((item) => item.id === textElementId);
       if (!element) return;
 
-      const newX = mouse.x - dragOffset.x;
-      const newY = mouse.y - dragOffset.y;
+      onBeginHistory?.();
+      onSelectElement?.(textElementId);
 
-      onMoveTextElement(
-        draggingElementId,
-        Math.max(0, Math.min(width - (element.width ?? 300), newX)),
-        Math.max(0, Math.min(height - (element.height ?? 80), newY)),
-      );
-    }
+      const rect =
+        event.currentTarget.parentElement.parentElement.getBoundingClientRect();
 
-    if (draggingMediaId) {
-      const media = mediaElements.find((item) => item.id === draggingMediaId);
-      if (!media) return;
-
-      const newX = mouse.x - dragOffset.x;
-      const newY = mouse.y - dragOffset.y;
-
-      onMoveMediaElement(
-        draggingMediaId,
-        Math.max(0, Math.min(width - (media.width ?? 300), newX)),
-        Math.max(0, Math.min(height - (media.height ?? 200), newY)),
-      );
-    }
-
-    if (resizingElementId) {
-      const element = textElements.find(
-        (item) => item.id === resizingElementId,
-      );
-      if (!element) return;
-
-      const x = element.position?.x ?? 0;
-      const y = element.position?.y ?? 0;
-
-      onResizeTextElement(
-        resizingElementId,
-        Math.max(100, Math.min(width - x, mouse.x - x)),
-        Math.max(40, Math.min(height - y, mouse.y - y)),
-      );
-    }
-
-    if (resizingMediaId) {
-      const media = mediaElements.find((item) => item.id === resizingMediaId);
-      if (!media) return;
-
-      const x = media.position?.x ?? 0;
-      const y = media.position?.y ?? 0;
-
-      onResizeMediaElement(
-        resizingMediaId,
-        Math.max(80, Math.min(width - x, mouse.x - x)),
-        Math.max(60, Math.min(height - y, mouse.y - y)),
-      );
-    }
-
-    if (rotatingElement?.type === "text") {
-      const element = textElements.find(
-        (item) => item.id === rotatingElement.id,
-      );
-      if (!element) return;
-
-      const rawAngle = getRotationAngle(mouse.x, mouse.y, element);
-      const snapped = snapAngle(rawAngle);
-      const isSnapped = snapped !== ((rawAngle % 360) + 360) % 360;
-      setSnapInfo({
-        angle: Math.round(snapped),
-        snapped: isSnapped,
-        elementId: rotatingElement.id,
+      setDraggingElementId(textElementId);
+      setDragOffset({
+        x: (event.clientX - rect.left) / zoomScale - (element.position?.x ?? 0),
+        y: (event.clientY - rect.top) / zoomScale - (element.position?.y ?? 0),
       });
-      onRotateTextElement?.(rotatingElement.id, snapped);
-    }
+    },
+    [textElements, onBeginHistory, onSelectElement, zoomScale],
+  );
 
-    if (rotatingElement?.type === "media") {
-      const media = mediaElements.find(
-        (item) => item.id === rotatingElement.id,
-      );
+  const startDraggingMedia = useCallback(
+    (event, mediaId) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const media = mediaElements.find((item) => item.id === mediaId);
       if (!media) return;
 
-      const rawAngle = getRotationAngle(mouse.x, mouse.y, media);
-      const snapped = snapAngle(rawAngle);
-      const isSnapped = snapped !== ((rawAngle % 360) + 360) % 360;
-      setSnapInfo({
-        angle: Math.round(snapped),
-        snapped: isSnapped,
-        elementId: rotatingElement.id,
+      onBeginHistory?.();
+      onSelectElement?.(mediaId);
+
+      const rect = event.currentTarget.parentElement.getBoundingClientRect();
+
+      setDraggingMediaId(mediaId);
+      setDragOffset({
+        x: (event.clientX - rect.left) / zoomScale - (media.position?.x ?? 0),
+        y: (event.clientY - rect.top) / zoomScale - (media.position?.y ?? 0),
       });
-      onRotateMediaElement?.(rotatingElement.id, snapped);
-    }
-  };
+    },
+    [mediaElements, onBeginHistory, onSelectElement, zoomScale],
+  );
 
-  const startDraggingText = (event, textElementId) => {
-    event.preventDefault();
-    event.stopPropagation();
+  const startResizingText = useCallback(
+    (event, textElementId) => {
+      event.preventDefault();
+      event.stopPropagation();
 
-    const element = textElements.find((item) => item.id === textElementId);
-    if (!element) return;
+      onBeginHistory?.();
+      onSelectElement?.(textElementId);
+      setResizingElementId(textElementId);
+    },
+    [onBeginHistory, onSelectElement],
+  );
 
-    interactionSnapshot.current = createBeforeSnapshot?.();
+  const startResizingMedia = useCallback(
+    (event, mediaId) => {
+      event.preventDefault();
+      event.stopPropagation();
 
-    // event.currentTarget = drag-border div → parentElement = text wrapper → parentElement = canvas
-    const rect =
-      event.currentTarget.parentElement.parentElement.getBoundingClientRect();
+      onBeginHistory?.();
+      onSelectElement?.(mediaId);
+      setResizingMediaId(mediaId);
+    },
+    [onBeginHistory, onSelectElement],
+  );
 
-    setDraggingElementId(textElementId);
-    setDragOffset({
-      x: (event.clientX - rect.left) / zoomScale - (element.position?.x ?? 0),
-      y: (event.clientY - rect.top) / zoomScale - (element.position?.y ?? 0),
-    });
-  };
+  const startRotatingText = useCallback(
+    (event, textElementId) => {
+      event.preventDefault();
+      event.stopPropagation();
 
-  const startDraggingMedia = (event, mediaId) => {
-    event.preventDefault();
-    event.stopPropagation();
+      onBeginHistory?.();
+      onSelectElement?.(textElementId);
 
-    const media = mediaElements.find((item) => item.id === mediaId);
-    if (!media) return;
+      setRotatingElement({
+        type: "text",
+        id: textElementId,
+      });
+    },
+    [onBeginHistory, onSelectElement],
+  );
 
-    interactionSnapshot.current = createBeforeSnapshot?.();
+  const startRotatingMedia = useCallback(
+    (event, mediaId) => {
+      event.preventDefault();
+      event.stopPropagation();
 
-    const rect = event.currentTarget.parentElement.getBoundingClientRect();
+      onBeginHistory?.();
+      onSelectElement?.(mediaId);
 
-    setDraggingMediaId(mediaId);
-    setDragOffset({
-      x: (event.clientX - rect.left) / zoomScale - (media.position?.x ?? 0),
-      y: (event.clientY - rect.top) / zoomScale - (media.position?.y ?? 0),
-    });
-  };
-
-  const startResizingText = (event, textElementId) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    interactionSnapshot.current = createBeforeSnapshot?.();
-    setResizingElementId(textElementId);
-  };
-
-  const startResizingMedia = (event, mediaId) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    interactionSnapshot.current = createBeforeSnapshot?.();
-    setResizingMediaId(mediaId);
-  };
-
-  const startRotatingText = (event, textElementId) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    setRotatingElement({
-      type: "text",
-      id: textElementId,
-    });
-  };
-
-  const startRotatingMedia = (event, mediaId) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    setRotatingElement({
-      type: "media",
-      id: mediaId,
-    });
-  };
+      setRotatingElement({
+        type: "media",
+        id: mediaId,
+      });
+    },
+    [onBeginHistory, onSelectElement],
+  );
 
   return {
     handleMouseMove,
     stopInteraction,
+    cancelInteraction,
     startDraggingText,
     startDraggingMedia,
     startResizingText,
@@ -260,6 +669,6 @@ export function useCanvasInteractions({
     startRotatingText,
     startRotatingMedia,
     snapInfo,
-    isRotating: !!rotatingElement,
+    isRotating: Boolean(rotatingElement),
   };
 }

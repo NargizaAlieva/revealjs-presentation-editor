@@ -1,24 +1,10 @@
-const createId = () => {
-  if (globalThis.crypto?.randomUUID) {
-    return globalThis.crypto.randomUUID();
-  }
+import { createId, getSlides, setSlides } from "../../utils/presentationUtils";
 
-  return `id-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-};
-
-const getSlides = (presentation) => presentation?.slideset?.slides ?? [];
-const getLayouts = (presentation) => presentation?.slideset?.layouts ?? [];
-
-const setSlides = (presentation, slides) => ({
-  ...presentation,
-  slideset: {
-    ...presentation.slideset,
-    slides,
-  },
-});
+const getLayouts = (presentation) =>
+  presentation?.slideset?.layouts ?? [];
 
 const createTextElementFromPlaceholder = (placeholder, defaultText = "") => ({
-  id: createId(),
+  id: createId("text"),
   "placeholder-id": placeholder["placeholder-id"],
   position: { ...placeholder.position },
   "pos-type": "relative-to-placeholder",
@@ -27,10 +13,10 @@ const createTextElementFromPlaceholder = (placeholder, defaultText = "") => ({
   rotation: 0,
   overflow: "shrink-on-overflow",
   "z-index": 1,
-  background: placeholder.background ?? "transparent",
+  background: placeholder.background ?? "#FFFFFF00",
   paragraphs: [
     {
-      id: createId(),
+      id: createId("paragraph"),
       formatting: { ...(placeholder.formatting ?? {}) },
       bullets: "none",
       runs: [
@@ -46,7 +32,7 @@ const createTextElementFromPlaceholder = (placeholder, defaultText = "") => ({
 });
 
 const createMediaElementFromPlaceholder = (placeholder) => ({
-  id: createId(),
+  id: createId("media"),
   "placeholder-id": placeholder["placeholder-id"],
   "file-link": "",
   "media-type": placeholder.type === "video" ? "video" : "image",
@@ -56,7 +42,7 @@ const createMediaElementFromPlaceholder = (placeholder) => ({
   rotation: 0,
   "z-index": 1,
   scale: 1,
-  crop: null,
+  crop: [],
   effects: {},
   playback: {},
 });
@@ -64,13 +50,9 @@ const createMediaElementFromPlaceholder = (placeholder) => ({
 export const createSlideFromLayout = (layout, slideNumber) => {
   const placeholders = layout.placeholders ?? [];
 
-  const textPlaceholders = placeholders.filter(
-    (placeholder) => placeholder.type === "text",
-  );
-
+  const textPlaceholders = placeholders.filter((p) => p.type === "text");
   const mediaPlaceholders = placeholders.filter(
-    (placeholder) =>
-      placeholder.type === "image" || placeholder.type === "video",
+    (p) => p.type === "image" || p.type === "video",
   );
 
   return {
@@ -78,21 +60,19 @@ export const createSlideFromLayout = (layout, slideNumber) => {
     "layout-id": layout["layout-id"],
     hidden: false,
     contents: {
-      text: textPlaceholders.map((placeholder) =>
+      text: textPlaceholders.map((p) =>
         createTextElementFromPlaceholder(
-          placeholder,
-          placeholder.role === "title"
-            ? `Slide ${slideNumber}`
-            : "Click to edit text",
+          p,
+          p.role === "title" ? `Slide ${slideNumber}` : "Click to edit text",
         ),
       ),
       media: mediaPlaceholders.map(createMediaElementFromPlaceholder),
-      shapes: [],
-      tables: [],
+      shapes: [],   // reserved for future integration
+      tables: [],   // reserved for future integration
       groups: [],
       animations: [],
-      background: "var(--bg-light)",
-      transition: "slide",
+      background: "#FFFFFFFF",
+      transition: "none",
       notes: "",
     },
   };
@@ -102,7 +82,7 @@ export const addSlide = (presentation, layoutId = "title-content") => {
   const layouts = getLayouts(presentation);
   const slides = getSlides(presentation);
 
-  const layout = layouts.find((item) => item["layout-id"] === layoutId);
+  const layout = layouts.find((l) => l["layout-id"] === layoutId);
 
   if (!layout) {
     throw new Error(`Layout not found: ${layoutId}`);
@@ -124,76 +104,51 @@ export const deleteSlide = (presentation, slideIndex) => {
   );
 };
 
-const cloneTextElementWithNewIds = (textElement) => ({
-  ...structuredClone(textElement),
-  id: createId(),
-  paragraphs: (textElement.paragraphs ?? []).map((paragraph) => ({
-    ...structuredClone(paragraph),
-    id: createId(),
-  })),
-});
-
-const cloneMediaElementWithNewId = (mediaElement) => ({
-  ...structuredClone(mediaElement),
-  id: createId(),
-});
-
-const cloneShapeElementWithNewId = (shapeElement) => ({
-  ...structuredClone(shapeElement),
-  id: createId(),
-});
-
-const cloneTableElementWithNewId = (tableElement) => ({
-  ...structuredClone(tableElement),
-  id: createId(),
-});
-
-const cloneGroupElementWithNewId = (groupElement) => ({
-  ...structuredClone(groupElement),
-  id: createId(),
-});
-
-const cloneAnimationElement = (animationElement) => ({
-  ...structuredClone(animationElement),
-});
-
 export const duplicateSlide = (presentation, slideIndex) => {
   const slides = getSlides(presentation);
-  const slideToDuplicate = slides[slideIndex];
+  const source = slides[slideIndex];
 
-  if (!slideToDuplicate) return presentation;
+  if (!source) return presentation;
 
-  const duplicatedSlide = {
-    ...structuredClone(slideToDuplicate),
-    title: {
-      content: `${slideToDuplicate.title?.content ?? "Slide"} Copy`,
-    },
+  const duplicated = {
+    ...structuredClone(source),
+    title: { content: `${source.title?.content ?? "Slide"} Copy` },
     contents: {
-      ...structuredClone(slideToDuplicate.contents),
-      text: (slideToDuplicate.contents?.text ?? []).map(
-        cloneTextElementWithNewIds,
-      ),
-      media: (slideToDuplicate.contents?.media ?? []).map(
-        cloneMediaElementWithNewId,
-      ),
-      shapes: (slideToDuplicate.contents?.shapes ?? []).map(
-        cloneShapeElementWithNewId,
-      ),
-      tables: (slideToDuplicate.contents?.tables ?? []).map(
-        cloneTableElementWithNewId,
-      ),
-      groups: (slideToDuplicate.contents?.groups ?? []).map(
-        cloneGroupElementWithNewId,
-      ),
-      animations: (slideToDuplicate.contents?.animations ?? []).map(
-        cloneAnimationElement,
-      ),
+      ...structuredClone(source.contents),
+      text: (source.contents?.text ?? []).map((el) => ({
+        ...structuredClone(el),
+        id: createId("text"),
+        paragraphs: (el.paragraphs ?? []).map((p) => ({
+          ...structuredClone(p),
+          id: createId("paragraph"),
+        })),
+      })),
+      media: (source.contents?.media ?? []).map((el) => ({
+        ...structuredClone(el),
+        id: createId("media"),
+      })),
+      shapes: (source.contents?.shapes ?? []).map((el) => ({
+        ...structuredClone(el),
+        id: createId("shape"),
+      })),
+      tables: (source.contents?.tables ?? []).map((el) => ({
+        ...structuredClone(el),
+        id: createId("table"),
+      })),
+      groups: (source.contents?.groups ?? []).map((el) => ({
+        ...structuredClone(el),
+        id: createId("group"),
+      })),
+      animations: (source.contents?.animations ?? []).map((el) => ({
+        ...structuredClone(el),
+        id: createId("animation"),
+      })),
     },
   };
 
   return setSlides(presentation, [
     ...slides.slice(0, slideIndex + 1),
-    duplicatedSlide,
+    duplicated,
     ...slides.slice(slideIndex + 1),
   ]);
 };
@@ -211,8 +166,47 @@ export const reorderSlides = (presentation, fromIndex, toIndex) => {
     return presentation;
   }
 
-  const [movedSlide] = slides.splice(fromIndex, 1);
-  slides.splice(toIndex, 0, movedSlide);
+  const [moved] = slides.splice(fromIndex, 1);
+  slides.splice(toIndex, 0, moved);
+
+  return setSlides(presentation, slides);
+};
+
+export const updateSlideNotes = (presentation, slideIndex, notes) => {
+  const slides = [...getSlides(presentation)];
+  const slide = slides[slideIndex];
+
+  if (!slide) return presentation;
+
+  slides[slideIndex] = {
+    ...slide,
+    contents: { ...slide.contents, notes },
+  };
+
+  return setSlides(presentation, slides);
+};
+
+export const toggleSlideHidden = (presentation, slideIndex) => {
+  const slides = [...getSlides(presentation)];
+  const slide = slides[slideIndex];
+
+  if (!slide) return presentation;
+
+  slides[slideIndex] = { ...slide, hidden: !slide.hidden };
+
+  return setSlides(presentation, slides);
+};
+
+export const updateSlideTransition = (presentation, slideIndex, transition) => {
+  const slides = [...getSlides(presentation)];
+  const slide = slides[slideIndex];
+
+  if (!slide) return presentation;
+
+  slides[slideIndex] = {
+    ...slide,
+    contents: { ...slide.contents, transition },
+  };
 
   return setSlides(presentation, slides);
 };

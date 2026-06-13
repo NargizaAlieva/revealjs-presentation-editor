@@ -10,16 +10,17 @@ const AUTO_SAVE_EVENTS = new Set([
   EditorEventType.SLIDE.DUPLICATE,
   EditorEventType.SLIDE.REORDER,
   EditorEventType.SLIDE.TOGGLE_HIDDEN,
-  EditorEventType.SLIDE.UPDATE_BACKGROUND,
   EditorEventType.SLIDE.UPDATE_TRANSITION,
   EditorEventType.SLIDE.UPDATE_NOTES,
 
-  EditorEventType.CONTENT.ADD_TEXT,
-  EditorEventType.CONTENT.UPDATE_TEXT,
-  EditorEventType.CONTENT.UPDATE_TEXT_FORMATTING,
-  EditorEventType.CONTENT.DELETE_ELEMENT,
-  EditorEventType.CONTENT.MOVE_ELEMENT,
-  EditorEventType.CONTENT.RESIZE_ELEMENT,
+  EditorEventType.TEXT.ADD,
+  EditorEventType.TEXT.UPDATE_COMMIT,
+  EditorEventType.TEXT.UPDATE_FORMATTING,
+  EditorEventType.TEXT.DELETE,
+
+  EditorEventType.ELEMENT.DELETE,
+  EditorEventType.ELEMENT.MOVE_COMMIT,
+  EditorEventType.ELEMENT.RESIZE_COMMIT,
 
   EditorEventType.MEDIA.ADD,
   EditorEventType.MEDIA.DELETE,
@@ -37,6 +38,9 @@ const AUTO_SAVE_EVENTS = new Set([
   EditorEventType.MASTER.UPDATE_FORMATTING,
 
   EditorEventType.PRESENTATION.UPDATE,
+
+  EditorEventType.HISTORY.UNDO,
+  EditorEventType.HISTORY.REDO,
 ]);
 
 const createDebounce = (fn, delay) => {
@@ -57,7 +61,7 @@ export const createAutosaveService = (
   {
     storageKey = DEFAULT_STORAGE_KEY,
     delay = DEFAULT_AUTOSAVE_DELAY,
-  } = {}
+  } = {},
 ) => {
   const persist = () => {
     try {
@@ -70,22 +74,19 @@ export const createAutosaveService = (
 
       localStorage.setItem(
         storageKey,
-        serializePresentation(state.presentation)
+        serializePresentation(state.presentation),
       );
 
-      console.log("[AutosaveService] Autosave completed");
+      if (process.env.NODE_ENV === "development") {
+        console.log("[AutosaveService] Saved.");
+      }
     } catch (error) {
-      console.error("[AutosaveService] Autosave failed:", error);
+      console.error("[AutosaveService] Save failed:", error);
     }
   };
 
   const scheduleAutosave = createDebounce(persist, delay);
-
-  const saveImmediately = () => {
-    persist();
-    console.log("[AutosaveService] Manual save completed");
-  };
-
+  const saveImmediately = () => persist();
   const shouldAutosave = (eventType) => AUTO_SAVE_EVENTS.has(eventType);
 
   return {

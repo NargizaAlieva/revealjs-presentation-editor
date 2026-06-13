@@ -35,7 +35,6 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
 
   const moveSlideUp = useCallback(() => {
     if (selectedSlideIndex <= 0) return;
-
     eventBus.dispatch(
       createEditorEvent(EditorEventType.SLIDE.REORDER, {
         fromIndex: selectedSlideIndex,
@@ -46,7 +45,6 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
 
   const moveSlideDown = useCallback(() => {
     if (selectedSlideIndex >= slidesLength - 1) return;
-
     eventBus.dispatch(
       createEditorEvent(EditorEventType.SLIDE.REORDER, {
         fromIndex: selectedSlideIndex,
@@ -90,7 +88,7 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
   const updateTextElementContent = useCallback(
     (textElementId, newText) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.CONTENT.UPDATE_TEXT, {
+        createEditorEvent(EditorEventType.TEXT.UPDATE, {
           textElementId,
           text: newText,
         })
@@ -101,7 +99,7 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
   const updateTextElementFormatting = useCallback(
     (textElementId, formatting) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.CONTENT.UPDATE_TEXT_FORMATTING, {
+        createEditorEvent(EditorEventType.TEXT.UPDATE_FORMATTING, {
           textElementId,
           formatting,
         })
@@ -109,11 +107,27 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     [eventBus]
   );
 
-  const updateElementPosition = useCallback(
-    (textElementId, x, y) =>
+  const deleteElement = useCallback(
+    (elementId) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.CONTENT.MOVE_ELEMENT, {
-          elementId: textElementId,
+        createEditorEvent(EditorEventType.TEXT.DELETE, { elementId })
+      ),
+    [eventBus]
+  );
+
+  const selectElement = useCallback(
+    (elementId) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.ELEMENT.SELECT, { elementId })
+      ),
+    [eventBus]
+  );
+
+  const updateElementPosition = useCallback(
+    (elementId, x, y) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.ELEMENT.MOVE, {
+          elementId,
           position: { x, y },
         })
       ),
@@ -121,10 +135,10 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
   );
 
   const updateElementSize = useCallback(
-    (textElementId, width, height) =>
+    (elementId, width, height) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.CONTENT.RESIZE_ELEMENT, {
-          elementId: textElementId,
+        createEditorEvent(EditorEventType.ELEMENT.RESIZE, {
+          elementId,
           size: { width, height },
         })
       ),
@@ -132,20 +146,12 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
   );
 
   const updateElement = useCallback(
-  (elementId, updates) =>
-    eventBus.dispatch(
-      createEditorEvent(EditorEventType.CONTENT.UPDATE_ELEMENT, {
-        elementId,
-        updates,
-      })
-    ),
-  [eventBus]
-);
-
-  const deleteElement = useCallback(
-    (elementId) =>
+    (elementId, updates) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.CONTENT.DELETE_ELEMENT, { elementId })
+        createEditorEvent(EditorEventType.ELEMENT.UPDATE, {
+          elementId,
+          updates,
+        })
       ),
     [eventBus]
   );
@@ -153,9 +159,7 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
   const addAnimation = useCallback(
     (animation) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.ANIMATION.ADD, {
-          animation,
-        })
+        createEditorEvent(EditorEventType.ANIMATION.ADD, { animation })
       ),
     [eventBus]
   );
@@ -174,9 +178,7 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
   const deleteAnimation = useCallback(
     (animationId) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.ANIMATION.DELETE, {
-          animationId,
-        })
+        createEditorEvent(EditorEventType.ANIMATION.DELETE, { animationId })
       ),
     [eventBus]
   );
@@ -192,10 +194,7 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
   const updateMedia = useCallback(
     (mediaId, updates) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.MEDIA.UPDATE, {
-          mediaId,
-          updates,
-        })
+        createEditorEvent(EditorEventType.MEDIA.UPDATE, { mediaId, updates })
       ),
     [eventBus]
   );
@@ -211,22 +210,31 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
   const updateMasterTheme = useCallback(
     (colorTheme) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.MASTER.UPDATE_THEME, { colorTheme }),
+        createEditorEvent(EditorEventType.MASTER.UPDATE_THEME, { colorTheme })
       ),
-    [eventBus],
+    [eventBus]
   );
 
   const updateMasterDimensions = useCallback(
-    (slideDimensions, aspectRatio) =>
-        eventBus.dispatch(
+    (slideDimensions, aspectRatio, dimensionUnits) =>
+      eventBus.dispatch(
         createEditorEvent(EditorEventType.MASTER.UPDATE_DIMENSIONS, {
-            slideDimensions,
-            aspectRatio,
-        }),
-        ),
-    [eventBus],
-    );
-    
+          slideDimensions,
+          aspectRatio,
+          dimensionUnits,
+        })
+      ),
+    [eventBus]
+  );
+
+  const updateMasterFormatting = useCallback(
+    (formatting) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.MASTER.UPDATE_FORMATTING, { formatting })
+      ),
+    [eventBus]
+  );
+
   const updateLayout = useCallback(
     (layoutId, placeholders) =>
       eventBus.dispatch(
@@ -239,12 +247,12 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
   );
 
   const applyLayout = useCallback(
-  (layoutId) =>
-    eventBus.dispatch(
-      createEditorEvent(EditorEventType.LAYOUT.APPLY, { layoutId })
-    ),
-  [eventBus]
-);
+    (layoutId) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.APPLY, { layoutId })
+      ),
+    [eventBus]
+  );
 
   const savePresentation = useCallback(
     () =>
@@ -267,43 +275,50 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     [eventBus]
   );
 
-  const commitMoveElement = useCallback(
-    (beforeSnapshot) =>
-      eventBus.dispatch(
-        createEditorEvent(EditorEventType.CONTENT.MOVE_ELEMENT_COMMIT, {
-          beforeSnapshot,
-        })
-      ),
+  // const commitMoveElement = useCallback(
+  //   (beforeSnapshot) =>
+  //     eventBus.dispatch(
+  //       createEditorEvent(EditorEventType.ELEMENT.MOVE_COMMIT, { beforeSnapshot })
+  //     ),
+  //   [eventBus]
+  // );
+
+  // const commitResizeElement = useCallback(
+  //   (beforeSnapshot) =>
+  //     eventBus.dispatch(
+  //       createEditorEvent(EditorEventType.ELEMENT.RESIZE_COMMIT, { beforeSnapshot })
+  //     ),
+  //   [eventBus]
+  // );
+
+  // const commitTextUpdate = useCallback(
+  //   (beforeSnapshot) =>
+  //     eventBus.dispatch(
+  //       createEditorEvent(EditorEventType.TEXT.UPDATE_COMMIT, { beforeSnapshot })
+  //     ),
+  //   [eventBus]
+  // );
+
+  // const commitMediaUpdate = useCallback(
+  //   (beforeSnapshot) =>
+  //     eventBus.dispatch(
+  //       createEditorEvent(EditorEventType.MEDIA.UPDATE_COMMIT, { beforeSnapshot })
+  //     ),
+  //   [eventBus]
+  // );
+
+  const beginHistory = useCallback(
+    () => eventBus.dispatch(createEditorEvent(EditorEventType.HISTORY.BEGIN)),
     [eventBus]
   );
 
-  const commitResizeElement = useCallback(
-    (beforeSnapshot) =>
-      eventBus.dispatch(
-        createEditorEvent(EditorEventType.CONTENT.RESIZE_ELEMENT_COMMIT, {
-          beforeSnapshot,
-        })
-      ),
+  const commitHistory = useCallback(
+    () => eventBus.dispatch(createEditorEvent(EditorEventType.HISTORY.COMMIT)),
     [eventBus]
   );
 
-  const commitTextUpdate = useCallback(
-    (beforeSnapshot) =>
-      eventBus.dispatch(
-        createEditorEvent(EditorEventType.CONTENT.UPDATE_TEXT_COMMIT, {
-          beforeSnapshot,
-        })
-      ),
-    [eventBus]
-  );
-
-  const commitMediaUpdate = useCallback(
-    (beforeSnapshot) =>
-      eventBus.dispatch(
-        createEditorEvent(EditorEventType.MEDIA.UPDATE_COMMIT, {
-          beforeSnapshot,
-        })
-      ),
+  const cancelHistory = useCallback(
+    () => eventBus.dispatch(createEditorEvent(EditorEventType.HISTORY.CANCEL)),
     [eventBus]
   );
 
@@ -318,6 +333,7 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     updateSlideBackground,
     updateSlideTransition,
     updateSlideNotes,
+    selectElement,
     updateTextElementContent,
     updateTextElementFormatting,
     updateElementPosition,
@@ -332,15 +348,19 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     deleteAnimation,
     updateMasterTheme,
     updateMasterDimensions,
+    updateMasterFormatting,
     updateLayout,
     applyLayout,
     savePresentation,
     resetPresentation,
     undo,
     redo,
-    commitMoveElement,
-    commitResizeElement,
-    commitTextUpdate,
-    commitMediaUpdate,
+    // commitMoveElement,
+    // commitResizeElement,
+    // commitTextUpdate,
+    // commitMediaUpdate,
+    beginHistory,
+    commitHistory,
+    cancelHistory,
   };
 }

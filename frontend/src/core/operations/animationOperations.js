@@ -1,19 +1,6 @@
-const getSlides = (presentation) =>
-  presentation?.slideset?.slides ?? [];
+import { getSlides, setSlides } from "../../utils/presentationUtils";
 
-const setSlides = (presentation, slides) => ({
-  ...presentation,
-  slideset: {
-    ...presentation.slideset,
-    slides,
-  },
-});
-
-export const addAnimation = (
-  presentation,
-  slideIndex,
-  animation,
-) => {
+export const addAnimation = (presentation, slideIndex, animation) => {
   const slides = [...getSlides(presentation)];
   const slide = slides[slideIndex];
 
@@ -33,12 +20,7 @@ export const addAnimation = (
   return setSlides(presentation, slides);
 };
 
-export const updateAnimation = (
-  presentation,
-  slideIndex,
-  animationId,
-  updates,
-) => {
+export const updateAnimation = (presentation, slideIndex, animationId, updates) => {
   const slides = [...getSlides(presentation)];
   const slide = slides[slideIndex];
 
@@ -48,11 +30,10 @@ export const updateAnimation = (
     ...slide,
     contents: {
       ...slide.contents,
-      animations: (slide.contents?.animations ?? []).map(
-        (animation) =>
-          animation.id === animationId
-            ? { ...animation, ...updates }
-            : animation
+      animations: (slide.contents?.animations ?? []).map((animation) =>
+        animation.id === animationId
+          ? { ...animation, ...updates }
+          : animation
       ),
     },
   };
@@ -60,11 +41,7 @@ export const updateAnimation = (
   return setSlides(presentation, slides);
 };
 
-export const deleteAnimation = (
-  presentation,
-  slideIndex,
-  animationId,
-) => {
+export const deleteAnimation = (presentation, slideIndex, animationId) => {
   const slides = [...getSlides(presentation)];
   const slide = slides[slideIndex];
 
@@ -74,9 +51,9 @@ export const deleteAnimation = (
     ...slide,
     contents: {
       ...slide.contents,
-      animations: (slide.contents?.animations ?? []).filter(
-        (animation) => animation.id !== animationId
-      ),
+      animations: (slide.contents?.animations ?? [])
+        .filter((animation) => animation.id !== animationId)
+        .map((animation, index) => ({ ...animation, sequence: index + 1 })),
     },
   };
 

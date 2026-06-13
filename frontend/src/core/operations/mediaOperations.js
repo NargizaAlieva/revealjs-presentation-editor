@@ -1,17 +1,4 @@
-const createId = (prefix = "media") => {
-  if (crypto?.randomUUID) return `${prefix}-${crypto.randomUUID()}`;
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-};
-
-const getSlides = (presentation) => presentation?.slideset?.slides ?? [];
-
-const setSlides = (presentation, slides) => ({
-  ...presentation,
-  slideset: {
-    ...presentation.slideset,
-    slides,
-  },
-});
+import { createId, getSlides, setSlides } from "../../utils/presentationUtils";
 
 export const addMedia = (presentation, slideIndex, mediaData) => {
   const slides = [...getSlides(presentation)];
@@ -20,16 +7,16 @@ export const addMedia = (presentation, slideIndex, mediaData) => {
   if (!slide) return presentation;
 
   const mediaElement = {
-    id: mediaData.id ?? createId(),
-    "file-link": mediaData["file-link"] ?? mediaData.fileLink ?? mediaData.src,
-    "media-type": mediaData["media-type"] ?? mediaData.mediaType ?? "image",
+    id: mediaData.id ?? createId("media"),
+    "file-link": mediaData["file-link"] ?? "",
+    "media-type": mediaData["media-type"] ?? "image",
     position: mediaData.position ?? { x: 10, y: 10 },
     width: mediaData.width ?? 300,
     height: mediaData.height ?? 200,
     rotation: mediaData.rotation ?? 0,
-    "z-index": mediaData["z-index"] ?? mediaData.zIndex ?? 1,
+    "z-index": mediaData["z-index"] ?? 1,
     scale: mediaData.scale ?? 1,
-    crop: mediaData.crop ?? null,
+    crop: mediaData.crop ?? [],
     effects: mediaData.effects ?? {},
     playback: mediaData.playback ?? {},
   };
@@ -55,9 +42,7 @@ export const deleteMedia = (presentation, slideIndex, mediaId) => {
     ...slide,
     contents: {
       ...slide.contents,
-      media: (slide.contents?.media ?? []).filter(
-        (media) => media.id !== mediaId
-      ),
+      media: (slide.contents?.media ?? []).filter((media) => media.id !== mediaId),
     },
   };
 
@@ -75,7 +60,7 @@ export const updateMedia = (presentation, slideIndex, mediaId, updates) => {
     contents: {
       ...slide.contents,
       media: (slide.contents?.media ?? []).map((media) =>
-        media.id === mediaId ? { ...media, ...updates } : media
+        media.id === mediaId ? { ...media, ...updates } : media,
       ),
     },
   };

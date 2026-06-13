@@ -1,48 +1,18 @@
-const createId = (prefix = "id") => {
-  if (globalThis.crypto?.randomUUID) {
-    return `${prefix}-${globalThis.crypto.randomUUID()}`;
-  }
+import { createId, getSlides, setSlides } from "../../utils/presentationUtils";
 
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-};
-
-const getSlides = (presentation) => presentation?.slideset?.slides ?? [];
+// NOTE: media elements retain placeholder-id internally for layout matching.
+// Strip this field before sending to the backend.
 
 const getLayouts = (presentation) =>
-  presentation?.slideset?.master?.layouts ??
-  presentation?.slideset?.layouts ??
-  [];
+  presentation?.slideset?.layouts ?? [];
 
-const setSlides = (presentation, slides) => ({
+const setLayouts = (presentation, layouts) => ({
   ...presentation,
   slideset: {
     ...presentation.slideset,
-    slides,
+    layouts,
   },
 });
-
-const setLayouts = (presentation, layouts) => {
-  if (presentation?.slideset?.master?.layouts) {
-    return {
-      ...presentation,
-      slideset: {
-        ...presentation.slideset,
-        master: {
-          ...presentation.slideset.master,
-          layouts,
-        },
-      },
-    };
-  }
-
-  return {
-    ...presentation,
-    slideset: {
-      ...presentation.slideset,
-      layouts,
-    },
-  };
-};
 
 const createTextFromPlaceholder = (placeholder) => ({
   id: createId("text"),
@@ -54,7 +24,7 @@ const createTextFromPlaceholder = (placeholder) => ({
   rotation: 0,
   overflow: "shrink-on-overflow",
   "z-index": 1,
-  background: placeholder.background ?? "transparent",
+  background: placeholder.background ?? "#FFFFFF00",
   paragraphs: [
     {
       id: createId("paragraph"),
@@ -83,71 +53,61 @@ const createMediaFromPlaceholder = (placeholder) => ({
   rotation: 0,
   "z-index": 1,
   scale: 1,
-  crop: null,
+  crop: [],
   effects: {},
   playback: {},
 });
 
 const updateElementFromPlaceholder = (element, placeholders) => {
-  const matchingPlaceholder = placeholders.find(
-    (placeholder) =>
-      placeholder["placeholder-id"] === element["placeholder-id"],
+  const match = placeholders.find(
+    (p) => p["placeholder-id"] === element["placeholder-id"],
   );
 
-  if (!matchingPlaceholder) return element;
+  if (!match) return element;
 
   return {
     ...element,
-    position: { ...matchingPlaceholder.position },
-    width: matchingPlaceholder.width,
-    height: matchingPlaceholder.height,
-    background: matchingPlaceholder.background ?? element.background,
+    position: { ...match.position },
+    width: match.width,
+    height: match.height,
+    background: match.background ?? element.background,
   };
 };
 
 export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
   const slides = [...getSlides(presentation)];
-  const layout = getLayouts(presentation).find(
-    (item) => item["layout-id"] === layoutId,
-  );
   const slide = slides[slideIndex];
+  const layout = getLayouts(presentation).find(
+    (l) => l["layout-id"] === layoutId,
+  );
 
   if (!layout || !slide) return presentation;
 
   const placeholders = layout.placeholders ?? [];
 
-  const existingText = slide.contents?.text ?? [];
-  const existingMedia = slide.contents?.media ?? [];
-
-  const updatedText = existingText.map((element) =>
-    updateElementFromPlaceholder(element, placeholders),
+  const updatedText = (slide.contents?.text ?? []).map((el) =>
+    updateElementFromPlaceholder(el, placeholders),
   );
-
-  const updatedMedia = existingMedia.map((element) =>
-    updateElementFromPlaceholder(element, placeholders),
+  const updatedMedia = (slide.contents?.media ?? []).map((el) =>
+    updateElementFromPlaceholder(el, placeholders),
   );
 
   const existingPlaceholderIds = new Set([
-    ...updatedText.map((element) => element["placeholder-id"]).filter(Boolean),
-    ...updatedMedia.map((element) => element["placeholder-id"]).filter(Boolean),
+    ...updatedText.map((el) => el["placeholder-id"]).filter(Boolean),
+    ...updatedMedia.map((el) => el["placeholder-id"]).filter(Boolean),
   ]);
 
-  const missingTextElements = [];
-  const missingMediaElements = [];
+  const newText = [];
+  const newMedia = [];
 
   for (const placeholder of placeholders) {
-    const placeholderId = placeholder["placeholder-id"];
-
-    if (!placeholderId || existingPlaceholderIds.has(placeholderId)) {
-      continue;
-    }
+    const pid = placeholder["placeholder-id"];
+    if (!pid || existingPlaceholderIds.has(pid)) continue;
 
     if (placeholder.type === "text") {
-      missingTextElements.push(createTextFromPlaceholder(placeholder));
-    }
-
-    if (placeholder.type === "image" || placeholder.type === "video") {
-      missingMediaElements.push(createMediaFromPlaceholder(placeholder));
+      newText.push(createTextFromPlaceholder(placeholder));
+    } else if (placeholder.type === "image" || placeholder.type === "video") {
+      newMedia.push(createMediaFromPlaceholder(placeholder));
     }
   }
 
@@ -156,8 +116,8 @@ export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
     "layout-id": layoutId,
     contents: {
       ...slide.contents,
-      text: [...updatedText, ...missingTextElements],
-      media: [...updatedMedia, ...missingMediaElements],
+      text: [...updatedText, ...newText],
+      media: [...updatedMedia, ...newMedia],
     },
   };
 
@@ -169,23 +129,6 @@ export const propagateLayoutChanges = (
   layoutId,
   updatedPlaceholders,
 ) => {
-  const updateElementFromPlaceholder = (element) => {
-    const matchingPlaceholder = updatedPlaceholders.find(
-      (placeholder) =>
-        placeholder["placeholder-id"] === element["placeholder-id"],
-    );
-
-    if (!matchingPlaceholder) return element;
-
-    return {
-      ...element,
-      position: { ...matchingPlaceholder.position },
-      width: matchingPlaceholder.width,
-      height: matchingPlaceholder.height,
-      background: matchingPlaceholder.background ?? element.background,
-    };
-  };
-
   const slides = getSlides(presentation).map((slide) => {
     if (slide["layout-id"] !== layoutId) return slide;
 
@@ -193,8 +136,12 @@ export const propagateLayoutChanges = (
       ...slide,
       contents: {
         ...slide.contents,
-        text: (slide.contents?.text ?? []).map(updateElementFromPlaceholder),
-        media: (slide.contents?.media ?? []).map(updateElementFromPlaceholder),
+        text: (slide.contents?.text ?? []).map((el) =>
+          updateElementFromPlaceholder(el, updatedPlaceholders),
+        ),
+        media: (slide.contents?.media ?? []).map((el) =>
+          updateElementFromPlaceholder(el, updatedPlaceholders),
+        ),
       },
     };
   });
@@ -205,7 +152,5 @@ export const propagateLayoutChanges = (
       : layout,
   );
 
-  const presentationWithSlides = setSlides(presentation, slides);
-
-  return setLayouts(presentationWithSlides, updatedLayouts);
+  return setLayouts(setSlides(presentation, slides), updatedLayouts);
 };

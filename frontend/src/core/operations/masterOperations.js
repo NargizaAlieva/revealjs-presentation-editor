@@ -13,14 +13,16 @@ export const updateMasterDimensions = (
   presentation,
   slideDimensions,
   aspectRatio,
+  dimensionUnits,
 ) => ({
   ...presentation,
   slideset: {
     ...presentation.slideset,
     master: {
       ...presentation.slideset.master,
-      "aspect-ratio": aspectRatio,
       "slide-dimensions": slideDimensions,
+      "aspect-ratio": aspectRatio,
+      "dimension-units": dimensionUnits,
     },
   },
 });
@@ -32,7 +34,7 @@ export const updateMasterFormatting = (presentation, formatting) => ({
     master: {
       ...presentation.slideset.master,
       formatting: {
-        ...presentation.slideset.master.formatting,
+        ...(presentation.slideset.master?.formatting ?? {}),
         ...formatting,
       },
     },
