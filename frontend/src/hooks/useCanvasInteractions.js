@@ -425,18 +425,14 @@ export function useCanvasInteractions({
   }, []);
 
   const stopInteraction = useCallback(() => {
-    if (!hasActiveInteraction) return;
+  onCommitHistory?.();
+  clearInteractionState();
+}, [onCommitHistory, clearInteractionState]);
 
-    onCommitHistory?.();
-    clearInteractionState();
-  }, [hasActiveInteraction, onCommitHistory, clearInteractionState]);
-
-  const cancelInteraction = useCallback(() => {
-    if (!hasActiveInteraction) return;
-
-    onCancelHistory?.();
-    clearInteractionState();
-  }, [hasActiveInteraction, onCancelHistory, clearInteractionState]);
+const cancelInteraction = useCallback(() => {
+  onCancelHistory?.();
+  clearInteractionState();
+}, [onCancelHistory, clearInteractionState]);
 
   const handleMouseMove = useCallback(
     (event) => {
@@ -557,6 +553,7 @@ export function useCanvasInteractions({
     (event, textElementId) => {
       event.preventDefault();
       event.stopPropagation();
+      document.activeElement?.blur(); 
 
       const element = textElements.find((item) => item.id === textElementId);
       if (!element) return;
@@ -580,6 +577,7 @@ export function useCanvasInteractions({
     (event, mediaId) => {
       event.preventDefault();
       event.stopPropagation();
+      document.activeElement?.blur();  // ← add here
 
       const media = mediaElements.find((item) => item.id === mediaId);
       if (!media) return;
@@ -602,6 +600,7 @@ export function useCanvasInteractions({
     (event, textElementId) => {
       event.preventDefault();
       event.stopPropagation();
+      document.activeElement?.blur(); 
 
       onBeginHistory?.();
       onSelectElement?.(textElementId);
@@ -614,6 +613,7 @@ export function useCanvasInteractions({
     (event, mediaId) => {
       event.preventDefault();
       event.stopPropagation();
+      document.activeElement?.blur(); 
 
       onBeginHistory?.();
       onSelectElement?.(mediaId);
@@ -626,6 +626,7 @@ export function useCanvasInteractions({
     (event, textElementId) => {
       event.preventDefault();
       event.stopPropagation();
+      document.activeElement?.blur(); 
 
       onBeginHistory?.();
       onSelectElement?.(textElementId);
@@ -642,6 +643,7 @@ export function useCanvasInteractions({
     (event, mediaId) => {
       event.preventDefault();
       event.stopPropagation();
+      document.activeElement?.blur(); 
 
       onBeginHistory?.();
       onSelectElement?.(mediaId);

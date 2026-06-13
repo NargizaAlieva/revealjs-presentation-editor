@@ -77,6 +77,25 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     [eventBus]
   );
 
+  const updateTransitionDuration = useCallback(
+    (duration) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.SLIDE.UPDATE_TRANSITION, { duration })
+      ),
+    [eventBus]
+  );
+
+  const applyTransitionToAll = useCallback(
+    (transition, duration) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.SLIDE.APPLY_TRANSITION_TO_ALL, {
+          transition,
+          duration,
+        })
+      ),
+    [eventBus]
+  );
+
   const updateSlideNotes = useCallback(
     (notes) =>
       eventBus.dispatch(
@@ -332,6 +351,8 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     toggleSlideHidden,
     updateSlideBackground,
     updateSlideTransition,
+    updateTransitionDuration,
+    applyTransitionToAll,
     updateSlideNotes,
     selectElement,
     updateTextElementContent,
