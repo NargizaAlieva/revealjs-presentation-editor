@@ -84,9 +84,9 @@ export function getSlideMediaElements(slide) {
   return getMediaElements(slide);
 }
 
-export function initRevealDeck(containerElement, width, height) {
+export function initRevealDeck(containerElement, width, height, initialSlide = 0) {
   const deck = new Reveal(containerElement, {
-    controls: true,
+    controls: false,
     progress: true,
     center: false,
     hash: false,
@@ -101,6 +101,9 @@ export function initRevealDeck(containerElement, width, height) {
   deck.initialize().then(() => {
     deck.layout();
     deck.sync();
+    if (initialSlide > 0) {
+      deck.slide(initialSlide);
+    }
   });
 
   return deck;

@@ -23,6 +23,7 @@ export default function EditorPage() {
   const navigate = useNavigate();
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewStartSlide, setPreviewStartSlide] = useState(0);
   const [showUI, setShowUI] = useState(false);
   const [activeTab, setActiveTab] = useState("Home");
   const [previewEffect, setPreviewEffect] = useState(null);
@@ -74,7 +75,6 @@ export default function EditorPage() {
 
   const exportPresentation = async () => exportToReveal(presentation);
 
-  // Save As – download JSON
   const saveAsPresentation = () => {
     const json = JSON.stringify(presentation, null, 2);
     const blob = new Blob([json], { type: "application/json" });
@@ -87,7 +87,6 @@ export default function EditorPage() {
     URL.revokeObjectURL(url);
   };
 
-  // Load from JSON file
   const loadPresentation = async (jsonText) => {
     try {
       const parsed = JSON.parse(jsonText);
@@ -105,7 +104,6 @@ export default function EditorPage() {
     }
   };
 
-  // Delete current presentation and go home
   const handleDeleteAndGoHome = async () => {
     if (!confirm("Delete this presentation?")) return;
     await deletePresentation(presentationId);
@@ -209,7 +207,6 @@ export default function EditorPage() {
     return <div className="editor-loading">Loading...</div>;
   }
 
-  // Full-screen File backstage
   if (activeTab === "File") {
     return (
       <FileMenu
@@ -254,7 +251,14 @@ export default function EditorPage() {
             onMoveSlideDown={moveSlideDown}
             onSavePresentation={savePresentation}
             onExportPresentation={exportPresentation}
-            onOpenPreview={() => setIsPreviewOpen(true)}
+            onOpenPreviewFromBeginning={() => {
+              setPreviewStartSlide(0);
+              setIsPreviewOpen(true);
+            }}
+            onOpenPreviewFromCurrent={() => {
+              setPreviewStartSlide(selectedSlideIndex);
+              setIsPreviewOpen(true);
+            }}
             canDelete={slides.length > 1}
             canMoveUp={selectedSlideIndex > 0}
             canMoveDown={selectedSlideIndex < slides.length - 1}
@@ -355,6 +359,7 @@ export default function EditorPage() {
           slides={slides}
           presentation={presentation}
           onClose={() => setIsPreviewOpen(false)}
+          initialSlide={previewStartSlide}
         />
       )}
     </div>
