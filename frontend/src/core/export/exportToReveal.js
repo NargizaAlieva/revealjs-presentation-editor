@@ -7,6 +7,7 @@ import {
 } from "../../utils/slidesetRenderUtils";
 import { downloadHtml } from "./downloadHtml";
 import { idbGet } from "../persistence/autoSaveService";
+import JSZip from "jszip";
 
 function buildColorThemeCss(presentation) {
   const colorTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
@@ -18,22 +19,10 @@ function buildColorThemeCss(presentation) {
 }
 
 const FRAGMENT_EFFECT_CLASSES = new Set([
-  "grow",
-  "shrink",
-  "shrink-down",
-  "fade-out",
-  "fade-up",
-  "fade-down",
-  "fade-left",
-  "fade-right",
-  "fade-in-then-out",
-  "fade-in-then-semi-out",
-  "highlight-red",
-  "highlight-green",
-  "highlight-blue",
-  "highlight-current-red",
-  "highlight-current-green",
-  "highlight-current-blue",
+  "grow", "shrink", "shrink-down", "fade-out", "fade-up", "fade-down",
+  "fade-left", "fade-right", "fade-in-then-out", "fade-in-then-semi-out",
+  "highlight-red", "highlight-green", "highlight-blue",
+  "highlight-current-red", "highlight-current-green", "highlight-current-blue",
   "strike",
 ]);
 
@@ -65,6 +54,30 @@ async function resolveMediaLinks(slides) {
   return resolvedMap;
 }
 
+// ZIP export: images as separate files
+async function resolveMediaForZip(slides) {
+  const resolvedMap = new Map();
+  let counter = 1;
+  for (const slide of slides) {
+    for (const media of getMediaElements(slide)) {
+      const fileLink = media["file-link"];
+      if (!fileLink || resolvedMap.has(fileLink)) continue;
+      if (fileLink.startsWith("indexeddb://")) {
+        const key = fileLink.replace("indexeddb://", "");
+        const blob = await idbGet(key);
+        if (blob) {
+          const ext = blob.type.split("/")[1] ?? "jpg";
+          const filename = `media/image_${counter++}.${ext}`;
+          resolvedMap.set(fileLink, { src: filename, blob });
+        }
+      } else {
+        resolvedMap.set(fileLink, { src: fileLink, blob: null });
+      }
+    }
+  }
+  return resolvedMap;
+}
+
 function buildAnimationMap(slide) {
   const animations = slide.contents?.animations ?? [];
   const map = new Map();
@@ -76,11 +89,7 @@ function buildAnimationMap(slide) {
 
 function fragmentClassesFor(effect) {
   const classes = ["fragment"];
-  if (
-    effect !== "fade-in" &&
-    effect !== "none" &&
-    FRAGMENT_EFFECT_CLASSES.has(effect)
-  ) {
+  if (effect !== "fade-in" && effect !== "none" && FRAGMENT_EFFECT_CLASSES.has(effect)) {
     classes.push(effect);
   }
   return classes.join(" ");
@@ -91,15 +100,11 @@ function fragmentDataAttrs(sequence, speedRaw) {
   return [
     Number.isFinite(sequence) ? `data-fragment-index="${sequence}"` : "",
     speed ? `data-fragment-speed="${speed}"` : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
+  ].filter(Boolean).join(" ");
 }
 
 function applyFragment(innerHtml, wrapperStyle, animation) {
-  if (!animation) {
-    return `<div style="${wrapperStyle}">${innerHtml}</div>`;
-  }
+  if (!animation) return `<div style="${wrapperStyle}">${innerHtml}</div>`;
   const effect = animation.effect ?? "fade-in";
   const sequence = animation.sequence;
   const speedRaw = animation["effect-options"]?.speed ?? animation.speed;
@@ -137,9 +142,7 @@ function buildPStyle(paragraphFormatting) {
     paragraphFormatting.margin
       ? `margin: ${paragraphFormatting.margin}`
       : "margin: 0 0 4px 0",
-  ]
-    .filter(Boolean)
-    .join("; ");
+  ].filter(Boolean).join("; ");
 }
 
 function buildRunHtml(run) {
@@ -152,10 +155,7 @@ function buildRunHtml(run) {
     runFormatting["text-decoration"]
       ? `text-decoration: ${runFormatting["text-decoration"]}`
       : "",
-  ]
-    .filter(Boolean)
-    .join("; ");
-
+  ].filter(Boolean).join("; ");
   const text = escapeHtml(run.text ?? "");
   if (run.link?.href) {
     return `<a href="${escapeHtml(run.link.href)}" target="${run.link.target ?? "_blank"}" style="${style}">${text}</a>`;
@@ -165,8 +165,7 @@ function buildRunHtml(run) {
 
 function buildTextElementContent(textElement, animation) {
   if (!textElement.paragraphs?.length) return "";
-  const sequenceMode =
-    animation?.["effect-options"]?.sequence ?? "as-one-object";
+  const sequenceMode = animation?.["effect-options"]?.sequence ?? "as-one-object";
   const perLine = animation && sequenceMode !== "as-one-object";
 
   return textElement.paragraphs
@@ -205,7 +204,7 @@ function buildTextElementContent(textElement, animation) {
     .join("");
 }
 
-function buildSlideSection(slide, width, height, resolvedMap) {
+function buildSlideSection(slide, width, height, getSrc) {
   const textElements = getTextElements(slide);
   const mediaElements = getMediaElements(slide);
   const transition = slide.contents?.transition ?? "slide";
@@ -217,8 +216,7 @@ function buildSlideSection(slide, width, height, resolvedMap) {
   const textElementsHtml = textElements
     .map((textElement, index) => {
       const animation = animationMap.get(textElement.id);
-      const sequenceMode =
-        animation?.["effect-options"]?.sequence ?? "as-one-object";
+      const sequenceMode = animation?.["effect-options"]?.sequence ?? "as-one-object";
       const style = buildTextElementStyle(textElement, index);
       const content = buildTextElementContent(textElement, animation);
       if (!animation || sequenceMode === "as-one-object") {
@@ -249,7 +247,7 @@ function buildSlideSection(slide, width, height, resolvedMap) {
       ].join("; ");
 
       const fileLink = media["file-link"] ?? "";
-      const src = resolvedMap.get(fileLink) ?? fileLink;
+      const src = getSrc(fileLink);
       const isVideo = media["media-type"] === "video";
 
       const mediaHtml = isVideo
@@ -273,20 +271,8 @@ function buildSlideSection(slide, width, height, resolvedMap) {
     </section>`;
 }
 
-export async function exportToReveal(presentation) {
-  const { width, height } = getSlideSize(presentation);
-  const slides = getVisibleSlides(presentation);
-  const colorThemeCss = buildColorThemeCss(presentation);
-  const title = escapeHtml(presentation?.slideset?.title ?? "Presentation");
-  const filename = presentation?.slideset?.filename ?? "presentation";
-
-  const resolvedMap = await resolveMediaLinks(slides);
-
-  const slideSections = slides
-    .map((slide) => buildSlideSection(slide, width, height, resolvedMap))
-    .join("\n");
-
-  const htmlContent = `<!doctype html>
+function buildHtmlContent(title, colorThemeCss, width, height, slideSections) {
+  return `<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -324,6 +310,65 @@ export async function exportToReveal(presentation) {
   </script>
 </body>
 </html>`;
+}
 
+// ── Export as single HTML (images embedded as base64) ──
+export async function exportToReveal(presentation) {
+  const { width, height } = getSlideSize(presentation);
+  const slides = getVisibleSlides(presentation);
+  const colorThemeCss = buildColorThemeCss(presentation);
+  const title = escapeHtml(presentation?.slideset?.title ?? "Presentation");
+  const filename = (presentation?.slideset?.filename ?? "presentation")
+    .replace(/\.json$/, "");
+
+  const resolvedMap = await resolveMediaLinks(slides);
+  const getSrc = (fileLink) => resolvedMap.get(fileLink) ?? fileLink;
+
+  const slideSections = slides
+    .map((slide) => buildSlideSection(slide, width, height, getSrc))
+    .join("\n");
+
+  const htmlContent = buildHtmlContent(title, colorThemeCss, width, height, slideSections);
   downloadHtml(htmlContent, `${filename}.html`);
+}
+
+export async function exportToRevealZip(presentation) {
+  const { width, height } = getSlideSize(presentation);
+  const slides = getVisibleSlides(presentation);
+  const colorThemeCss = buildColorThemeCss(presentation);
+  const title = escapeHtml(presentation?.slideset?.title ?? "Presentation");
+  const filename = (presentation?.slideset?.filename ?? "presentation")
+    .replace(/\.json$/, "");
+
+  const resolvedMap = await resolveMediaForZip(slides);
+  const getSrc = (fileLink) => resolvedMap.get(fileLink)?.src ?? fileLink;
+
+  const slideSections = slides
+    .map((slide) => buildSlideSection(slide, width, height, getSrc))
+    .join("\n");
+
+  const htmlContent = buildHtmlContent(title, colorThemeCss, width, height, slideSections);
+
+  const zip = new JSZip();
+  zip.file("index.html", htmlContent);
+  zip.file(
+    "README.txt",
+    `${title}\n\nOpen index.html in a web browser to view the presentation.\nRequires an internet connection for reveal.js (loaded from CDN).\n`
+  );
+
+  for (const [, resolved] of resolvedMap) {
+    if (resolved.blob && resolved.src.startsWith("media/")) {
+      zip.file(resolved.src, resolved.blob);
+    }
+  }
+
+  const blob = await zip.generateAsync({ type: "blob" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${filename}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }

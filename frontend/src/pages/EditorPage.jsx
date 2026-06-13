@@ -9,10 +9,10 @@ import { useSlides } from "../hooks/useSlides";
 import { useEditorActions } from "../hooks/useEditorActions";
 import "./EditorPage.css";
 import PreviewModal from "../components/PreviewModal";
-import { exportToReveal } from "../core/export/exportToReveal";
 import StatusBar from "../components/StatusBar";
 import { getSlideSize } from "../utils/slidesetRenderUtils";
 import FileMenu from "../components/FileMenu";
+import { exportToReveal, exportToRevealZip } from "../core/export/exportToReveal";
 import {
   deletePresentation,
   createPresentation,
@@ -219,6 +219,7 @@ export default function EditorPage() {
         onSave={savePresentation}
         onSaveAs={saveAsPresentation}
         onExport={exportPresentation}
+        onExportZip={() => exportToRevealZip(presentation)}
         onLoadFile={loadPresentation}
         onDelete={handleDeleteAndGoHome}
       />

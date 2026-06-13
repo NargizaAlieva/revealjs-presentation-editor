@@ -21,6 +21,7 @@ export default function FileMenu({
   onSave,
   onSaveAs,
   onExport,
+  onExportZip,
   onLoadFile,
   onDelete,
 }) {
@@ -34,24 +35,11 @@ export default function FileMenu({
   }, []);
 
   const handleNav = (item) => {
-    if (item === "Close") {
-      onClose();
-      return;
-    }
-    if (item === "Save") {
-      onSave();
-      onClose();
-      return;
-    }
-    if (item === "Export") {
-      onExport();
-      onClose();
-      return;
-    }
-    if (item === "Open") {
-      fileInputRef.current?.click();
-      return;
-    }
+    if (item === "Close") { onClose(); return; }
+    if (item === "Save") { onSave(); onClose(); return; }
+    if (item === "Export HTML") { onExport(); onClose(); return; }
+    if (item === "Export ZIP") { onExportZip?.(); onClose(); return; }
+    if (item === "Open") { fileInputRef.current?.click(); return; }
     setActiveItem(item);
   };
 
@@ -70,19 +58,19 @@ export default function FileMenu({
   };
 
   const NAV_ITEMS = [
-    { label: "Home", section: "top" },
-    { label: "New", section: "top" },
-    { label: "Open", section: "top" },
-    { label: "Save", section: "top" },
-    { label: "Save As", section: "top" },
-    { label: "Export", section: "top" },
-    { label: "Delete", section: "danger" },
-    { label: "Close", section: "bottom" },
+    { label: "Home",       section: "top" },
+    { label: "New",        section: "top" },
+    { label: "Open",       section: "top" },
+    { label: "Save",       section: "top" },
+    { label: "Save As",    section: "top" },
+    { label: "Export HTML",section: "top" },
+    { label: "Export ZIP", section: "top" },
+    { label: "Delete",     section: "danger" },
+    { label: "Close",      section: "bottom" },
   ];
 
   return (
     <div className="file-menu">
-      {/* Sidebar */}
       <aside className="file-menu-sidebar">
         <button className="file-menu-back" onClick={onClose}>
           ← Back
@@ -98,10 +86,7 @@ export default function FileMenu({
                 section === "bottom" ? "bottom" : "",
               ].join(" ")}
               onClick={() => {
-                if (label === "Delete") {
-                  onDelete?.();
-                  return;
-                }
+                if (label === "Delete") { onDelete?.(); return; }
                 handleNav(label);
               }}
             >
@@ -111,7 +96,6 @@ export default function FileMenu({
         </nav>
       </aside>
 
-      {/* Content */}
       <main className="file-menu-content">
         {activeItem === "Home" && (
           <div className="file-menu-home">
@@ -174,10 +158,7 @@ export default function FileMenu({
             </p>
             <button
               className="file-menu-action-btn"
-              onClick={() => {
-                onSaveAs();
-                onClose();
-              }}
+              onClick={() => { onSaveAs(); onClose(); }}
             >
               Download .json
             </button>
