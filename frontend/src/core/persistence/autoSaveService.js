@@ -1,4 +1,5 @@
 import { serializePresentation } from "./serializationOperations";
+import { updateIndexEntry } from "./presentationsLibrary";
 import { EditorEventType } from "../events/editorEvents";
 
 const DEFAULT_STORAGE_KEY = "presentation";
@@ -126,7 +127,10 @@ export const createAutosaveService = (
         console.warn("[AutosaveService] No presentation state to save.");
         return;
       }
+      const id = storageKey.replace("presentation-", "");
+      const title = state.presentation?.slideset?.filename ?? "Untitled Presentation";
       await idbSet(storageKey, serializePresentation(state.presentation));
+      await updateIndexEntry(id, title);
       if (process.env.NODE_ENV === "development") {
         console.log("[AutosaveService] Saved.");
       }

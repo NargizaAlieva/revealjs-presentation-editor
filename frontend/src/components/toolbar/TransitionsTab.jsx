@@ -1,14 +1,20 @@
 import { useState } from "react";
-import { MdPreview } from "react-icons/md";
+import { MdPreview, MdSpeed } from "react-icons/md";
 import "./TransitionsTab.css";
 
 const TRANSITIONS = [
-  { value: "none",    label: "None" },
-  { value: "fade",    label: "Fade" },
-  { value: "slide",   label: "Slide" },
-  { value: "convex",  label: "Convex" },
+  { value: "none", label: "None" },
+  { value: "fade", label: "Fade" },
+  { value: "slide", label: "Slide" },
+  { value: "convex", label: "Convex" },
   { value: "concave", label: "Concave" },
-  { value: "zoom",    label: "Zoom" },
+  { value: "zoom", label: "Zoom" },
+];
+
+const SPEEDS = [
+  { value: 0.3, label: "Fast" },
+  { value: 0.75, label: "Medium" },
+  { value: 1.5, label: "Slow" },
 ];
 
 export default function TransitionsTab({
@@ -37,20 +43,6 @@ export default function TransitionsTab({
   const handlePreviewClick = () => {
     if (!currentTransition || currentTransition === "none") return;
     triggerPreview(currentTransition);
-  };
-
-  const handleDurationChange = (e) => {
-    const val = parseFloat(e.target.value);
-    if (!isNaN(val) && val >= 0.1 && val <= 9.99) {
-      onDurationChange?.(Math.round(val * 100) / 100);
-    }
-  };
-
-  const handleDurationStep = (delta) => {
-    const next = Math.round((duration + delta) * 100) / 100;
-    if (next >= 0.1 && next <= 9.99) {
-      onDurationChange?.(next);
-    }
   };
 
   return (
@@ -87,44 +79,33 @@ export default function TransitionsTab({
       </div>
 
       <div className="ribbon-group ribbon-group--timing-panel">
-        <div className="timing-row">
-          <span className="timing-icon">⏱</span>
-          <span className="timing-label">Duration:</span>
-          <div className="timing-input-wrap">
-            <input
-              type="number"
-              className="timing-input"
-              value={duration.toFixed(2)}
-              min="0.10"
-              max="9.99"
-              step="0.25"
-              onChange={handleDurationChange}
-            />
-            <div className="timing-spinners">
+        <div className="speed-group">
+          <div className="speed-options">
+            {SPEEDS.map((option) => (
               <button
-                className="timing-spinner-btn"
-                onClick={() => handleDurationStep(0.25)}
-                tabIndex={-1}
-              >▲</button>
-              <button
-                className="timing-spinner-btn"
-                onClick={() => handleDurationStep(-0.25)}
-                tabIndex={-1}
-              >▼</button>
-            </div>
+                key={option.value}
+                type="button"
+                className={`speed-option ${duration === option.value ? "active" : ""}`}
+                onClick={() => onDurationChange?.(option.value)}
+              >
+                <MdSpeed className="speed-option-icon" />
+                <span>{option.label}</span>
+              </button>
+            ))}
           </div>
+          <div className="ribbon-group-title">Timing</div>
         </div>
 
-        <button
-          className="apply-to-all-btn"
-          onClick={onApplyToAll}
-          disabled={!currentTransition}
-        >
-          <span className="apply-icon">⬛</span>
-          Apply To All
-        </button>
-
-        <div className="ribbon-group-title">Timing</div>
+        <div className="apply-group">
+          <button
+            className="apply-to-all-btn"
+            onClick={onApplyToAll}
+            disabled={!currentTransition}
+          >
+            <span className="apply-icon">⬛</span>
+            Apply To All
+          </button>
+        </div>
       </div>
     </>
   );
