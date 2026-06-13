@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import "./EditorCanvas.css";
 import { getSlideSize } from "../utils/slidesetRenderUtils";
 import { buildColorThemeStyle } from "../core/render/revealRenderer";
@@ -22,35 +22,26 @@ export default function EditorCanvas({
   zoom = 100,
   showNotes = true,
   onCanvasZoom,
-  selectedElementId: externalSelectedElementId,
+  selectedElementId,
   onSelectElement,
+  onBeginHistory,
+  onCommitHistory,
+  onCancelHistory,
   updateElement,
   updateMedia,
   previewEffect,
   animations = [],
   showAnimationBadges = false,
+  onUndo,
+  onRedo,
+  onCopy,
+  onPaste,
 }) {
-  const [localSelectedElementId, setLocalSelectedElementId] = useState(null);
   const [playingElementId, setPlayingElementId] = useState(null);
   const [playingEffect, setPlayingEffect] = useState(null);
   const [playingTransition, setPlayingTransition] = useState(null);
 
-  const selectedElementId =
-    externalSelectedElementId !== undefined
-      ? externalSelectedElementId
-      : localSelectedElementId;
-
-  const setSelectedElementId = useCallback(
-    (id) => {
-      if (onSelectElement) {
-        onSelectElement(id);
-        return;
-      }
-
-      setLocalSelectedElementId(id);
-    },
-    [onSelectElement],
-  );
+  const workspaceRef = useRef(null);
 
   const { width, height } = getSlideSize(presentation);
   const colorThemeStyle = buildColorThemeStyle(presentation);
@@ -70,13 +61,17 @@ export default function EditorCanvas({
   );
 
   const animationSequenceMap = useMemo(
-    () => new Map(animations.map((a) => [a.id, a.sequence])),
+    () =>
+      new Map(
+        animations.map((animation) => [animation.id, animation.sequence]),
+      ),
     [animations],
   );
 
   const {
     handleMouseMove,
     stopInteraction,
+    cancelInteraction,
     startDraggingText,
     startDraggingMedia,
     startResizingText,
@@ -91,15 +86,20 @@ export default function EditorCanvas({
     zoom,
     textElements,
     mediaElements,
+    onSelectElement,
     onMoveTextElement,
     onResizeTextElement,
     onMoveMediaElement,
     onResizeMediaElement,
-    onRotateTextElement: (textElementId, angle) =>
-      updateElement(textElementId, { rotation: angle }),
-    onRotateMediaElement: (mediaId, angle) =>
-      updateMedia(mediaId, { rotation: angle }),
-    setSelectedElementId,
+    onRotateTextElement: (textElementId, angle) => {
+      updateElement?.(textElementId, { rotation: angle });
+    },
+    onRotateMediaElement: (mediaId, angle) => {
+      updateMedia?.(mediaId, { rotation: angle });
+    },
+    onBeginHistory,
+    onCommitHistory,
+    onCancelHistory,
   });
 
   useEffect(() => {
@@ -152,11 +152,50 @@ export default function EditorCanvas({
 
   useEffect(() => {
     const handleKeyDown = (event) => {
+      const isEditableTarget =
+        event.target instanceof HTMLInputElement ||
+        event.target instanceof HTMLTextAreaElement ||
+        event.target.isContentEditable;
+
+      const key = event.key.toLowerCase();
+
+      const isUndo =
+        (event.ctrlKey || event.metaKey) && !event.shiftKey && key === "z";
+
+      const isRedo =
+        ((event.ctrlKey || event.metaKey) && key === "y") ||
+        ((event.ctrlKey || event.metaKey) && event.shiftKey && key === "z");
+
+      if (isUndo && !isEditableTarget) {
+        event.preventDefault();
+        onUndo?.();
+        return;
+      }
+
+      if (isRedo && !isEditableTarget) {
+        event.preventDefault();
+        onRedo?.();
+        return;
+      }
+
+      const isCopy = (event.ctrlKey || event.metaKey) && key === "c";
+      const isPaste = (event.ctrlKey || event.metaKey) && key === "v";
+
+      if (isCopy && !isEditableTarget && selectedElementId) {
+        const element =
+          textElements.find((el) => el.id === selectedElementId) ||
+          mediaElements.find((el) => el.id === selectedElementId);
+        if (element) onCopy?.(element);
+        return;
+      }
+
+      if (isPaste && !isEditableTarget) {
+        onPaste?.();
+        return;
+      }
+
       if (event.key !== "Delete" && event.key !== "Backspace") return;
-
-      const tagName = event.target.tagName;
-      if (tagName === "INPUT" || tagName === "TEXTAREA") return;
-
+      if (isEditableTarget) return;
       if (!selectedElementId) return;
 
       const isTextElement = textElements.some(
@@ -169,43 +208,51 @@ export default function EditorCanvas({
 
       if (isTextElement) {
         onDeleteTextElement(selectedElementId);
-        setSelectedElementId(null);
+        onSelectElement?.(null);
       }
 
       if (isMediaElement) {
         onDeleteMedia(selectedElementId);
-        setSelectedElementId(null);
+        onSelectElement?.(null);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [
     selectedElementId,
     textElements,
     mediaElements,
     onDeleteTextElement,
     onDeleteMedia,
-    setSelectedElementId,
+    onSelectElement,
+    onUndo,
+    onRedo,
+    onCopy,
+    onPaste,
   ]);
 
-  const workspaceRef = useRef(null);
-
   useEffect(() => {
-    const el = workspaceRef.current;
-    if (!el) return;
+    const element = workspaceRef.current;
+    if (!element) return;
 
     const handleWheel = (event) => {
       if (!event.ctrlKey) return;
+
       event.preventDefault();
 
-      const raw = event.deltaY;
-      const delta = -(raw * 0.3);
+      const delta = -(event.deltaY * 0.3);
       onCanvasZoom?.(delta);
     };
 
-    el.addEventListener("wheel", handleWheel, { passive: false });
-    return () => el.removeEventListener("wheel", handleWheel);
+    element.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      element.removeEventListener("wheel", handleWheel);
+    };
   }, [onCanvasZoom]);
 
   if (!slide) {
@@ -253,7 +300,7 @@ export default function EditorCanvas({
               onMouseLeave={stopInteraction}
               onClick={(event) => {
                 if (event.target === event.currentTarget) {
-                  setSelectedElementId(null);
+                  onSelectElement?.(null);
                 }
               }}
             >
@@ -268,16 +315,19 @@ export default function EditorCanvas({
                     key={textElement.id}
                     textElement={textElement}
                     isSelected={selectedElementId === textElement.id}
-                    onSelect={setSelectedElementId}
+                    onSelect={onSelectElement}
                     onChangeTextElement={onChangeTextElement}
                     onFormatTextElement={onFormatTextElement}
                     onDeleteTextElement={(id) => {
                       onDeleteTextElement(id);
-                      setSelectedElementId(null);
+                      onSelectElement?.(null);
                     }}
                     onStartDrag={startDraggingText}
                     onStartResize={startResizingText}
                     onStartRotate={startRotatingText}
+                    onBeginHistory={onBeginHistory}
+                    onCommitHistory={onCommitHistory}
+                    onCancelHistory={onCancelHistory}
                     previewClassName={playClass}
                     animationOrder={
                       showAnimationBadges
@@ -299,14 +349,14 @@ export default function EditorCanvas({
                     key={media.id}
                     media={media}
                     isSelected={selectedElementId === media.id}
-                    onSelect={setSelectedElementId}
+                    onSelect={onSelectElement}
                     onStartDrag={startDraggingMedia}
-                    onDeleteMedia={(id) => {
-                      onDeleteMedia(id);
-                      setSelectedElementId(null);
-                    }}
                     onStartResize={startResizingMedia}
                     onStartRotate={startRotatingMedia}
+                    onDeleteMedia={(id) => {
+                      onDeleteMedia(id);
+                      onSelectElement?.(null);
+                    }}
                     previewClassName={playClass}
                     animationOrder={
                       showAnimationBadges
@@ -320,14 +370,21 @@ export default function EditorCanvas({
               {isRotating &&
                 snapInfo &&
                 (() => {
-                  const el =
-                    textElements.find((e) => e.id === snapInfo.elementId) ||
-                    mediaElements.find((e) => e.id === snapInfo.elementId);
+                  const element =
+                    textElements.find(
+                      (item) => item.id === snapInfo.elementId,
+                    ) ||
+                    mediaElements.find(
+                      (item) => item.id === snapInfo.elementId,
+                    );
 
-                  if (!el) return null;
+                  if (!element) return null;
 
-                  const cx = (el.position?.x ?? 0) + (el.width ?? 300) / 2;
-                  const cy = (el.position?.y ?? 0) + (el.height ?? 80) / 2;
+                  const centerX =
+                    (element.position?.x ?? 0) + (element.width ?? 300) / 2;
+
+                  const centerY =
+                    (element.position?.y ?? 0) + (element.height ?? 80) / 2;
 
                   return (
                     <>
@@ -335,7 +392,7 @@ export default function EditorCanvas({
                         <div
                           style={{
                             position: "absolute",
-                            top: cy,
+                            top: centerY,
                             left: 0,
                             right: 0,
                             height: 1,
@@ -350,7 +407,7 @@ export default function EditorCanvas({
                         <div
                           style={{
                             position: "absolute",
-                            left: cx,
+                            left: centerX,
                             top: 0,
                             bottom: 0,
                             width: 1,
@@ -377,16 +434,16 @@ export default function EditorCanvas({
                           }}
                         >
                           <line
-                            x1={cx - 2000}
+                            x1={centerX - 2000}
                             y1={
-                              cy +
+                              centerY +
                               (snapInfo.angle === 45 || snapInfo.angle === 225
                                 ? 2000
                                 : -2000)
                             }
-                            x2={cx + 2000}
+                            x2={centerX + 2000}
                             y2={
-                              cy +
+                              centerY +
                               (snapInfo.angle === 45 || snapInfo.angle === 225
                                 ? -2000
                                 : 2000)
@@ -401,8 +458,8 @@ export default function EditorCanvas({
                       <div
                         style={{
                           position: "absolute",
-                          top: cy - 32,
-                          left: cx,
+                          top: centerY - 32,
+                          left: centerX,
                           transform: "translateX(-50%)",
                           background: snapInfo.snapped
                             ? "#4f46e5"
@@ -429,7 +486,9 @@ export default function EditorCanvas({
         <div className="slide-notes">
           <textarea
             value={slideNotes}
+            onFocus={() => onBeginHistory?.()}
             onChange={(event) => onUpdateSlideNotes(event.target.value)}
+            onBlur={() => onCommitHistory?.()}
             placeholder="Click to add notes"
           />
         </div>
