@@ -1,3 +1,4 @@
+import { useMediaSrc } from "../../hooks/useMediaSrc";
 import "./MediaElement.css";
 
 export default function MediaElement({
@@ -11,6 +12,8 @@ export default function MediaElement({
   previewClassName,
   animationOrder,
 }) {
+  const resolvedSrc = useMediaSrc(media["file-link"]);
+
   return (
     <div
       className={
@@ -32,7 +35,7 @@ export default function MediaElement({
       }}
     >
       <img
-        src={media["file-link"]}
+        src={resolvedSrc}
         alt=""
         className="canvas-media"
         style={{

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useMediaSrc } from "../hooks/useMediaSrc";
 import "reveal.js/reveal.css";
 import "reveal.js/theme/white.css";
 import "./PreviewModal.css";
@@ -19,6 +20,18 @@ import {
   getFragmentProps,
   getPerLineFragments,
 } from "../core/render/revealRenderer";
+
+function PreviewMediaElement({ media, index, fragmentProps }) {
+  const src = useMediaSrc(media["file-link"]);
+  return (
+    <img
+      src={src}
+      alt=""
+      style={buildMediaElementStyle(media, index)}
+      {...fragmentProps}
+    />
+  );
+}
 
 export default function PreviewModal({ slides, presentation, onClose }) {
   const deckRef = useRef(null);
@@ -101,12 +114,11 @@ export default function PreviewModal({ slides, presentation, onClose }) {
                     {mediaElements.map((media, index) => {
                       const fragmentProps = getFragmentProps(animationMap.get(media.id));
                       return (
-                        <img
+                        <PreviewMediaElement
                           key={media.id || index}
-                          src={media["file-link"]}
-                          alt=""
-                          style={buildMediaElementStyle(media, index)}
-                          {...fragmentProps}
+                          media={media}
+                          index={index}
+                          fragmentProps={fragmentProps}
                         />
                       );
                     })}

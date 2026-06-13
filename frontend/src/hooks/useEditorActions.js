@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { idbRemove } from "../core/persistence/autoSaveService";
 import {
   EditorEventType,
   createEditorEvent,
@@ -280,8 +281,7 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
   );
 
   const resetPresentation = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
-    window.location.reload();
+    idbRemove(STORAGE_KEY).finally(() => window.location.reload());
   }, []);
 
   const undo = useCallback(

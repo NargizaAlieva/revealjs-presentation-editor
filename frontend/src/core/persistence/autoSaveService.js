@@ -3,6 +3,50 @@ import { EditorEventType } from "../events/editorEvents";
 
 const DEFAULT_STORAGE_KEY = "presentation";
 const DEFAULT_AUTOSAVE_DELAY = 2000;
+const DB_NAME = "editor-db";
+const DB_VERSION = 1;
+const STORE_NAME = "keyval";
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = (e) => {
+      e.target.result.createObjectStore(STORE_NAME);
+    };
+    request.onsuccess = (e) => resolve(e.target.result);
+    request.onerror = (e) => reject(e.target.error);
+  });
+}
+
+export async function idbSet(key, value) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    tx.objectStore(STORE_NAME).put(value, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = (e) => reject(e.target.error);
+  });
+}
+
+export async function idbGet(key) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readonly");
+    const request = tx.objectStore(STORE_NAME).get(key);
+    request.onsuccess = (e) => resolve(e.target.result ?? null);
+    request.onerror = (e) => reject(e.target.error);
+  });
+}
+
+export async function idbRemove(key) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    tx.objectStore(STORE_NAME).delete(key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = (e) => reject(e.target.error);
+  });
+}
 
 const AUTO_SAVE_EVENTS = new Set([
   EditorEventType.SLIDE.ADD,
@@ -45,10 +89,8 @@ const AUTO_SAVE_EVENTS = new Set([
 
 const createDebounce = (fn, delay) => {
   let timer = null;
-
   return () => {
     if (timer) clearTimeout(timer);
-
     timer = setTimeout(() => {
       fn();
       timer = null;
@@ -58,25 +100,16 @@ const createDebounce = (fn, delay) => {
 
 export const createAutosaveService = (
   getState,
-  {
-    storageKey = DEFAULT_STORAGE_KEY,
-    delay = DEFAULT_AUTOSAVE_DELAY,
-  } = {},
+  { storageKey = DEFAULT_STORAGE_KEY, delay = DEFAULT_AUTOSAVE_DELAY } = {},
 ) => {
-  const persist = () => {
+  const persist = async () => {
     try {
       const state = getState();
-
       if (!state?.presentation) {
         console.warn("[AutosaveService] No presentation state to save.");
         return;
       }
-
-      localStorage.setItem(
-        storageKey,
-        serializePresentation(state.presentation),
-      );
-
+      await idbSet(storageKey, serializePresentation(state.presentation));
       if (process.env.NODE_ENV === "development") {
         console.log("[AutosaveService] Saved.");
       }
@@ -89,9 +122,5 @@ export const createAutosaveService = (
   const saveImmediately = () => persist();
   const shouldAutosave = (eventType) => AUTO_SAVE_EVENTS.has(eventType);
 
-  return {
-    scheduleAutosave,
-    saveImmediately,
-    shouldAutosave,
-  };
+  return { scheduleAutosave, saveImmediately, shouldAutosave };
 };

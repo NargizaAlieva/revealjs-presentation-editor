@@ -56,7 +56,6 @@ function withHistory(state, newState) {
 export const editorReducer = (state, event) => {
   switch (event.type) {
     case EditorEventType.HISTORY.BEGIN:
-      console.log("BEGIN", state.pendingSnapshot);
       if (state.pendingSnapshot) return state;
 
       return {
@@ -150,7 +149,7 @@ export const editorReducer = (state, event) => {
         },
       };
 
-      const isMedia = state.clipboard.type !== undefined;
+      const isMedia = state.clipboard["media-type"] !== undefined;
 
       slides[state.selectedSlideIndex] = {
         ...slide,
@@ -191,6 +190,7 @@ export const editorReducer = (state, event) => {
       return {
         ...state,
         presentation: result.data,
+        autosaveEnabled: event.payload.autosaveEnabled ?? true,
         selectedSlideIndex: 0,
         selectedElementId: null,
         past: [],

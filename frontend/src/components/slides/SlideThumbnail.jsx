@@ -1,3 +1,4 @@
+import { useMediaSrc } from "../../hooks/useMediaSrc";
 import "./SlideThumbnail.css";
 
 const THUMB_W = 180;
@@ -7,6 +8,25 @@ const getElementText = (textElement) =>
   (textElement?.paragraphs ?? [])
     .map((p) => (p.runs ?? []).map((r) => r.text ?? "").join(""))
     .join(" ");
+
+function ThumbnailMedia({ media }) {
+  const src = useMediaSrc(media["file-link"]);
+  return (
+    <img
+      src={src}
+      alt=""
+      style={{
+        position: "absolute",
+        left: media.position?.x ?? 0,
+        top: media.position?.y ?? 0,
+        width: media.width ?? 300,
+        height: media.height ?? 200,
+        objectFit: "contain",
+        pointerEvents: "none",
+      }}
+    />
+  );
+}
 
 export default function SlideThumbnail({
   slide,
@@ -60,20 +80,7 @@ export default function SlideThumbnail({
         })}
 
         {mediaElements.map((media) => (
-          <img
-            key={media.id}
-            src={media["file-link"]}
-            alt=""
-            style={{
-              position: "absolute",
-              left: media.position?.x ?? 0,
-              top: media.position?.y ?? 0,
-              width: media.width ?? 300,
-              height: media.height ?? 200,
-              objectFit: "contain",
-              pointerEvents: "none",
-            }}
-          />
+          <ThumbnailMedia key={media.id} media={media} />
         ))}
       </div>
     </div>
