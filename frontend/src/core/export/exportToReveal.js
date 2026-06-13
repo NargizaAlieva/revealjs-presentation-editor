@@ -26,6 +26,7 @@ const FRAGMENT_EFFECT_CLASSES = new Set([
 ]);
 
 const SPEED_MAP = { 0.5: "fast", 1: undefined, 2: "slow" };
+const TRANSITION_SPEED_MAP = { 0.3: "fast", 0.75: "default", 1.5: "slow" };
 
 function blobToDataUrl(blob) {
   return new Promise((resolve) => {
@@ -151,14 +152,22 @@ function buildTextElementContent(textElement, animation) {
     const lines = runsHtml.split("\n");
     if (lines.length === 1) {
       const classes = fragmentClassesFor(animation.effect ?? "fade-in");
-      const dataAttrs = fragmentDataAttrs(animation.sequence, animation["effect-options"]?.speed ?? animation.speed);
+      const dataAttrs = fragmentDataAttrs(
+        animation.sequence,
+        animation["effect-options"]?.speed ?? animation.speed
+      );
       return `<p class="${classes}" ${dataAttrs} style="${pStyle}">${runsHtml}</p>`;
     }
 
     return lines.map((line, lineIndex) => {
-      const fragIndex = sequenceMode === "all-at-once" ? animation.sequence : animation.sequence + lineIndex;
+      const fragIndex = sequenceMode === "all-at-once"
+        ? animation.sequence
+        : animation.sequence + lineIndex;
       const classes = fragmentClassesFor(animation.effect ?? "fade-in");
-      const dataAttrs = fragmentDataAttrs(fragIndex, animation["effect-options"]?.speed ?? animation.speed);
+      const dataAttrs = fragmentDataAttrs(
+        fragIndex,
+        animation["effect-options"]?.speed ?? animation.speed
+      );
       return `<p class="${classes}" ${dataAttrs} style="${pStyle}">${line}</p>`;
     }).join("");
   }).join("");
@@ -168,6 +177,8 @@ function buildSlideSection(slide, width, height, resolvedMap) {
   const textElements = getTextElements(slide);
   const mediaElements = getMediaElements(slide);
   const transition = slide.contents?.transition ?? "slide";
+  const transitionDuration = slide.contents?.transitionDuration ?? 0.75;
+  const transitionSpeed = TRANSITION_SPEED_MAP[transitionDuration] ?? "default";
   const background = slide.contents?.background ?? "var(--bg-light, white)";
   const animationMap = buildAnimationMap(slide);
 
@@ -209,7 +220,11 @@ function buildSlideSection(slide, width, height, resolvedMap) {
   }).join("");
 
   return `
-    <section data-transition="${escapeHtml(transition)}" style="background: ${background};">
+    <section
+      data-transition="${escapeHtml(transition)}"
+      data-transition-speed="${transitionSpeed}"
+      style="background: ${background};"
+    >
       <div style="position: relative; width: ${width}px; height: ${height}px; overflow: hidden;">
         ${textElementsHtml}
         ${mediaElementsHtml}

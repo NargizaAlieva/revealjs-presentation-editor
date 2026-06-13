@@ -74,12 +74,12 @@ export default function EditorPage() {
             }
             isSlideHidden={selectedSlide?.hidden}
             onTransitionChange={(transition) =>
-              actions.updateSlideTransition(transition, currentDuration)
+              actions.updateSlideTransition(transition)
             }
             currentTransition={currentTransition}
             currentDuration={currentDuration}
             onDurationChange={(duration) =>
-              actions.updateSlideTransition(currentTransition, duration)
+              actions.updateTransitionDuration(duration)
             }
             onApplyTransitionToAll={() =>
               actions.applyTransitionToAll(currentTransition, currentDuration)
