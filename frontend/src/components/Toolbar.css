@@ -50,7 +50,7 @@
 /* ─── Ribbon ─────────────────────────────────────────────────────────────── */
 
 .toolbar-ribbon {
-  height: 92px;
+  height: 90px;
   display: flex;
   align-items: stretch;
   background: #ffffff;
@@ -402,4 +402,103 @@
   top: 18px;
   height: 12px;
   border: 1px dashed #9aa4b2;
+}
+
+/* ── Title bar ───────────────────────────────────────────────────────────── */
+
+.toolbar-titlebar {
+  height: 36px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 0 12px;
+  background: #f3f4f6;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.toolbar-titlebar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.toolbar-filename {
+  font-size: 13px;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+.toolbar-titlebar-center {
+  display: flex;
+  justify-content: center;
+}
+
+.toolbar-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: white;
+  border: 1px solid #d0d0d0;
+  border-radius: 16px;
+  padding: 0 12px;
+  height: 24px;
+  width: 220px;
+  color: #888;
+}
+
+.toolbar-search input {
+  border: none;
+  outline: none;
+  font-size: 12px;
+  background: transparent;
+  width: 100%;
+  color: #333;
+}
+
+.toolbar-search input::placeholder {
+  color: #aaa;
+}
+
+.toolbar-titlebar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.toolbar-titlebar-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  font-size: 12px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.toolbar-present-btn {
+  background: white;
+  border-color: #c0c0c0;
+  color: #333;
+}
+
+.toolbar-present-btn:hover {
+  background: #f0f0f0;
+}
+
+.toolbar-share-btn {
+  background: #107c41;
+  color: white;
+  border-color: #0e6b37;
+}
+
+.toolbar-share-btn:hover {
+  background: #0e6b37;
 }

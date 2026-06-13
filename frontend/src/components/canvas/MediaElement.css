@@ -1,10 +1,10 @@
 .canvas-media-wrapper {
-  cursor: pointer;
+  cursor: move;
   box-sizing: border-box;
 }
 
 .canvas-media-wrapper.selected {
-  outline: 2px solid #4a90e2;
+  outline: 1px solid #4f46e5;
   outline-offset: 2px;
 }
 
@@ -14,45 +14,75 @@
   pointer-events: none;
 }
 
-.media-delete-button {
-  position: absolute;
-  top: -32px;
-  right: 0;
-
-  padding: 4px 8px;
-
-  font-size: 12px;
-
-  cursor: pointer;
-  z-index: 10;
+/* video разрешаем pointer-events чтобы работали controls */
+video.canvas-media {
+  pointer-events: auto;
 }
 
-.media-resize-handle {
+/* ── Resize handles (те же что в TextElement) ───────────────── */
+
+.resize-handle {
   position: absolute;
-  right: -8px;
-  bottom: -8px;
-
-  width: 14px;
-  height: 14px;
-
+  width: 10px;
+  height: 10px;
   background: white;
-  border: 2px solid #3b82f6;
-  cursor: nwse-resize;
+  border: 1.5px solid #4f46e5;
+  border-radius: 50%;
+  z-index: 20;
+  margin: -5px;
 }
+
+.resize-handle-nw { top: 0;    left: 0;   }
+.resize-handle-ne { top: 0;    right: 0;  margin-right: -5px; margin-left: 0; }
+.resize-handle-se { bottom: 0; right: 0;  margin-bottom: -5px; margin-right: -5px; margin-top: 0; margin-left: 0; }
+.resize-handle-sw { bottom: 0; left: 0;   margin-bottom: -5px; margin-top: 0; }
+.resize-handle-n  { top: 0;    left: 50%; margin-top: -5px;    margin-left: -5px; }
+.resize-handle-s  { bottom: 0; left: 50%; margin-bottom: -5px; margin-left: -5px; margin-top: 0; }
+.resize-handle-e  { top: 50%;  right: 0;  margin-top: -5px;    margin-right: -5px; margin-left: 0; }
+.resize-handle-w  { top: 50%;  left: 0;   margin-top: -5px;    margin-left: -5px; }
+
+/* ── Drag borders ────────────────────────────────────────────── */
+
+.drag-border {
+  position: absolute;
+  z-index: 10;
+  cursor: grab;
+}
+
+.drag-border:active { cursor: grabbing; }
+
+.drag-border-top    { top: -4px;    left: 8px;  right: 8px;  height: 10px; }
+.drag-border-bottom { bottom: -4px; left: 8px;  right: 8px;  height: 10px; }
+.drag-border-left   { left: -4px;   top: 8px;   bottom: 8px; width: 10px;  }
+.drag-border-right  { right: -4px;  top: 8px;   bottom: 8px; width: 10px;  }
+
+/* ── Rotate handle ───────────────────────────────────────────── */
 
 .media-rotate-handle {
   position: absolute;
-  top: -48px;
+  top: -40px;
   left: 50%;
   transform: translateX(-50%);
 
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
 
-  border: 2px solid #3b82f6;
+  border: 1.5px solid #4f46e5;
   border-radius: 50%;
   background: white;
 
   cursor: grab;
   z-index: 9999;
 }
+
+.media-rotate-handle::before {
+  content: "↻";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -54%);
+  font-size: 14px;
+  color: #4f46e5;
+}
+
+.media-rotate-handle:active { cursor: grabbing; }

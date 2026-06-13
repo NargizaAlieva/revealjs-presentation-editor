@@ -71,7 +71,6 @@ export default function EditorCanvas({
   const {
     handleMouseMove,
     stopInteraction,
-    cancelInteraction,
     startDraggingText,
     startDraggingMedia,
     startResizingText,
@@ -106,12 +105,16 @@ export default function EditorCanvas({
     if (!previewEffect) return;
 
     if (previewEffect.type === "animation") {
-      setPlayingElementId(null);
-      setPlayingEffect(null);
+      let raf1, raf2;
 
-      const raf = requestAnimationFrame(() => {
-        setPlayingElementId(previewEffect.elementId);
-        setPlayingEffect(previewEffect.effect);
+      raf1 = requestAnimationFrame(() => {
+        setPlayingElementId(null);
+        setPlayingEffect(null);
+
+        raf2 = requestAnimationFrame(() => {
+          setPlayingElementId(previewEffect.elementId);
+          setPlayingEffect(previewEffect.effect);
+        });
       });
 
       const duration =
@@ -127,16 +130,20 @@ export default function EditorCanvas({
       }, duration + 100);
 
       return () => {
-        cancelAnimationFrame(raf);
+        cancelAnimationFrame(raf1);
+        cancelAnimationFrame(raf2);
         clearTimeout(timer);
       };
     }
-
     if (previewEffect.type === "transition") {
-      setPlayingTransition(null);
+      let raf1, raf2;
 
-      const raf = requestAnimationFrame(() => {
-        setPlayingTransition(previewEffect.effect);
+      raf1 = requestAnimationFrame(() => {
+        setPlayingTransition(null);
+
+        raf2 = requestAnimationFrame(() => {
+          setPlayingTransition(previewEffect.effect);
+        });
       });
 
       const timer = setTimeout(() => {
@@ -144,7 +151,8 @@ export default function EditorCanvas({
       }, 900);
 
       return () => {
-        cancelAnimationFrame(raf);
+        cancelAnimationFrame(raf1);
+        cancelAnimationFrame(raf2);
         clearTimeout(timer);
       };
     }
