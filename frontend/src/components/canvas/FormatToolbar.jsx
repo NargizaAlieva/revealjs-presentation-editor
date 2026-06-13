@@ -1,10 +1,9 @@
 import { useState } from "react";
 import "./FormatToolbar.css";
 
-// Module-level formatting clipboard — persists across renders and components
-let formattingClipboard = null; // { formatting, sourceElementId }
+let formattingClipboard = null; 
 
-const FONTS = [
+const DEFAULT_FONTS = [
   "Arial",
   "Georgia",
   "Times New Roman",
@@ -23,12 +22,19 @@ export default function FormatToolbar({
   elementId,
   formatting,
   onFormatTextElement,
+  presentation,
 }) {
   const [justCopied, setJustCopied] = useState(false);
   const fmt = (updates) => onFormatTextElement(elementId, updates);
 
+  const presentationFonts = (presentation?.slideset?.fonts ?? [])
+    .map((f) => f["font-id"])
+    .filter(Boolean);
+  const fonts =
+    presentationFonts.length > 0 ? presentationFonts : DEFAULT_FONTS;
+
   const currentSize = parseInt(formatting.size ?? "24", 10);
-  const currentFont = formatting.font ?? "Arial";
+  const currentFont = formatting.font ?? fonts[0] ?? "Arial";
   const currentAlign = formatting.align ?? "left";
   const currentColor = formatting.color ?? "#111111";
   const currentHighlight = formatting.highlight ?? "transparent";
@@ -39,11 +45,9 @@ export default function FormatToolbar({
 
   const handleFormatPainter = () => {
     if (hasPaste) {
-      // Apply copied formatting to this element
       fmt({ ...formattingClipboard.formatting });
       formattingClipboard = null;
     } else {
-      // Copy current formatting to clipboard
       formattingClipboard = {
         formatting: { ...formatting },
         sourceElementId: elementId,
@@ -55,7 +59,6 @@ export default function FormatToolbar({
 
   return (
     <div className="format-toolbar" onMouseDown={stop} onClick={stop}>
-      {/* Row 1: Font, Size, A+/A-, Line spacing */}
       <div className="format-row">
         <select
           className="font-select"
@@ -63,7 +66,7 @@ export default function FormatToolbar({
           onChange={(e) => fmt({ font: e.target.value })}
           title="Font"
         >
-          {FONTS.map((f) => (
+          {fonts.map((f) => (
             <option key={f} value={f} style={{ fontFamily: f }}>
               {f}
             </option>
@@ -113,7 +116,6 @@ export default function FormatToolbar({
         </select>
       </div>
 
-      {/* Row 2: B, I, U, Align, Colors, Format Painter, Clear */}
       <div className="format-row">
         <button
           type="button"

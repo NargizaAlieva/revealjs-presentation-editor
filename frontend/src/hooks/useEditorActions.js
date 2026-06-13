@@ -1,37 +1,39 @@
 import { useCallback } from "react";
 import { idbRemove } from "../core/persistence/autoSaveService";
-import {
-  EditorEventType,
-  createEditorEvent,
-} from "../core";
+import { EditorEventType, createEditorEvent } from "../core";
 
 // const STORAGE_KEY = "presentation";
 
-export function useEditorActions(eventBus, selectedSlideIndex, slidesLength, presentationId) {
+export function useEditorActions(
+  eventBus,
+  selectedSlideIndex,
+  slidesLength,
+  presentationId,
+) {
   const setSelectedSlideId = useCallback(
     (slideIndex) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.SLIDE.SELECT, { slideIndex })
+        createEditorEvent(EditorEventType.SLIDE.SELECT, { slideIndex }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const addSlide = useCallback(
     (layoutId) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.SLIDE.ADD, { layoutId })
+        createEditorEvent(EditorEventType.SLIDE.ADD, { layoutId }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const deleteSlide = useCallback(
     () => eventBus.dispatch(createEditorEvent(EditorEventType.SLIDE.DELETE)),
-    [eventBus]
+    [eventBus],
   );
 
   const duplicateSlide = useCallback(
     () => eventBus.dispatch(createEditorEvent(EditorEventType.SLIDE.DUPLICATE)),
-    [eventBus]
+    [eventBus],
   );
 
   const moveSlideUp = useCallback(() => {
@@ -40,7 +42,7 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength, pre
       createEditorEvent(EditorEventType.SLIDE.REORDER, {
         fromIndex: selectedSlideIndex,
         toIndex: selectedSlideIndex - 1,
-      })
+      }),
     );
   }, [eventBus, selectedSlideIndex]);
 
@@ -50,40 +52,57 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength, pre
       createEditorEvent(EditorEventType.SLIDE.REORDER, {
         fromIndex: selectedSlideIndex,
         toIndex: selectedSlideIndex + 1,
-      })
+      }),
     );
   }, [eventBus, selectedSlideIndex, slidesLength]);
+
+  const reorderSlide = useCallback(
+    (fromIndex, toIndex) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.SLIDE.REORDER, {
+          fromIndex,
+          toIndex,
+        }),
+      ),
+    [eventBus],
+  );
 
   const toggleSlideHidden = useCallback(
     (slideIndex) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.SLIDE.TOGGLE_HIDDEN, { slideIndex })
+        createEditorEvent(EditorEventType.SLIDE.TOGGLE_HIDDEN, { slideIndex }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const updateSlideBackground = useCallback(
     (background) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.SLIDE.UPDATE_BACKGROUND, { background })
+        createEditorEvent(EditorEventType.SLIDE.UPDATE_BACKGROUND, {
+          background,
+        }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const updateSlideTransition = useCallback(
     (transition) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.SLIDE.UPDATE_TRANSITION, { transition })
+        createEditorEvent(EditorEventType.SLIDE.UPDATE_TRANSITION, {
+          transition,
+        }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const updateTransitionDuration = useCallback(
     (duration) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.SLIDE.UPDATE_TRANSITION, { duration })
+        createEditorEvent(EditorEventType.SLIDE.UPDATE_TRANSITION, {
+          duration,
+        }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const applyTransitionToAll = useCallback(
@@ -92,17 +111,17 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength, pre
         createEditorEvent(EditorEventType.SLIDE.APPLY_TRANSITION_TO_ALL, {
           transition,
           duration,
-        })
+        }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const updateSlideNotes = useCallback(
     (notes) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.SLIDE.UPDATE_NOTES, { notes })
+        createEditorEvent(EditorEventType.SLIDE.UPDATE_NOTES, { notes }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const updateTextElementContent = useCallback(
@@ -111,9 +130,9 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength, pre
         createEditorEvent(EditorEventType.TEXT.UPDATE, {
           textElementId,
           text: newText,
-        })
+        }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const updateTextElementFormatting = useCallback(
@@ -122,25 +141,25 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength, pre
         createEditorEvent(EditorEventType.TEXT.UPDATE_FORMATTING, {
           textElementId,
           formatting,
-        })
+        }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const deleteElement = useCallback(
     (elementId) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.TEXT.DELETE, { elementId })
+        createEditorEvent(EditorEventType.TEXT.DELETE, { elementId }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const selectElement = useCallback(
     (elementId) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.ELEMENT.SELECT, { elementId })
+        createEditorEvent(EditorEventType.ELEMENT.SELECT, { elementId }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const updateElementPosition = useCallback(
@@ -149,9 +168,9 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength, pre
         createEditorEvent(EditorEventType.ELEMENT.MOVE, {
           elementId,
           position: { x, y },
-        })
+        }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const updateElementSize = useCallback(
@@ -160,9 +179,9 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength, pre
         createEditorEvent(EditorEventType.ELEMENT.RESIZE, {
           elementId,
           size: { width, height },
-        })
+        }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const updateElement = useCallback(
@@ -171,17 +190,17 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength, pre
         createEditorEvent(EditorEventType.ELEMENT.UPDATE, {
           elementId,
           updates,
-        })
+        }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const addAnimation = useCallback(
     (animation) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.ANIMATION.ADD, { animation })
+        createEditorEvent(EditorEventType.ANIMATION.ADD, { animation }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const updateAnimation = useCallback(
@@ -190,49 +209,49 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength, pre
         createEditorEvent(EditorEventType.ANIMATION.UPDATE, {
           animationId,
           updates,
-        })
+        }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const deleteAnimation = useCallback(
     (animationId) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.ANIMATION.DELETE, { animationId })
+        createEditorEvent(EditorEventType.ANIMATION.DELETE, { animationId }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const addMedia = useCallback(
     (mediaElement) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.MEDIA.ADD, { mediaElement })
+        createEditorEvent(EditorEventType.MEDIA.ADD, { mediaElement }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const updateMedia = useCallback(
     (mediaId, updates) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.MEDIA.UPDATE, { mediaId, updates })
+        createEditorEvent(EditorEventType.MEDIA.UPDATE, { mediaId, updates }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const deleteMedia = useCallback(
     (mediaId) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.MEDIA.DELETE, { mediaId })
+        createEditorEvent(EditorEventType.MEDIA.DELETE, { mediaId }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const updateMasterTheme = useCallback(
     (colorTheme) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.MASTER.UPDATE_THEME, { colorTheme })
+        createEditorEvent(EditorEventType.MASTER.UPDATE_THEME, { colorTheme }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const updateMasterDimensions = useCallback(
@@ -242,17 +261,19 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength, pre
           slideDimensions,
           aspectRatio,
           dimensionUnits,
-        })
+        }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const updateMasterFormatting = useCallback(
     (formatting) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.MASTER.UPDATE_FORMATTING, { formatting })
+        createEditorEvent(EditorEventType.MASTER.UPDATE_FORMATTING, {
+          formatting,
+        }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const updateLayout = useCallback(
@@ -261,74 +282,74 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength, pre
         createEditorEvent(EditorEventType.LAYOUT.UPDATE, {
           layoutId,
           placeholders,
-        })
+        }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const applyLayout = useCallback(
     (layoutId) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.LAYOUT.APPLY, { layoutId })
+        createEditorEvent(EditorEventType.LAYOUT.APPLY, { layoutId }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const savePresentation = useCallback(
     () =>
       eventBus.dispatch(createEditorEvent(EditorEventType.PRESENTATION.SAVE)),
-    [eventBus]
+    [eventBus],
   );
 
   const createNewPresentation = useCallback(
-    () => eventBus.dispatch(createEditorEvent(EditorEventType.PRESENTATION.CREATE)),
-    [eventBus]
+    () =>
+      eventBus.dispatch(createEditorEvent(EditorEventType.PRESENTATION.CREATE)),
+    [eventBus],
   );
 
   const resetPresentation = useCallback(() => {
-    const key = presentationId ? `presentation-${presentationId}` : "presentation";
+    const key = presentationId
+      ? `presentation-${presentationId}`
+      : "presentation";
     idbRemove(key).finally(() => window.location.reload());
   }, [presentationId]);
 
   const undo = useCallback(
     () => eventBus.dispatch(createEditorEvent(EditorEventType.HISTORY.UNDO)),
-    [eventBus]
+    [eventBus],
   );
 
   const redo = useCallback(
     () => eventBus.dispatch(createEditorEvent(EditorEventType.HISTORY.REDO)),
-    [eventBus]
+    [eventBus],
   );
 
   const beginHistory = useCallback(
     () => eventBus.dispatch(createEditorEvent(EditorEventType.HISTORY.BEGIN)),
-    [eventBus]
+    [eventBus],
   );
 
   const commitHistory = useCallback(
     () => eventBus.dispatch(createEditorEvent(EditorEventType.HISTORY.COMMIT)),
-    [eventBus]
+    [eventBus],
   );
 
   const cancelHistory = useCallback(
     () => eventBus.dispatch(createEditorEvent(EditorEventType.HISTORY.CANCEL)),
-    [eventBus]
+    [eventBus],
   );
 
   const copyElement = useCallback(
     (element) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.ELEMENT.COPY, { element })
+        createEditorEvent(EditorEventType.ELEMENT.COPY, { element }),
       ),
-    [eventBus]
+    [eventBus],
   );
 
   const pasteElement = useCallback(
-    () =>
-      eventBus.dispatch(
-        createEditorEvent(EditorEventType.ELEMENT.PASTE)
-      ),
-    [eventBus]
+    () => eventBus.dispatch(createEditorEvent(EditorEventType.ELEMENT.PASTE)),
+    [eventBus],
   );
 
   return {
@@ -338,6 +359,7 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength, pre
     duplicateSlide,
     moveSlideUp,
     moveSlideDown,
+    reorderSlide,
     toggleSlideHidden,
     updateSlideBackground,
     updateSlideTransition,

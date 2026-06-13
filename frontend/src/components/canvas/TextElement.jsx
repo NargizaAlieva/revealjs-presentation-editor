@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import FormatToolbar from "./FormatToolbar";
 import "./TextElement.css";
 
@@ -26,8 +26,10 @@ export default function TextElement({
   onCommitHistory,
   previewClassName,
   animationOrder,
+  presentation,
 }) {
   const [isFormatting, setIsFormatting] = useState(false);
+  const editableRef = useRef(null);
 
   if (!isSelected && isFormatting) setIsFormatting(false);
 
@@ -35,6 +37,15 @@ export default function TextElement({
     .map((p) => p.runs?.[0]?.text ?? "")
     .join("\n");
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
+
+  useEffect(() => {
+    const el = editableRef.current;
+    if (!el) return;
+    if (document.activeElement === el) return;
+    if (el.innerText !== text) {
+      el.innerText = text;
+    }
+  }, [text]);
 
   return (
     <div
@@ -72,10 +83,12 @@ export default function TextElement({
           elementId={textElement.id}
           formatting={formatting}
           onFormatTextElement={onFormatTextElement}
+          presentation={presentation}
         />
       )}
 
       <div
+        ref={editableRef}
         contentEditable
         suppressContentEditableWarning
         className="text-editable"
@@ -95,9 +108,7 @@ export default function TextElement({
           fontFamily: formatting.font ?? "inherit",
           backgroundColor: formatting.highlight ?? "transparent",
         }}
-      >
-        {text}
-      </div>
+      />
 
       {isSelected &&
         RESIZE_HANDLES.map(({ dir, cursor }) => (

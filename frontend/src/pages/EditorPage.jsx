@@ -12,6 +12,7 @@ import PreviewModal from "../components/PreviewModal";
 import { exportToReveal } from "../core/export/exportToReveal";
 import StatusBar from "../components/StatusBar";
 import { getSlideSize } from "../utils/slidesetRenderUtils";
+import { usePresentationFonts } from "../hooks/usePresentationFonts";
 import FileMenu from "../components/FileMenu";
 import {
   deletePresentation,
@@ -21,9 +22,7 @@ import {
 export default function EditorPage() {
   const { presentationId } = useParams();
   const navigate = useNavigate();
-
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [showUI, setShowUI] = useState(false);
   const [activeTab, setActiveTab] = useState("Home");
   const [previewEffect, setPreviewEffect] = useState(null);
   const [zoom, setZoom] = useState(70);
@@ -38,6 +37,9 @@ export default function EditorPage() {
     selectedElementId,
   } = useSlides(state);
 
+  // Load custom @font-face rules from the presentation's fonts array
+  usePresentationFonts(presentation);
+
   const {
     setSelectedSlideId,
     selectElement,
@@ -46,7 +48,9 @@ export default function EditorPage() {
     duplicateSlide,
     moveSlideUp,
     moveSlideDown,
+    reorderSlide,
     savePresentation,
+    resetPresentation,
     updateTextElementContent,
     updateTextElementFormatting,
     updateElementPosition,
@@ -59,6 +63,7 @@ export default function EditorPage() {
     deleteMedia,
     updateSlideNotes,
     updateSlideTransition,
+    updateTransitionDuration,
     applyTransitionToAll,
     addAnimation,
     updateAnimation,
@@ -70,47 +75,14 @@ export default function EditorPage() {
     redo,
     copyElement,
     pasteElement,
-  } = useEditorActions(eventBus, selectedSlideIndex, slides.length);
+  } = useEditorActions(
+    eventBus,
+    selectedSlideIndex,
+    slides.length,
+    presentationId,
+  );
 
   const exportPresentation = async () => exportToReveal(presentation);
-
-  // Save As – download JSON
-  const saveAsPresentation = () => {
-    const json = JSON.stringify(presentation, null, 2);
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    const filename = presentation?.slideset?.filename ?? "presentation";
-    a.download = `${filename}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  // Load from JSON file
-  const loadPresentation = async (jsonText) => {
-    try {
-      const parsed = JSON.parse(jsonText);
-      const id = await createPresentation(
-        parsed?.slideset?.title ?? "Imported",
-      );
-      const { idbSet: set } =
-        await import("../core/persistence/autoSaveService");
-      const { presentationKey } =
-        await import("../core/persistence/presentationsLibrary");
-      await set(presentationKey(id), parsed);
-      navigate(`/editor/${id}`);
-    } catch {
-      alert("Failed to load file: invalid JSON.");
-    }
-  };
-
-  // Delete current presentation and go home
-  const handleDeleteAndGoHome = async () => {
-    if (!confirm("Delete this presentation?")) return;
-    await deletePresentation(presentationId);
-    navigate("/");
-  };
 
   const triggerAnimationPreview = (elementId, effect, speed) => {
     setPreviewEffect({
@@ -123,15 +95,22 @@ export default function EditorPage() {
   };
 
   const triggerTransitionPreview = (effect) => {
-    setPreviewEffect({ type: "transition", effect, key: Date.now() });
+    setPreviewEffect({
+      type: "transition",
+      effect,
+      key: Date.now(),
+    });
   };
 
   const handleImageUpload = async (event) => {
     const file = event.target.files?.[0];
     if (!file || !file.type.startsWith("image/")) return;
+
     const mediaId = crypto.randomUUID();
     const key = `media/${mediaId}`;
+
     await idbSet(key, file);
+
     addMedia({
       id: mediaId,
       "file-link": `indexeddb://${key}`,
@@ -146,29 +125,7 @@ export default function EditorPage() {
       effects: {},
       playback: {},
     });
-    event.target.value = "";
-  };
 
-  const handleVideoUpload = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file || !file.type.startsWith("video/")) return;
-    const mediaId = crypto.randomUUID();
-    const key = `media/${mediaId}`;
-    await idbSet(key, file);
-    addMedia({
-      id: mediaId,
-      "file-link": `indexeddb://${key}`,
-      "media-type": "video",
-      position: { x: 60, y: 60 },
-      width: 480,
-      height: 270,
-      rotation: 0,
-      "z-index": 1,
-      scale: 1,
-      crop: [],
-      effects: {},
-      playback: { autoplay: false, loop: false, muted: false },
-    });
     event.target.value = "";
   };
 
@@ -179,6 +136,7 @@ export default function EditorPage() {
 
   const selectedElement = (() => {
     if (!selectedElementId) return null;
+
     const textElement = (selectedSlide?.contents?.text ?? []).find(
       (item) => item.id === selectedElementId,
     );
@@ -188,28 +146,80 @@ export default function EditorPage() {
         label: textElement.paragraphs?.[0]?.runs?.[0]?.text || "Text",
       };
     }
+
     const mediaElement = (selectedSlide?.contents?.media ?? []).find(
       (item) => item.id === selectedElementId,
     );
     if (mediaElement) {
       return { id: mediaElement.id, label: "Image" };
     }
+
     return null;
   })();
 
+  // Derive text-formatting state for the ribbon Font section
+  const selectedTextEl = selectedElementId
+    ? (selectedSlide?.contents?.text ?? []).find(
+        (t) => t.id === selectedElementId,
+      )
+    : null;
+
+  const currentFormatting = selectedTextEl?.paragraphs?.[0]?.formatting ?? {};
+
+  const handleFormatChange = (updates) => {
+    if (!selectedElementId || !selectedTextEl) return;
+    updateTextElementFormatting(selectedElementId, updates);
+  };
+
   const { width: slideWidth, height: slideHeight } = getSlideSize(presentation);
+
   const currentTransition = selectedSlide?.contents?.transition ?? "none";
   const currentDuration = selectedSlide?.contents?.transitionDuration ?? 0.75;
+
+  // ── File menu actions ──────────────────────────────────────────────────────
   const presentationTitle =
     presentation?.slideset?.title ??
     presentation?.slideset?.filename ??
-    "Untitled";
+    "Untitled Presentation";
+
+  const handleSaveAs = () => {
+    const json = JSON.stringify(presentation, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${presentationTitle}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleLoadFile = async (jsonText) => {
+    try {
+      const data = JSON.parse(jsonText);
+      const id = await createPresentation(
+        data?.slideset?.title ?? "Imported Presentation",
+      );
+      await idbSet(`presentation-${id}`, data);
+      navigate(`/editor/${id}`);
+    } catch (e) {
+      console.error("Failed to load file:", e);
+    }
+  };
+
+  const handleDeleteAndGoHome = async () => {
+    if (!presentationId) return;
+    const ok = window.confirm(
+      "Delete this presentation? This cannot be undone.",
+    );
+    if (!ok) return;
+    await deletePresentation(presentationId);
+    navigate("/");
+  };
 
   if (isLoading) {
     return <div className="editor-loading">Loading...</div>;
   }
 
-  // Full-screen File backstage
   if (activeTab === "File") {
     return (
       <FileMenu
@@ -217,78 +227,63 @@ export default function EditorPage() {
         onClose={() => setActiveTab("Home")}
         onGoHome={() => navigate("/")}
         onSave={savePresentation}
-        onSaveAs={saveAsPresentation}
+        onSaveAs={handleSaveAs}
         onExport={exportPresentation}
-        onLoadFile={loadPresentation}
+        onLoadFile={handleLoadFile}
         onDelete={handleDeleteAndGoHome}
       />
     );
   }
 
   return (
-    <div className="editor-page" onDoubleClick={() => setShowUI(false)}>
-      {!showUI && (
-        <div
-          className="ui-toggle-strip"
-          onClick={(event) => {
-            event.stopPropagation();
-            setShowUI(true);
-          }}
+    <div className="editor-page">
+      <div className="toolbar-overlay">
+        <Toolbar
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          onAddSlide={addSlide}
+          onDeleteSlide={deleteSlide}
+          onDuplicateSlide={duplicateSlide}
+          onMoveSlideUp={moveSlideUp}
+          onMoveSlideDown={moveSlideDown}
+          onSavePresentation={savePresentation}
+          onExportPresentation={exportPresentation}
+          onOpenPreview={() => setIsPreviewOpen(true)}
+          canDelete={slides.length > 1}
+          canMoveUp={selectedSlideIndex > 0}
+          canMoveDown={selectedSlideIndex < slides.length - 1}
+          onResetPresentation={resetPresentation}
+          onImageUpload={handleImageUpload}
+          onToggleSlideHidden={() => toggleSlideHidden(selectedSlideIndex)}
+          isSlideHidden={selectedSlide?.hidden}
+          onTransitionChange={(transition) => updateSlideTransition(transition)}
+          currentTransition={currentTransition}
+          currentDuration={currentDuration}
+          onDurationChange={(duration) => updateTransitionDuration(duration)}
+          onApplyTransitionToAll={() =>
+            applyTransitionToAll(currentTransition, currentDuration)
+          }
+          selectedElement={selectedElement}
+          animations={selectedSlide?.contents?.animations ?? []}
+          onAddAnimation={addAnimation}
+          onUpdateAnimation={updateAnimation}
+          onDeleteAnimation={deleteAnimation}
+          onAnimationPreview={triggerAnimationPreview}
+          onTransitionPreview={triggerTransitionPreview}
+          onPreviewEffect={setPreviewEffect}
+          currentFormatting={currentFormatting}
+          onFormatChange={handleFormatChange}
+          isTextSelected={!!selectedTextEl}
+          presentation={presentation}
         />
-      )}
-
-      {showUI && (
-        <div
-          className="toolbar-overlay"
-          onClick={(event) => event.stopPropagation()}
-          onDoubleClick={(event) => event.stopPropagation()}
-        >
-          <Toolbar
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            onAddSlide={addSlide}
-            onDeleteSlide={deleteSlide}
-            onDuplicateSlide={duplicateSlide}
-            onMoveSlideUp={moveSlideUp}
-            onMoveSlideDown={moveSlideDown}
-            onSavePresentation={savePresentation}
-            onExportPresentation={exportPresentation}
-            onOpenPreview={() => setIsPreviewOpen(true)}
-            canDelete={slides.length > 1}
-            canMoveUp={selectedSlideIndex > 0}
-            canMoveDown={selectedSlideIndex < slides.length - 1}
-            onImageUpload={handleImageUpload}
-            onVideoUpload={handleVideoUpload}
-            onToggleSlideHidden={() => toggleSlideHidden(selectedSlideIndex)}
-            isSlideHidden={selectedSlide?.hidden}
-            onTransitionChange={(transition) =>
-              updateSlideTransition(transition, currentDuration)
-            }
-            currentTransition={currentTransition}
-            currentDuration={currentDuration}
-            onDurationChange={(duration) =>
-              updateSlideTransition(currentTransition, duration)
-            }
-            onApplyTransitionToAll={() =>
-              applyTransitionToAll(currentTransition, currentDuration)
-            }
-            selectedElement={selectedElement}
-            animations={selectedSlide?.contents?.animations ?? []}
-            onAddAnimation={addAnimation}
-            onUpdateAnimation={updateAnimation}
-            onDeleteAnimation={deleteAnimation}
-            onAnimationPreview={triggerAnimationPreview}
-            onTransitionPreview={triggerTransitionPreview}
-            onPreviewEffect={setPreviewEffect}
-          />
-        </div>
-      )}
+      </div>
 
       <div className="editor-body">
         <SlideList
           slides={slides}
           selectedSlideId={selectedSlideIndex}
           onSelectSlide={setSelectedSlideId}
+          onReorderSlide={reorderSlide}
           slideWidth={slideWidth}
           slideHeight={slideHeight}
         />
@@ -330,24 +325,18 @@ export default function EditorPage() {
         </div>
       </div>
 
-      {showUI && (
-        <div
-          className="statusbar-overlay"
-          onClick={(event) => event.stopPropagation()}
-          onDoubleClick={(event) => event.stopPropagation()}
-        >
-          <StatusBar
-            selectedSlideIndex={selectedSlideIndex}
-            totalSlides={slides.length}
-            zoom={zoom}
-            onZoomChange={setZoom}
-            onZoomIn={zoomIn}
-            onZoomOut={zoomOut}
-            showNotes={showNotes}
-            onToggleNotes={() => setShowNotes((v) => !v)}
-          />
-        </div>
-      )}
+      <div className="statusbar-overlay">
+        <StatusBar
+          selectedSlideIndex={selectedSlideIndex}
+          totalSlides={slides.length}
+          zoom={zoom}
+          onZoomChange={setZoom}
+          onZoomIn={zoomIn}
+          onZoomOut={zoomOut}
+          showNotes={showNotes}
+          onToggleNotes={() => setShowNotes((v) => !v)}
+        />
+      </div>
 
       {isPreviewOpen && (
         <PreviewModal

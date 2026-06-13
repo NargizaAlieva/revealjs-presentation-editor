@@ -104,58 +104,59 @@ export default function EditorCanvas({
   useEffect(() => {
     if (!previewEffect) return;
 
-    if (previewEffect.type === "animation") {
-      let raf1, raf2;
+    let cancelled = false;
+    let rafId = null;
+    let timerId = null;
 
-      raf1 = requestAnimationFrame(() => {
+    // React 19: setState cannot be called synchronously in an effect body.
+    // Yield to the microtask queue first, then run all state updates.
+    Promise.resolve().then(() => {
+      if (cancelled) return;
+
+      if (previewEffect.type === "animation") {
         setPlayingElementId(null);
         setPlayingEffect(null);
 
-        raf2 = requestAnimationFrame(() => {
-          setPlayingElementId(previewEffect.elementId);
-          setPlayingEffect(previewEffect.effect);
+        rafId = requestAnimationFrame(() => {
+          if (!cancelled) {
+            setPlayingElementId(previewEffect.elementId);
+            setPlayingEffect(previewEffect.effect);
+          }
         });
-      });
 
-      const duration =
-        previewEffect.speed === 0.5
-          ? 200
-          : previewEffect.speed === 2
-            ? 2200
-            : 800;
+        const duration =
+          previewEffect.speed === 0.5
+            ? 200
+            : previewEffect.speed === 2
+              ? 2200
+              : 800;
 
-      const timer = setTimeout(() => {
-        setPlayingElementId(null);
-        setPlayingEffect(null);
-      }, duration + 100);
+        timerId = setTimeout(() => {
+          setPlayingElementId(null);
+          setPlayingEffect(null);
+        }, duration + 100);
+      }
 
-      return () => {
-        cancelAnimationFrame(raf1);
-        cancelAnimationFrame(raf2);
-        clearTimeout(timer);
-      };
-    }
-    if (previewEffect.type === "transition") {
-      let raf1, raf2;
-
-      raf1 = requestAnimationFrame(() => {
+      if (previewEffect.type === "transition") {
         setPlayingTransition(null);
 
-        raf2 = requestAnimationFrame(() => {
-          setPlayingTransition(previewEffect.effect);
+        rafId = requestAnimationFrame(() => {
+          if (!cancelled) {
+            setPlayingTransition(previewEffect.effect);
+          }
         });
-      });
 
-      const timer = setTimeout(() => {
-        setPlayingTransition(null);
-      }, 900);
+        timerId = setTimeout(() => {
+          setPlayingTransition(null);
+        }, 900);
+      }
+    });
 
-      return () => {
-        cancelAnimationFrame(raf1);
-        cancelAnimationFrame(raf2);
-        clearTimeout(timer);
-      };
-    }
+    return () => {
+      cancelled = true;
+      if (rafId) cancelAnimationFrame(rafId);
+      if (timerId) clearTimeout(timerId);
+    };
   }, [previewEffect]);
 
   useEffect(() => {
@@ -337,6 +338,7 @@ export default function EditorCanvas({
                     onCommitHistory={onCommitHistory}
                     onCancelHistory={onCancelHistory}
                     previewClassName={playClass}
+                    presentation={presentation}
                     animationOrder={
                       showAnimationBadges
                         ? animationSequenceMap.get(textElement.id)

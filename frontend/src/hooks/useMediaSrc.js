@@ -12,31 +12,33 @@ export function useMediaSrc(fileLink) {
     let cancelled = false;
     let objectUrl = null;
 
-    if (!fileLink) {
-      setSrc(null);
-      return;
-    }
+    async function load() {
+      await Promise.resolve();
+      if (cancelled) return;
 
-    if (!fileLink.startsWith("indexeddb://")) {
-      setSrc(fileLink);
-      return;
-    }
+      if (!fileLink) {
+        setSrc(null);
+        return;
+      }
 
-    const key = fileLink.replace("indexeddb://", "");
+      if (!fileLink.startsWith("indexeddb://")) {
+        setSrc(fileLink);
+        return;
+      }
 
-    idbGet(key).then((blob) => {
+      const key = fileLink.replace("indexeddb://", "");
+      const blob = await idbGet(key);
       if (cancelled || !blob) return;
 
       objectUrl = URL.createObjectURL(blob);
       setSrc(objectUrl);
-    });
+    }
+
+    load();
 
     return () => {
       cancelled = true;
-
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [fileLink]);
 
