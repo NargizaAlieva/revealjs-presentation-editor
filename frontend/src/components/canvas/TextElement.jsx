@@ -2,13 +2,23 @@ import { useState } from "react";
 import FormatToolbar from "./FormatToolbar";
 import "./TextElement.css";
 
+const RESIZE_HANDLES = [
+  { dir: "nw", cursor: "nwse-resize" },
+  { dir: "n", cursor: "ns-resize" },
+  { dir: "ne", cursor: "nesw-resize" },
+  { dir: "e", cursor: "ew-resize" },
+  { dir: "se", cursor: "nwse-resize" },
+  { dir: "s", cursor: "ns-resize" },
+  { dir: "sw", cursor: "nesw-resize" },
+  { dir: "w", cursor: "ew-resize" },
+];
+
 export default function TextElement({
   textElement,
   isSelected,
   onSelect,
   onChangeTextElement,
   onFormatTextElement,
-  onDeleteTextElement,
   onStartDrag,
   onStartResize,
   onStartRotate,
@@ -25,7 +35,6 @@ export default function TextElement({
     .map((p) => p.runs?.[0]?.text ?? "")
     .join("\n");
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
-  const isTitle = textElement["placeholder-id"]?.includes("title");
 
   return (
     <div
@@ -33,11 +42,10 @@ export default function TextElement({
         .filter(Boolean)
         .join(" ")}
       style={{
-        position: "absolute",
         left: `${textElement.position?.x ?? 0}px`,
         top: `${textElement.position?.y ?? 0}px`,
         width: `${textElement.width ?? 300}px`,
-        height: `${textElement.height ?? 80}px`,
+        minHeight: `${textElement.height ?? 80}px`,
         background: textElement.background ?? "transparent",
         zIndex: textElement["z-index"] ?? 1,
         transform: `rotate(${textElement.rotation ?? 0}deg)`,
@@ -59,20 +67,6 @@ export default function TextElement({
           />
         ))}
 
-      {isSelected && (
-        <button
-          type="button"
-          className="element-delete-button"
-          onMouseDown={(event) => event.stopPropagation()}
-          onClick={(event) => {
-            event.stopPropagation();
-            onDeleteTextElement(textElement.id);
-          }}
-        >
-          Delete
-        </button>
-      )}
-
       {isSelected && isFormatting && (
         <FormatToolbar
           elementId={textElement.id}
@@ -81,56 +75,42 @@ export default function TextElement({
         />
       )}
 
-      {isTitle ? (
-        <input
-          value={text}
-          onFocus={() => onBeginHistory?.()}
-          onChange={(event) =>
-            onChangeTextElement(textElement.id, event.target.value)
-          }
-          onBlur={() => onCommitHistory?.()}
-          style={{
-            fontSize: formatting.size ?? "24px",
-            fontWeight: formatting.weight ?? "normal",
-            fontStyle: formatting.italics ? "italic" : "normal",
-            textDecoration: formatting["text-decoration"] ?? "none",
-            textAlign: formatting.align ?? "left",
-            color: formatting.color ?? "var(--text-dark, black)",
-            fontFamily: formatting.font ?? "inherit",
-            backgroundColor: formatting.highlight ?? "transparent",
-          }}
-        />
-      ) : (
-        <textarea
-          value={text}
-          onFocus={() => onBeginHistory?.()}
-          onChange={(event) =>
-            onChangeTextElement(textElement.id, event.target.value)
-          }
-          onBlur={() => onCommitHistory?.()}
-          style={{
-            fontSize: formatting.size ?? "24px",
-            fontWeight: formatting.weight ?? "normal",
-            fontStyle: formatting.italics ? "italic" : "normal",
-            textDecoration: formatting["text-decoration"] ?? "none",
-            textAlign: formatting.align ?? "left",
-            lineHeight: formatting["line-spacing"] ?? 1.2,
-            color: formatting.color ?? "var(--text-dark, black)",
-            fontFamily: formatting.font ?? "inherit",
-            backgroundColor: formatting.highlight ?? "transparent",
-          }}
-        />
-      )}
+      <div
+        contentEditable
+        suppressContentEditableWarning
+        className="text-editable"
+        onFocus={() => onBeginHistory?.()}
+        onInput={(event) =>
+          onChangeTextElement(textElement.id, event.currentTarget.innerText)
+        }
+        onBlur={() => onCommitHistory?.()}
+        style={{
+          fontSize: formatting.size ?? "24px",
+          fontWeight: formatting.weight ?? "normal",
+          fontStyle: formatting.italics ? "italic" : "normal",
+          textDecoration: formatting["text-decoration"] ?? "none",
+          textAlign: formatting.align ?? "left",
+          lineHeight: formatting["line-spacing"] ?? 1.2,
+          color: formatting.color ?? "var(--text-dark, black)",
+          fontFamily: formatting.font ?? "inherit",
+          backgroundColor: formatting.highlight ?? "transparent",
+        }}
+      >
+        {text}
+      </div>
 
-      {isSelected && (
-        <div
-          className="text-resize-handle"
-          onMouseDown={(event) => {
-            event.stopPropagation();
-            onStartResize(event, textElement.id);
-          }}
-        />
-      )}
+      {isSelected &&
+        RESIZE_HANDLES.map(({ dir, cursor }) => (
+          <div
+            key={dir}
+            className={`resize-handle resize-handle-${dir}`}
+            style={{ cursor }}
+            onMouseDown={(event) => {
+              event.stopPropagation();
+              onStartResize(event, textElement.id, dir);
+            }}
+          />
+        ))}
 
       {isSelected && (
         <button

@@ -3,6 +3,7 @@ import Toolbar from "../components/Toolbar";
 import EditorCanvas from "../components/EditorCanvas";
 import PreviewModal from "../components/PreviewModal";
 import StatusBar from "../components/StatusBar";
+import { useVideoUpload } from "../hooks/useVideoUpload";
 
 import { useEditorState } from "../hooks/useEditorState";
 import { useSlides } from "../hooks/useSlides";
@@ -27,6 +28,7 @@ export default function EditorPage() {
   const actions = useEditorActions(eventBus, selectedSlideIndex, slides.length);
   const view = useEditorViewState();
   const { handleImageUpload } = useImageUpload(actions.addMedia);
+  const { handleVideoUpload } = useVideoUpload(actions.addMedia);  
 
   const { width: slideWidth, height: slideHeight } = getSlideSize(presentation);
   const currentTransition = selectedSlide?.contents?.transition ?? "none";
@@ -53,6 +55,7 @@ export default function EditorPage() {
           onDoubleClick={(e) => e.stopPropagation()}
         >
           <Toolbar
+            presentationTitle={presentation?.slideset?.title}
             activeTab={view.activeTab}
             onTabChange={view.setActiveTab}
             onAddSlide={actions.addSlide}
@@ -92,6 +95,7 @@ export default function EditorPage() {
             onAnimationPreview={view.triggerAnimationPreview}
             onTransitionPreview={view.triggerTransitionPreview}
             onPreviewEffect={view.setPreviewEffect}
+            onVideoUpload={handleVideoUpload}
           />
         </div>
       )}
