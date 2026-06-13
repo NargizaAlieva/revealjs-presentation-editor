@@ -74,7 +74,7 @@ export const createDefaultLayouts = ({ titleFormatting, bodyFormatting }) => {
 
   const makeLeftColumn = () =>
     createLayoutPlaceholder({
-      placeholderId: "left-body-placeholder",
+      placeholderId: "body-placeholder",
       x: 120,
       y: 220,
       width: 470,
@@ -118,6 +118,43 @@ export const createDefaultLayouts = ({ titleFormatting, bodyFormatting }) => {
     {
       "layout-id": "blank",
       placeholders: [],
+    },
+
+    {
+      "layout-id": "content-subtitle-image",
+      placeholders: [
+        createLayoutPlaceholder({
+          placeholderId: "title-placeholder",
+          x: 75,
+          y: 80,
+          width: 820,
+          height: 290,
+          type: "text",
+          role: "title",
+          formatting: titleFormatting,
+        }),
+        createLayoutPlaceholder({
+          placeholderId: "body-placeholder",
+          x: 75,
+          y: 410,
+          width: 560,
+          height: 160,
+          type: "text",
+          role: "body",
+          padding: "12px",
+          formatting: bodyFormatting,
+        }),
+        createLayoutPlaceholder({
+          placeholderId: "media-placeholder",
+          x: 920,
+          y: 0,
+          width: 360,
+          height: 720,
+          type: "image",
+          role: "body",
+          padding: "0px",
+        }),
+      ],
     },
   ];
 };

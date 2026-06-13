@@ -56,6 +56,7 @@ const createTextElement = ({
   overflow: "shrink-on-overflow",
   "z-index": zIndex,
   background: "transparent",
+  userModified: false,
   paragraphs: [
     {
       id: createId("paragraph"),

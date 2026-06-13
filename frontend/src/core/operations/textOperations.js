@@ -5,8 +5,6 @@ const createParagraphId = () =>
     ? `paragraph-${globalThis.crypto.randomUUID()}`
     : `paragraph-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-// Only super-sub-script is run-level only — all other formatting fields
-// exist at both paragraph and run level per the JSON contract.
 const RUN_ONLY_KEYS = new Set(["super-sub-script"]);
 
 export const updateTextElement = (
@@ -14,6 +12,7 @@ export const updateTextElement = (
   slideIndex,
   textElementId,
   newText,
+  userModified, 
 ) => {
   const slides = [...getSlides(presentation)];
   const slide = slides[slideIndex];
@@ -44,7 +43,7 @@ export const updateTextElement = (
       };
     });
 
-    return { ...textElement, paragraphs: updatedParagraphs };
+    return { ...textElement, userModified: userModified ?? textElement.userModified, paragraphs: updatedParagraphs };
   });
 
   slides[slideIndex] = {

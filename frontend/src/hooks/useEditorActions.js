@@ -111,6 +111,7 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength, pre
         createEditorEvent(EditorEventType.TEXT.UPDATE, {
           textElementId,
           text: newText,
+          userModified: true,
         })
       ),
     [eventBus]
