@@ -74,6 +74,14 @@ const updateElementFromPlaceholder = (element, placeholders) => {
   };
 };
 
+const isTextModified = (el) =>
+  (el.paragraphs ?? []).some((p) =>
+    (p.runs ?? []).some((r) => r.text && r.text.trim() !== "")
+  );
+
+const isMediaModified = (el) =>
+  !!el["file-link"] && el["file-link"] !== "";
+
 export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
   const slides = [...getSlides(presentation)];
   const slide = slides[slideIndex];
@@ -84,17 +92,37 @@ export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
   if (!layout || !slide) return presentation;
 
   const placeholders = layout.placeholders ?? [];
-
-  const updatedText = (slide.contents?.text ?? []).map((el) =>
-    updateElementFromPlaceholder(el, placeholders),
-  );
-  const updatedMedia = (slide.contents?.media ?? []).map((el) =>
-    updateElementFromPlaceholder(el, placeholders),
+  const placeholderMap = new Map(
+    placeholders.map((p) => [p["placeholder-id"], p])
   );
 
-  const existingPlaceholderIds = new Set([
-    ...updatedText.map((el) => el["placeholder-id"]).filter(Boolean),
-    ...updatedMedia.map((el) => el["placeholder-id"]).filter(Boolean),
+  const processElement = (el, isModified) => {
+    const pid = el["placeholder-id"];
+    const match = pid ? placeholderMap.get(pid) : null;
+    if (match) {
+      return { updated: { ...el, position: { ...match.position }, width: match.width, height: match.height, background: match.background ?? el.background } };
+    }
+    if (!pid || isModified(el)) return { kept: el };
+    return { remove: true };
+  };
+
+  const processedText = [];
+  for (const el of (slide.contents?.text ?? [])) {
+    const r = processElement(el, isTextModified);
+    if (r.updated) processedText.push(r.updated);
+    else if (r.kept) processedText.push(r.kept);
+  }
+
+  const processedMedia = [];
+  for (const el of (slide.contents?.media ?? [])) {
+    const r = processElement(el, isMediaModified);
+    if (r.updated) processedMedia.push(r.updated);
+    else if (r.kept) processedMedia.push(r.kept);
+  }
+
+  const handledPids = new Set([
+    ...processedText.map((el) => el["placeholder-id"]).filter(Boolean),
+    ...processedMedia.map((el) => el["placeholder-id"]).filter(Boolean),
   ]);
 
   const newText = [];
@@ -102,13 +130,9 @@ export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
 
   for (const placeholder of placeholders) {
     const pid = placeholder["placeholder-id"];
-    if (!pid || existingPlaceholderIds.has(pid)) continue;
-
-    if (placeholder.type === "text") {
-      newText.push(createTextFromPlaceholder(placeholder));
-    } else if (placeholder.type === "image" || placeholder.type === "video") {
-      newMedia.push(createMediaFromPlaceholder(placeholder));
-    }
+    if (!pid || handledPids.has(pid)) continue;
+    if (placeholder.type === "text") newText.push(createTextFromPlaceholder(placeholder));
+    else if (placeholder.type === "image" || placeholder.type === "video") newMedia.push(createMediaFromPlaceholder(placeholder));
   }
 
   slides[slideIndex] = {
@@ -116,8 +140,8 @@ export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
     "layout-id": layoutId,
     contents: {
       ...slide.contents,
-      text: [...updatedText, ...newText],
-      media: [...updatedMedia, ...newMedia],
+      text: [...processedText, ...newText],
+      media: [...processedMedia, ...newMedia],
     },
   };
 

@@ -1,4 +1,9 @@
-import { idbGet, idbSet, idbRemove } from "./autoSaveService";
+import {
+  idbGet,
+  idbSet,
+  idbRemove,
+  idbGetAllPresentationIds,
+} from "./autoSaveService";
 
 const INDEX_KEY = "presentations_index";
 
@@ -7,7 +12,26 @@ export function presentationKey(id) {
 }
 
 export async function getIndex() {
-  return (await idbGet(INDEX_KEY)) ?? [];
+  const stored = await idbGet(INDEX_KEY);
+  if (stored && stored.length > 0) return stored;
+
+  const ids = await idbGetAllPresentationIds();
+  if (ids.length === 0) return [];
+
+  const entries = await Promise.all(
+    ids.map(async (id) => {
+      const data = await idbGet(presentationKey(id));
+      const title =
+        data?.slideset?.title ??
+        data?.slideset?.filename ??
+        "Untitled Presentation";
+      return { id, title, updatedAt: Date.now() };
+    }),
+  );
+
+  entries.sort((a, b) => b.updatedAt - a.updatedAt);
+  await idbSet(INDEX_KEY, entries);
+  return entries;
 }
 
 export async function createPresentation(title = "Untitled Presentation") {
