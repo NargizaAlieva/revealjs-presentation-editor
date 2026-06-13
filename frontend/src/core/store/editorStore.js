@@ -305,7 +305,9 @@ export const editorReducer = (state, event) => {
         ...slide,
         contents: {
           ...slide.contents,
-          transition: event.payload.transition,
+          ...(event.payload.transition !== undefined
+            ? { transition: event.payload.transition }
+            : {}),
           ...(event.payload.duration !== undefined
             ? { transitionDuration: event.payload.duration }
             : {}),
