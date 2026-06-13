@@ -31,6 +31,7 @@ export const createInitialEditorState = () => ({
   past: [],
   future: [],
   pendingSnapshot: null,
+  clipboard: null,
 });
 
 const HISTORY_LIMIT = 50;
@@ -55,6 +56,7 @@ function withHistory(state, newState) {
 export const editorReducer = (state, event) => {
   switch (event.type) {
     case EditorEventType.HISTORY.BEGIN:
+      console.log("BEGIN", state.pendingSnapshot);
       if (state.pendingSnapshot) return state;
 
       return {
@@ -123,6 +125,53 @@ export const editorReducer = (state, event) => {
         lastEvent: event,
         lastUpdated: Date.now(),
       };
+    }
+
+    case EditorEventType.ELEMENT.COPY: {
+      return {
+        ...state,
+        clipboard: structuredClone(event.payload.element),
+      };
+    }
+
+    case EditorEventType.ELEMENT.PASTE: {
+      if (!state.clipboard) return state;
+
+      const slides = [...(state.presentation.slideset?.slides ?? [])];
+      const slide = slides[state.selectedSlideIndex];
+      if (!slide) return state;
+
+      const newElement = {
+        ...structuredClone(state.clipboard),
+        id: crypto.randomUUID(),
+        position: {
+          x: (state.clipboard.position?.x ?? 0) + 20,
+          y: (state.clipboard.position?.y ?? 0) + 20,
+        },
+      };
+
+      const isMedia = state.clipboard.type !== undefined;
+
+      slides[state.selectedSlideIndex] = {
+        ...slide,
+        contents: {
+          ...slide.contents,
+          ...(isMedia
+            ? { media: [...(slide.contents?.media ?? []), newElement] }
+            : { text: [...(slide.contents?.text ?? []), newElement] }),
+        },
+      };
+
+      return withHistory(state, {
+        ...state,
+        presentation: {
+          ...state.presentation,
+          slideset: { ...state.presentation.slideset, slides },
+        },
+        selectedElementId: newElement.id,
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
     }
 
     case EditorEventType.PRESENTATION.CREATE:

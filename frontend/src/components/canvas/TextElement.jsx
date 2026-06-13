@@ -12,6 +12,8 @@ export default function TextElement({
   onStartDrag,
   onStartResize,
   onStartRotate,
+  onBeginHistory,
+  onCommitHistory,
   previewClassName,
   animationOrder,
 }) {
@@ -82,9 +84,11 @@ export default function TextElement({
       {isTitle ? (
         <input
           value={text}
+          onFocus={() => onBeginHistory?.()}
           onChange={(event) =>
             onChangeTextElement(textElement.id, event.target.value)
           }
+          onBlur={() => onCommitHistory?.()}
           style={{
             fontSize: formatting.size ?? "24px",
             fontWeight: formatting.weight ?? "normal",
@@ -99,9 +103,11 @@ export default function TextElement({
       ) : (
         <textarea
           value={text}
+          onFocus={() => onBeginHistory?.()}
           onChange={(event) =>
             onChangeTextElement(textElement.id, event.target.value)
           }
+          onBlur={() => onCommitHistory?.()}
           style={{
             fontSize: formatting.size ?? "24px",
             fontWeight: formatting.weight ?? "normal",

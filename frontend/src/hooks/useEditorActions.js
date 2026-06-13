@@ -294,38 +294,6 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     [eventBus]
   );
 
-  // const commitMoveElement = useCallback(
-  //   (beforeSnapshot) =>
-  //     eventBus.dispatch(
-  //       createEditorEvent(EditorEventType.ELEMENT.MOVE_COMMIT, { beforeSnapshot })
-  //     ),
-  //   [eventBus]
-  // );
-
-  // const commitResizeElement = useCallback(
-  //   (beforeSnapshot) =>
-  //     eventBus.dispatch(
-  //       createEditorEvent(EditorEventType.ELEMENT.RESIZE_COMMIT, { beforeSnapshot })
-  //     ),
-  //   [eventBus]
-  // );
-
-  // const commitTextUpdate = useCallback(
-  //   (beforeSnapshot) =>
-  //     eventBus.dispatch(
-  //       createEditorEvent(EditorEventType.TEXT.UPDATE_COMMIT, { beforeSnapshot })
-  //     ),
-  //   [eventBus]
-  // );
-
-  // const commitMediaUpdate = useCallback(
-  //   (beforeSnapshot) =>
-  //     eventBus.dispatch(
-  //       createEditorEvent(EditorEventType.MEDIA.UPDATE_COMMIT, { beforeSnapshot })
-  //     ),
-  //   [eventBus]
-  // );
-
   const beginHistory = useCallback(
     () => eventBus.dispatch(createEditorEvent(EditorEventType.HISTORY.BEGIN)),
     [eventBus]
@@ -338,6 +306,22 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
 
   const cancelHistory = useCallback(
     () => eventBus.dispatch(createEditorEvent(EditorEventType.HISTORY.CANCEL)),
+    [eventBus]
+  );
+
+  const copyElement = useCallback(
+    (element) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.ELEMENT.COPY, { element })
+      ),
+    [eventBus]
+  );
+
+  const pasteElement = useCallback(
+    () =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.ELEMENT.PASTE)
+      ),
     [eventBus]
   );
 
@@ -376,12 +360,10 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     resetPresentation,
     undo,
     redo,
-    // commitMoveElement,
-    // commitResizeElement,
-    // commitTextUpdate,
-    // commitMediaUpdate,
     beginHistory,
     commitHistory,
     cancelHistory,
+    copyElement,
+    pasteElement,
   };
 }
