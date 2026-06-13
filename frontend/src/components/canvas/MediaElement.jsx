@@ -19,15 +19,21 @@ export default function MediaElement({
   onStartDrag,
   onStartResize,
   onStartRotate,
+  previewClassName,
+  animationOrder,
 }) {
   const resolvedSrc = useMediaSrc(media["file-link"]);
   const isVideo = media["media-type"] === "video";
 
   return (
     <div
-      className={
-        isSelected ? "canvas-media-wrapper selected" : "canvas-media-wrapper"
-      }
+      className={[
+        "canvas-media-wrapper",
+        isSelected ? "selected" : "",
+        previewClassName,
+      ]
+        .filter(Boolean)
+        .join(" ")}
       style={{
         position: "absolute",
         left: `${media.position?.x ?? 0}px`,
@@ -43,6 +49,10 @@ export default function MediaElement({
         onStartDrag(event, media.id);
       }}
     >
+      {animationOrder != null && (
+        <span className="animation-order-badge">{animationOrder}</span>
+      )}
+
       {isVideo ? (
         <>
           <video
@@ -51,7 +61,6 @@ export default function MediaElement({
             style={{ width: "100%", height: "100%", objectFit: "contain" }}
             controls={isSelected}
           />
-          {/* оверлей для drag когда не выбран — иначе video поглощает клики */}
           {!isSelected && (
             <div style={{ position: "absolute", inset: 0, cursor: "move" }} />
           )}
@@ -65,7 +74,6 @@ export default function MediaElement({
         />
       )}
 
-      {/* 8 resize handles */}
       {isSelected &&
         RESIZE_HANDLES.map(({ dir, cursor }) => (
           <div
@@ -79,7 +87,6 @@ export default function MediaElement({
           />
         ))}
 
-      {/* rotate handle */}
       {isSelected && (
         <button
           type="button"

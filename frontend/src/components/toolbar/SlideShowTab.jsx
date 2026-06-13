@@ -1,14 +1,31 @@
-import { MdPreview } from "react-icons/md";
+import { MdPlayArrow, MdSkipNext } from "react-icons/md";
+import "./SlideShowTab.css";
 
-export default function SlideShowTab({ onOpenPreview }) {
+export default function SlideShowTab({
+  onOpenPreviewFromBeginning,
+  onOpenPreviewFromCurrent,
+}) {
   return (
-    <div className="ribbon-group">
-      <button className="toolbar-item large" onClick={onOpenPreview}>
-        <MdPreview />
-        <span>Preview</span>
+    <div className="ribbon-group slideshow-group">
+      <button
+        className="slideshow-btn"
+        onClick={onOpenPreviewFromBeginning}
+        title="Start from the beginning"
+      >
+        <MdPlayArrow className="slideshow-btn-icon" />
+        <span>{"From\nBeginning"}</span>
       </button>
 
-      <div className="ribbon-group-title">Slide Show</div>
+      <button
+        className="slideshow-btn"
+        onClick={onOpenPreviewFromCurrent}
+        title="Start from the current slide"
+      >
+        <MdSkipNext className="slideshow-btn-icon" />
+        <span>{"From\nCurrent Slide"}</span>
+      </button>
+
+      <div className="ribbon-group-title">Start Slide Show</div>
     </div>
   );
 }
