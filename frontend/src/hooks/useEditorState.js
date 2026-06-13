@@ -23,10 +23,6 @@ export function useEditorState(presentationId) {
   );
   const [isLoading, setIsLoading] = useState(true);
 
-  // React 19 freezes useState values and blocks useRef mutations.
-  // Solution: hide the mutable box inside a closure — React only sees the
-  // frozen { get, set } object; 'box' is a plain JS closure variable that
-  // React never tracks or freezes.
   const [stateAccessor] = useState(() => {
     const box = { state: undefined };
     return {
@@ -37,19 +33,14 @@ export function useEditorState(presentationId) {
     };
   });
 
-  // Update the hidden box after every render (calling set() is fine — we're
-  // not mutating stateAccessor itself, just calling its frozen method)
   useLayoutEffect(() => {
     stateAccessor.set(state);
   });
 
-  // Create eventBus once; closes over stateAccessor (not a ref), so React 19
-  // doesn't flag it.
   const [eventBus] = useState(() =>
     createEventBus(reactDispatch, () => stateAccessor.get(), { storageKey }),
   );
 
-  // Load saved presentation on mount
   useEffect(() => {
     idbGet(storageKey)
       .then((saved) => {
@@ -70,7 +61,6 @@ export function useEditorState(presentationId) {
       .finally(() => setIsLoading(false));
   }, [storageKey]);
 
-  // Keep presentations_index in sync with the current title
   useEffect(() => {
     if (isLoading || !presentationId) return;
     const title =
