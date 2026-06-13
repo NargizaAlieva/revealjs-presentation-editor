@@ -130,6 +130,7 @@ export function useEditorActions(
         createEditorEvent(EditorEventType.TEXT.UPDATE, {
           textElementId,
           text: newText,
+          userModified: true,
         }),
       ),
     [eventBus],

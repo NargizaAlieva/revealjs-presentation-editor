@@ -1,6 +1,5 @@
 import { useState } from "react";
 import "./Toolbar.css";
-
 import FileTab from "./toolbar/FileTab";
 import HomeTab from "./toolbar/HomeTab";
 import InsertTab from "./toolbar/InsertTab";
@@ -26,7 +25,8 @@ export default function Toolbar({
   onMoveSlideUp,
   onMoveSlideDown,
   onSavePresentation,
-  onOpenPreview,
+  onOpenPreviewFromBeginning,
+  onOpenPreviewFromCurrent,
   canDelete,
   canMoveUp,
   canMoveDown,
@@ -56,6 +56,8 @@ export default function Toolbar({
   onFormatChange,
   isTextSelected,
   presentation,
+  onNewPresentation,
+  onOpenPresentation,
 }) {
   const [localActiveTab, setLocalActiveTab] = useState("Home");
   const currentTab = activeTab ?? localActiveTab;
@@ -78,9 +80,11 @@ export default function Toolbar({
       <div className="toolbar-ribbon">
         {currentTab === "File" && (
           <FileTab
+            onOpenPresentation={onOpenPresentation}
             onSavePresentation={onSavePresentation}
             onExportPresentation={onExportPresentation}
             onResetPresentation={onResetPresentation}
+            onNewPresentation={onNewPresentation}
           />
         )}
 
@@ -135,7 +139,10 @@ export default function Toolbar({
         )}
 
         {currentTab === "Slide Show" && (
-          <SlideShowTab onOpenPreview={onOpenPreview} />
+          <SlideShowTab
+            onOpenPreviewFromBeginning={onOpenPreviewFromBeginning}
+            onOpenPreviewFromCurrent={onOpenPreviewFromCurrent}
+          />
         )}
 
         {currentTab === "View" && (

@@ -1,8 +1,5 @@
 import { createId, getSlides, setSlides } from "../../utils/presentationUtils";
 
-// NOTE: media elements retain placeholder-id internally for layout matching.
-// Strip this field before sending to the backend.
-
 const getLayouts = (presentation) =>
   presentation?.slideset?.layouts ?? [];
 
@@ -25,6 +22,7 @@ const createTextFromPlaceholder = (placeholder) => ({
   overflow: "shrink-on-overflow",
   "z-index": 1,
   background: placeholder.background ?? "#FFFFFF00",
+  userModified: false,
   paragraphs: [
     {
       id: createId("paragraph"),
@@ -74,10 +72,7 @@ const updateElementFromPlaceholder = (element, placeholders) => {
   };
 };
 
-const isTextModified = (el) =>
-  (el.paragraphs ?? []).some((p) =>
-    (p.runs ?? []).some((r) => r.text && r.text.trim() !== "")
-  );
+const isTextModified = (el) => el.userModified === true;
 
 const isMediaModified = (el) =>
   !!el["file-link"] && el["file-link"] !== "";
@@ -99,6 +94,7 @@ export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
   const processElement = (el, isModified) => {
     const pid = el["placeholder-id"];
     const match = pid ? placeholderMap.get(pid) : null;
+    console.log("[applyLayout]", pid, match ? "→ updated" : isModified(el) ? "→ kept" : "→ removed");
     if (match) {
       return { updated: { ...el, position: { ...match.position }, width: match.width, height: match.height, background: match.background ?? el.background } };
     }

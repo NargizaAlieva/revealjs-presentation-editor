@@ -84,9 +84,9 @@ export function getSlideMediaElements(slide) {
   return getMediaElements(slide);
 }
 
-export function initRevealDeck(containerElement, width, height) {
+export function initRevealDeck(containerElement, width, height, initialSlide = 0) {
   const deck = new Reveal(containerElement, {
-    controls: true,
+    controls: false,
     progress: true,
     center: false,
     hash: false,
@@ -101,6 +101,9 @@ export function initRevealDeck(containerElement, width, height) {
   deck.initialize().then(() => {
     deck.layout();
     deck.sync();
+    if (initialSlide > 0) {
+      deck.slide(initialSlide);
+    }
   });
 
   return deck;
@@ -191,17 +194,17 @@ export function getPerLineFragments(textElement, animation, lines) {
 
   const sequenceMode = animation["effect-options"]?.sequence ?? "as-one-object";
   if (sequenceMode === "as-one-object") return null;
-  if (!lines || lines.length <= 1) return null;
+  if (!lines || lines.length === 0) return null;
 
-  return lines.map((line, index) => {
-    const fragIndex =
-      sequenceMode === "all-at-once"
-        ? animation.sequence
-        : animation.sequence + index;
-
-    return {
+  if (sequenceMode === "all-at-once") {
+    return lines.map((line) => ({
       text: line,
-      fragmentProps: buildFragmentProps(animation, fragIndex),
-    };
-  });
+      fragmentProps: buildFragmentProps(animation, animation.sequence),
+    }));
+  }
+
+  return lines.map((line, index) => ({
+    text: line,
+    fragmentProps: buildFragmentProps(animation, animation.sequence + index),
+  }));
 }

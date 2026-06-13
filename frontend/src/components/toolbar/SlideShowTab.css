@@ -1,0 +1,42 @@
+.slideshow-group {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 1px 12px 18px 8px;
+}
+
+.slideshow-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    width: 90px;
+    height: 70px;
+    border: 1.5px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    color: #222;
+    font: inherit;
+    transition: background 0.1s, border-color 0.1s;
+    padding: 1px 9px 10px;
+}
+
+.slideshow-btn:hover {
+    background: #f0f0f0;
+    border-color: #d8d8d8;
+}
+
+.slideshow-btn-icon {
+    font-size: 44px;
+    color: #1a6fc4;
+}
+
+.slideshow-btn span {
+    font-size: 11px;
+    line-height: 1.2;
+    text-align: center;
+    white-space: pre-line;
+    max-width: 88px;
+}

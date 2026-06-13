@@ -76,13 +76,8 @@ const AUTO_SAVE_EVENTS = new Set([
   EditorEventType.SLIDE.UPDATE_NOTES,
 
   EditorEventType.TEXT.ADD,
-  EditorEventType.TEXT.UPDATE_COMMIT,
   EditorEventType.TEXT.UPDATE_FORMATTING,
   EditorEventType.TEXT.DELETE,
-
-  EditorEventType.ELEMENT.DELETE,
-  EditorEventType.ELEMENT.MOVE_COMMIT,
-  EditorEventType.ELEMENT.RESIZE_COMMIT,
 
   EditorEventType.MEDIA.ADD,
   EditorEventType.MEDIA.DELETE,

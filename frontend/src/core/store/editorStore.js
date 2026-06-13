@@ -366,6 +366,7 @@ export const editorReducer = (state, event) => {
           state.selectedSlideIndex,
           event.payload.textElementId,
           event.payload.text,
+          event.payload.userModified,
         ),
         lastEvent: event,
         lastUpdated: Date.now(),

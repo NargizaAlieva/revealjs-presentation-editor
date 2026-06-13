@@ -20,7 +20,8 @@ export async function getIndex() {
 
   const entries = await Promise.all(
     ids.map(async (id) => {
-      const data = await idbGet(presentationKey(id));
+      const raw = await idbGet(presentationKey(id));
+      const data = typeof raw === "string" ? JSON.parse(raw) : raw;
       const title =
         data?.slideset?.title ??
         data?.slideset?.filename ??

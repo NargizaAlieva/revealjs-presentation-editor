@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useMediaSrc } from "../hooks/useMediaSrc";
 import "reveal.js/reveal.css";
 import "reveal.js/theme/white.css";
@@ -23,6 +23,20 @@ import {
 
 function PreviewMediaElement({ media, index, fragmentProps }) {
   const src = useMediaSrc(media["file-link"]);
+  const isVideo = media["media-type"] === "video";
+
+  if (isVideo) {
+    return (
+      <video
+        src={src}
+        style={buildMediaElementStyle(media, index)}
+        controls
+        preload="metadata"
+        {...fragmentProps}
+      />
+    );
+  }
+
   return (
     <img
       src={src}
@@ -33,34 +47,64 @@ function PreviewMediaElement({ media, index, fragmentProps }) {
   );
 }
 
-export default function PreviewModal({ slides, presentation, onClose }) {
+export default function PreviewModal({ slides, presentation, onClose, initialSlide = 0 }) {
   const deckRef = useRef(null);
+  const deckInstanceRef = useRef(null);
   const { width, height } = getSlideDimensions(presentation);
   const colorThemeStyle = buildColorThemeStyle(presentation);
+  const [showUI, setShowUI] = useState(false);
+  const hideTimerRef = useRef(null);
+
+  const handleMouseMove = useCallback(() => {
+    setShowUI(true);
+    clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(() => setShowUI(false), 2000);
+  }, []);
+
+  useEffect(() => {
+    return () => clearTimeout(hideTimerRef.current);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
 
   useEffect(() => {
     if (!deckRef.current) return;
-    const deck = initRevealDeck(deckRef.current, width, height);
+    const deck = initRevealDeck(deckRef.current, width, height, initialSlide);
+    deckInstanceRef.current = deck;
     return () => {
       deck.destroy();
+      deckInstanceRef.current = null;
     };
-  }, [slides, width, height]);
+  }, [slides, width, height, initialSlide]);
+
+  const handleClick = useCallback((e) => {
+    if (e.target.closest(".preview-close")) return;
+    const deck = deckInstanceRef.current;
+    if (!deck) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    if (clickX > rect.width / 2) {
+      deck.next();
+    } else {
+      deck.prev();
+    }
+  }, []);
 
   const visibleSlides = getVisibleSlidesForPreview(slides);
 
   return (
-    <div className="preview-overlay" style={colorThemeStyle}>
-      <div
-        className="preview-window"
-        style={{
-          width: `${width}px`,
-          height: `${height}px`,
-          maxWidth: "95vw",
-          maxHeight: "95vh",
-        }}
-      >
-        <button className="preview-close" onClick={onClose}>
-          Close
+    <div
+      className={`preview-overlay${showUI ? " show-ui" : ""}`}
+      style={colorThemeStyle}
+      onMouseMove={handleMouseMove}
+    >
+      <div className="preview-window" onClick={handleClick}>
+        <button className="preview-close" onClick={(e) => { e.stopPropagation(); onClose(); }}>
+          ✕
         </button>
 
         <div className="reveal" ref={deckRef}>
@@ -77,7 +121,6 @@ export default function PreviewModal({ slides, presentation, onClose }) {
                   style={{ background: slide.contents?.background ?? "white" }}
                 >
                   <div style={buildSlideContainerStyle(width, height)}>
-
                     {textElements.map((textElement, index) => {
                       const animation = animationMap.get(textElement.id);
                       const baseStyle = buildTextElementStyle(textElement, index);
@@ -86,10 +129,7 @@ export default function PreviewModal({ slides, presentation, onClose }) {
 
                       if (perLine) {
                         return (
-                          <div
-                            key={textElement.id || index}
-                            style={baseStyle}
-                          >
+                          <div key={textElement.id || index} style={baseStyle}>
                             {perLine.map((entry, lineIndex) => (
                               <p key={lineIndex} {...entry.fragmentProps}>
                                 {entry.text}
@@ -122,7 +162,6 @@ export default function PreviewModal({ slides, presentation, onClose }) {
                         />
                       );
                     })}
-
                   </div>
                 </section>
               );

@@ -9,20 +9,25 @@ import { useSlides } from "../hooks/useSlides";
 import { useEditorActions } from "../hooks/useEditorActions";
 import "./EditorPage.css";
 import PreviewModal from "../components/PreviewModal";
-import { exportToReveal } from "../core/export/exportToReveal";
 import StatusBar from "../components/StatusBar";
 import { getSlideSize } from "../utils/slidesetRenderUtils";
 import { usePresentationFonts } from "../hooks/usePresentationFonts";
 import FileMenu from "../components/FileMenu";
 import {
+  exportToReveal,
+  exportToRevealZip,
+} from "../core/export/exportToReveal";
+import {
   deletePresentation,
   createPresentation,
+  presentationKey,
 } from "../core/persistence/presentationsLibrary";
 
 export default function EditorPage() {
   const { presentationId } = useParams();
   const navigate = useNavigate();
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewStartSlide, setPreviewStartSlide] = useState(0);
   const [activeTab, setActiveTab] = useState("Home");
   const [previewEffect, setPreviewEffect] = useState(null);
   const [zoom, setZoom] = useState(70);
@@ -37,7 +42,6 @@ export default function EditorPage() {
     selectedElementId,
   } = useSlides(state);
 
-  // Load custom @font-face rules from the presentation's fonts array
   usePresentationFonts(presentation);
 
   const {
@@ -157,7 +161,6 @@ export default function EditorPage() {
     return null;
   })();
 
-  // Derive text-formatting state for the ribbon Font section
   const selectedTextEl = selectedElementId
     ? (selectedSlide?.contents?.text ?? []).find(
         (t) => t.id === selectedElementId,
@@ -176,7 +179,6 @@ export default function EditorPage() {
   const currentTransition = selectedSlide?.contents?.transition ?? "none";
   const currentDuration = selectedSlide?.contents?.transitionDuration ?? 0.75;
 
-  // ── File menu actions ──────────────────────────────────────────────────────
   const presentationTitle =
     presentation?.slideset?.title ??
     presentation?.slideset?.filename ??
@@ -199,7 +201,7 @@ export default function EditorPage() {
       const id = await createPresentation(
         data?.slideset?.title ?? "Imported Presentation",
       );
-      await idbSet(`presentation-${id}`, data);
+      idbSet(presentationKey(id), data);
       navigate(`/editor/${id}`);
     } catch (e) {
       console.error("Failed to load file:", e);
@@ -229,6 +231,7 @@ export default function EditorPage() {
         onSave={savePresentation}
         onSaveAs={handleSaveAs}
         onExport={exportPresentation}
+        onExportZip={() => exportToRevealZip(presentation)}
         onLoadFile={handleLoadFile}
         onDelete={handleDeleteAndGoHome}
       />
@@ -248,7 +251,14 @@ export default function EditorPage() {
           onMoveSlideDown={moveSlideDown}
           onSavePresentation={savePresentation}
           onExportPresentation={exportPresentation}
-          onOpenPreview={() => setIsPreviewOpen(true)}
+          onOpenPreviewFromBeginning={() => {
+            setPreviewStartSlide(0);
+            setIsPreviewOpen(true);
+          }}
+          onOpenPreviewFromCurrent={() => {
+            setPreviewStartSlide(selectedSlideIndex);
+            setIsPreviewOpen(true);
+          }}
           canDelete={slides.length > 1}
           canMoveUp={selectedSlideIndex > 0}
           canMoveDown={selectedSlideIndex < slides.length - 1}
@@ -343,6 +353,7 @@ export default function EditorPage() {
           slides={slides}
           presentation={presentation}
           onClose={() => setIsPreviewOpen(false)}
+          initialSlide={previewStartSlide}
         />
       )}
     </div>
