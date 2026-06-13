@@ -1,5 +1,4 @@
-import { useState } from "react";
-import {
+import { useState, useRef, useEffect } from "react"; import {
   MdBlock,
   MdCloseFullscreen,
   MdNorth,
@@ -112,11 +111,23 @@ export default function AnimationsTab({
   const canMoveLater = animation && (animation.sequence ?? 1) < maxSequence;
   const SEQUENCE_LABELS = {
     "as-one-object": "As One Object",
-    "all-at-once": "All at Once",
     "by-paragraph": "By Paragraph",
   };
 
   const currentSequence = animation?.["effect-options"]?.sequence ?? "as-one-object";
+
+  const effectOptionsRef = useRef(null);
+
+  useEffect(() => {
+    if (!showEffectOptions) return;
+    const handler = (e) => {
+      if (effectOptionsRef.current && !effectOptionsRef.current.contains(e.target)) {
+        setShowEffectOptions(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showEffectOptions]);
 
   return (
     <>
@@ -161,7 +172,7 @@ export default function AnimationsTab({
 
       {animation && (
         <div className="ribbon-group ribbon-group--effect-options">
-          <div className="effect-options-dropdown">
+          <div className="effect-options-dropdown" ref={effectOptionsRef}>
             <button
               type="button"
               className="effect-options-trigger"
@@ -177,15 +188,13 @@ export default function AnimationsTab({
 
                 {[
                   { value: "as-one-object", label: "As One Object" },
-                  { value: "all-at-once", label: "All at Once" },
                   { value: "by-paragraph", label: "By Paragraph" },
                 ].map((option) => (
                   <button
                     key={option.value}
                     type="button"
                     className={`effect-options-item ${(animation["effect-options"]?.sequence ?? "as-one-object") === option.value
-                      ? "active"
-                      : ""
+                      ? "active" : ""
                       }`}
                     onClick={() => {
                       onUpdateAnimation?.(animation.id, {

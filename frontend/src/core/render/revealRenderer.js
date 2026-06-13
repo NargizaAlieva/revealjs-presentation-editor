@@ -194,17 +194,17 @@ export function getPerLineFragments(textElement, animation, lines) {
 
   const sequenceMode = animation["effect-options"]?.sequence ?? "as-one-object";
   if (sequenceMode === "as-one-object") return null;
-  if (!lines || lines.length <= 1) return null;
+  if (!lines || lines.length === 0) return null;
 
-  return lines.map((line, index) => {
-    const fragIndex =
-      sequenceMode === "all-at-once"
-        ? animation.sequence
-        : animation.sequence + index;
-
-    return {
+  if (sequenceMode === "all-at-once") {
+    return lines.map((line) => ({
       text: line,
-      fragmentProps: buildFragmentProps(animation, fragIndex),
-    };
-  });
+      fragmentProps: buildFragmentProps(animation, animation.sequence),
+    }));
+  }
+
+  return lines.map((line, index) => ({
+    text: line,
+    fragmentProps: buildFragmentProps(animation, animation.sequence + index),
+  }));
 }

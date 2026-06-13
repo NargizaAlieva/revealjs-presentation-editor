@@ -23,6 +23,20 @@ import {
 
 function PreviewMediaElement({ media, index, fragmentProps }) {
   const src = useMediaSrc(media["file-link"]);
+  const isVideo = media["media-type"] === "video";
+
+  if (isVideo) {
+    return (
+      <video
+        src={src}
+        style={buildMediaElementStyle(media, index)}
+        controls
+        preload="metadata"
+        {...fragmentProps}
+      />
+    );
+  }
+
   return (
     <img
       src={src}
@@ -68,7 +82,6 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
   }, [slides, width, height, initialSlide]);
 
   const handleClick = useCallback((e) => {
-    // Ignore clicks on the close button
     if (e.target.closest(".preview-close")) return;
     const deck = deckInstanceRef.current;
     if (!deck) return;
