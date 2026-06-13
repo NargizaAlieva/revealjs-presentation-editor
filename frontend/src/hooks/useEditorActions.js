@@ -7,7 +7,7 @@ import {
 
 const STORAGE_KEY = "presentation";
 
-export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
+export function useEditorActions(eventBus, selectedSlideIndex, slidesLength, presentationId) {
   const setSelectedSlideId = useCallback(
     (slideIndex) =>
       eventBus.dispatch(
@@ -280,9 +280,15 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     [eventBus]
   );
 
+  const createNewPresentation = useCallback(
+    () => eventBus.dispatch(createEditorEvent(EditorEventType.PRESENTATION.CREATE)),
+    [eventBus]
+  );
+
   const resetPresentation = useCallback(() => {
-    idbRemove(STORAGE_KEY).finally(() => window.location.reload());
-  }, []);
+    const key = presentationId ? `presentation-${presentationId}` : "presentation";
+    idbRemove(key).finally(() => window.location.reload());
+  }, [presentationId]);
 
   const undo = useCallback(
     () => eventBus.dispatch(createEditorEvent(EditorEventType.HISTORY.UNDO)),
@@ -357,6 +363,7 @@ export function useEditorActions(eventBus, selectedSlideIndex, slidesLength) {
     updateLayout,
     applyLayout,
     savePresentation,
+    createNewPresentation,
     resetPresentation,
     undo,
     redo,

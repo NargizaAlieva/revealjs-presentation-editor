@@ -8,10 +8,10 @@ import {
 } from "../core";
 import { idbGet, idbRemove } from "../core/persistence/autoSaveService";
 
-const STORAGE_KEY = "presentation";
 const AUTOSAVE_SETTING_KEY = "autosaveEnabled";
 
-export function useEditorState() {
+export function useEditorState(presentationId) {
+  const storageKey = presentationId ? `presentation-${presentationId}` : "presentation";
   const [state, reactDispatch] = useReducer(
     editorReducer,
     undefined,
@@ -23,12 +23,12 @@ export function useEditorState() {
   stateRef.current = state;
 
   const eventBus = useMemo(
-    () => createEventBus(reactDispatch, () => stateRef.current),
-    [],
+    () => createEventBus(reactDispatch, () => stateRef.current, { storageKey }),
+    [storageKey],
   );
 
   useEffect(() => {
-    idbGet(STORAGE_KEY)
+    idbGet(storageKey)
       .then((saved) => {
         if (!saved) return;
 
@@ -44,10 +44,10 @@ export function useEditorState() {
         );
       })
       .catch(() => {
-        idbRemove(STORAGE_KEY);
+        idbRemove(storageKey);
       })
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [storageKey]);
 
   return { state, eventBus, isLoading };
 }

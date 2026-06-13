@@ -1,8 +1,8 @@
 import { EditorEventType } from "../events/editorEvents";
 import { createAutosaveService } from "../persistence/autoSaveService";
 
-export const createEventBus = (reactDispatch, getState) => {
-  const autosave = createAutosaveService(getState);
+export const createEventBus = (reactDispatch, getState, { storageKey } = {}) => {
+  const autosave = createAutosaveService(getState, { storageKey });
 
   return {
     async dispatch(event) {

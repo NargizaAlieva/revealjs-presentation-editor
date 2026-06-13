@@ -59,6 +59,7 @@ export default function EditorPage() {
             activeTab={view.activeTab}
             onTabChange={view.setActiveTab}
             onAddSlide={actions.addSlide}
+            onApplyLayout={actions.applyLayout}
             onDeleteSlide={actions.deleteSlide}
             onDuplicateSlide={actions.duplicateSlide}
             onMoveSlideUp={actions.moveSlideUp}
