@@ -38,6 +38,23 @@ export async function idbGet(key) {
   });
 }
 
+export async function idbGetAllKeys() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readonly");
+    const request = tx.objectStore(STORE_NAME).getAllKeys();
+    request.onsuccess = (e) => resolve(e.target.result);
+    request.onerror = (e) => reject(e.target.error);
+  });
+}
+
+export async function idbGetAllPresentationIds() {
+  const keys = await idbGetAllKeys();
+  return keys
+    .filter((k) => k.startsWith("presentation-"))
+    .map((k) => k.replace("presentation-", ""));
+}
+
 export async function idbRemove(key) {
   const db = await openDB();
   return new Promise((resolve, reject) => {
