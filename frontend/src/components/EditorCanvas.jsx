@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import "./EditorCanvas.css";
 import { getSlideSize } from "../utils/slidesetRenderUtils";
 import { buildColorThemeStyle } from "../core/render/revealRenderer";
@@ -24,24 +24,33 @@ export default function EditorCanvas({
   onCanvasZoom,
   selectedElementId: externalSelectedElementId,
   onSelectElement,
+  updateElement,
+  updateMedia,
   previewEffect,
   animations = [],
   showAnimationBadges = false,
 }) {
   const [localSelectedElementId, setLocalSelectedElementId] = useState(null);
+  const [playingElementId, setPlayingElementId] = useState(null);
+  const [playingEffect, setPlayingEffect] = useState(null);
+  const [playingTransition, setPlayingTransition] = useState(null);
 
   const selectedElementId =
     externalSelectedElementId !== undefined
       ? externalSelectedElementId
       : localSelectedElementId;
 
-  const setSelectedElementId = (id) => {
-    if (onSelectElement) {
-      onSelectElement(id);
-      return;
-    }
-    setLocalSelectedElementId(id);
-  };
+  const setSelectedElementId = useCallback(
+    (id) => {
+      if (onSelectElement) {
+        onSelectElement(id);
+        return;
+      }
+
+      setLocalSelectedElementId(id);
+    },
+    [onSelectElement],
+  );
 
   const { width, height } = getSlideSize(presentation);
   const colorThemeStyle = buildColorThemeStyle(presentation);
@@ -50,10 +59,19 @@ export default function EditorCanvas({
   const scaledWidth = width * zoomScale;
   const scaledHeight = height * zoomScale;
 
-  const textElements = slide?.contents?.text ?? [];
-  const mediaElements = slide?.contents?.media ?? [];
-  const animationSequenceMap = new Map(
-    animations.map((a) => [a.id, a.sequence]),
+  const textElements = useMemo(
+    () => slide?.contents?.text ?? [],
+    [slide?.contents?.text],
+  );
+
+  const mediaElements = useMemo(
+    () => slide?.contents?.media ?? [],
+    [slide?.contents?.media],
+  );
+
+  const animationSequenceMap = useMemo(
+    () => new Map(animations.map((a) => [a.id, a.sequence])),
+    [animations],
   );
 
   const {
@@ -61,8 +79,12 @@ export default function EditorCanvas({
     stopInteraction,
     startDraggingText,
     startDraggingMedia,
-    setResizingElementId,
-    setResizingMediaId,
+    startResizingText,
+    startResizingMedia,
+    startRotatingText,
+    startRotatingMedia,
+    snapInfo,
+    isRotating,
   } = useCanvasInteractions({
     width,
     height,
@@ -73,12 +95,12 @@ export default function EditorCanvas({
     onResizeTextElement,
     onMoveMediaElement,
     onResizeMediaElement,
+    onRotateTextElement: (textElementId, angle) =>
+      updateElement(textElementId, { rotation: angle }),
+    onRotateMediaElement: (mediaId, angle) =>
+      updateMedia(mediaId, { rotation: angle }),
     setSelectedElementId,
   });
-
-  const [playingElementId, setPlayingElementId] = useState(null);
-  const [playingEffect, setPlayingEffect] = useState(null);
-  const [playingTransition, setPlayingTransition] = useState(null);
 
   useEffect(() => {
     if (!previewEffect) return;
@@ -164,15 +186,27 @@ export default function EditorCanvas({
     mediaElements,
     onDeleteTextElement,
     onDeleteMedia,
+    setSelectedElementId,
   ]);
 
-  const handleWorkspaceWheel = (event) => {
-    if (!event.ctrlKey) return;
-    event.preventDefault();
-    event.stopPropagation();
-    const delta = event.deltaY < 0 ? 2 : -2;
-    onCanvasZoom?.(delta);
-  };
+  const workspaceRef = useRef(null);
+
+  useEffect(() => {
+    const el = workspaceRef.current;
+    if (!el) return;
+
+    const handleWheel = (event) => {
+      if (!event.ctrlKey) return;
+      event.preventDefault();
+
+      const raw = event.deltaY;
+      const delta = -(raw * 0.3);
+      onCanvasZoom?.(delta);
+    };
+
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, [onCanvasZoom]);
 
   if (!slide) {
     return (
@@ -190,91 +224,203 @@ export default function EditorCanvas({
 
   return (
     <main className="canvas-wrapper" style={colorThemeStyle}>
-      <div className="slide-workspace" onWheel={handleWorkspaceWheel}>
-        <div
-          className="zoom-stage"
-          style={{
-            width: `${scaledWidth}px`,
-            height: `${scaledHeight}px`,
-            transform: `scale(${zoomScale})`,
-            transformOrigin: "top left",
-          }}
-        >
+      <div className="slide-workspace" ref={workspaceRef}>
+        <div className="slide-workspace-inner">
           <div
-            className={["editor-slide", transitionClass]
-              .filter(Boolean)
-              .join(" ")}
+            className="zoom-stage"
             style={{
-              width: `${width}px`,
-              height: `${height}px`,
-              background: "var(--bg-light, white)",
-              color: "var(--text-dark, black)",
-            }}
-            onMouseMove={handleMouseMove}
-            onMouseUp={stopInteraction}
-            onMouseLeave={stopInteraction}
-            onClick={(event) => {
-              if (event.target === event.currentTarget) {
-                setSelectedElementId(null);
-              }
+              width: `${scaledWidth}px`,
+              height: `${scaledHeight}px`,
             }}
           >
-            {textElements.map((textElement) => {
-              const playClass =
-                playingElementId === textElement.id
-                  ? `play-effect play-${playingEffect}`
-                  : "";
+            <div
+              className={["editor-slide", transitionClass]
+                .filter(Boolean)
+                .join(" ")}
+              style={{
+                width: `${width}px`,
+                height: `${height}px`,
+                background: "var(--bg-light, white)",
+                color: "var(--text-dark, black)",
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: `translate(-50%, -50%) scale(${zoomScale})`,
+                transformOrigin: "center center",
+              }}
+              onMouseMove={handleMouseMove}
+              onMouseUp={stopInteraction}
+              onMouseLeave={stopInteraction}
+              onClick={(event) => {
+                if (event.target === event.currentTarget) {
+                  setSelectedElementId(null);
+                }
+              }}
+            >
+              {textElements.map((textElement) => {
+                const playClass =
+                  playingElementId === textElement.id
+                    ? `play-effect play-${playingEffect}`
+                    : "";
 
-              return (
-                <TextElement
-                  key={textElement.id}
-                  textElement={textElement}
-                  isSelected={selectedElementId === textElement.id}
-                  onSelect={setSelectedElementId}
-                  onChangeTextElement={onChangeTextElement}
-                  onFormatTextElement={onFormatTextElement}
-                  onDeleteTextElement={(id) => {
-                    onDeleteTextElement(id);
-                    setSelectedElementId(null);
-                  }}
-                  onStartDrag={startDraggingText}
-                  onStartResize={setResizingElementId}
-                  previewClassName={playClass}
-                  animationOrder={
-                    showAnimationBadges
-                      ? animationSequenceMap.get(textElement.id)
-                      : undefined
-                  }
-                />
-              );
-            })}
+                return (
+                  <TextElement
+                    key={textElement.id}
+                    textElement={textElement}
+                    isSelected={selectedElementId === textElement.id}
+                    onSelect={setSelectedElementId}
+                    onChangeTextElement={onChangeTextElement}
+                    onFormatTextElement={onFormatTextElement}
+                    onDeleteTextElement={(id) => {
+                      onDeleteTextElement(id);
+                      setSelectedElementId(null);
+                    }}
+                    onStartDrag={startDraggingText}
+                    onStartResize={startResizingText}
+                    onStartRotate={startRotatingText}
+                    previewClassName={playClass}
+                    animationOrder={
+                      showAnimationBadges
+                        ? animationSequenceMap.get(textElement.id)
+                        : undefined
+                    }
+                  />
+                );
+              })}
 
-            {mediaElements.map((media) => {
-              const playClass =
-                playingElementId === media.id
-                  ? `play-effect play-${playingEffect}`
-                  : "";
+              {mediaElements.map((media) => {
+                const playClass =
+                  playingElementId === media.id
+                    ? `play-effect play-${playingEffect}`
+                    : "";
 
-              return (
-                <MediaElement
-                  key={media.id}
-                  media={media}
-                  isSelected={selectedElementId === media.id}
-                  onStartDrag={startDraggingMedia}
-                  onDeleteMedia={(id) => {
-                    onDeleteMedia(id);
-                    setSelectedElementId(null);
-                  }}
-                  onStartResize={setResizingMediaId}
-                  previewClassName={playClass}
-                  animationOrder={
-                    showAnimationBadges
-                      ? animationSequenceMap.get(media.id)
-                      : undefined
-                  }
-                />
-              );
-            })}
+                return (
+                  <MediaElement
+                    key={media.id}
+                    media={media}
+                    isSelected={selectedElementId === media.id}
+                    onSelect={setSelectedElementId}
+                    onStartDrag={startDraggingMedia}
+                    onDeleteMedia={(id) => {
+                      onDeleteMedia(id);
+                      setSelectedElementId(null);
+                    }}
+                    onStartResize={startResizingMedia}
+                    onStartRotate={startRotatingMedia}
+                    previewClassName={playClass}
+                    animationOrder={
+                      showAnimationBadges
+                        ? animationSequenceMap.get(media.id)
+                        : undefined
+                    }
+                  />
+                );
+              })}
+
+              {isRotating &&
+                snapInfo &&
+                (() => {
+                  const el =
+                    textElements.find((e) => e.id === snapInfo.elementId) ||
+                    mediaElements.find((e) => e.id === snapInfo.elementId);
+
+                  if (!el) return null;
+
+                  const cx = (el.position?.x ?? 0) + (el.width ?? 300) / 2;
+                  const cy = (el.position?.y ?? 0) + (el.height ?? 80) / 2;
+
+                  return (
+                    <>
+                      {(snapInfo.angle === 0 || snapInfo.angle === 180) && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: cy,
+                            left: 0,
+                            right: 0,
+                            height: 1,
+                            background: "#4f46e5",
+                            opacity: 0.7,
+                            pointerEvents: "none",
+                          }}
+                        />
+                      )}
+
+                      {(snapInfo.angle === 90 || snapInfo.angle === 270) && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            left: cx,
+                            top: 0,
+                            bottom: 0,
+                            width: 1,
+                            background: "#4f46e5",
+                            opacity: 0.7,
+                            pointerEvents: "none",
+                          }}
+                        />
+                      )}
+
+                      {(snapInfo.angle === 45 ||
+                        snapInfo.angle === 135 ||
+                        snapInfo.angle === 225 ||
+                        snapInfo.angle === 315) && (
+                        <svg
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            height: "100%",
+                            pointerEvents: "none",
+                            overflow: "visible",
+                          }}
+                        >
+                          <line
+                            x1={cx - 2000}
+                            y1={
+                              cy +
+                              (snapInfo.angle === 45 || snapInfo.angle === 225
+                                ? 2000
+                                : -2000)
+                            }
+                            x2={cx + 2000}
+                            y2={
+                              cy +
+                              (snapInfo.angle === 45 || snapInfo.angle === 225
+                                ? -2000
+                                : 2000)
+                            }
+                            stroke="#4f46e5"
+                            strokeWidth="1"
+                            opacity="0.7"
+                          />
+                        </svg>
+                      )}
+
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: cy - 32,
+                          left: cx,
+                          transform: "translateX(-50%)",
+                          background: snapInfo.snapped
+                            ? "#4f46e5"
+                            : "rgba(0,0,0,0.65)",
+                          color: "white",
+                          fontSize: 12,
+                          padding: "2px 8px",
+                          borderRadius: 4,
+                          pointerEvents: "none",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {snapInfo.angle}°
+                      </div>
+                    </>
+                  );
+                })()}
+            </div>
           </div>
         </div>
       </div>

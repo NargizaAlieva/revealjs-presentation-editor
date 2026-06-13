@@ -1,3 +1,4 @@
+import { useState } from "react";
 import FormatToolbar from "./FormatToolbar";
 import "./TextElement.css";
 
@@ -10,20 +11,23 @@ export default function TextElement({
   onDeleteTextElement,
   onStartDrag,
   onStartResize,
+  onStartRotate,
   previewClassName,
   animationOrder,
 }) {
-  const text = textElement.paragraphs?.[0]?.runs?.[0]?.text ?? "";
+  const [isFormatting, setIsFormatting] = useState(false);
+
+  if (!isSelected && isFormatting) setIsFormatting(false);
+
+  const text = (textElement.paragraphs ?? [])
+    .map((p) => p.runs?.[0]?.text ?? "")
+    .join("\n");
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
   const isTitle = textElement["placeholder-id"]?.includes("title");
 
   return (
     <div
-      className={[
-        "draggable",
-        isSelected ? "selected" : "",
-        previewClassName,
-      ]
+      className={["draggable", isSelected ? "selected" : "", previewClassName]
         .filter(Boolean)
         .join(" ")}
       style={{
@@ -34,8 +38,11 @@ export default function TextElement({
         height: `${textElement.height ?? 80}px`,
         background: textElement.background ?? "transparent",
         zIndex: textElement["z-index"] ?? 1,
+        transform: `rotate(${textElement.rotation ?? 0}deg)`,
+        transformOrigin: "center center",
       }}
       onMouseDown={() => onSelect(textElement.id)}
+      onDoubleClick={() => setIsFormatting(true)}
     >
       {animationOrder != null && (
         <span className="animation-order-badge">{animationOrder}</span>
@@ -64,7 +71,7 @@ export default function TextElement({
         </button>
       )}
 
-      {isSelected && (
+      {isSelected && isFormatting && (
         <FormatToolbar
           elementId={textElement.id}
           formatting={formatting}
@@ -82,8 +89,11 @@ export default function TextElement({
             fontSize: formatting.size ?? "24px",
             fontWeight: formatting.weight ?? "normal",
             fontStyle: formatting.italics ? "italic" : "normal",
+            textDecoration: formatting["text-decoration"] ?? "none",
             textAlign: formatting.align ?? "left",
             color: formatting.color ?? "var(--text-dark, black)",
+            fontFamily: formatting.font ?? "inherit",
+            backgroundColor: formatting.highlight ?? "transparent",
           }}
         />
       ) : (
@@ -96,20 +106,36 @@ export default function TextElement({
             fontSize: formatting.size ?? "24px",
             fontWeight: formatting.weight ?? "normal",
             fontStyle: formatting.italics ? "italic" : "normal",
+            textDecoration: formatting["text-decoration"] ?? "none",
             textAlign: formatting.align ?? "left",
             lineHeight: formatting["line-spacing"] ?? 1.2,
             color: formatting.color ?? "var(--text-dark, black)",
+            fontFamily: formatting.font ?? "inherit",
+            backgroundColor: formatting.highlight ?? "transparent",
           }}
         />
       )}
 
       {isSelected && (
         <div
-          className="resize-handle"
+          className="text-resize-handle"
           onMouseDown={(event) => {
             event.stopPropagation();
-            onStartResize(textElement.id);
+            onStartResize(event, textElement.id);
           }}
+        />
+      )}
+
+      {isSelected && (
+        <button
+          type="button"
+          className="text-rotate-handle"
+          onMouseDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onStartRotate(event, textElement.id);
+          }}
+          aria-label="Rotate text element"
         />
       )}
     </div>

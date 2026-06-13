@@ -336,7 +336,6 @@
 //   };
 // }
 
-
 import { useCallback, useState } from "react";
 
 const SNAP_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315, 360];
@@ -390,11 +389,20 @@ export function useCanvasInteractions({
   const zoomScale = zoom / 100;
 
   const hasActiveInteraction =
-    draggingElementId ||
-    draggingMediaId ||
-    resizingElementId ||
-    resizingMediaId ||
-    rotatingElement;
+    Boolean(draggingElementId) ||
+    Boolean(draggingMediaId) ||
+    Boolean(resizingElementId) ||
+    Boolean(resizingMediaId) ||
+    Boolean(rotatingElement);
+
+  const clearInteractionState = useCallback(() => {
+    setDraggingElementId(null);
+    setDraggingMediaId(null);
+    setResizingElementId(null);
+    setResizingMediaId(null);
+    setRotatingElement(null);
+    setSnapInfo(null);
+  }, []);
 
   const getMousePosition = useCallback(
     (event, rect) => ({
@@ -417,30 +425,18 @@ export function useCanvasInteractions({
   }, []);
 
   const stopInteraction = useCallback(() => {
-    if (hasActiveInteraction) {
-      onCommitHistory?.();
-    }
+    if (!hasActiveInteraction) return;
 
-    setDraggingElementId(null);
-    setDraggingMediaId(null);
-    setResizingElementId(null);
-    setResizingMediaId(null);
-    setRotatingElement(null);
-    setSnapInfo(null);
-  }, [hasActiveInteraction, onCommitHistory]);
+    onCommitHistory?.();
+    clearInteractionState();
+  }, [hasActiveInteraction, onCommitHistory, clearInteractionState]);
 
   const cancelInteraction = useCallback(() => {
-    if (hasActiveInteraction) {
-      onCancelHistory?.();
-    }
+    if (!hasActiveInteraction) return;
 
-    setDraggingElementId(null);
-    setDraggingMediaId(null);
-    setResizingElementId(null);
-    setResizingMediaId(null);
-    setRotatingElement(null);
-    setSnapInfo(null);
-  }, [hasActiveInteraction, onCancelHistory]);
+    onCancelHistory?.();
+    clearInteractionState();
+  }, [hasActiveInteraction, onCancelHistory, clearInteractionState]);
 
   const handleMouseMove = useCallback(
     (event) => {

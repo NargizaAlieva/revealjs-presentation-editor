@@ -1,7 +1,13 @@
 import "./SlideList.css";
 import SlideThumbnail from "./slides/SlideThumbnail";
 
-export default function SlideList({ slides, selectedSlideId, onSelectSlide }) {
+export default function SlideList({
+  slides,
+  selectedSlideId,
+  onSelectSlide,
+  slideWidth,
+  slideHeight,
+}) {
   return (
     <aside className="slide-list">
       {(slides ?? []).map((slide, index) => {
@@ -10,24 +16,26 @@ export default function SlideList({ slides, selectedSlideId, onSelectSlide }) {
         const isActive = selectedSlideId === index;
 
         return (
-          <div
-            key={`slide-${index}`}
-            className={[
-              "slide-list-item",
-              isActive ? "active" : "",
-              isHidden ? "hidden-slide" : "",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-            onClick={() => onSelectSlide(index)}
-            title={isHidden ? `${slideTitle} (hidden)` : slideTitle}
-          >
-            <div className="slide-number">
-              {index + 1}. {slideTitle}
-              {isHidden && <span className="hidden-badge">hidden</span>}
-            </div>
+          <div key={`slide-${index}`} className="slide-list-row">
+            <span className="slide-number">{index + 1}</span>
 
-            <SlideThumbnail slide={slide} />
+            <div
+              className={[
+                "slide-list-item",
+                isActive ? "active" : "",
+                isHidden ? "hidden-slide" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              onClick={() => onSelectSlide(index)}
+              title={isHidden ? `${slideTitle} (hidden)` : slideTitle}
+            >
+              <SlideThumbnail
+                slide={slide}
+                slideWidth={slideWidth}
+                slideHeight={slideHeight}
+              />
+            </div>
           </div>
         );
       })}

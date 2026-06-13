@@ -3,9 +3,13 @@ import "./MediaElement.css";
 export default function MediaElement({
   media,
   isSelected,
+  onSelect,
   onStartDrag,
   onDeleteMedia,
   onStartResize,
+  onStartRotate,
+  previewClassName,
+  animationOrder,
 }) {
   return (
     <div
@@ -19,8 +23,13 @@ export default function MediaElement({
         width: `${media.width ?? 300}px`,
         height: `${media.height ?? 200}px`,
         zIndex: media["z-index"] ?? 1,
+        transform: `rotate(${media.rotation ?? 0}deg)`,
+        transformOrigin: "center center",
       }}
-      onMouseDown={(event) => onStartDrag(event, media.id)}
+      onMouseDown={(event) => {
+        onSelect(media.id);
+        onStartDrag(event, media.id);
+      }}
     >
       <img
         src={media["file-link"]}
@@ -29,7 +38,6 @@ export default function MediaElement({
         style={{
           width: "100%",
           height: "100%",
-          transform: `rotate(${media.rotation ?? 0}deg)`,
         }}
       />
 
@@ -49,10 +57,22 @@ export default function MediaElement({
 
       {isSelected && (
         <div
-          className="resize-handle"
+          className="media-resize-handle"
           onMouseDown={(event) => {
+            event.preventDefault();
             event.stopPropagation();
-            onStartResize(media.id);
+            onStartResize(event, media.id);
+          }}
+        />
+      )}
+
+      {isSelected && (
+        <div
+          className="media-rotate-handle"
+          onMouseDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onStartRotate(event, media.id);
           }}
         />
       )}

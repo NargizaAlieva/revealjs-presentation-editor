@@ -26,3 +26,33 @@
   cursor: pointer;
   z-index: 10;
 }
+
+.media-resize-handle {
+  position: absolute;
+  right: -8px;
+  bottom: -8px;
+
+  width: 14px;
+  height: 14px;
+
+  background: white;
+  border: 2px solid #3b82f6;
+  cursor: nwse-resize;
+}
+
+.media-rotate-handle {
+  position: absolute;
+  top: -48px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  width: 28px;
+  height: 28px;
+
+  border: 2px solid #3b82f6;
+  border-radius: 50%;
+  background: white;
+
+  cursor: grab;
+  z-index: 9999;
+}
