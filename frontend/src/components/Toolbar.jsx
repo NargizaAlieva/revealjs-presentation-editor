@@ -132,7 +132,6 @@ export default function Toolbar({
         </div>
       </div>
 
-      {/* ── Tab bar ───────────────────────────────────────────── */}
       <nav className="toolbar-tabs">
         {TABS.map((tab) => (
           <button
@@ -145,7 +144,6 @@ export default function Toolbar({
         ))}
       </nav>
 
-      {/* ── Ribbon ────────────────────────────────────────────── */}
       <div className="toolbar-ribbon">
         {currentTab === "File" && (
           <FileTab
