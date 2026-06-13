@@ -5,7 +5,7 @@ import {
   createEditorEvent,
 } from "../core";
 
-const STORAGE_KEY = "presentation";
+// const STORAGE_KEY = "presentation";
 
 export function useEditorActions(eventBus, selectedSlideIndex, slidesLength, presentationId) {
   const setSelectedSlideId = useCallback(

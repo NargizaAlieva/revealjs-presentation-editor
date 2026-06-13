@@ -1,11 +1,21 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { idbGet } from "../core/persistence/autoSaveService";
 
 export function useMediaSrc(fileLink) {
-  const [src, setSrc] = useState(null);
+  const [src, setSrc] = useState(() => {
+    if (!fileLink) return null;
+    if (!fileLink.startsWith("indexeddb://")) return fileLink;
+    return null;
+  });
 
   useEffect(() => {
-    if (!fileLink) return;
+    let cancelled = false;
+    let objectUrl = null;
+
+    if (!fileLink) {
+      setSrc(null);
+      return;
+    }
 
     if (!fileLink.startsWith("indexeddb://")) {
       setSrc(fileLink);
@@ -13,17 +23,20 @@ export function useMediaSrc(fileLink) {
     }
 
     const key = fileLink.replace("indexeddb://", "");
-    let objectUrl = null;
 
     idbGet(key).then((blob) => {
-      if (blob) {
-        objectUrl = URL.createObjectURL(blob);
-        setSrc(objectUrl);
-      }
+      if (cancelled || !blob) return;
+
+      objectUrl = URL.createObjectURL(blob);
+      setSrc(objectUrl);
     });
 
     return () => {
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      cancelled = true;
+
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
     };
   }, [fileLink]);
 

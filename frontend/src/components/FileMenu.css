@@ -1,0 +1,223 @@
+.file-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  font-family: Arial, sans-serif;
+}
+
+/* ── Sidebar ── */
+
+.file-menu-sidebar {
+  width: 200px;
+  background: #a31f12;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.file-menu-back {
+  height: 48px;
+  padding: 0 16px;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+
+.file-menu-back:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.file-menu-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+  flex: 1;
+}
+
+.file-menu-nav-item {
+  height: 40px;
+  padding: 0 20px;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.file-menu-nav-item:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+.file-menu-nav-item.active {
+  background: rgba(255,255,255,0.2);
+  font-weight: 600;
+}
+
+.file-menu-nav-item.danger {
+  color: #ffb3ae;
+  margin-top: auto;
+}
+
+.file-menu-nav-item.danger:hover {
+  background: rgba(255,80,60,0.25);
+  color: white;
+}
+
+.file-menu-nav-item.bottom {
+  color: rgba(255,255,255,0.7);
+}
+
+/* ── Content ── */
+
+.file-menu-content {
+  flex: 1;
+  background: #f5f5f5;
+  overflow-y: auto;
+  padding: 40px 48px;
+}
+
+.file-menu-home section,
+.file-menu-section {
+  margin-bottom: 40px;
+}
+
+.file-menu-home section h2,
+.file-menu-section > p + h2 {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #555;
+  margin: 0 0 16px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 8px;
+}
+
+.file-menu-greeting {
+  font-size: 28px;
+  font-weight: 300;
+  color: #111;
+  margin: 0 0 36px;
+}
+
+/* ── Templates ── */
+
+.file-menu-templates {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.file-menu-template {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 12px;
+  color: #333;
+}
+
+.file-menu-template:hover .file-menu-template-thumb {
+  border-color: #a31f12;
+  box-shadow: 0 2px 8px rgba(163,31,18,0.2);
+}
+
+.file-menu-template-thumb {
+  width: 160px;
+  height: 100px;
+  border: 1.5px solid #ccc;
+  background: white;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: #ccc;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+/* ── Recent list ── */
+
+.file-menu-recent-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.file-menu-recent-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.file-menu-recent-item:hover {
+  background: #e8e8e8;
+}
+
+.file-menu-recent-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.file-menu-recent-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #111;
+}
+
+.file-menu-recent-meta {
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.file-menu-empty {
+  font-size: 13px;
+  color: #999;
+}
+
+/* ── Section page ── */
+
+.file-menu-section h1 {
+  font-size: 24px;
+  font-weight: 300;
+  color: #111;
+  margin: 0 0 24px;
+}
+
+.file-menu-desc {
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 16px;
+}
+
+.file-menu-action-btn {
+  padding: 8px 20px;
+  background: #a31f12;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.file-menu-action-btn:hover {
+  background: #8a1a0f;
+}
