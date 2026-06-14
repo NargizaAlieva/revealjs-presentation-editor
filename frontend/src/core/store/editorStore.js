@@ -8,6 +8,7 @@ import {
   updateTextFormatting, 
   updateTextElementParagraphs,
   updateTextRangeFormatting,
+  updateRunLink,
   deleteTextElement 
 } from "../operations/textOperations";
 import {
@@ -463,6 +464,22 @@ export const editorReducer = (state, event) => {
           event.payload.rangeStart,
           event.payload.rangeEnd,
           event.payload.formatting,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+
+    case EditorEventType.TEXT.UPDATE_RUN_LINK:
+      return withHistory(state, {
+        ...state,
+        presentation: updateRunLink(
+          state.presentation,
+          state.selectedSlideIndex,
+          event.payload.elementId,
+          event.payload.paragraphIdx,
+          event.payload.rangeStart,
+          event.payload.rangeEnd,
+          event.payload.link,
         ),
         lastEvent: event,
         lastUpdated: Date.now(),

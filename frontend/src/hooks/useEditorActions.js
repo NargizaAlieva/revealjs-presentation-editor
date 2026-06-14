@@ -178,6 +178,20 @@ export function useEditorActions(
     [eventBus],
   );
 
+  const updateRunLink = useCallback(
+    (elementId, paragraphIdx, rangeStart, rangeEnd, link) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.TEXT.UPDATE_RUN_LINK, {
+          elementId,
+          paragraphIdx,
+          rangeStart,
+          rangeEnd,
+          link,
+        }),
+      ),
+    [eventBus],
+  );
+
   const deleteElement = useCallback(
     (elementId) =>
       eventBus.dispatch(
@@ -454,6 +468,7 @@ export function useEditorActions(
     updateTextElementFormatting,
     updateTextElementParagraphs,
     updateTextRangeFormatting,
+    updateRunLink,
     updateElementPosition,
     updateElementSize,
     updateElement,

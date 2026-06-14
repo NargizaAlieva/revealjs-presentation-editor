@@ -206,3 +206,64 @@ export const updateTextRangeFormatting = (
 
   return setSlides(presentation, slides);
 };
+
+export const updateRunLink = (
+  presentation,
+  slideIndex,
+  elementId,
+  paragraphIdx,
+  rangeStart,
+  rangeEnd,
+  link,
+) => {
+  const slides = [...getSlides(presentation)];
+  const slide = slides[slideIndex];
+  if (!slide) return presentation;
+
+  const updatedText = (slide.contents?.text ?? []).map((el) => {
+    if (el.id !== elementId) return el;
+
+    const updatedParagraphs = el.paragraphs.map((para, pIdx) => {
+      if (pIdx !== paragraphIdx) return para;
+
+      const newRuns = [];
+      let charOffset = 0;
+
+      for (const run of para.runs) {
+        const runStart = charOffset;
+        const runEnd = charOffset + run.text.length;
+
+        if (runEnd <= rangeStart || runStart >= rangeEnd) {
+          newRuns.push(run);
+        } else {
+          if (runStart < rangeStart) {
+            newRuns.push({ ...run, text: run.text.slice(0, rangeStart - runStart) });
+          }
+          const selectedStart = Math.max(0, rangeStart - runStart);
+          const selectedEnd = Math.min(run.text.length, rangeEnd - runStart);
+          newRuns.push({
+            ...run,
+            text: run.text.slice(selectedStart, selectedEnd),
+            link,
+          });
+          if (runEnd > rangeEnd) {
+            newRuns.push({ ...run, text: run.text.slice(rangeEnd - runStart) });
+          }
+        }
+
+        charOffset = runEnd;
+      }
+
+      return { ...para, runs: newRuns };
+    });
+
+    return { ...el, paragraphs: updatedParagraphs };
+  });
+
+  slides[slideIndex] = {
+    ...slide,
+    contents: { ...slide.contents, text: updatedText },
+  };
+
+  return setSlides(presentation, slides);
+};
