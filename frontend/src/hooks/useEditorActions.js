@@ -336,6 +336,14 @@ export function useEditorActions(
     [eventBus],
   );
 
+  const resetLayout = useCallback(
+    () =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.RESET, {}),
+      ),
+    [eventBus],
+  );
+
   const savePresentation = useCallback(
     () =>
       eventBus.dispatch(createEditorEvent(EditorEventType.PRESENTATION.SAVE)),
@@ -437,6 +445,7 @@ export function useEditorActions(
     deleteMasterElement,
     updateLayout,
     applyLayout,
+    resetLayout,
     savePresentation,
     createNewPresentation,
     resetPresentation,

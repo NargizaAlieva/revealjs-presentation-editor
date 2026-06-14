@@ -73,6 +73,7 @@ const FONT_SIZES = [
 export default function HomeTab({
   onAddSlide,
   onApplyLayout,
+  onResetLayout,
   onDeleteSlide,
   onDuplicateSlide,
   onMoveSlideUp,
@@ -282,7 +283,7 @@ export default function HomeTab({
               </div>
             )}
           </div>
-          <button className="mini-text-command" disabled>Reset</button>
+          <button className="mini-text-command" onClick={onResetLayout}>Reset</button>
           <button className="mini-text-command" disabled>Section</button>
         </div>
 

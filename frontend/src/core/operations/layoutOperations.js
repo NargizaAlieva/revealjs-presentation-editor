@@ -192,3 +192,76 @@ export const propagateLayoutChanges = (
 
   return setLayouts(setSlides(presentation, slides), updatedLayouts);
 };
+
+export const resetSlideToLayout = (presentation, slideIndex) => {
+  const slides = [...getSlides(presentation)];
+  const slide = slides[slideIndex];
+  if (!slide) return presentation;
+
+  const masterFormatting = presentation.slideset?.master?.formatting ?? {};
+  const layout = getLayouts(presentation).find(
+    (l) => l["layout-id"] === slide["layout-id"],
+  );
+  if (!layout) return presentation;
+
+  const placeholders = layout.placeholders ?? [];
+  const placeholderMap = new Map(
+    placeholders.map((p) => [p["placeholder-id"], p])
+  );
+
+  const resetText = (slide.contents?.text ?? []).map((el) => {
+      const pid = el["placeholder-id"];
+      const match = pid ? placeholderMap.get(pid) : null;
+
+      if (!match) return el;
+      return {
+        ...el,
+        position: { ...match.position },
+        width: match.width,
+        height: match.height,
+        background: match.background ?? el.background,
+        rotation: 0,
+        userModified: false,
+      };
+    });
+
+    const resetMedia = (slide.contents?.media ?? []).map((el) => {
+      const pid = el["placeholder-id"];
+      const match = pid ? placeholderMap.get(pid) : null;
+
+      if (!match) return el;
+      return {
+        ...el,
+        position: { ...match.position },
+        width: match.width,
+        height: match.height,
+        rotation: 0,
+      };
+    });
+
+  const handledPids = new Set([
+    ...resetText.map((el) => el["placeholder-id"]).filter(Boolean),
+    ...resetMedia.map((el) => el["placeholder-id"]).filter(Boolean),
+  ]);
+
+  const newText = [];
+  const newMedia = [];
+
+  for (const placeholder of placeholders) {
+    const pid = placeholder["placeholder-id"];
+    if (!pid || handledPids.has(pid)) continue;
+    if (placeholder.type === "text") newText.push(createTextFromPlaceholder(placeholder, masterFormatting));
+    else if (placeholder.type === "image" || placeholder.type === "video") newMedia.push(createMediaFromPlaceholder(placeholder));
+  }
+
+  slides[slideIndex] = {
+    ...slide,
+    contents: {
+      ...slide.contents,
+      text: [...resetText, ...newText],
+      media: [...resetMedia, ...newMedia],
+    },
+  };
+
+  return setSlides(presentation, slides);
+};

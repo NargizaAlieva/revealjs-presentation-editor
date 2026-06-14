@@ -74,6 +74,7 @@ export default function EditorPage() {
     updateTransitionDuration,
     applyTransitionToAll,
     applyLayout,
+    resetLayout,
     addAnimation,
     updateAnimation,
     deleteAnimation,
@@ -327,6 +328,7 @@ export default function EditorPage() {
           onTransitionPreview={triggerTransitionPreview}
           onPreviewEffect={setPreviewEffect}
           onApplyLayout={applyLayout}
+          onResetLayout={resetLayout}
           currentFormatting={currentFormatting}
           onFormatChange={handleFormatChange}
           isTextSelected={!!selectedTextEl}

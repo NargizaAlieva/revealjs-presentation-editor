@@ -12,7 +12,7 @@ import {
   updateSlideTransition,
   updateSlideNotes,
 } from "../operations/slideOperations";
-import { applyLayoutToSlide, propagateLayoutChanges } from "../operations/layoutOperations";
+import { applyLayoutToSlide, propagateLayoutChanges, resetSlideToLayout } from "../operations/layoutOperations";
 import { addMedia, deleteMedia, updateMedia } from "../operations/mediaOperations";
 import {
   updateMasterTheme,
@@ -588,6 +588,17 @@ export const editorReducer = (state, event) => {
           state.presentation,
           event.payload.layoutId,
           event.payload.placeholders,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+
+    case EditorEventType.LAYOUT.RESET:
+      return withHistory(state, {
+        ...state,
+        presentation: resetSlideToLayout(
+          state.presentation,
+          state.selectedSlideIndex,
         ),
         lastEvent: event,
         lastUpdated: Date.now(),
