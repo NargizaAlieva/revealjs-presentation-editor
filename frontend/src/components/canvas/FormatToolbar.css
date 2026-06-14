@@ -1,7 +1,8 @@
 .format-toolbar {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
   background: #ffffff;
   border: 1px solid #9ca3af;
   border-radius: 6px;
@@ -12,10 +13,60 @@
   user-select: none;
 }
 
+/* Левая часть: два ряда кнопок */
+.ft-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .format-row {
   display: flex;
   align-items: center;
   gap: 3px;
+}
+
+/* Вертикальный разделитель между рядами и кнопкой комментария */
+.ft-separator-v {
+  width: 1px;
+  background: #d1d5db;
+  margin: 0 8px;
+  align-self: stretch;
+}
+
+/* Высокая кнопка New Comment */
+.ft-new-comment-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 56px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  color: #374151;
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.ft-new-comment-btn:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.ft-new-comment-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.ft-new-comment-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #374151;
 }
 
 .font-select {

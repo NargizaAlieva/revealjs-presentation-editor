@@ -1,5 +1,9 @@
 import Reveal from "reveal.js";
-import { getSlideSize, getTextElements, getMediaElements } from "../../utils/slidesetRenderUtils";
+import {
+  getSlideSize,
+  getTextElements,
+  getMediaElements,
+} from "../../utils/slidesetRenderUtils";
 
 export function buildTextElementStyle(textElement, index, masterFont) {
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
@@ -21,6 +25,7 @@ export function buildTextElementStyle(textElement, index, masterFont) {
     fontFamily: formatting.font ?? masterFont ?? "inherit",
     color: formatting.color ?? "var(--text-dark, black)",
     textAlign: formatting.align ?? "left",
+    textAlignLast: formatting.align === "justify" ? "left" : undefined,
     lineHeight: formatting["line-spacing"] ?? "1.4",
     boxSizing: "border-box",
   };
@@ -54,7 +59,7 @@ export function getTextContent(textElement) {
   return (
     textElement?.paragraphs
       ?.map((paragraph) =>
-        paragraph?.runs?.map((run) => run?.text || "").join("")
+        paragraph?.runs?.map((run) => run?.text || "").join(""),
       )
       .join("\n") || ""
   );
@@ -85,7 +90,12 @@ export function getSlideMediaElements(slide) {
   return getMediaElements(slide);
 }
 
-export function initRevealDeck(containerElement, width, height, initialSlide = 0) {
+export function initRevealDeck(
+  containerElement,
+  width,
+  height,
+  initialSlide = 0,
+) {
   const deck = new Reveal(containerElement, {
     controls: true,
     progress: true,
@@ -121,7 +131,14 @@ export function buildColorThemeStyle(presentation) {
 
 export function getSlideTransition(slide, defaultTransition = "slide") {
   const transition = slide?.contents?.transition;
-  const validTransitions = ["fade", "slide", "convex", "concave", "zoom", "none"];
+  const validTransitions = [
+    "fade",
+    "slide",
+    "convex",
+    "concave",
+    "zoom",
+    "none",
+  ];
   if (transition && validTransitions.includes(transition)) {
     return transition;
   }
@@ -165,7 +182,11 @@ export function buildAnimationMap(slide) {
 
 function fragmentClassNameFor(effect) {
   const classes = ["fragment"];
-  if (effect !== "fade-in" && effect !== "none" && FRAGMENT_EFFECT_CLASSES.has(effect)) {
+  if (
+    effect !== "fade-in" &&
+    effect !== "none" &&
+    FRAGMENT_EFFECT_CLASSES.has(effect)
+  ) {
     classes.push(effect);
   }
   return classes.join(" ");

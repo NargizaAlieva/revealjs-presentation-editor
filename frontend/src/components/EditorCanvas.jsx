@@ -38,6 +38,7 @@ export default function EditorCanvas({
   onCopy,
   onPaste,
   onCut,
+  onNewComment,
 }) {
   const [playingElementId, setPlayingElementId] = useState(null);
   const [playingEffect, setPlayingEffect] = useState(null);
@@ -371,6 +372,7 @@ export default function EditorCanvas({
                       onBeginHistory={onBeginHistory}
                       onCommitHistory={onCommitHistory}
                       onCancelHistory={onCancelHistory}
+                      onNewComment={onNewComment}
                       previewClassName={playClass}
                       presentation={presentation}
                       animationOrder={
@@ -466,38 +468,38 @@ export default function EditorCanvas({
                           snapInfo.angle === 135 ||
                           snapInfo.angle === 225 ||
                           snapInfo.angle === 315) && (
-                            <svg
-                              style={{
-                                position: "absolute",
-                                top: 0,
-                                left: 0,
-                                width: "100%",
-                                height: "100%",
-                                pointerEvents: "none",
-                                overflow: "visible",
-                              }}
-                            >
-                              <line
-                                x1={centerX - 2000}
-                                y1={
-                                  centerY +
-                                  (snapInfo.angle === 45 || snapInfo.angle === 225
-                                    ? 2000
-                                    : -2000)
-                                }
-                                x2={centerX + 2000}
-                                y2={
-                                  centerY +
-                                  (snapInfo.angle === 45 || snapInfo.angle === 225
-                                    ? -2000
-                                    : 2000)
-                                }
-                                stroke="#4f46e5"
-                                strokeWidth="1"
-                                opacity="0.7"
-                              />
-                            </svg>
-                          )}
+                          <svg
+                            style={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              width: "100%",
+                              height: "100%",
+                              pointerEvents: "none",
+                              overflow: "visible",
+                            }}
+                          >
+                            <line
+                              x1={centerX - 2000}
+                              y1={
+                                centerY +
+                                (snapInfo.angle === 45 || snapInfo.angle === 225
+                                  ? 2000
+                                  : -2000)
+                              }
+                              x2={centerX + 2000}
+                              y2={
+                                centerY +
+                                (snapInfo.angle === 45 || snapInfo.angle === 225
+                                  ? -2000
+                                  : 2000)
+                              }
+                              stroke="#4f46e5"
+                              strokeWidth="1"
+                              opacity="0.7"
+                            />
+                          </svg>
+                        )}
 
                         <div
                           style={{
