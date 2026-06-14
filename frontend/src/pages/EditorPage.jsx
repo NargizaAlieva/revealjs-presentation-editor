@@ -4,16 +4,18 @@ import SlideList from "../components/SlideList";
 import Toolbar from "../components/Toolbar";
 import EditorCanvas from "../components/EditorCanvas";
 import { useEditorState } from "../hooks/useEditorState";
-import { idbSet } from "../core/persistence/autoSaveService";
 import { useSlides } from "../hooks/useSlides";
 import { useEditorActions } from "../hooks/useEditorActions";
+import { useEditorViewState } from "../hooks/useEditorViewState";
+import { useImageUpload } from "../hooks/useImageUpload";
+import { useVideoUpload } from "../hooks/useVideoUpload";
+import { usePresentationFonts } from "../hooks/usePresentationFonts";
 import "./EditorPage.css";
 import PreviewModal from "../components/PreviewModal";
 import StatusBar from "../components/StatusBar";
 import { getSlideSize } from "../utils/slidesetRenderUtils";
-import { usePresentationFonts } from "../hooks/usePresentationFonts";
-import { useVideoUpload } from "../hooks/useVideoUpload";
 import FileMenu from "../components/FileMenu";
+import { idbSet } from "../core/persistence/autoSaveService";
 import {
   exportToReveal,
   exportToRevealZip,
@@ -27,13 +29,28 @@ import {
 export default function EditorPage() {
   const { presentationId } = useParams();
   const navigate = useNavigate();
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  // previewStartSlide не входит в useEditorViewState — оставляем локально
   const [previewStartSlide, setPreviewStartSlide] = useState(0);
-  const [activeTab, setActiveTab] = useState("Home");
-  const [previewEffect, setPreviewEffect] = useState(null);
-  const [zoom, setZoom] = useState(70);
-  const [showNotes, setShowNotes] = useState(true);
-  const [clipboard, setClipboard] = useState(null);
+
+  const {
+    zoom,
+    setZoom,
+    zoomIn,
+    zoomOut,
+    handleCanvasZoom,
+    activeTab,
+    setActiveTab,
+    showNotes,
+    toggleNotes,
+    isPreviewOpen,
+    openPreview,
+    closePreview,
+    previewEffect,
+    setPreviewEffect,
+    triggerAnimationPreview,
+    triggerTransitionPreview,
+  } = useEditorViewState();
 
   const { state, eventBus, isLoading } = useEditorState(presentationId);
   const {
@@ -90,59 +107,10 @@ export default function EditorPage() {
     presentationId,
   );
 
+  const { handleImageUpload } = useImageUpload(addMedia);
   const { handleVideoUpload } = useVideoUpload(addMedia);
 
   const exportPresentation = async () => exportToReveal(presentation);
-
-  const triggerAnimationPreview = (elementId, effect, speed) => {
-    setPreviewEffect({
-      type: "animation",
-      elementId,
-      effect,
-      speed,
-      key: Date.now(),
-    });
-  };
-
-  const triggerTransitionPreview = (effect) => {
-    setPreviewEffect({
-      type: "transition",
-      effect,
-      key: Date.now(),
-    });
-  };
-
-  const handleImageUpload = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file || !file.type.startsWith("image/")) return;
-
-    const mediaId = crypto.randomUUID();
-    const key = `media/${mediaId}`;
-
-    await idbSet(key, file);
-
-    addMedia({
-      id: mediaId,
-      "file-link": `indexeddb://${key}`,
-      "media-type": "image",
-      position: { x: 60, y: 60 },
-      width: 300,
-      height: 200,
-      rotation: 0,
-      "z-index": 1,
-      scale: 1,
-      crop: [],
-      effects: {},
-      playback: {},
-    });
-
-    event.target.value = "";
-  };
-
-  const zoomIn = () => setZoom((z) => Math.min(200, z + 10));
-  const zoomOut = () => setZoom((z) => Math.max(25, z - 10));
-  const handleCanvasZoom = (delta) =>
-    setZoom((z) => Math.min(200, Math.max(25, z + delta)));
 
   // Находит выбранный элемент по selectedElementId.
   // Нужен тулбарным хендлерам, где элемент не передаётся аргументом.
@@ -165,47 +133,22 @@ export default function EditorPage() {
     const element = elementOrEvent?.id ? elementOrEvent : getSelectedElement();
     if (!element) return;
     copyElement(element);
-    setClipboard(element);
   };
 
   const handleCut = (elementOrEvent) => {
     const element = elementOrEvent?.id ? elementOrEvent : getSelectedElement();
     if (!element) return;
     cutElement(element);
-    setClipboard(element);
   };
 
   const handlePaste = () => {
     pasteElement();
   };
 
-  const selectedElement = (() => {
-    if (!selectedElementId) return null;
-
-    const textElement = (selectedSlide?.contents?.text ?? []).find(
-      (item) => item.id === selectedElementId,
-    );
-    if (textElement) {
-      return {
-        id: textElement.id,
-        label: textElement.paragraphs?.[0]?.runs?.[0]?.text || "Text",
-      };
-    }
-
-    const mediaElement = (selectedSlide?.contents?.media ?? []).find(
-      (item) => item.id === selectedElementId,
-    );
-    if (mediaElement) {
-      return { id: mediaElement.id, label: "Image" };
-    }
-
-    return null;
-  })();
-
   const selectedTextEl = selectedElementId
     ? (selectedSlide?.contents?.text ?? []).find(
-      (t) => t.id === selectedElementId,
-    )
+        (t) => t.id === selectedElementId,
+      )
     : null;
 
   const currentFormatting = selectedTextEl?.paragraphs?.[0]?.formatting ?? {};
@@ -259,6 +202,27 @@ export default function EditorPage() {
     navigate("/");
   };
 
+  // selectedElement используется в Toolbar для отображения анимаций
+  const selectedElement = (() => {
+    if (!selectedElementId) return null;
+    const textElement = (selectedSlide?.contents?.text ?? []).find(
+      (item) => item.id === selectedElementId,
+    );
+    if (textElement) {
+      return {
+        id: textElement.id,
+        label: textElement.paragraphs?.[0]?.runs?.[0]?.text || "Text",
+      };
+    }
+    const mediaElement = (selectedSlide?.contents?.media ?? []).find(
+      (item) => item.id === selectedElementId,
+    );
+    if (mediaElement) {
+      return { id: mediaElement.id, label: "Image" };
+    }
+    return null;
+  })();
+
   if (isLoading) {
     return <div className="editor-loading">Loading...</div>;
   }
@@ -294,11 +258,11 @@ export default function EditorPage() {
           onExportPresentation={exportPresentation}
           onOpenPreviewFromBeginning={() => {
             setPreviewStartSlide(0);
-            setIsPreviewOpen(true);
+            openPreview();
           }}
           onOpenPreviewFromCurrent={() => {
             setPreviewStartSlide(selectedSlideIndex);
-            setIsPreviewOpen(true);
+            openPreview();
           }}
           canDelete={slides.length > 1}
           canMoveUp={selectedSlideIndex > 0}
@@ -331,7 +295,7 @@ export default function EditorPage() {
           onCut={handleCut}
           onCopy={handleCopy}
           onPaste={handlePaste}
-          canPaste={!!clipboard}
+          canPaste={!!state.clipboard}
         />
       </div>
 
@@ -392,7 +356,7 @@ export default function EditorPage() {
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}
           showNotes={showNotes}
-          onToggleNotes={() => setShowNotes((v) => !v)}
+          onToggleNotes={toggleNotes}
         />
       </div>
 
@@ -400,7 +364,7 @@ export default function EditorPage() {
         <PreviewModal
           slides={slides}
           presentation={presentation}
-          onClose={() => setIsPreviewOpen(false)}
+          onClose={closePreview}
           initialSlide={previewStartSlide}
         />
       )}

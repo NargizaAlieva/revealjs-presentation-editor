@@ -163,9 +163,9 @@ export default function FormatToolbar({
             title={`Align ${align}`}
             onClick={() => fmt({ align })}
           >
-            {align === "left" && "⬤≡"}
-            {align === "center" && "≡≡"}
-            {align === "right" && "≡⬤"}
+            {align === "left" && "☰"}
+            {align === "center" && "≡"}
+            {align === "right" && "☷"}
             {align === "justify" && "▤"}
           </button>
         ))}

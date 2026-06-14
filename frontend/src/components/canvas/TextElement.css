@@ -19,13 +19,6 @@
   cursor: text;
 }
 
-.text-editable:empty::before {
-  content: attr(data-placeholder);
-  color: #aaa;
-  pointer-events: none;
-  font-style: italic;
-}
-
 .draggable.selected {
   outline: 1px solid #4f46e5;
   outline-offset: 2px;
@@ -103,6 +96,7 @@
 .drag-border-left   { left: -4px;   top: 8px;   bottom: 8px; width: 10px;  }
 .drag-border-right  { right: -4px;  top: 8px;   bottom: 8px; width: 10px;  }
 
+
 .text-rotate-handle {
   position: absolute;
   top: -40px;
@@ -132,25 +126,16 @@
 
 .text-rotate-handle:active { cursor: grabbing; }
 
-.text-editable[data-list-type]::before {
+.list-markers-overlay {
   position: absolute;
-  left: 0;
   top: 0;
-  width: 1.4em;
-  text-align: center;
   pointer-events: none;
-  line-height: inherit;
-  font-size: inherit;
-  color: inherit;
-  font-family: inherit;
+  text-align: center;
+  user-select: none;
 }
 
-.text-editable[data-list-type="bullet"]::before {
-  content: attr(data-list-marker);
+.list-marker-line {
+  /* высота строки берётся из line-height родителя */
+  display: block;
+  white-space: nowrap;
 }
-
-.text-editable[data-list-numbered-style="decimal"]::before    { content: "1."; }
-.text-editable[data-list-numbered-style="lower-alpha"]::before { content: "a."; }
-.text-editable[data-list-numbered-style="upper-alpha"]::before { content: "A."; }
-.text-editable[data-list-numbered-style="lower-roman"]::before { content: "i."; }
-.text-editable[data-list-numbered-style="upper-roman"]::before { content: "I."; }
