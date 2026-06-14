@@ -337,176 +337,175 @@ export default function EditorCanvas({
                     ? `play-effect play-${playingEffect}`
                     : "";
 
+                return (
+                  <TextElement
+                    key={textElement.id}
+                    textElement={textElement}
+                    isSelected={selectedElementId === textElement.id}
+                    onSelect={onSelectElement}
+                    onChangeTextElement={onChangeTextElement}
+                    onFormatTextElement={onFormatTextElement}
+                    onDeleteTextElement={(id) => {
+                      onDeleteTextElement(id);
+                      onSelectElement?.(null);
+                    }}
+                    onStartDrag={startDraggingText}
+                    onStartResize={startResizingText}
+                    onStartRotate={startRotatingText}
+                    onBeginHistory={onBeginHistory}
+                    onCommitHistory={onCommitHistory}
+                    onCancelHistory={onCancelHistory}
+                    previewClassName={playClass}
+                    presentation={presentation}
+                    animationOrder={
+                      showAnimationBadges
+                        ? animationSequenceMap.get(textElement.id)
+                        : undefined
+                    }
+                  />
+                );
+              })}
+
+              {mediaElements.map((media) => {
+                const playClass =
+                  playingElementId === media.id
+                    ? `play-effect play-${playingEffect}`
+                    : "";
+
+                return (
+                  <MediaElement
+                    key={media.id}
+                    media={media}
+                    isSelected={selectedElementId === media.id}
+                    onSelect={onSelectElement}
+                    onStartDrag={startDraggingMedia}
+                    onStartResize={startResizingMedia}
+                    onStartRotate={startRotatingMedia}
+                    onDeleteMedia={(id) => {
+                      onDeleteMedia(id);
+                      onSelectElement?.(null);
+                    }}
+                    previewClassName={playClass}
+                    animationOrder={
+                      showAnimationBadges
+                        ? animationSequenceMap.get(media.id)
+                        : undefined
+                    }
+                  />
+                );
+              })}
+
+              {isRotating &&
+                snapInfo &&
+                (() => {
+                  const element =
+                    textElements.find(
+                      (item) => item.id === snapInfo.elementId,
+                    ) ||
+                    mediaElements.find(
+                      (item) => item.id === snapInfo.elementId,
+                    );
+
+                  if (!element) return null;
+
+                  const centerX =
+                    (element.position?.x ?? 0) + (element.width ?? 300) / 2;
+
+                  const centerY =
+                    (element.position?.y ?? 0) + (element.height ?? 80) / 2;
+
                   return (
-                    <TextElement
-                      key={textElement.id}
-                      textElement={textElement}
-                      isSelected={selectedElementId === textElement.id}
-                      onSelect={onSelectElement}
-                      onChangeTextElement={onChangeTextElement}
-                      onFormatTextElement={onFormatTextElement}
-                      onDeleteTextElement={(id) => {
-                        onDeleteTextElement(id);
-                        onSelectElement?.(null);
-                      }}
-                      onStartDrag={startDraggingText}
-                      onStartResize={startResizingText}
-                      onStartRotate={startRotatingText}
-                      onBeginHistory={onBeginHistory}
-                      onCommitHistory={onCommitHistory}
-                      onCancelHistory={onCancelHistory}
-                      previewClassName={playClass}
-                      presentation={presentation}
-                      animationOrder={
-                        showAnimationBadges
-                          ? animationSequenceMap.get(textElement.id)
-                          : undefined
-                      }
-                    />
-                  );
-                })}
-
-                {mediaElements.map((media) => {
-                  const playClass =
-                    playingElementId === media.id
-                      ? `play-effect play-${playingEffect}`
-                      : "";
-
-                  return (
-                    <MediaElement
-                      key={media.id}
-                      media={media}
-                      isSelected={selectedElementId === media.id}
-                      onSelect={onSelectElement}
-                      onStartDrag={startDraggingMedia}
-                      onStartResize={startResizingMedia}
-                      onStartRotate={startRotatingMedia}
-                      onDeleteMedia={(id) => {
-                        onDeleteMedia(id);
-                        onSelectElement?.(null);
-                      }}
-                      previewClassName={playClass}
-                      animationOrder={
-                        showAnimationBadges
-                          ? animationSequenceMap.get(media.id)
-                          : undefined
-                      }
-                    />
-                  );
-                })}
-
-                {isRotating &&
-                  snapInfo &&
-                  (() => {
-                    const element =
-                      textElements.find(
-                        (item) => item.id === snapInfo.elementId,
-                      ) ||
-                      mediaElements.find(
-                        (item) => item.id === snapInfo.elementId,
-                      );
-
-                    if (!element) return null;
-
-                    const centerX =
-                      (element.position?.x ?? 0) + (element.width ?? 300) / 2;
-
-                    const centerY =
-                      (element.position?.y ?? 0) + (element.height ?? 80) / 2;
-
-                    return (
-                      <>
-                        {(snapInfo.angle === 0 || snapInfo.angle === 180) && (
-                          <div
-                            style={{
-                              position: "absolute",
-                              top: centerY,
-                              left: 0,
-                              right: 0,
-                              height: 1,
-                              background: "#4f46e5",
-                              opacity: 0.7,
-                              pointerEvents: "none",
-                            }}
-                          />
-                        )}
-
-                        {(snapInfo.angle === 90 || snapInfo.angle === 270) && (
-                          <div
-                            style={{
-                              position: "absolute",
-                              left: centerX,
-                              top: 0,
-                              bottom: 0,
-                              width: 1,
-                              background: "#4f46e5",
-                              opacity: 0.7,
-                              pointerEvents: "none",
-                            }}
-                          />
-                        )}
-
-                        {(snapInfo.angle === 45 ||
-                          snapInfo.angle === 135 ||
-                          snapInfo.angle === 225 ||
-                          snapInfo.angle === 315) && (
-                            <svg
-                              style={{
-                                position: "absolute",
-                                top: 0,
-                                left: 0,
-                                width: "100%",
-                                height: "100%",
-                                pointerEvents: "none",
-                                overflow: "visible",
-                              }}
-                            >
-                              <line
-                                x1={centerX - 2000}
-                                y1={
-                                  centerY +
-                                  (snapInfo.angle === 45 || snapInfo.angle === 225
-                                    ? 2000
-                                    : -2000)
-                                }
-                                x2={centerX + 2000}
-                                y2={
-                                  centerY +
-                                  (snapInfo.angle === 45 || snapInfo.angle === 225
-                                    ? -2000
-                                    : 2000)
-                                }
-                                stroke="#4f46e5"
-                                strokeWidth="1"
-                                opacity="0.7"
-                              />
-                            </svg>
-                          )}
-
+                    <>
+                      {(snapInfo.angle === 0 || snapInfo.angle === 180) && (
                         <div
                           style={{
                             position: "absolute",
-                            top: centerY - 32,
-                            left: centerX,
-                            transform: "translateX(-50%)",
-                            background: snapInfo.snapped
-                              ? "#4f46e5"
-                              : "rgba(0,0,0,0.65)",
-                            color: "white",
-                            fontSize: 12,
-                            padding: "2px 8px",
-                            borderRadius: 4,
+                            top: centerY,
+                            left: 0,
+                            right: 0,
+                            height: 1,
+                            background: "#4f46e5",
+                            opacity: 0.7,
                             pointerEvents: "none",
-                            whiteSpace: "nowrap",
                           }}
-                        >
-                          {snapInfo.angle}°
-                        </div>
-                      </>
-                    );
-                  })()}
-              </div>
-            </div>
+                        />
+                      )}
+
+                      {(snapInfo.angle === 90 || snapInfo.angle === 270) && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            left: centerX,
+                            top: 0,
+                            bottom: 0,
+                            width: 1,
+                            background: "#4f46e5",
+                            opacity: 0.7,
+                            pointerEvents: "none",
+                          }}
+                        />
+                      )}
+
+                      {(snapInfo.angle === 45 ||
+                        snapInfo.angle === 135 ||
+                        snapInfo.angle === 225 ||
+                        snapInfo.angle === 315) && (
+                          <svg
+                            style={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              width: "100%",
+                              height: "100%",
+                              pointerEvents: "none",
+                              overflow: "visible",
+                            }}
+                          >
+                            <line
+                              x1={centerX - 2000}
+                              y1={
+                                centerY +
+                                (snapInfo.angle === 45 || snapInfo.angle === 225
+                                  ? 2000
+                                  : -2000)
+                              }
+                              x2={centerX + 2000}
+                              y2={
+                                centerY +
+                                (snapInfo.angle === 45 || snapInfo.angle === 225
+                                  ? -2000
+                                  : 2000)
+                              }
+                              stroke="#4f46e5"
+                              strokeWidth="1"
+                              opacity="0.7"
+                            />
+                          </svg>
+                        )}
+
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: centerY - 32,
+                          left: centerX,
+                          transform: "translateX(-50%)",
+                          background: snapInfo.snapped
+                            ? "#4f46e5"
+                            : "rgba(0,0,0,0.65)",
+                          color: "white",
+                          fontSize: 12,
+                          padding: "2px 8px",
+                          borderRadius: 4,
+                          pointerEvents: "none",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {snapInfo.angle}°
+                      </div>
+                    </>
+                  );
+                })()}
+</div>
           </div>
         </div>
       </div>

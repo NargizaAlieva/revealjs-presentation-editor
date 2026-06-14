@@ -83,7 +83,6 @@ export default function EditorPage() {
     copyElement,
     pasteElement,
     cutElement,
-    applyLayout,
   } = useEditorActions(
     eventBus,
     selectedSlideIndex,
@@ -333,7 +332,6 @@ export default function EditorPage() {
           onCopy={handleCopy}
           onPaste={handlePaste}
           canPaste={!!clipboard}
-          onApplyLayout={applyLayout}
         />
       </div>
 
