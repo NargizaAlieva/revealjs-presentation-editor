@@ -1,0 +1,84 @@
+.cp-popup {
+    position: fixed;
+    z-index: 99999;
+    background: #ffffff;
+    border: 1px solid #b0b0b0;
+    border-radius: 4px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.22);
+    padding: 14px 16px 12px;
+    width: 280px;
+    user-select: none;
+}
+
+.cp-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #222;
+    margin-bottom: 7px;
+    letter-spacing: 0.02em;
+}
+
+.cp-label--std {
+    margin-top: 14px;
+}
+
+.cp-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 22px);
+    gap: 3px;
+}
+
+.cp-row {
+    display: flex;
+    gap: 3px;
+}
+
+.cp-swatch {
+    width: 22px;
+    height: 22px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 1px;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+    transition: transform 0.1s, border-color 0.1s;
+}
+
+.cp-swatch:hover {
+    border-color: #333;
+    transform: scale(1.2);
+    z-index: 1;
+    position: relative;
+}
+
+.cp-swatch--active {
+    border: 2px solid #1a56db !important;
+    outline: 1px solid #fff;
+    outline-offset: -3px;
+}
+
+.cp-divider {
+    height: 1px;
+    background: #e0e0e0;
+    margin: 10px 0 8px;
+}
+
+.cp-more {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    color: #222;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 3px;
+    transition: background 0.1s;
+}
+
+.cp-more:hover {
+    background: #f0f0f0;
+}
+
+.cp-more-icon {
+    font-size: 14px;
+}

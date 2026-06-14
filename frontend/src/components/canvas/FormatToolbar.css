@@ -92,11 +92,21 @@
   color: #4338ca;
 }
 
-.bold { font-weight: bold; }
-.italic { font-style: italic; }
-.underline { text-decoration: underline; }
+.bold {
+  font-weight: bold;
+}
 
-.align-btn { font-size: 11px; }
+.italic {
+  font-style: italic;
+}
+
+.underline {
+  text-decoration: underline;
+}
+
+.align-btn {
+  font-size: 11px;
+}
 
 .clear-btn {
   color: #9ca3af;
@@ -169,7 +179,45 @@
 }
 
 @keyframes painter-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
-  70%  { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-  100% { box-shadow: none; }
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+  }
+
+  70% {
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+
+  100% {
+    box-shadow: none;
+  }
+}
+
+.ft-color-container {
+  position: relative;
+  display: inline-flex;
+}
+
+.ft-color-arrow {
+  font-size: 10px;
+  color: #555;
+  line-height: 1;
+}
+
+/* Переопредели color-btn для кнопки с палитрой */
+.ft-color-container .color-btn {
+  width: auto;
+  padding: 0 4px;
+  gap: 2px;
+  flex-direction: row;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.ft-color-container .color-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
 }

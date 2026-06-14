@@ -1,7 +1,8 @@
 import { useState } from "react";
+import ColorPicker from "./ColorPicker";
 import "./FormatToolbar.css";
 
-let formattingClipboard = null; 
+let formattingClipboard = null;
 
 const DEFAULT_FONTS = [
   "Arial",
@@ -25,6 +26,10 @@ export default function FormatToolbar({
   presentation,
 }) {
   const [justCopied, setJustCopied] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [colorPickerPos, setColorPickerPos] = useState({ top: 0, left: 0 });
+  const [showHighlightPicker, setShowHighlightPicker] = useState(false);
+  const [highlightPickerPos, setHighlightPickerPos] = useState({ top: 0, left: 0 });
   const fmt = (updates) => onFormatTextElement(elementId, updates);
 
   const presentationFonts = (presentation?.slideset?.fonts ?? [])
@@ -172,40 +177,58 @@ export default function FormatToolbar({
 
         <div className="separator" />
 
-        <label className="color-btn" title="Text color">
-          <span
-            className="color-icon"
-            style={{ borderBottom: `3px solid ${currentColor}` }}
-          >
-            A
-          </span>
-          <input
-            type="color"
-            value={currentColor.length === 7 ? currentColor : "#111111"}
-            onChange={(e) => fmt({ color: e.target.value })}
-          />
-        </label>
-
-        <label className="color-btn" title="Highlight color">
-          <span
-            className="color-icon highlight-icon"
-            style={{
-              background:
-                currentHighlight === "transparent"
-                  ? "#ffff00"
-                  : currentHighlight,
+        <div className="ft-color-container">
+          <button
+            type="button"
+            className="color-btn"
+            title="Text color"
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              setColorPickerPos({ top: rect.bottom + 4, left: rect.left });
+              setShowColorPicker((v) => !v);
+              setShowHighlightPicker(false);
             }}
           >
-            A
-          </span>
-          <input
-            type="color"
-            value={
-              currentHighlight === "transparent" ? "#ffff00" : currentHighlight
-            }
-            onChange={(e) => fmt({ highlight: e.target.value })}
-          />
-        </label>
+            <span className="color-icon" style={{ borderBottom: `3px solid ${currentColor}` }}>A</span>
+            <span className="ft-color-arrow">▾</span>
+          </button>
+          {showColorPicker && (
+            <ColorPicker
+              color={currentColor}
+              onChange={(c) => fmt({ color: c })}
+              onClose={() => setShowColorPicker(false)}
+              style={{ position: "absolute", top: "100%", left: 0, zIndex: 99999 }}
+            />
+          )}
+        </div>
+
+        <div className="ft-color-container">
+          <button
+            type="button"
+            className="color-btn"
+            title="Highlight color"
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              setHighlightPickerPos({ top: rect.bottom + 4, left: rect.left });
+              setShowHighlightPicker((v) => !v);
+              setShowColorPicker(false);
+            }}
+          >
+            <span
+              className="color-icon highlight-icon"
+              style={{ background: currentHighlight === "transparent" ? "#ffff00" : currentHighlight }}
+            >A</span>
+            <span className="ft-color-arrow">▾</span>
+          </button>
+          {showHighlightPicker && (
+            <ColorPicker
+              color={currentHighlight === "transparent" ? "#ffff00" : currentHighlight}
+              onChange={(c) => fmt({ highlight: c })}
+              onClose={() => setShowHighlightPicker(false)}
+              style={{ position: "absolute", top: "100%", left: 0, zIndex: 99999 }}
+            />
+          )}
+        </div>
 
         <button
           type="button"
