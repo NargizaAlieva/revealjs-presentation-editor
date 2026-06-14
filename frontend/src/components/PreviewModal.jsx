@@ -3,6 +3,7 @@ import { useMediaSrc } from "../hooks/useMediaSrc";
 import "reveal.js/reveal.css";
 import "reveal.js/theme/white.css";
 import "./PreviewModal.css";
+import SlideDecorations from "./canvas/SlideDecorations";
 import {
   initRevealDeck,
   buildTextElementStyle,
@@ -121,9 +122,18 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
                 <section
                   key={`slide-${slideIndex}`}
                   data-transition={getSlideTransition(slide)}
-                  style={{ background: slide.contents?.background ?? "white" }}
-                >
+                  style={{
+                    background:
+                      !slide?.contents?.background || slide.contents.background === "#FFFFFFFF"
+                        ? "var(--bg-light, white)"
+                        : slide.contents.background,
+                  }}                >
                   <div style={buildSlideContainerStyle(width, height)}>
+                    <SlideDecorations
+                      presentation={presentation}
+                      width={width}
+                      height={height}
+                    />
                     {textElements.map((textElement, index) => {
                       const animation = animationMap.get(textElement.id);
                       const baseStyle = buildTextElementStyle(textElement, index);

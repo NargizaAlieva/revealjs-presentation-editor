@@ -607,7 +607,7 @@ export const editorReducer = (state, event) => {
     case EditorEventType.MASTER.UPDATE_THEME:
       return withHistory(state, {
         ...state,
-        presentation: updateMasterTheme(state.presentation, event.payload.colorTheme),
+        presentation: updateMasterTheme(state.presentation, event.payload.colorTheme, event.payload.decorations),
         lastEvent: event,
         lastUpdated: Date.now(),
       });

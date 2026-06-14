@@ -254,9 +254,9 @@ export function useEditorActions(
   );
 
   const updateMasterTheme = useCallback(
-    (colorTheme) =>
+    (colorTheme, decorations) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.MASTER.UPDATE_THEME, { colorTheme }),
+        createEditorEvent(EditorEventType.MASTER.UPDATE_THEME, { colorTheme, decorations }),
       ),
     [eventBus],
   );

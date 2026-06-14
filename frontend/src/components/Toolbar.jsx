@@ -6,6 +6,7 @@ import InsertTab from "./toolbar/InsertTab";
 import TransitionsTab from "./toolbar/TransitionsTab";
 import AnimationsTab from "./toolbar/AnimationsTab";
 import SlideShowTab from "./toolbar/SlideShowTab";
+import DesignTab from "./toolbar/DesignTab";
 
 const TABS = [
   "File",
@@ -66,6 +67,9 @@ export default function Toolbar({
   onCopy,
   onPaste,
   canPaste,
+  onApplyTheme,
+  onApplyFont,
+  onUpdateDimensions,
 }) {
   const [localActiveTab, setLocalActiveTab] = useState("Home");
   const currentTab = activeTab ?? localActiveTab;
@@ -132,10 +136,12 @@ export default function Toolbar({
         )}
 
         {currentTab === "Design" && (
-          <div className="toolbar-placeholder">
-            Use the Presentation Settings panel on the right to change aspect
-            ratio and color theme.
-          </div>
+          <DesignTab
+            presentation={presentation}
+            onApplyTheme={onApplyTheme}
+            onApplyFont={onApplyFont}
+            onUpdateDimensions={onUpdateDimensions}
+          />
         )}
 
         {currentTab === "Transitions" && (

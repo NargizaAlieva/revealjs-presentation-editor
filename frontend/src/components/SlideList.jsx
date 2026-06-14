@@ -9,6 +9,7 @@ export default function SlideList({
   onReorderSlide,
   slideWidth,
   slideHeight,
+  presentation,
 }) {
   const listRef = useRef(null);
   const itemRefs = useRef([]);
@@ -17,7 +18,6 @@ export default function SlideList({
   const lastScrollTime = useRef(0);
   const accumulated = useRef(0);
 
-  // Скролл колёсиком — плавно меняет выбранный слайд
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
@@ -47,13 +47,11 @@ export default function SlideList({
     return () => el.removeEventListener("wheel", handleWheel);
   }, [slides, selectedSlideId, onSelectSlide]);
 
-  // Автоскролл к активной карточке при смене слайда
   useEffect(() => {
     const el = itemRefs.current[selectedSlideId];
     el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [selectedSlideId]);
 
-  // Drag & Drop
   const handleDragStart = (e, index) => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = "move";
@@ -119,6 +117,7 @@ export default function SlideList({
                 slide={slide}
                 slideWidth={slideWidth}
                 slideHeight={slideHeight}
+                presentation={presentation}
               />
             </div>
           </div>

@@ -91,6 +91,9 @@ export default function EditorPage() {
     applyTransitionToAll,
     applyLayout,
     resetLayout,
+    updateMasterTheme,
+    updateMasterFormatting,
+    updateMasterDimensions,
     addAnimation,
     updateAnimation,
     deleteAnimation,
@@ -296,6 +299,9 @@ export default function EditorPage() {
           onCopy={handleCopy}
           onPaste={handlePaste}
           canPaste={!!state.clipboard}
+          onApplyTheme={updateMasterTheme}
+          onApplyFont={updateMasterFormatting}
+          onUpdateDimensions={updateMasterDimensions}
         />
       </div>
 
@@ -307,6 +313,7 @@ export default function EditorPage() {
           onReorderSlide={reorderSlide}
           slideWidth={slideWidth}
           slideHeight={slideHeight}
+          presentation={presentation}
         />
 
         <div className="editor-main">

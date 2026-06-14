@@ -1,4 +1,6 @@
 import { useMediaSrc } from "../../hooks/useMediaSrc";
+import { buildColorThemeStyle } from "../../core/render/revealRenderer";
+import SlideDecorations from "../canvas/SlideDecorations";
 import "./SlideThumbnail.css";
 
 const THUMB_W = 180;
@@ -32,17 +34,18 @@ export default function SlideThumbnail({
   slide,
   slideWidth = 1280,
   slideHeight = 720,
+  presentation,
 }) {
   const textElements = slide?.contents?.text ?? [];
   const mediaElements = slide?.contents?.media ?? [];
   const scale = THUMB_W / slideWidth;
+  const colorThemeStyle = buildColorThemeStyle(presentation);
 
   return (
     <div
       className="slide-thumbnail"
-      style={{ width: THUMB_W, height: THUMB_H }}
+      style={{ width: THUMB_W, height: THUMB_H, ...colorThemeStyle }}
     >
-      {/* Inner div at full slide size, scaled down — matches EditorCanvas exactly */}
       <div
         className="slide-thumbnail-inner"
         style={{
@@ -50,8 +53,20 @@ export default function SlideThumbnail({
           height: slideHeight,
           transform: `scale(${scale})`,
           transformOrigin: "top left",
+          background:
+            !slide?.contents?.background || slide.contents.background === "#FFFFFFFF"
+              ? "var(--bg-light, white)"
+              : slide.contents.background,
+          position: "relative",
+          overflow: "hidden",
         }}
       >
+        <SlideDecorations
+          presentation={presentation}
+          width={slideWidth}
+          height={slideHeight}
+        />
+
         {textElements.map((textElement) => {
           const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
           return (
@@ -67,11 +82,12 @@ export default function SlideThumbnail({
                 fontWeight: formatting.weight ?? "normal",
                 fontStyle: formatting.italics ? "italic" : "normal",
                 textAlign: formatting.align ?? "left",
-                color: formatting.color ?? "#111",
+                color: formatting.color ?? "var(--text-dark, #111)",
                 lineHeight: formatting["line-spacing"] ?? 1.2,
                 overflow: "hidden",
                 boxSizing: "border-box",
                 padding: "8px",
+                zIndex: 1,
               }}
             >
               {getElementText(textElement)}

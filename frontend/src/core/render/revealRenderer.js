@@ -1,7 +1,7 @@
 import Reveal from "reveal.js";
 import { getSlideSize, getTextElements, getMediaElements } from "../../utils/slidesetRenderUtils";
 
-export function buildTextElementStyle(textElement, index) {
+export function buildTextElementStyle(textElement, index, masterFont) {
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
   const rotation = textElement.rotation ?? 0;
 
@@ -18,6 +18,7 @@ export function buildTextElementStyle(textElement, index) {
     fontSize: formatting.size ?? (index === 0 ? "44px" : "28px"),
     fontWeight: formatting.weight ?? (index === 0 ? "bold" : "normal"),
     fontStyle: formatting.italics ? "italic" : "normal",
+    fontFamily: formatting.font ?? masterFont ?? "inherit",
     color: formatting.color ?? "var(--text-dark, black)",
     textAlign: formatting.align ?? "left",
     lineHeight: formatting["line-spacing"] ?? "1.4",

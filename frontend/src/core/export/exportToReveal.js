@@ -113,7 +113,7 @@ function applyFragment(innerHtml, wrapperStyle, animation) {
   return `<div class="${classes}" ${dataAttrs} style="${wrapperStyle}">${innerHtml}</div>`;
 }
 
-function buildTextElementStyle(textElement, index) {
+function buildTextElementStyle(textElement, index, masterFont) {
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
   const rotation = textElement.rotation ?? 0;
   return [
@@ -129,6 +129,7 @@ function buildTextElementStyle(textElement, index) {
     `font-size: ${formatting.size ?? (index === 0 ? "44px" : "28px")}`,
     `font-weight: ${formatting.weight ?? (index === 0 ? "bold" : "normal")}`,
     `font-style: ${formatting.italics ? "italic" : "normal"}`,
+    `font-family: ${formatting.font ?? masterFont ?? "inherit"}`,
     `color: ${formatting.color ?? "var(--text-dark, black)"}`,
     `text-align: ${formatting.align ?? "left"}`,
     `line-height: ${formatting["line-spacing"] ?? "1.4"}`,
@@ -204,7 +205,7 @@ function buildTextElementContent(textElement, animation) {
     .join("");
 }
 
-function buildSlideSection(slide, width, height, getSrc) {
+function buildSlideSection(slide, width, height, getSrc, masterFont) {
   const textElements = getTextElements(slide);
   const mediaElements = getMediaElements(slide);
   const transition = slide.contents?.transition ?? "slide";
@@ -217,7 +218,7 @@ function buildSlideSection(slide, width, height, getSrc) {
     .map((textElement, index) => {
       const animation = animationMap.get(textElement.id);
       const sequenceMode = animation?.["effect-options"]?.sequence ?? "as-one-object";
-      const style = buildTextElementStyle(textElement, index);
+      const style = buildTextElementStyle(textElement, index, masterFont);
       const content = buildTextElementContent(textElement, animation);
       if (!animation || sequenceMode === "as-one-object") {
         return applyFragment(content, style, animation);
@@ -265,10 +266,31 @@ function buildSlideSection(slide, width, height, getSrc) {
       style="background: ${background};"
     >
       <div style="position: relative; width: ${width}px; height: ${height}px; overflow: hidden;">
+        ${buildDecorationsHtml(presentation, width, height)}
         ${textElementsHtml}
         ${mediaElementsHtml}
       </div>
     </section>`;
+}
+
+function buildDecorationsHtml(presentation, width, height) {
+  const shapes = presentation?.slideset?.master?.decorations?.shapes;
+  if (!shapes?.length) return "";
+
+  const shapeSvgs = shapes.map((s) => {
+    const base = `fill="${s.fill ?? "none"}" stroke="${s.stroke ?? "none"}" stroke-width="${s.strokeWidth ?? 0}" opacity="${s.opacity ?? 1}"`;
+    switch (s.type) {
+      case "rect": return `<rect ${base} x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" rx="${s.rx ?? 0}" ry="${s.ry ?? 0}"/>`;
+      case "circle": return `<circle ${base} cx="${s.cx}" cy="${s.cy}" r="${s.r}"/>`;
+      case "ellipse": return `<ellipse ${base} cx="${s.cx}" cy="${s.cy}" rx="${s.rx}" ry="${s.ry}"/>`;
+      case "polygon": return `<polygon ${base} points="${s.points}"/>`;
+      case "path": return `<path ${base} d="${s.d}"/>`;
+      case "line": return `<line fill="none" stroke="${s.stroke ?? s.fill ?? "none"}" stroke-width="${s.strokeWidth ?? 2}" opacity="${s.opacity ?? 1}" x1="${s.x1}" y1="${s.y1}" x2="${s.x2}" y2="${s.y2}"/>`;
+      default: return "";
+    }
+  }).join("\n        ");
+
+  return `<svg style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden;z-index:0;" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">${shapeSvgs}</svg>`;
 }
 
 function buildHtmlContent(title, colorThemeCss, width, height, slideSections) {
@@ -324,8 +346,10 @@ export async function exportToReveal(presentation) {
   const resolvedMap = await resolveMediaLinks(slides);
   const getSrc = (fileLink) => resolvedMap.get(fileLink) ?? fileLink;
 
+  const masterFont = presentation?.slideset?.master?.formatting?.font;
+
   const slideSections = slides
-    .map((slide) => buildSlideSection(slide, width, height, getSrc))
+    .map((slide) => buildSlideSection(slide, width, height, getSrc, masterFont))
     .join("\n");
 
   const htmlContent = buildHtmlContent(title, colorThemeCss, width, height, slideSections);
@@ -343,8 +367,10 @@ export async function exportToRevealZip(presentation) {
   const resolvedMap = await resolveMediaForZip(slides);
   const getSrc = (fileLink) => resolvedMap.get(fileLink)?.src ?? fileLink;
 
+  const masterFont = presentation?.slideset?.master?.formatting?.font;
+
   const slideSections = slides
-    .map((slide) => buildSlideSection(slide, width, height, getSrc))
+    .map((slide) => buildSlideSection(slide, width, height, getSrc, masterFont))
     .join("\n");
 
   const htmlContent = buildHtmlContent(title, colorThemeCss, width, height, slideSections);

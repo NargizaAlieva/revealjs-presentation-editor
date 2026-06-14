@@ -1,10 +1,11 @@
-export const updateMasterTheme = (presentation, colorTheme) => ({
+export const updateMasterTheme = (presentation, colorTheme, decorations) => ({
   ...presentation,
   slideset: {
     ...presentation.slideset,
     master: {
       ...presentation.slideset.master,
       "color-theme": colorTheme,
+      ...(decorations !== undefined ? { decorations } : {}),
     },
   },
 });
@@ -27,19 +28,43 @@ export const updateMasterDimensions = (
   },
 });
 
-export const updateMasterFormatting = (presentation, formatting) => ({
-  ...presentation,
-  slideset: {
-    ...presentation.slideset,
-    master: {
-      ...presentation.slideset.master,
-      formatting: {
-        ...(presentation.slideset.master?.formatting ?? {}),
-        ...formatting,
+export const updateMasterFormatting = (presentation, formatting) => {
+  // When font changes, propagate it to every text element's paragraph formatting
+  const slides = presentation?.slideset?.slides ?? [];
+  const updatedSlides = formatting.font
+    ? slides.map((slide) => ({
+      ...slide,
+      contents: {
+        ...slide.contents,
+        text: (slide.contents?.text ?? []).map((textEl) => ({
+          ...textEl,
+          paragraphs: (textEl.paragraphs ?? []).map((para) => ({
+            ...para,
+            formatting: {
+              ...(para.formatting ?? {}),
+              font: formatting.font,
+            },
+          })),
+        })),
       },
+    }))
+    : slides;
+
+  return {
+    ...presentation,
+    slideset: {
+      ...presentation.slideset,
+      master: {
+        ...presentation.slideset.master,
+        formatting: {
+          ...(presentation.slideset.master?.formatting ?? {}),
+          ...formatting,
+        },
+      },
+      slides: updatedSlides,
     },
-  },
-});
+  };
+};
 
 export const addMasterElement = (presentation, type, element) => ({
   ...presentation,

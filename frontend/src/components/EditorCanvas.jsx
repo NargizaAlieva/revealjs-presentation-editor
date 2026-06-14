@@ -5,6 +5,7 @@ import { buildColorThemeStyle } from "../core/render/revealRenderer";
 import { useCanvasInteractions } from "../hooks/useCanvasInteractions";
 import TextElement from "./canvas/TextElement";
 import MediaElement from "./canvas/MediaElement";
+import SlideDecorations from "./canvas/SlideDecorations";
 
 export default function EditorCanvas({
   slide,
@@ -325,7 +326,10 @@ export default function EditorCanvas({
                 style={{
                   width: `${width}px`,
                   height: `${height}px`,
-                  background: "var(--bg-light, white)",
+                  background:
+                    !slide?.contents?.background || slide.contents.background === "#FFFFFFFF"
+                      ? "var(--bg-light, white)"
+                      : slide.contents.background,
                   color: "var(--text-dark, black)",
                 }}
                 onMouseMove={handleMouseMove}
@@ -337,6 +341,12 @@ export default function EditorCanvas({
                   }
                 }}
               >
+                <SlideDecorations
+                  presentation={presentation}
+                  width={width}
+                  height={height}
+                />
+
                 {textElements.map((textElement) => {
                   const playClass =
                     playingElementId === textElement.id
