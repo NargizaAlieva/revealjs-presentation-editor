@@ -153,6 +153,31 @@ export function useEditorActions(
     [eventBus],
   );
 
+  const updateTextElementParagraphs = useCallback(
+    (elementId, paragraphs) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.TEXT.UPDATE_PARAGRAPHS, {
+          elementId,
+          paragraphs,
+        }),
+      ),
+    [eventBus],
+  );
+
+  const updateTextRangeFormatting = useCallback(
+    (elementId, paragraphIdx, rangeStart, rangeEnd, formatting) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.TEXT.UPDATE_RANGE_FORMATTING, {
+          elementId,
+          paragraphIdx,
+          rangeStart,
+          rangeEnd,
+          formatting,
+        }),
+      ),
+    [eventBus],
+  );
+
   const deleteElement = useCallback(
     (elementId) =>
       eventBus.dispatch(
@@ -427,6 +452,8 @@ export function useEditorActions(
     addTextElement,
     updateTextElementContent,
     updateTextElementFormatting,
+    updateTextElementParagraphs,
+    updateTextRangeFormatting,
     updateElementPosition,
     updateElementSize,
     updateElement,
