@@ -59,11 +59,15 @@ export default function HomeTab({
   canMoveDown,
   onToggleSlideHidden,
   isSlideHidden,
-  // Font / Paragraph props
   currentFormatting = {},
   onFormatChange,
   isTextSelected = false,
   presentation,
+  onCut,
+  onCopy,
+  onPaste,
+  hasSelection = false,
+  canPaste = false,
 }) {
   const [showLayouts, setShowLayouts] = useState(false);
 
@@ -83,7 +87,6 @@ export default function HomeTab({
   const fonts =
     presentationFonts.length > 0 ? presentationFonts : DEFAULT_FONTS;
 
-  // Derive current values from formatting
   const currentFont = currentFormatting.font ?? fonts[0] ?? "Arial";
   const currentSize = parseInt(currentFormatting.size ?? "28", 10);
   const isBold = currentFormatting.weight === "bold";
@@ -95,16 +98,31 @@ export default function HomeTab({
   return (
     <>
       <div className="ribbon-group clipboard-group">
-        <button className="toolbar-item large" disabled>
+        <button
+          className="toolbar-item large"
+          disabled={!canPaste}
+          onClick={onPaste}
+          title="Paste (Ctrl+V)"
+        >
           <MdContentPaste />
           <span>Paste</span>
         </button>
 
         <div className="mini-stack">
-          <button className="mini-command" disabled>
+          <button
+            className="mini-command"
+            disabled={!hasSelection}
+            onClick={onCut}
+            title="Cut (Ctrl+X)"
+          >
             <MdContentCut />
           </button>
-          <button className="mini-command" disabled>
+          <button
+            className="mini-command"
+            disabled={!hasSelection}
+            onClick={onCopy}
+            title="Copy (Ctrl+C)"
+          >
             <MdContentCopy />
           </button>
         </div>

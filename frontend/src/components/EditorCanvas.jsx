@@ -36,12 +36,14 @@ export default function EditorCanvas({
   onRedo,
   onCopy,
   onPaste,
+  onCut,
 }) {
   const [playingElementId, setPlayingElementId] = useState(null);
   const [playingEffect, setPlayingEffect] = useState(null);
   const [playingTransition, setPlayingTransition] = useState(null);
 
   const workspaceRef = useRef(null);
+  const containerRef = useRef(null);
 
   const { width, height } = getSlideSize(presentation);
   const colorThemeStyle = buildColorThemeStyle(presentation);
@@ -203,6 +205,15 @@ export default function EditorCanvas({
         return;
       }
 
+      const isCut = (event.ctrlKey || event.metaKey) && key === "x";
+      if (isCut && !isEditableTarget && selectedElementId) {
+        const element =
+          textElements.find((el) => el.id === selectedElementId) ||
+          mediaElements.find((el) => el.id === selectedElementId);
+        if (element) onCut?.(element);
+        return;
+      }
+
       if (event.key !== "Delete" && event.key !== "Backspace") return;
       if (isEditableTarget) return;
       if (!selectedElementId) return;
@@ -226,10 +237,13 @@ export default function EditorCanvas({
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
+    const container = containerRef.current;
+    if (!container) return;
+
+    container.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      container.removeEventListener("keydown", handleKeyDown);
     };
   }, [
     selectedElementId,
@@ -242,6 +256,7 @@ export default function EditorCanvas({
     onRedo,
     onCopy,
     onPaste,
+    onCut,
   ]);
 
   useEffect(() => {
@@ -266,7 +281,12 @@ export default function EditorCanvas({
 
   if (!slide) {
     return (
-      <main className="canvas-wrapper" style={colorThemeStyle}>
+      <main
+        className="canvas-wrapper"
+        style={colorThemeStyle}
+        ref={containerRef}
+        tabIndex={-1}
+      >
         <div className="slide-workspace">
           <section className="editor-slide">No slide selected</section>
         </div>
@@ -279,7 +299,12 @@ export default function EditorCanvas({
     : "";
 
   return (
-    <main className="canvas-wrapper" style={colorThemeStyle}>
+    <main
+      className="canvas-wrapper"
+      style={colorThemeStyle}
+      ref={containerRef}
+      tabIndex={-1}
+    >
       <div className="slide-workspace" ref={workspaceRef}>
         <div className="slide-workspace-inner">
           <div
@@ -308,6 +333,7 @@ export default function EditorCanvas({
               onMouseUp={stopInteraction}
               onMouseLeave={stopInteraction}
               onClick={(event) => {
+                containerRef.current?.focus({ preventScroll: true });
                 if (event.target === event.currentTarget) {
                   onSelectElement?.(null);
                 }

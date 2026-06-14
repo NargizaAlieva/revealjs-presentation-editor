@@ -59,7 +59,7 @@ export const EditorEventType = {
 
     COPY: "ELEMENT.COPY",
     PASTE: "ELEMENT.PASTE",
-    PASTE: "ELEMENT.CUT",
+    CUT: "ELEMENT.CUT",
   },
 
   MEDIA: {
@@ -75,12 +75,12 @@ export const EditorEventType = {
   },
 
   HISTORY: {
-  BEGIN: "HISTORY.BEGIN",
-  COMMIT: "HISTORY.COMMIT",
-  CANCEL: "HISTORY.CANCEL",
-  UNDO: "HISTORY.UNDO",
-  REDO: "HISTORY.REDO",
-}
+    BEGIN: "HISTORY.BEGIN",
+    COMMIT: "HISTORY.COMMIT",
+    CANCEL: "HISTORY.CANCEL",
+    UNDO: "HISTORY.UNDO",
+    REDO: "HISTORY.REDO",
+  },
 };
 
 export const createEditorEvent = (type, payload = {}) => ({

@@ -59,6 +59,10 @@ export default function Toolbar({
   presentation,
   onNewPresentation,
   onOpenPresentation,
+  onCut,
+  onCopy,
+  onPaste,
+  canPaste,
 }) {
   const [localActiveTab, setLocalActiveTab] = useState("Home");
   const currentTab = activeTab ?? localActiveTab;
@@ -105,6 +109,11 @@ export default function Toolbar({
             onFormatChange={onFormatChange}
             isTextSelected={isTextSelected}
             presentation={presentation}
+            onCut={onCut}
+            onCopy={onCopy}
+            onPaste={onPaste}
+            hasSelection={!!selectedElement}
+            canPaste={canPaste}
           />
         )}
 

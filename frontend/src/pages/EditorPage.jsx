@@ -33,6 +33,7 @@ export default function EditorPage() {
   const [previewEffect, setPreviewEffect] = useState(null);
   const [zoom, setZoom] = useState(70);
   const [showNotes, setShowNotes] = useState(true);
+  const [clipboard, setClipboard] = useState(null);
 
   const { state, eventBus, isLoading } = useEditorState(presentationId);
   const {
@@ -80,6 +81,8 @@ export default function EditorPage() {
     redo,
     copyElement,
     pasteElement,
+    cutElement,
+    applyLayout,
   } = useEditorActions(
     eventBus,
     selectedSlideIndex,
@@ -140,6 +143,41 @@ export default function EditorPage() {
   const zoomOut = () => setZoom((z) => Math.max(25, z - 10));
   const handleCanvasZoom = (delta) =>
     setZoom((z) => Math.min(200, Math.max(25, z + delta)));
+
+  // Находит выбранный элемент по selectedElementId.
+  // Нужен тулбарным хендлерам, где элемент не передаётся аргументом.
+  const getSelectedElement = () => {
+    if (!selectedElementId) return null;
+    return (
+      (selectedSlide?.contents?.text ?? []).find(
+        (e) => e.id === selectedElementId,
+      ) ||
+      (selectedSlide?.contents?.media ?? []).find(
+        (e) => e.id === selectedElementId,
+      ) ||
+      null
+    );
+  };
+
+  // Принимает либо элемент (горячие клавиши EditorCanvas),
+  // либо click-event / ничего (кнопки тулбара) — тогда ищет сам.
+  const handleCopy = (elementOrEvent) => {
+    const element = elementOrEvent?.id ? elementOrEvent : getSelectedElement();
+    if (!element) return;
+    copyElement(element);
+    setClipboard(element);
+  };
+
+  const handleCut = (elementOrEvent) => {
+    const element = elementOrEvent?.id ? elementOrEvent : getSelectedElement();
+    if (!element) return;
+    cutElement(element);
+    setClipboard(element);
+  };
+
+  const handlePaste = () => {
+    pasteElement();
+  };
 
   const selectedElement = (() => {
     if (!selectedElementId) return null;
@@ -285,10 +323,15 @@ export default function EditorPage() {
           onAnimationPreview={triggerAnimationPreview}
           onTransitionPreview={triggerTransitionPreview}
           onPreviewEffect={setPreviewEffect}
+          onApplyLayout={applyLayout}
           currentFormatting={currentFormatting}
           onFormatChange={handleFormatChange}
           isTextSelected={!!selectedTextEl}
           presentation={presentation}
+          onCut={handleCut}
+          onCopy={handleCopy}
+          onPaste={handlePaste}
+          canPaste={!!clipboard}
         />
       </div>
 
@@ -332,8 +375,9 @@ export default function EditorPage() {
               showAnimationBadges={activeTab === "Animations"}
               onUndo={undo}
               onRedo={redo}
-              onCopy={copyElement}
-              onPaste={pasteElement}
+              onCopy={handleCopy}
+              onPaste={handlePaste}
+              onCut={handleCut}
             />
           )}
         </div>
