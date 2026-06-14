@@ -1,17 +1,22 @@
 import { createDefaultPresentation } from "../model/presentation";
 import { EditorEventType } from "../events/editorEvents";
 import { deserializePresentation } from "../persistence/serializationOperations";
+
 import {
   moveElement,
   resizeElement,
   updateElement,
 } from "../operations/elementOperations";
+
 import {
   addTextElement,
   updateTextElement,
   updateTextFormatting,
+  updateTextElementParagraphs,
+  updateTextRangeFormatting,
   deleteTextElement,
 } from "../operations/textOperations";
+
 import {
   addSlide,
   deleteSlide,
@@ -479,6 +484,35 @@ export const editorReducer = (state, event) => {
           event.payload.formatting,
         ),
         selectedElementId: event.payload.textElementId,
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+
+    case EditorEventType.TEXT.UPDATE_PARAGRAPHS:
+      return {
+        ...state,
+        presentation: updateTextElementParagraphs(
+          state.presentation,
+          state.selectedSlideIndex,
+          event.payload.elementId,
+          event.payload.paragraphs,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+
+    case EditorEventType.TEXT.UPDATE_RANGE_FORMATTING:
+      return withHistory(state, {
+        ...state,
+        presentation: updateTextRangeFormatting(
+          state.presentation,
+          state.selectedSlideIndex,
+          event.payload.elementId,
+          event.payload.paragraphIdx,
+          event.payload.rangeStart,
+          event.payload.rangeEnd,
+          event.payload.formatting,
+        ),
         lastEvent: event,
         lastUpdated: Date.now(),
       });
