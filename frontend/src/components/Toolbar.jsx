@@ -123,6 +123,7 @@ export default function Toolbar({
           <InsertTab
             onImageUpload={onImageUpload}
             onVideoUpload={onVideoUpload}
+            onAddSlide={onAddSlide}
           />
         )}
 
