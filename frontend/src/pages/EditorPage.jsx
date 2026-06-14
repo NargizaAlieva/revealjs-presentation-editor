@@ -12,6 +12,7 @@ import PreviewModal from "../components/PreviewModal";
 import StatusBar from "../components/StatusBar";
 import { getSlideSize } from "../utils/slidesetRenderUtils";
 import { usePresentationFonts } from "../hooks/usePresentationFonts";
+import { useVideoUpload } from "../hooks/useVideoUpload";
 import FileMenu from "../components/FileMenu";
 import {
   exportToReveal,
@@ -85,6 +86,8 @@ export default function EditorPage() {
     slides.length,
     presentationId,
   );
+
+  const { handleVideoUpload } = useVideoUpload(addMedia);
 
   const exportPresentation = async () => exportToReveal(presentation);
 
@@ -264,6 +267,7 @@ export default function EditorPage() {
           canMoveDown={selectedSlideIndex < slides.length - 1}
           onResetPresentation={resetPresentation}
           onImageUpload={handleImageUpload}
+          onVideoUpload={handleVideoUpload}
           onToggleSlideHidden={() => toggleSlideHidden(selectedSlideIndex)}
           isSlideHidden={selectedSlide?.hidden}
           onTransitionChange={(transition) => updateSlideTransition(transition)}

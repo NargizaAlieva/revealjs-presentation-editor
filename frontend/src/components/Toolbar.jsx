@@ -33,6 +33,7 @@ export default function Toolbar({
   onExportPresentation,
   onResetPresentation,
   onImageUpload,
+  onVideoUpload,
   onToggleSlideHidden,
   isSlideHidden,
 
@@ -107,7 +108,12 @@ export default function Toolbar({
           />
         )}
 
-        {currentTab === "Insert" && <InsertTab onImageUpload={onImageUpload} />}
+        {currentTab === "Insert" && (
+          <InsertTab
+            onImageUpload={onImageUpload}
+            onVideoUpload={onVideoUpload}
+          />
+        )}
 
         {currentTab === "Design" && (
           <div className="toolbar-placeholder">
