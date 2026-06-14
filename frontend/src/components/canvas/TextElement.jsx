@@ -92,10 +92,15 @@ export default function TextElement({
         contentEditable
         suppressContentEditableWarning
         className="text-editable"
+        data-placeholder="Click to edit text"
         onFocus={() => onBeginHistory?.()}
-        onInput={(event) =>
+        onInput={(event) => {
+          const el = event.currentTarget;
+          if (el.innerHTML === "<br>" || el.innerHTML === "<br/>") {
+            el.innerHTML = "";
+          }
           onChangeTextElement(textElement.id, event.currentTarget.innerText)
-        }
+        }}
         onBlur={() => onCommitHistory?.()}
         style={{
           fontSize: formatting.size ?? "24px",
