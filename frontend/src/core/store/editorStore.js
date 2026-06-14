@@ -18,6 +18,9 @@ import {
   updateMasterTheme,
   updateMasterDimensions,
   updateMasterFormatting,
+  addMasterElement,      
+  updateMasterElement,  
+  deleteMasterElement, 
 } from "../operations/masterOperations";
 import { addAnimation, updateAnimation, deleteAnimation } from "../operations/animationOperations";
 
@@ -605,6 +608,43 @@ export const editorReducer = (state, event) => {
         lastEvent: event,
         lastUpdated: Date.now(),
       });
+
+      case EditorEventType.MASTER.ADD_ELEMENT:
+        return withHistory(state, {
+          ...state,
+          presentation: addMasterElement(
+            state.presentation,
+            event.payload.elementType,
+            event.payload.element,
+          ),
+          lastEvent: event,
+          lastUpdated: Date.now(),
+        });
+
+      case EditorEventType.MASTER.UPDATE_ELEMENT:
+        return {
+          ...state,
+          presentation: updateMasterElement(
+            state.presentation,
+            event.payload.elementType,
+            event.payload.elementId,
+            event.payload.updates,
+          ),
+          lastEvent: event,
+          lastUpdated: Date.now(),
+        };
+
+      case EditorEventType.MASTER.DELETE_ELEMENT:
+        return withHistory(state, {
+          ...state,
+          presentation: deleteMasterElement(
+            state.presentation,
+            event.payload.elementType,
+            event.payload.elementId,
+          ),
+          lastEvent: event,
+          lastUpdated: Date.now(),
+        });
 
     default:
       return state;

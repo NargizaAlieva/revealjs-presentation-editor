@@ -277,6 +277,40 @@ export function useEditorActions(
     [eventBus],
   );
 
+  const addMasterElement = useCallback(
+    (elementType, element) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.MASTER.ADD_ELEMENT, {
+          elementType,
+          element,
+        })
+      ),
+    [eventBus],
+  );
+
+  const updateMasterElement = useCallback(
+    (elementType, elementId, updates) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.MASTER.UPDATE_ELEMENT, {
+          elementType,
+          elementId,
+          updates,
+        })
+      ),
+    [eventBus],
+  );
+
+  const deleteMasterElement = useCallback(
+    (elementType, elementId) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.MASTER.DELETE_ELEMENT, {
+          elementType,
+          elementId,
+        })
+      ),
+    [eventBus],
+  );
+
   const updateLayout = useCallback(
     (layoutId, placeholders) =>
       eventBus.dispatch(
@@ -391,6 +425,9 @@ export function useEditorActions(
     updateMasterTheme,
     updateMasterDimensions,
     updateMasterFormatting,
+    addMasterElement,
+    updateMasterElement,
+    deleteMasterElement,
     updateLayout,
     applyLayout,
     savePresentation,

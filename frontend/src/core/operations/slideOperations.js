@@ -110,23 +110,34 @@ export const duplicateSlide = (presentation, slideIndex) => {
 
   if (!source) return presentation;
 
+  const idMap = new Map();
+
+  const text = (source.contents?.text ?? []).map((el) => {
+    const newId = createId("text");
+    idMap.set(el.id, newId);
+    return {
+      ...structuredClone(el),
+      id: newId,
+      paragraphs: (el.paragraphs ?? []).map((p) => ({
+        ...structuredClone(p),
+        id: createId("paragraph"),
+      })),
+    };
+  });
+
+  const media = (source.contents?.media ?? []).map((el) => {
+    const newId = createId("media");
+    idMap.set(el.id, newId);
+    return { ...structuredClone(el), id: newId };
+  });
+
   const duplicated = {
     ...structuredClone(source),
     title: { content: `${source.title?.content ?? "Slide"} Copy` },
     contents: {
       ...structuredClone(source.contents),
-      text: (source.contents?.text ?? []).map((el) => ({
-        ...structuredClone(el),
-        id: createId("text"),
-        paragraphs: (el.paragraphs ?? []).map((p) => ({
-          ...structuredClone(p),
-          id: createId("paragraph"),
-        })),
-      })),
-      media: (source.contents?.media ?? []).map((el) => ({
-        ...structuredClone(el),
-        id: createId("media"),
-      })),
+      text,
+      media,
       shapes: (source.contents?.shapes ?? []).map((el) => ({
         ...structuredClone(el),
         id: createId("shape"),
@@ -144,9 +155,9 @@ export const duplicateSlide = (presentation, slideIndex) => {
         .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0))
         .map((anim, index) => ({
           ...structuredClone(anim),
-          id: createId("animation"),
+          id: idMap.get(anim.id) ?? createId("animation"),
           sequence: index + 1,
-      })),
+        })),
     },
   };
 

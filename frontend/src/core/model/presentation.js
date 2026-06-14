@@ -180,6 +180,11 @@ export const createDefaultPresentation = () => {
           { "css-variable-name": "link", color: "#2563EBFF" },
           { "css-variable-name": "link-visited", color: "#7C3AEDFF" },
         ],
+        elements: {          
+          text: [],
+          shapes: [],
+          media: [],
+        },
       },
 
       layouts,
