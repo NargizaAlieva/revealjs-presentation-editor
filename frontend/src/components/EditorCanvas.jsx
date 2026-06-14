@@ -36,12 +36,14 @@ export default function EditorCanvas({
   onRedo,
   onCopy,
   onPaste,
+  onCut,
 }) {
   const [playingElementId, setPlayingElementId] = useState(null);
   const [playingEffect, setPlayingEffect] = useState(null);
   const [playingTransition, setPlayingTransition] = useState(null);
 
   const workspaceRef = useRef(null);
+  const containerRef = useRef(null);
 
   const { width, height } = getSlideSize(presentation);
   const colorThemeStyle = buildColorThemeStyle(presentation);
@@ -201,6 +203,15 @@ export default function EditorCanvas({
         return;
       }
 
+      const isCut = (event.ctrlKey || event.metaKey) && key === "x";
+      if (isCut && !isEditableTarget && selectedElementId) {
+        const element =
+          textElements.find((el) => el.id === selectedElementId) ||
+          mediaElements.find((el) => el.id === selectedElementId);
+        if (element) onCut?.(element);
+        return;
+      }
+
       if (event.key !== "Delete" && event.key !== "Backspace") return;
       if (isEditableTarget) return;
       if (!selectedElementId) return;
@@ -224,8 +235,14 @@ export default function EditorCanvas({
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    const container = containerRef.current;
+    if (!container) return;
+
+    container.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      container.removeEventListener("keydown", handleKeyDown);
+    };
   }, [
     selectedElementId,
     textElements,
@@ -237,6 +254,7 @@ export default function EditorCanvas({
     onRedo,
     onCopy,
     onPaste,
+    onCut,
   ]);
 
   useEffect(() => {
@@ -256,7 +274,12 @@ export default function EditorCanvas({
 
   if (!slide) {
     return (
-      <main className="canvas-wrapper" style={colorThemeStyle}>
+      <main
+        className="canvas-wrapper"
+        style={colorThemeStyle}
+        ref={containerRef}
+        tabIndex={-1}
+      >
         <div className="slide-workspace">
           <section className="editor-slide">No slide selected</section>
         </div>
@@ -269,7 +292,12 @@ export default function EditorCanvas({
     : "";
 
   return (
-    <main className="canvas-wrapper" style={colorThemeStyle}>
+    <main
+      className="canvas-wrapper"
+      style={colorThemeStyle}
+      ref={containerRef}
+      tabIndex={-1}
+    >
       <div className="slide-workspace" ref={workspaceRef}>
         <div className="slide-workspace-inner">
           <div
@@ -283,34 +311,31 @@ export default function EditorCanvas({
               className={["transition-wrapper", transitionClass]
                 .filter(Boolean)
                 .join(" ")}
+              style={{
+                width: `${width}px`,
+                height: `${height}px`,
+                background: "var(--bg-light, white)",
+                color: "var(--text-dark, black)",
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: `translate(-50%, -50%) scale(${zoomScale})`,
+                transformOrigin: "center center",
+              }}
+              onMouseMove={handleMouseMove}
+              onMouseUp={stopInteraction}
+              onMouseLeave={stopInteraction}
+              onClick={(event) => {
+                if (event.target === event.currentTarget) {
+                  onSelectElement?.(null);
+                }
+              }}
             >
-              <div
-                className="editor-slide"
-                style={{
-                  width: `${width}px`,
-                  height: `${height}px`,
-                  background: "var(--bg-light, white)",
-                  color: "var(--text-dark, black)",
-                  position: "absolute",
-                  top: "50%",
-                  left: "50%",
-                  transform: `translate(-50%, -50%) scale(${zoomScale})`,
-                  transformOrigin: "center center",
-                }}
-                onMouseMove={handleMouseMove}
-                onMouseUp={stopInteraction}
-                onMouseLeave={stopInteraction}
-                onClick={(event) => {
-                  if (event.target === event.currentTarget) {
-                    onSelectElement?.(null);
-                  }
-                }}
-              >
-                {textElements.map((textElement) => {
-                  const playClass =
-                    playingElementId === textElement.id
-                      ? `play-effect play-${playingEffect}`
-                      : "";
+              {textElements.map((textElement) => {
+                const playClass =
+                  playingElementId === textElement.id
+                    ? `play-effect play-${playingEffect}`
+                    : "";
 
                   return (
                     <TextElement
