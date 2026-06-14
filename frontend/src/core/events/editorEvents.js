@@ -59,6 +59,7 @@ export const EditorEventType = {
 
     COPY: "ELEMENT.COPY",
     PASTE: "ELEMENT.PASTE",
+    PASTE: "ELEMENT.CUT",
   },
 
   MEDIA: {

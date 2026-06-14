@@ -353,6 +353,14 @@ export function useEditorActions(
     [eventBus],
   );
 
+  const cutElement = useCallback(
+    (element) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.ELEMENT.CUT, { element })
+      ),
+    [eventBus]
+  );
+
   return {
     setSelectedSlideId,
     addSlide,
@@ -395,5 +403,6 @@ export function useEditorActions(
     cancelHistory,
     copyElement,
     pasteElement,
+    cutElement,
   };
 }

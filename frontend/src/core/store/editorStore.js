@@ -173,6 +173,36 @@ export const editorReducer = (state, event) => {
       });
     }
 
+    case EditorEventType.ELEMENT.CUT: {
+      const element = event.payload.element;
+      const isMedia = element["media-type"] !== undefined;
+      const slides = [...(state.presentation.slideset?.slides ?? [])];
+      const slide = slides[state.selectedSlideIndex];
+      if (!slide) return state;
+
+      slides[state.selectedSlideIndex] = {
+        ...slide,
+        contents: {
+          ...slide.contents,
+          ...(isMedia
+            ? { media: (slide.contents?.media ?? []).filter((el) => el.id !== element.id) }
+            : { text: (slide.contents?.text ?? []).filter((el) => el.id !== element.id) }),
+        },
+      };
+
+      return withHistory(state, {
+        ...state,
+        clipboard: structuredClone(element),
+        presentation: {
+          ...state.presentation,
+          slideset: { ...state.presentation.slideset, slides },
+        },
+        selectedElementId: null,
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+    }
+
     case EditorEventType.PRESENTATION.CREATE:
       return { ...createInitialEditorState(), lastEvent: event };
 
