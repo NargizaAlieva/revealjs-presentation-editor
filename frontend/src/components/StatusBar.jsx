@@ -9,6 +9,9 @@ export default function StatusBar({
   onZoomOut,
   showNotes,
   onToggleNotes,
+  showComments,
+  onToggleComments,
+  commentCount = 0,
 }) {
   return (
     <footer className="status-bar">
@@ -16,6 +19,14 @@ export default function StatusBar({
         <span>
           Slide {selectedSlideIndex + 1} of {totalSlides}
         </span>
+
+        <button
+          className={`status-button ${showComments ? "active" : ""}`}
+          onClick={onToggleComments}
+          title="Toggle comments panel"
+        >
+          💬 Comments{commentCount > 0 ? ` (${commentCount})` : ""}
+        </button>
       </div>
 
       <div className="status-right">

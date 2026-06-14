@@ -1,4 +1,3 @@
-
 import { createDefaultLayouts } from "./defaultLayouts";
 
 const createId = (prefix = "id") => {
@@ -80,6 +79,7 @@ const createDefaultSlideContents = ({
   background = "var(--bg-light)",
   transition = "slide",
   notes = "",
+  comments = [],
 } = {}) => ({
   text,
   shapes: [],
@@ -90,6 +90,7 @@ const createDefaultSlideContents = ({
   background,
   transition,
   notes,
+  comments,
 });
 
 const createMediaElement = (placeholder) => ({
@@ -130,23 +131,25 @@ export const createDefaultPresentation = () => {
   });
 
   const defaultLayout = layouts.find(
-    (layout) => layout["layout-id"] === "title-content-media"
+    (layout) => layout["layout-id"] === "title-content-media",
   );
 
   if (!defaultLayout) {
-    throw new Error("Default layout 'title-content-media' not found in createDefaultLayouts");
+    throw new Error(
+      "Default layout 'title-content-media' not found in createDefaultLayouts",
+    );
   }
 
   const titlePlaceholder = defaultLayout.placeholders.find(
-    (p) => p["placeholder-id"] === "title-placeholder"
+    (p) => p["placeholder-id"] === "title-placeholder",
   );
 
   const bodyPlaceholder = defaultLayout.placeholders.find(
-    (p) => p["placeholder-id"] === "body-placeholder"
+    (p) => p["placeholder-id"] === "body-placeholder",
   );
 
   const mediaPlaceholder = defaultLayout.placeholders.find(
-    (p) => p["placeholder-id"] === "media-placeholder"
+    (p) => p["placeholder-id"] === "media-placeholder",
   );
 
   return {
@@ -190,7 +193,7 @@ export const createDefaultPresentation = () => {
           { "css-variable-name": "link", color: "#2563EBFF" },
           { "css-variable-name": "link-visited", color: "#7C3AEDFF" },
         ],
-        elements: {          
+        elements: {
           text: [],
           shapes: [],
           media: [],

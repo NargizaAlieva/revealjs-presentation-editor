@@ -28,39 +28,51 @@ export const updateTextElement = (
   slideIndex,
   textElementId,
   newText,
-  userModified, 
+  userModified,
+  htmlContent,
 ) => {
   const slides = [...getSlides(presentation)];
   const slide = slides[slideIndex];
   if (!slide) return presentation;
 
-  const updatedTextElements = (slide.contents?.text ?? []).map((textElement) => {
-    if (textElement.id !== textElementId) return textElement;
+  const updatedTextElements = (slide.contents?.text ?? []).map(
+    (textElement) => {
+      if (textElement.id !== textElementId) return textElement;
 
-    const lines = newText.split("\n");
-    const existingParagraphs = textElement.paragraphs ?? [];
-    const templateFormatting = existingParagraphs[0]?.formatting ?? {};
-    const templateRunFormatting = existingParagraphs[0]?.runs?.[0]?.formatting ?? {};
+      const lines = newText.split("\n");
+      const existingParagraphs = textElement.paragraphs ?? [];
+      const templateFormatting = existingParagraphs[0]?.formatting ?? {};
+      const templateRunFormatting =
+        existingParagraphs[0]?.runs?.[0]?.formatting ?? {};
 
-    const updatedParagraphs = lines.map((line, i) => {
-      const existing = existingParagraphs[i];
+      const updatedParagraphs = lines.map((line, i) => {
+        const existing = existingParagraphs[i];
+        return {
+          id: existing?.id ?? createParagraphId(),
+          formatting: existing?.formatting ?? { ...templateFormatting },
+          bullets: existing?.bullets ?? "none",
+          runs: [
+            {
+              formatting: existing?.runs?.[0]?.formatting ?? {
+                ...templateRunFormatting,
+              },
+              "super-sub-script":
+                existing?.runs?.[0]?.["super-sub-script"] ?? "normal",
+              text: line,
+              link: existing?.runs?.[0]?.link ?? null,
+            },
+          ],
+        };
+      });
+
       return {
-        id: existing?.id ?? createParagraphId(),
-        formatting: existing?.formatting ?? { ...templateFormatting },
-        bullets: existing?.bullets ?? "none",
-        runs: [
-          {
-            formatting: existing?.runs?.[0]?.formatting ?? { ...templateRunFormatting },
-            "super-sub-script": existing?.runs?.[0]?.["super-sub-script"] ?? "normal",
-            text: line,
-            link: existing?.runs?.[0]?.link ?? null,
-          },
-        ],
+        ...textElement,
+        userModified: userModified ?? textElement.userModified,
+        paragraphs: updatedParagraphs,
+        ...(htmlContent !== undefined ? { htmlContent } : {}),
       };
-    });
-
-    return { ...textElement, userModified: userModified ?? textElement.userModified, paragraphs: updatedParagraphs };
-  });
+    },
+  );
 
   slides[slideIndex] = {
     ...slide,
@@ -84,20 +96,24 @@ export const updateTextFormatting = (
     Object.entries(formattingUpdate).filter(([k]) => !RUN_ONLY_KEYS.has(k)),
   );
 
-  const updatedTextElements = (slide.contents?.text ?? []).map((textElement) => {
-    if (textElement.id !== textElementId) return textElement;
+  const updatedTextElements = (slide.contents?.text ?? []).map(
+    (textElement) => {
+      if (textElement.id !== textElementId) return textElement;
 
-    const updatedParagraphs = (textElement.paragraphs ?? []).map((paragraph) => ({
-      ...paragraph,
-      formatting: { ...(paragraph.formatting ?? {}), ...paragraphUpdate },
-      runs: (paragraph.runs ?? []).map((run) => ({
-        ...run,
-        formatting: { ...(run.formatting ?? {}), ...formattingUpdate },
-      })),
-    }));
+      const updatedParagraphs = (textElement.paragraphs ?? []).map(
+        (paragraph) => ({
+          ...paragraph,
+          formatting: { ...(paragraph.formatting ?? {}), ...paragraphUpdate },
+          runs: (paragraph.runs ?? []).map((run) => ({
+            ...run,
+            formatting: { ...(run.formatting ?? {}), ...formattingUpdate },
+          })),
+        }),
+      );
 
-    return { ...textElement, paragraphs: updatedParagraphs };
-  });
+      return { ...textElement, paragraphs: updatedParagraphs };
+    },
+  );
 
   slides[slideIndex] = {
     ...slide,

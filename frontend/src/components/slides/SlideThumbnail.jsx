@@ -32,6 +32,7 @@ export default function SlideThumbnail({
   slide,
   slideWidth = 1280,
   slideHeight = 720,
+  commentCount = 0,
 }) {
   const textElements = slide?.contents?.text ?? [];
   const mediaElements = slide?.contents?.media ?? [];
@@ -42,6 +43,14 @@ export default function SlideThumbnail({
       className="slide-thumbnail"
       style={{ width: THUMB_W, height: THUMB_H }}
     >
+      {commentCount > 0 && (
+        <div
+          className="slide-thumbnail-comment-badge"
+          title={`${commentCount} comment${commentCount > 1 ? "s" : ""}`}
+        >
+          💬 {commentCount}
+        </div>
+      )}
       {/* Inner div at full slide size, scaled down — matches EditorCanvas exactly */}
       <div
         className="slide-thumbnail-inner"

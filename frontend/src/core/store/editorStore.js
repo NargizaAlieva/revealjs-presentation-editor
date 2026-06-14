@@ -1,28 +1,48 @@
 import { createDefaultPresentation } from "../model/presentation";
 import { EditorEventType } from "../events/editorEvents";
 import { deserializePresentation } from "../persistence/serializationOperations";
-import { moveElement, resizeElement, updateElement } from "../operations/elementOperations";
-import { addTextElement, updateTextElement, updateTextFormatting, deleteTextElement } from "../operations/textOperations";
+import {
+  moveElement,
+  resizeElement,
+  updateElement,
+} from "../operations/elementOperations";
+import {
+  addTextElement,
+  updateTextElement,
+  updateTextFormatting,
+  deleteTextElement,
+} from "../operations/textOperations";
 import {
   addSlide,
   deleteSlide,
   duplicateSlide,
   reorderSlides,
   toggleSlideHidden,
-  updateSlideTransition,
   updateSlideNotes,
 } from "../operations/slideOperations";
-import { applyLayoutToSlide, propagateLayoutChanges, resetSlideToLayout } from "../operations/layoutOperations";
-import { addMedia, deleteMedia, updateMedia } from "../operations/mediaOperations";
+import {
+  applyLayoutToSlide,
+  propagateLayoutChanges,
+  resetSlideToLayout,
+} from "../operations/layoutOperations";
+import {
+  addMedia,
+  deleteMedia,
+  updateMedia,
+} from "../operations/mediaOperations";
 import {
   updateMasterTheme,
   updateMasterDimensions,
   updateMasterFormatting,
-  addMasterElement,      
-  updateMasterElement,  
-  deleteMasterElement, 
+  addMasterElement,
+  updateMasterElement,
+  deleteMasterElement,
 } from "../operations/masterOperations";
-import { addAnimation, updateAnimation, deleteAnimation } from "../operations/animationOperations";
+import {
+  addAnimation,
+  updateAnimation,
+  deleteAnimation,
+} from "../operations/animationOperations";
 
 export const createInitialEditorState = () => ({
   presentation: createDefaultPresentation(),
@@ -121,7 +141,9 @@ export const editorReducer = (state, event) => {
         presentation: nextState.presentation,
         selectedSlideIndex: nextState.selectedSlideIndex,
         selectedElementId: nextState.selectedElementId,
-        past: [...state.past, createHistorySnapshot(state)].slice(-HISTORY_LIMIT),
+        past: [...state.past, createHistorySnapshot(state)].slice(
+          -HISTORY_LIMIT,
+        ),
         future: state.future.slice(1),
         pendingSnapshot: null,
         lastEvent: event,
@@ -188,8 +210,16 @@ export const editorReducer = (state, event) => {
         contents: {
           ...slide.contents,
           ...(isMedia
-            ? { media: (slide.contents?.media ?? []).filter((el) => el.id !== element.id) }
-            : { text: (slide.contents?.text ?? []).filter((el) => el.id !== element.id) }),
+            ? {
+                media: (slide.contents?.media ?? []).filter(
+                  (el) => el.id !== element.id,
+                ),
+              }
+            : {
+                text: (slide.contents?.text ?? []).filter(
+                  (el) => el.id !== element.id,
+                ),
+              }),
         },
       };
 
@@ -217,7 +247,10 @@ export const editorReducer = (state, event) => {
       if (!result?.data) return state;
 
       if (result.errors.length > 0) {
-        console.warn("[Reducer] Loaded presentation has validation errors:", result.errors);
+        console.warn(
+          "[Reducer] Loaded presentation has validation errors:",
+          result.errors,
+        );
       }
 
       return {
@@ -270,7 +303,10 @@ export const editorReducer = (state, event) => {
       };
 
     case EditorEventType.SLIDE.ADD: {
-      const updatedPresentation = addSlide(state.presentation, event.payload.layoutId);
+      const updatedPresentation = addSlide(
+        state.presentation,
+        event.payload.layoutId,
+      );
 
       return withHistory(state, {
         ...state,
@@ -283,13 +319,19 @@ export const editorReducer = (state, event) => {
     }
 
     case EditorEventType.SLIDE.DELETE: {
-      const updatedPresentation = deleteSlide(state.presentation, state.selectedSlideIndex);
+      const updatedPresentation = deleteSlide(
+        state.presentation,
+        state.selectedSlideIndex,
+      );
       const slides = updatedPresentation.slideset?.slides ?? [];
 
       return withHistory(state, {
         ...state,
         presentation: updatedPresentation,
-        selectedSlideIndex: Math.max(0, Math.min(state.selectedSlideIndex, slides.length - 1)),
+        selectedSlideIndex: Math.max(
+          0,
+          Math.min(state.selectedSlideIndex, slides.length - 1),
+        ),
         selectedElementId: null,
         lastEvent: event,
         lastUpdated: Date.now(),
@@ -299,7 +341,10 @@ export const editorReducer = (state, event) => {
     case EditorEventType.SLIDE.DUPLICATE:
       return withHistory(state, {
         ...state,
-        presentation: duplicateSlide(state.presentation, state.selectedSlideIndex),
+        presentation: duplicateSlide(
+          state.presentation,
+          state.selectedSlideIndex,
+        ),
         selectedSlideIndex: state.selectedSlideIndex + 1,
         selectedElementId: null,
         lastEvent: event,
@@ -323,7 +368,10 @@ export const editorReducer = (state, event) => {
     case EditorEventType.SLIDE.TOGGLE_HIDDEN:
       return withHistory(state, {
         ...state,
-        presentation: toggleSlideHidden(state.presentation, event.payload.slideIndex),
+        presentation: toggleSlideHidden(
+          state.presentation,
+          event.payload.slideIndex,
+        ),
         lastEvent: event,
         lastUpdated: Date.now(),
       });
@@ -359,14 +407,16 @@ export const editorReducer = (state, event) => {
     }
 
     case EditorEventType.SLIDE.APPLY_TRANSITION_TO_ALL: {
-      const slides = (state.presentation.slideset?.slides ?? []).map((slide) => ({
-        ...slide,
-        contents: {
-          ...slide.contents,
-          transition: event.payload.transition,
-          transitionDuration: event.payload.duration,
-        },
-      }));
+      const slides = (state.presentation.slideset?.slides ?? []).map(
+        (slide) => ({
+          ...slide,
+          contents: {
+            ...slide.contents,
+            transition: event.payload.transition,
+            transitionDuration: event.payload.duration,
+          },
+        }),
+      );
 
       return withHistory(state, {
         ...state,
@@ -413,6 +463,7 @@ export const editorReducer = (state, event) => {
           event.payload.textElementId,
           event.payload.text,
           event.payload.userModified,
+          event.payload.html,
         ),
         lastEvent: event,
         lastUpdated: Date.now(),
@@ -607,7 +658,10 @@ export const editorReducer = (state, event) => {
     case EditorEventType.MASTER.UPDATE_THEME:
       return withHistory(state, {
         ...state,
-        presentation: updateMasterTheme(state.presentation, event.payload.colorTheme),
+        presentation: updateMasterTheme(
+          state.presentation,
+          event.payload.colorTheme,
+        ),
         lastEvent: event,
         lastUpdated: Date.now(),
       });
@@ -628,47 +682,102 @@ export const editorReducer = (state, event) => {
     case EditorEventType.MASTER.UPDATE_FORMATTING:
       return withHistory(state, {
         ...state,
-        presentation: updateMasterFormatting(state.presentation, event.payload.formatting),
+        presentation: updateMasterFormatting(
+          state.presentation,
+          event.payload.formatting,
+        ),
         lastEvent: event,
         lastUpdated: Date.now(),
       });
 
-      case EditorEventType.MASTER.ADD_ELEMENT:
-        return withHistory(state, {
-          ...state,
-          presentation: addMasterElement(
-            state.presentation,
-            event.payload.elementType,
-            event.payload.element,
-          ),
-          lastEvent: event,
-          lastUpdated: Date.now(),
-        });
+    case EditorEventType.MASTER.ADD_ELEMENT:
+      return withHistory(state, {
+        ...state,
+        presentation: addMasterElement(
+          state.presentation,
+          event.payload.elementType,
+          event.payload.element,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
 
-      case EditorEventType.MASTER.UPDATE_ELEMENT:
-        return {
-          ...state,
-          presentation: updateMasterElement(
-            state.presentation,
-            event.payload.elementType,
-            event.payload.elementId,
-            event.payload.updates,
-          ),
-          lastEvent: event,
-          lastUpdated: Date.now(),
-        };
+    case EditorEventType.MASTER.UPDATE_ELEMENT:
+      return {
+        ...state,
+        presentation: updateMasterElement(
+          state.presentation,
+          event.payload.elementType,
+          event.payload.elementId,
+          event.payload.updates,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
 
-      case EditorEventType.MASTER.DELETE_ELEMENT:
-        return withHistory(state, {
-          ...state,
-          presentation: deleteMasterElement(
-            state.presentation,
-            event.payload.elementType,
-            event.payload.elementId,
+    case EditorEventType.MASTER.DELETE_ELEMENT:
+      return withHistory(state, {
+        ...state,
+        presentation: deleteMasterElement(
+          state.presentation,
+          event.payload.elementType,
+          event.payload.elementId,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+
+    case EditorEventType.COMMENT.ADD: {
+      const slides = [...(state.presentation.slideset?.slides ?? [])];
+      const slide = slides[state.selectedSlideIndex];
+      if (!slide) return state;
+      const newComment = {
+        id: crypto.randomUUID(),
+        author: event.payload.author ?? "User",
+        text: event.payload.text,
+        createdAt: Date.now(),
+      };
+      slides[state.selectedSlideIndex] = {
+        ...slide,
+        contents: {
+          ...slide.contents,
+          comments: [...(slide.contents?.comments ?? []), newComment],
+        },
+      };
+      return withHistory(state, {
+        ...state,
+        presentation: {
+          ...state.presentation,
+          slideset: { ...state.presentation.slideset, slides },
+        },
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+    }
+
+    case EditorEventType.COMMENT.DELETE: {
+      const slides = [...(state.presentation.slideset?.slides ?? [])];
+      const slide = slides[state.selectedSlideIndex];
+      if (!slide) return state;
+      slides[state.selectedSlideIndex] = {
+        ...slide,
+        contents: {
+          ...slide.contents,
+          comments: (slide.contents?.comments ?? []).filter(
+            (c) => c.id !== event.payload.commentId,
           ),
-          lastEvent: event,
-          lastUpdated: Date.now(),
-        });
+        },
+      };
+      return withHistory(state, {
+        ...state,
+        presentation: {
+          ...state.presentation,
+          slideset: { ...state.presentation.slideset, slides },
+        },
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+    }
 
     default:
       return state;
