@@ -131,7 +131,6 @@ export default function ParagraphGroup({
           )}
         </div>
 
-        {/* Numbered split-button */}
         <div className="list-split-btn" ref={numberedPickerRef}>
           <button
             className={`small-format${currentListType === "numbered" ? " active" : ""}`}

@@ -1,6 +1,13 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import ColorPicker from "./ColorPicker";
 import "./FormatToolbar.css";
+import {
+  MdFormatAlignLeft,
+  MdFormatAlignCenter,
+  MdFormatAlignRight,
+  MdFormatAlignJustify,
+} from "react-icons/md";
 
 let formattingClipboard = null;
 
@@ -24,6 +31,7 @@ export default function FormatToolbar({
   formatting,
   onFormatTextElement,
   presentation,
+  style,
 }) {
   const [justCopied, setJustCopied] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -68,7 +76,12 @@ export default function FormatToolbar({
   };
 
   return (
-    <div className="format-toolbar" onMouseDown={stop} onClick={stop}>
+    <div
+      className="format-toolbar"
+      style={style}
+      onMouseDown={stop}
+      onClick={stop}
+    >
       <div className="format-row">
         <select
           className="font-select"
@@ -173,10 +186,10 @@ export default function FormatToolbar({
             title={`Align ${align}`}
             onClick={() => fmt({ align })}
           >
-            {align === "left" && "☰"}
-            {align === "center" && "≡"}
-            {align === "right" && "☷"}
-            {align === "justify" && "▤"}
+            {align === "left" && <MdFormatAlignLeft />}
+            {align === "center" && <MdFormatAlignCenter />}
+            {align === "right" && <MdFormatAlignRight />}
+            {align === "justify" && <MdFormatAlignJustify />}
           </button>
         ))}
 
@@ -202,19 +215,25 @@ export default function FormatToolbar({
             </span>
             <span className="ft-color-arrow">▾</span>
           </button>
-          {showColorPicker && (
-            <ColorPicker
-              color={currentColor}
-              onChange={(c) => fmt({ color: c })}
-              onClose={() => setShowColorPicker(false)}
-              style={{
-                position: "fixed",
-                top: colorPickerPos.top,
-                left: colorPickerPos.left,
-                zIndex: 99999,
-              }}
-            />
-          )}
+
+          {/* Portal — рендерится в document.body, вне zoom-трансформа канваса.
+              Иначе position:fixed считается от трансформированного предка,
+              и пикер уходит далеко от тулбара. */}
+          {showColorPicker &&
+            createPortal(
+              <ColorPicker
+                color={currentColor}
+                onChange={(c) => fmt({ color: c })}
+                onClose={() => setShowColorPicker(false)}
+                style={{
+                  position: "fixed",
+                  top: colorPickerPos.top,
+                  left: colorPickerPos.left,
+                  zIndex: 99999,
+                }}
+              />,
+              document.body,
+            )}
         </div>
 
         <div className="ft-color-container">
@@ -242,23 +261,26 @@ export default function FormatToolbar({
             </span>
             <span className="ft-color-arrow">▾</span>
           </button>
-          {showHighlightPicker && (
-            <ColorPicker
-              color={
-                currentHighlight === "transparent"
-                  ? "#ffff00"
-                  : currentHighlight
-              }
-              onChange={(c) => fmt({ highlight: c })}
-              onClose={() => setShowHighlightPicker(false)}
-              style={{
-                position: "fixed",
-                top: highlightPickerPos.top,
-                left: highlightPickerPos.left,
-                zIndex: 99999,
-              }}
-            />
-          )}
+
+          {showHighlightPicker &&
+            createPortal(
+              <ColorPicker
+                color={
+                  currentHighlight === "transparent"
+                    ? "#ffff00"
+                    : currentHighlight
+                }
+                onChange={(c) => fmt({ highlight: c })}
+                onClose={() => setShowHighlightPicker(false)}
+                style={{
+                  position: "fixed",
+                  top: highlightPickerPos.top,
+                  left: highlightPickerPos.left,
+                  zIndex: 99999,
+                }}
+              />,
+              document.body,
+            )}
         </div>
 
         <button

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import FormatToolbar from "./FormatToolbar";
 import "./TextElement.css";
 
@@ -12,6 +13,9 @@ const RESIZE_HANDLES = [
   { dir: "sw", cursor: "nesw-resize" },
   { dir: "w", cursor: "ew-resize" },
 ];
+
+const TOOLBAR_HEIGHT = 80;
+const TOOLBAR_WIDTH = 420;
 
 export default function TextElement({
   textElement,
@@ -29,6 +33,7 @@ export default function TextElement({
   presentation,
 }) {
   const [isFormatting, setIsFormatting] = useState(false);
+  const [toolbarPos, setToolbarPos] = useState({ top: 0, left: 0 });
   const editableRef = useRef(null);
 
   if (!isSelected && isFormatting) setIsFormatting(false);
@@ -36,11 +41,14 @@ export default function TextElement({
   const text = (textElement.paragraphs ?? [])
     .map((p) => p.runs?.[0]?.text ?? "")
     .join("\n");
+
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
 
-  const listType = (formatting["list-type"] && formatting["list-type"] !== "none")
-  ? formatting["list-type"]
-  : null;
+  const listType =
+    formatting["list-type"] && formatting["list-type"] !== "none"
+      ? formatting["list-type"]
+      : null;
+
   const listLevel = formatting["list-level"] ?? 0;
   const listMarker = formatting["list-marker"] ?? "•";
   const listNumberedStyle = formatting["list-numbered-style"] ?? "decimal";
@@ -50,10 +58,49 @@ export default function TextElement({
     const el = editableRef.current;
     if (!el) return;
     if (document.activeElement === el) return;
+
     if (el.innerText !== text) {
       el.innerText = text;
     }
   }, [text]);
+
+  const updateToolbarPosition = () => {
+    setTimeout(() => {
+      const editableEl = editableRef.current;
+      const selection = window.getSelection();
+
+      if (!editableEl || !selection || selection.rangeCount === 0) return;
+
+      const range = selection.getRangeAt(0);
+
+      if (!editableEl.contains(range.startContainer)) return;
+
+      let rect = range.getBoundingClientRect();
+
+      if (!rect || (rect.top === 0 && rect.left === 0)) {
+        rect = editableEl.getBoundingClientRect();
+      }
+
+      // Вертикаль: выше курсора, если места нет — ниже.
+      // CSS не использует translateY — JS полностью управляет позицией.
+      const topAbove = rect.top - TOOLBAR_HEIGHT - 8;
+      const topBelow = rect.bottom + 12;
+      const top = topAbove > 0 ? topAbove : topBelow;
+
+      // Горизонталь: выравниваем по курсору, зажимаем в границах viewport
+      const left = Math.max(
+        8,
+        Math.min(rect.left, window.innerWidth - TOOLBAR_WIDTH - 8),
+      );
+
+      setToolbarPos({ top, left });
+      setIsFormatting(true);
+    }, 0);
+  };
+
+  const handleDoubleClick = () => {
+    updateToolbarPosition();
+  };
 
   return (
     <div
@@ -71,7 +118,7 @@ export default function TextElement({
         transformOrigin: "center center",
       }}
       onMouseDown={() => onSelect(textElement.id)}
-      onDoubleClick={() => setIsFormatting(true)}
+      onDoubleClick={handleDoubleClick}
     >
       {animationOrder != null && (
         <span className="animation-order-badge">{animationOrder}</span>
@@ -86,14 +133,23 @@ export default function TextElement({
           />
         ))}
 
-      {isSelected && isFormatting && (
-        <FormatToolbar
-          elementId={textElement.id}
-          formatting={formatting}
-          onFormatTextElement={onFormatTextElement}
-          presentation={presentation}
-        />
-      )}
+      {isSelected &&
+        isFormatting &&
+        createPortal(
+          <FormatToolbar
+            elementId={textElement.id}
+            formatting={formatting}
+            onFormatTextElement={onFormatTextElement}
+            presentation={presentation}
+            style={{
+              position: "fixed",
+              top: toolbarPos.top,
+              left: toolbarPos.left,
+              zIndex: 9999,
+            }}
+          />,
+          document.body,
+        )}
 
       <div
         ref={editableRef}
@@ -101,13 +157,21 @@ export default function TextElement({
         suppressContentEditableWarning
         className="text-editable"
         data-placeholder="Click to edit text"
-        onFocus={() => onBeginHistory?.()}
+        onFocus={() => {
+          onBeginHistory?.();
+          updateToolbarPosition();
+        }}
+        onMouseUp={updateToolbarPosition}
+        onKeyUp={updateToolbarPosition}
         onInput={(event) => {
           const el = event.currentTarget;
+
           if (el.innerHTML === "<br>" || el.innerHTML === "<br/>") {
             el.innerHTML = "";
           }
-          onChangeTextElement(textElement.id, event.currentTarget.innerText)
+
+          onChangeTextElement(textElement.id, el.innerText);
+          updateToolbarPosition();
         }}
         onBlur={() => onCommitHistory?.()}
         style={{
