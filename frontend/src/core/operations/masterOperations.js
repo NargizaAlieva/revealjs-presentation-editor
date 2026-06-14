@@ -40,3 +40,52 @@ export const updateMasterFormatting = (presentation, formatting) => ({
     },
   },
 });
+
+export const addMasterElement = (presentation, type, element) => ({
+  ...presentation,
+  slideset: {
+    ...presentation.slideset,
+    master: {
+      ...presentation.slideset.master,
+      elements: {
+        ...(presentation.slideset.master.elements ?? {}),
+        [type]: [
+          ...(presentation.slideset.master.elements?.[type] ?? []),
+          element,
+        ],
+      },
+    },
+  },
+});
+
+export const updateMasterElement = (presentation, type, elementId, updates) => ({
+  ...presentation,
+  slideset: {
+    ...presentation.slideset,
+    master: {
+      ...presentation.slideset.master,
+      elements: {
+        ...(presentation.slideset.master.elements ?? {}),
+        [type]: (presentation.slideset.master.elements?.[type] ?? []).map((el) =>
+          el.id === elementId ? { ...el, ...updates } : el
+        ),
+      },
+    },
+  },
+});
+
+export const deleteMasterElement = (presentation, type, elementId) => ({
+  ...presentation,
+  slideset: {
+    ...presentation.slideset,
+    master: {
+      ...presentation.slideset.master,
+      elements: {
+        ...(presentation.slideset.master.elements ?? {}),
+        [type]: (presentation.slideset.master.elements?.[type] ?? []).filter(
+          (el) => el.id !== elementId
+        ),
+      },
+    },
+  },
+});

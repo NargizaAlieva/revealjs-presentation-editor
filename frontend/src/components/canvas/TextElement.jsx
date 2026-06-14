@@ -38,7 +38,9 @@ export default function TextElement({
     .join("\n");
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
 
-  const listType = formatting["list-type"] ?? null;
+  const listType = (formatting["list-type"] && formatting["list-type"] !== "none")
+  ? formatting["list-type"]
+  : null;
   const listLevel = formatting["list-level"] ?? 0;
   const listMarker = formatting["list-marker"] ?? "•";
   const listNumberedStyle = formatting["list-numbered-style"] ?? "decimal";

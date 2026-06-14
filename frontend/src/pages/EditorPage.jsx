@@ -9,6 +9,7 @@ import { useEditorActions } from "../hooks/useEditorActions";
 import { useEditorViewState } from "../hooks/useEditorViewState";
 import { useImageUpload } from "../hooks/useImageUpload";
 import { useVideoUpload } from "../hooks/useVideoUpload";
+import { useAddTextElement } from "../hooks/useAddTextElement";
 import { usePresentationFonts } from "../hooks/usePresentationFonts";
 import "./EditorPage.css";
 import PreviewModal from "../components/PreviewModal";
@@ -30,7 +31,6 @@ export default function EditorPage() {
   const { presentationId } = useParams();
   const navigate = useNavigate();
 
-  // previewStartSlide не входит в useEditorViewState — оставляем локально
   const [previewStartSlide, setPreviewStartSlide] = useState(0);
 
   const {
@@ -74,6 +74,7 @@ export default function EditorPage() {
     reorderSlide,
     savePresentation,
     resetPresentation,
+    addTextElement,
     updateTextElementContent,
     updateTextElementFormatting,
     updateElementPosition,
@@ -89,6 +90,7 @@ export default function EditorPage() {
     updateTransitionDuration,
     applyTransitionToAll,
     applyLayout,
+    resetLayout,
     addAnimation,
     updateAnimation,
     deleteAnimation,
@@ -109,11 +111,10 @@ export default function EditorPage() {
 
   const { handleImageUpload } = useImageUpload(addMedia);
   const { handleVideoUpload } = useVideoUpload(addMedia);
+  const { handleAddTextElement } = useAddTextElement(addTextElement);
 
   const exportPresentation = async () => exportToReveal(presentation);
 
-  // Находит выбранный элемент по selectedElementId.
-  // Нужен тулбарным хендлерам, где элемент не передаётся аргументом.
   const getSelectedElement = () => {
     if (!selectedElementId) return null;
     return (
@@ -127,8 +128,6 @@ export default function EditorPage() {
     );
   };
 
-  // Принимает либо элемент (горячие клавиши EditorCanvas),
-  // либо click-event / ничего (кнопки тулбара) — тогда ищет сам.
   const handleCopy = (elementOrEvent) => {
     const element = elementOrEvent?.id ? elementOrEvent : getSelectedElement();
     if (!element) return;
@@ -202,7 +201,6 @@ export default function EditorPage() {
     navigate("/");
   };
 
-  // selectedElement используется в Toolbar для отображения анимаций
   const selectedElement = (() => {
     if (!selectedElementId) return null;
     const textElement = (selectedSlide?.contents?.text ?? []).find(
@@ -288,9 +286,11 @@ export default function EditorPage() {
           onTransitionPreview={triggerTransitionPreview}
           onPreviewEffect={setPreviewEffect}
           onApplyLayout={applyLayout}
+          onResetLayout={resetLayout}
           currentFormatting={currentFormatting}
           onFormatChange={handleFormatChange}
           isTextSelected={!!selectedTextEl}
+          onAddTextElement={handleAddTextElement}
           presentation={presentation}
           onCut={handleCut}
           onCopy={handleCopy}

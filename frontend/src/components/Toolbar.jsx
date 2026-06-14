@@ -37,6 +37,7 @@ export default function Toolbar({
   onToggleSlideHidden,
   isSlideHidden,
   onApplyLayout,
+  onResetLayout,
 
   onTransitionChange,
   currentTransition,
@@ -54,6 +55,7 @@ export default function Toolbar({
   activeTab,
   onTabChange,
 
+  onAddTextElement,
   currentFormatting,
   onFormatChange,
   isTextSelected,
@@ -98,6 +100,7 @@ export default function Toolbar({
           <HomeTab
             onAddSlide={onAddSlide}
             onApplyLayout={onApplyLayout}
+            onResetLayout={onResetLayout}
             onDeleteSlide={onDeleteSlide}
             onDuplicateSlide={onDuplicateSlide}
             onMoveSlideUp={onMoveSlideUp}
@@ -124,6 +127,7 @@ export default function Toolbar({
             onImageUpload={onImageUpload}
             onVideoUpload={onVideoUpload}
             onAddSlide={onAddSlide}
+            onAddTextElement={onAddTextElement}
           />
         )}
 

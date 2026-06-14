@@ -397,3 +397,52 @@
   height: 10px;
   border: 1px dashed #9aa4b2;
 }
+
+.color-format-letter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  gap: 2px;
+}
+
+.color-format-bar {
+  display: block;
+  width: 14px;
+  height: 3px;
+  border-radius: 1px;
+}
+
+.color-format-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  width: auto;
+  padding: 0 4px;
+}
+
+.color-format-letter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  gap: 2px;
+}
+
+.color-format-bar {
+  display: block;
+  width: 14px;
+  height: 3px;
+  border-radius: 1px;
+}
+
+.color-format-arrow {
+  font-size: 18px;
+  color: #555;
+  line-height: 1;
+  margin-top: 2px;
+}

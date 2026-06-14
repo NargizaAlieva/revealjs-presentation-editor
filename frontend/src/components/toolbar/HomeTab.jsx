@@ -22,6 +22,7 @@ import {
   MdSearch,
   MdTextFields,
 } from "react-icons/md";
+import ColorPicker from "../canvas/ColorPicker";
 
 const BULLET_STYLES = [
   { marker: null, label: "None" },
@@ -72,6 +73,7 @@ const FONT_SIZES = [
 export default function HomeTab({
   onAddSlide,
   onApplyLayout,
+  onResetLayout,
   onDeleteSlide,
   onDuplicateSlide,
   onMoveSlideUp,
@@ -92,6 +94,8 @@ export default function HomeTab({
   canPaste = false,
 }) {
   const [showLayouts, setShowLayouts] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [colorPickerPos, setColorPickerPos] = useState({ top: 0, left: 0 });
   const [showBulletPicker, setShowBulletPicker] = useState(false);
   const [showNumberedPicker, setShowNumberedPicker] = useState(false);
   const bulletPickerRef = useRef(null);
@@ -279,7 +283,7 @@ export default function HomeTab({
               </div>
             )}
           </div>
-          <button className="mini-text-command" disabled>Reset</button>
+          <button className="mini-text-command" onClick={onResetLayout}>Reset</button>
           <button className="mini-text-command" disabled>Section</button>
         </div>
 
@@ -368,29 +372,40 @@ export default function HomeTab({
             A<sup>+</sup>
           </button>
 
-          <label
-            className={`small-format color-format-btn${!isTextSelected ? " disabled" : ""}`}
-            title="Text color"
-          >
-            <span
-              style={{
-                borderBottom: `2px solid ${isTextSelected ? currentColor : "#888"}`,
+          <div className="color-btn-container">
+            <button
+              className={`small-format color-format-btn${!isTextSelected ? " disabled" : ""}`}
+              title="Text color"
+              disabled={!isTextSelected}
+              onClick={(e) => {
+                e.stopPropagation();
+                const rect = e.currentTarget.getBoundingClientRect();
+                setColorPickerPos({ top: rect.bottom + 4, left: rect.left });
+                setShowColorPicker((v) => !v);
               }}
             >
-              A
-            </span>
-            <input
-              type="color"
-              value={currentColor.length === 7 ? currentColor : "#111111"}
-              disabled={!isTextSelected}
-              onChange={(e) => fmt({ color: e.target.value })}
-              style={{ display: "none" }}
-            />
-          </label>
+              <span className="color-format-letter">
+                A
+                <span
+                  className="color-format-bar"
+                  style={{ background: isTextSelected ? currentColor : "#ccc" }}
+                />
+              </span>
+              <span className="color-format-arrow">▾</span>
+            </button>
+            {showColorPicker && isTextSelected && (
+              <ColorPicker
+                color={currentColor}
+                onChange={(c) => fmt({ color: c })}
+                onClose={() => setShowColorPicker(false)}
+                style={{ top: colorPickerPos.top, left: colorPickerPos.left, position: "fixed" }}
+              />
+            )}
+          </div>
         </div>
 
         <div className="ribbon-group-title">Font</div>
-      </div>
+      </div >
 
       <div className="ribbon-group paragraph-group">
         <div className="font-row">
