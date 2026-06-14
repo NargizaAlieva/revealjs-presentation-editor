@@ -13,6 +13,7 @@ import StatusBar from "../components/StatusBar";
 import { getSlideSize } from "../utils/slidesetRenderUtils";
 import { usePresentationFonts } from "../hooks/usePresentationFonts";
 import { useVideoUpload } from "../hooks/useVideoUpload";
+import { useAddTextElement } from "../hooks/useAddTextElement";
 import FileMenu from "../components/FileMenu";
 import {
   exportToReveal,
@@ -57,6 +58,7 @@ export default function EditorPage() {
     reorderSlide,
     savePresentation,
     resetPresentation,
+    addTextElement,
     updateTextElementContent,
     updateTextElementFormatting,
     updateElementPosition,
@@ -91,6 +93,7 @@ export default function EditorPage() {
   );
 
   const { handleVideoUpload } = useVideoUpload(addMedia);
+  const { handleAddTextElement } = useAddTextElement(addTextElement);
 
   const exportPresentation = async () => exportToReveal(presentation);
 
@@ -327,6 +330,7 @@ export default function EditorPage() {
           currentFormatting={currentFormatting}
           onFormatChange={handleFormatChange}
           isTextSelected={!!selectedTextEl}
+          onAddTextElement={handleAddTextElement}
           presentation={presentation}
           onCut={handleCut}
           onCopy={handleCopy}

@@ -2,8 +2,6 @@ import { useCallback } from "react";
 import { idbRemove } from "../core/persistence/autoSaveService";
 import { EditorEventType, createEditorEvent } from "../core";
 
-// const STORAGE_KEY = "presentation";
-
 export function useEditorActions(
   eventBus,
   selectedSlideIndex,
@@ -120,6 +118,14 @@ export function useEditorActions(
     (notes) =>
       eventBus.dispatch(
         createEditorEvent(EditorEventType.SLIDE.UPDATE_NOTES, { notes }),
+      ),
+    [eventBus],
+  );
+
+  const addTextElement = useCallback(
+    (textElement) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.TEXT.ADD, { textElement }),
       ),
     [eventBus],
   );
@@ -410,6 +416,7 @@ export function useEditorActions(
     applyTransitionToAll,
     updateSlideNotes,
     selectElement,
+    addTextElement,
     updateTextElementContent,
     updateTextElementFormatting,
     updateElementPosition,

@@ -9,7 +9,7 @@ const LAYOUTS = [
   { id: "blank", label: "Blank" },
 ];
 
-export default function InsertTab({ onImageUpload, onVideoUpload, onAddSlide }) {
+export default function InsertTab({ onImageUpload, onVideoUpload, onAddSlide, onAddTextElement }) {
   const [showLayouts, setShowLayouts] = useState(false);
   const [newSlidePos, setNewSlidePos] = useState({ top: 0, left: 0 });
   const newSlideBtnRef = useRef(null);
@@ -82,7 +82,7 @@ export default function InsertTab({ onImageUpload, onVideoUpload, onAddSlide }) 
           <input type="file" accept="video/*" onChange={onVideoUpload} hidden />
         </label>
 
-        <button className="toolbar-item large" disabled>
+        <button className="toolbar-item large" onClick={() => onAddTextElement?.()}>
           <MdTextFields />
           <span>Text Box</span>
         </button>

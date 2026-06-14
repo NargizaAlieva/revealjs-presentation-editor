@@ -159,7 +159,17 @@ export const createDefaultPresentation = () => {
       fonts: [],
 
       master: {
-        formatting: {},
+        formatting: {
+          font: "Arial",
+          color: "var(--text-dark)",
+          size: "24px",
+          weight: "normal",
+          italics: false,
+          "text-decoration": "none",
+          "line-spacing": "1.4em",
+          align: "left",
+          "vertical-align": "top",
+        },
         "aspect-ratio": "16:9",
         "slide-dimensions": {
           width: 1280,

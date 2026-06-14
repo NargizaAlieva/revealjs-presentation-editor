@@ -7,6 +7,22 @@ const createParagraphId = () =>
 
 const RUN_ONLY_KEYS = new Set(["super-sub-script"]);
 
+export const addTextElement = (presentation, slideIndex, textElement) => {
+  const slides = [...getSlides(presentation)];
+  const slide = slides[slideIndex];
+  if (!slide) return presentation;
+
+  slides[slideIndex] = {
+    ...slide,
+    contents: {
+      ...slide.contents,
+      text: [...(slide.contents?.text ?? []), textElement],
+    },
+  };
+
+  return setSlides(presentation, slides);
+};
+
 export const updateTextElement = (
   presentation,
   slideIndex,

@@ -54,6 +54,7 @@ export default function Toolbar({
   activeTab,
   onTabChange,
 
+  onAddTextElement,
   currentFormatting,
   onFormatChange,
   isTextSelected,
@@ -124,6 +125,7 @@ export default function Toolbar({
             onImageUpload={onImageUpload}
             onVideoUpload={onVideoUpload}
             onAddSlide={onAddSlide}
+            onAddTextElement={onAddTextElement}
           />
         )}
 
