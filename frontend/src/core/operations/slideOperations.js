@@ -67,8 +67,8 @@ export const createSlideFromLayout = (layout, slideNumber) => {
         ),
       ),
       media: mediaPlaceholders.map(createMediaElementFromPlaceholder),
-      shapes: [],   // reserved for future integration
-      tables: [],   // reserved for future integration
+      shapes: [],
+      tables: [],  
       groups: [],
       animations: [],
       background: "#FFFFFFFF",
@@ -139,9 +139,13 @@ export const duplicateSlide = (presentation, slideIndex) => {
         ...structuredClone(el),
         id: createId("group"),
       })),
-      animations: (source.contents?.animations ?? []).map((el) => ({
-        ...structuredClone(el),
-        id: createId("animation"),
+      animations: (source.contents?.animations ?? [])
+        .slice()
+        .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0))
+        .map((anim, index) => ({
+          ...structuredClone(anim),
+          id: createId("animation"),
+          sequence: index + 1,
       })),
     },
   };

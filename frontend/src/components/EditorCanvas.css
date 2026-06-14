@@ -14,22 +14,15 @@
   flex: 1;
   min-height: 0;
 
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+
   overflow: auto;
+  padding: 40px;
 
   background-color: #eeeeee;
   touch-action: none;
-}
-
-.slide-workspace-inner {
-  min-width: 100%;
-  min-height: 100%;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  padding: 80px;
-  box-sizing: border-box;
 }
 
 .zoom-stage {
@@ -47,7 +40,7 @@
   border: 1px solid #cfcfcf;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
 
-  overflow: visible;
+  overflow: hidden;
 }
 
 .slide-notes {
@@ -211,165 +204,289 @@
 }
 
 @keyframes previewStrike {
-  0% { text-decoration: none; }
-  100% { text-decoration: line-through; }
+  0% {
+    text-decoration: none;
+  }
+
+  100% {
+    text-decoration: line-through;
+  }
 }
 
 /* shrink-down */
 .play-shrink-down {
   animation-name: previewShrinkDown;
 }
+
 @keyframes previewShrinkDown {
-  from { transform: scale(1); opacity: 1; }
-  to   { transform: scale(0.5) translateY(40px); opacity: 0; }
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  to {
+    transform: scale(0.5) translateY(40px);
+    opacity: 0;
+  }
 }
 
 /* fade-out */
 .play-fade-out {
   animation-name: previewFadeOut;
 }
+
 @keyframes previewFadeOut {
-  from { opacity: 1; }
-  to   { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
 }
 
 /* fade-in-then-out */
 .play-fade-in-then-out {
   animation-name: previewFadeInThenOut;
 }
+
 @keyframes previewFadeInThenOut {
-  0%   { opacity: 0; }
-  40%  { opacity: 1; }
-  100% { opacity: 0; }
+  0% {
+    opacity: 0;
+  }
+
+  40% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
 }
 
 /* fade-in-then-semi-out */
 .play-fade-in-then-semi-out {
   animation-name: previewFadeInThenSemiOut;
 }
+
 @keyframes previewFadeInThenSemiOut {
-  0%   { opacity: 0; }
-  40%  { opacity: 1; }
-  100% { opacity: 0.4; }
+  0% {
+    opacity: 0;
+  }
+
+  40% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.4;
+  }
 }
 
 /* highlight-red */
 .play-highlight-red {
   animation-name: previewHighlightRed;
 }
+
 @keyframes previewHighlightRed {
-  0%   { background-color: transparent; }
-  50%  { background-color: #ff000066; }
-  100% { background-color: #ff000066; }
+  0% {
+    background-color: transparent;
+  }
+
+  50% {
+    background-color: #ff000066;
+  }
+
+  100% {
+    background-color: #ff000066;
+  }
 }
 
 /* highlight-green */
 .play-highlight-green {
   animation-name: previewHighlightGreen;
 }
+
 @keyframes previewHighlightGreen {
-  0%   { background-color: transparent; }
-  50%  { background-color: #00cc0066; }
-  100% { background-color: #00cc0066; }
+  0% {
+    background-color: transparent;
+  }
+
+  50% {
+    background-color: #00cc0066;
+  }
+
+  100% {
+    background-color: #00cc0066;
+  }
 }
 
 /* highlight-blue */
 .play-highlight-blue {
   animation-name: previewHighlightBlue;
 }
+
 @keyframes previewHighlightBlue {
-  0%   { background-color: transparent; }
-  50%  { background-color: #0077ff66; }
-  100% { background-color: #0077ff66; }
+  0% {
+    background-color: transparent;
+  }
+
+  50% {
+    background-color: #0077ff66;
+  }
+
+  100% {
+    background-color: #0077ff66;
+  }
 }
 
 /* highlight-current-red (flashes then fades) */
 .play-highlight-current-red {
   animation-name: previewHighlightCurrentRed;
 }
+
 @keyframes previewHighlightCurrentRed {
-  0%   { background-color: transparent; }
-  40%  { background-color: #ff000066; }
-  100% { background-color: transparent; }
+  0% {
+    background-color: transparent;
+  }
+
+  40% {
+    background-color: #ff000066;
+  }
+
+  100% {
+    background-color: transparent;
+  }
 }
 
 /* highlight-current-green */
 .play-highlight-current-green {
   animation-name: previewHighlightCurrentGreen;
 }
+
 @keyframes previewHighlightCurrentGreen {
-  0%   { background-color: transparent; }
-  40%  { background-color: #00cc0066; }
-  100% { background-color: transparent; }
+  0% {
+    background-color: transparent;
+  }
+
+  40% {
+    background-color: #00cc0066;
+  }
+
+  100% {
+    background-color: transparent;
+  }
 }
 
 /* highlight-current-blue */
 .play-highlight-current-blue {
   animation-name: previewHighlightCurrentBlue;
 }
+
 @keyframes previewHighlightCurrentBlue {
-  0%   { background-color: transparent; }
-  40%  { background-color: #0077ff66; }
-  100% { background-color: transparent; }
+  0% {
+    background-color: transparent;
+  }
+
+  40% {
+    background-color: #0077ff66;
+  }
+
+  100% {
+    background-color: transparent;
+  }
 }
 
-.editor-slide.play-transition {
+.transition-wrapper {
+  width: 100%;
+  height: 100%;
+}
+
+.transition-wrapper.play-transition {
   animation-duration: 800ms;
   animation-timing-function: ease-out;
   animation-fill-mode: both;
 }
 
-/* Fade: просто появляется */
-.play-transition-fade {
+.transition-wrapper.play-transition-fade {
   animation-name: previewSlideFade;
 }
 
-/* Slide: въезжает справа */
-.play-transition-slide {
+.transition-wrapper.play-transition-slide {
   animation-name: previewSlideMove;
 }
 
-/* Convex: приходит маленьким с лёгким поворотом (выпуклость) */
-.play-transition-convex {
+.transition-wrapper.play-transition-convex {
   animation-name: previewSlideConvex;
   transform-origin: center center;
 }
 
-/* Concave: приходит большим с лёгким поворотом (вогнутость) */
-.play-transition-concave {
+.transition-wrapper.play-transition-concave {
   animation-name: previewSlideConcave;
   transform-origin: center center;
 }
 
-/* Zoom: появляется из центра */
-.play-transition-zoom {
+.transition-wrapper.play-transition-zoom {
   animation-name: previewSlideZoom;
   transform-origin: center center;
 }
 
 @keyframes previewSlideFade {
-  0%   { opacity: 0; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }
 
 @keyframes previewSlideMove {
-  0%   { transform: translateX(60px); opacity: 0.3; }
-  100% { transform: translateX(0);    opacity: 1; }
+  0% {
+    transform: translateX(60px);
+    opacity: 0.3;
+  }
+
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @keyframes previewSlideConvex {
-  0%   { transform: scale(0.6) rotate(6deg) translate(30px, -20px); opacity: 0; }
-  100% { transform: scale(1)   rotate(0deg) translate(0, 0);        opacity: 1; }
+  0% {
+    transform: rotate(5deg) translate(20px, -10px);
+    opacity: 0;
+  }
+
+  100% {
+    transform: rotate(0deg) translate(0, 0);
+    opacity: 1;
+  }
 }
 
 @keyframes previewSlideConcave {
-  0%   { transform: scale(1.4) rotate(-6deg) translate(-30px, 20px); opacity: 0; }
-  100% { transform: scale(1)   rotate(0deg)  translate(0, 0);        opacity: 1; }
+  0% {
+    transform: rotate(-5deg) translate(-20px, 10px);
+    opacity: 0;
+  }
+
+  100% {
+    transform: rotate(0deg) translate(0, 0);
+    opacity: 1;
+  }
 }
 
 @keyframes previewSlideZoom {
-  0%   { transform: scale(0.4); opacity: 0; }
-  100% { transform: scale(1);   opacity: 1; }
+  0% {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .animation-order-badge {
@@ -398,3 +515,4 @@
 
   pointer-events: none;
 }
+

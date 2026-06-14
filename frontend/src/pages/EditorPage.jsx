@@ -71,6 +71,7 @@ export default function EditorPage() {
     updateSlideTransition,
     updateTransitionDuration,
     applyTransitionToAll,
+    applyLayout,
     addAnimation,
     updateAnimation,
     deleteAnimation,
@@ -82,7 +83,6 @@ export default function EditorPage() {
     copyElement,
     pasteElement,
     cutElement,
-    applyLayout,
   } = useEditorActions(
     eventBus,
     selectedSlideIndex,
@@ -204,8 +204,8 @@ export default function EditorPage() {
 
   const selectedTextEl = selectedElementId
     ? (selectedSlide?.contents?.text ?? []).find(
-        (t) => t.id === selectedElementId,
-      )
+      (t) => t.id === selectedElementId,
+    )
     : null;
 
   const currentFormatting = selectedTextEl?.paragraphs?.[0]?.formatting ?? {};

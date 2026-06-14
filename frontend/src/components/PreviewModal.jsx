@@ -103,7 +103,10 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
       onMouseMove={handleMouseMove}
     >
       <div className="preview-window" onClick={handleClick}>
-        <button className="preview-close" onClick={(e) => { e.stopPropagation(); onClose(); }}>
+        <button
+          className="preview-close"
+          onClick={(e) => { e.stopPropagation(); onClose(); }}
+        >
           ✕
         </button>
 

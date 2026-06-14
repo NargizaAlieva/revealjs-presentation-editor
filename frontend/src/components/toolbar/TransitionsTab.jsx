@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { MdPreview, MdSpeed } from "react-icons/md";
+import { MdPreview, MdSpeed, MdSelectAll } from "react-icons/md";
 import "./TransitionsTab.css";
+
 
 const TRANSITIONS = [
   { value: "none", label: "None" },
@@ -93,8 +94,10 @@ export default function TransitionsTab({
               </button>
             ))}
           </div>
-          <div className="ribbon-group-title">Timing</div>
+          <div className="ribbon-group-title">Speed</div>
         </div>
+
+        <div className="timing-divider" />
 
         <div className="apply-group">
           <button
@@ -102,7 +105,7 @@ export default function TransitionsTab({
             onClick={onApplyToAll}
             disabled={!currentTransition}
           >
-            <span className="apply-icon">⬛</span>
+            <MdSelectAll className="apply-icon-svg" />
             Apply To All
           </button>
         </div>

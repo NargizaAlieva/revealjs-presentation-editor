@@ -77,8 +77,15 @@
 }
 
 @keyframes previewFade {
-  0%, 100% { opacity: 0; }
-  50%       { opacity: 1; }
+
+  0%,
+  100% {
+    opacity: 0;
+  }
+
+  50% {
+    opacity: 1;
+  }
 }
 
 .transition-preview--slide .preview-square--b {
@@ -86,9 +93,20 @@
 }
 
 @keyframes previewSlide {
-  0%, 10%   { transform: translateX(100%); }
-  50%, 90%  { transform: translateX(0); }
-  100%      { transform: translateX(100%); }
+
+  0%,
+  10% {
+    transform: translateX(100%);
+  }
+
+  50%,
+  90% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .transition-preview--convex .preview-square--b {
@@ -97,9 +115,23 @@
 }
 
 @keyframes previewConvex {
-  0%, 10%  { transform: scale(0.3) rotate(8deg);  opacity: 0; }
-  50%, 90% { transform: scale(1)   rotate(0deg);  opacity: 1; }
-  100%     { transform: scale(0.3) rotate(8deg);  opacity: 0; }
+
+  0%,
+  10% {
+    transform: scale(0.3) rotate(8deg);
+    opacity: 0;
+  }
+
+  50%,
+  90% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0.3) rotate(8deg);
+    opacity: 0;
+  }
 }
 
 .transition-preview--concave .preview-square--b {
@@ -108,9 +140,23 @@
 }
 
 @keyframes previewConcave {
-  0%, 10%  { transform: scale(1.4) rotate(-8deg); opacity: 0; }
-  50%, 90% { transform: scale(1)   rotate(0deg);  opacity: 1; }
-  100%     { transform: scale(1.4) rotate(-8deg); opacity: 0; }
+
+  0%,
+  10% {
+    transform: scale(1.4) rotate(-8deg);
+    opacity: 0;
+  }
+
+  50%,
+  90% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1.4) rotate(-8deg);
+    opacity: 0;
+  }
 }
 
 .transition-preview--zoom .preview-square--b {
@@ -119,9 +165,23 @@
 }
 
 @keyframes previewZoom {
-  0%, 10%  { transform: scale(0); opacity: 0; }
-  50%, 90% { transform: scale(1); opacity: 1; }
-  100%     { transform: scale(0); opacity: 0; }
+
+  0%,
+  10% {
+    transform: scale(0);
+    opacity: 0;
+  }
+
+  50%,
+  90% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
 }
 
 .transitions-preview-group .toolbar-item.large {
@@ -254,4 +314,24 @@
 .apply-icon {
   font-size: 11px;
   color: #555;
+}
+
+.timing-divider {
+  width: 1px;
+  height: 50px;
+  background: #d8d8d8;
+  margin: 0 8px;
+  align-self: center;
+}
+
+.apply-icon-svg {
+  font-size: 16px;
+  color: #333;
+}
+
+.apply-group {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
 }

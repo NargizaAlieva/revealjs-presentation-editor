@@ -19,6 +19,13 @@
   cursor: text;
 }
 
+.text-editable:empty::before {
+  content: attr(data-placeholder);
+  color: #aaa;
+  pointer-events: none;
+  font-style: italic;
+}
+
 .draggable.selected {
   outline: 1px solid #4f46e5;
   outline-offset: 2px;
