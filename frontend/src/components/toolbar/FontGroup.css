@@ -1,0 +1,17 @@
+.toolbar-select {
+  width: 118px;
+  height: 26px;
+  border: 1px solid #cfcfcf;
+  border-radius: 4px;
+  background: white;
+  font-size: 12px;
+}
+
+.toolbar-size {
+  width: 48px;
+  height: 26px;
+  border: 1px solid #cfcfcf;
+  border-radius: 4px;
+  background: white;
+  font-size: 12px;
+}
