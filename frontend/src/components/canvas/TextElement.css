@@ -65,17 +65,14 @@
   border: 1.5px solid #4f46e5;
   border-radius: 50%;
   z-index: 20;
-  /* центрируем точку относительно края */
   margin: -5px;
 }
 
-/* углы */
 .resize-handle-nw { top: 0;   left: 0;   }
 .resize-handle-ne { top: 0;   right: 0;  margin-right: -5px; margin-left: 0; }
 .resize-handle-se { bottom: 0; right: 0; margin-bottom: -5px; margin-right: -5px; margin-top: 0; margin-left: 0; }
 .resize-handle-sw { bottom: 0; left: 0;  margin-bottom: -5px; margin-top: 0; }
 
-/* середины сторон */
 .resize-handle-n  { top: 0;    left: 50%; margin-top: -5px;    margin-left: -5px; }
 .resize-handle-s  { bottom: 0; left: 50%; margin-bottom: -5px; margin-left: -5px; margin-top: 0; }
 .resize-handle-e  { top: 50%;  right: 0;  margin-top: -5px;    margin-right: -5px; margin-left: 0; }
@@ -106,8 +103,6 @@
 .drag-border-left   { left: -4px;   top: 8px;   bottom: 8px; width: 10px;  }
 .drag-border-right  { right: -4px;  top: 8px;   bottom: 8px; width: 10px;  }
 
-/* ── Rotate handle ──────────────────────────────────────────── */
-
 .text-rotate-handle {
   position: absolute;
   top: -40px;
@@ -136,3 +131,26 @@
 }
 
 .text-rotate-handle:active { cursor: grabbing; }
+
+.text-editable[data-list-type]::before {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1.4em;
+  text-align: center;
+  pointer-events: none;
+  line-height: inherit;
+  font-size: inherit;
+  color: inherit;
+  font-family: inherit;
+}
+
+.text-editable[data-list-type="bullet"]::before {
+  content: attr(data-list-marker);
+}
+
+.text-editable[data-list-numbered-style="decimal"]::before    { content: "1."; }
+.text-editable[data-list-numbered-style="lower-alpha"]::before { content: "a."; }
+.text-editable[data-list-numbered-style="upper-alpha"]::before { content: "A."; }
+.text-editable[data-list-numbered-style="lower-roman"]::before { content: "i."; }
+.text-editable[data-list-numbered-style="upper-roman"]::before { content: "I."; }
