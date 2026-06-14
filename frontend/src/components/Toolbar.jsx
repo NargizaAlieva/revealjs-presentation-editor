@@ -36,6 +36,7 @@ export default function Toolbar({
   onVideoUpload,
   onToggleSlideHidden,
   isSlideHidden,
+  onApplyLayout,
 
   onTransitionChange,
   currentTransition,
@@ -92,6 +93,7 @@ export default function Toolbar({
         {currentTab === "Home" && (
           <HomeTab
             onAddSlide={onAddSlide}
+            onApplyLayout={onApplyLayout}
             onDeleteSlide={onDeleteSlide}
             onDuplicateSlide={onDuplicateSlide}
             onMoveSlideUp={onMoveSlideUp}

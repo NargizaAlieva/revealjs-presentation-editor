@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   MdAdd,
   MdDelete,
@@ -50,6 +50,7 @@ const FONT_SIZES = [
 
 export default function HomeTab({
   onAddSlide,
+  onApplyLayout,
   onDeleteSlide,
   onDuplicateSlide,
   onMoveSlideUp,
@@ -92,6 +93,50 @@ export default function HomeTab({
   const currentColor = currentFormatting.color ?? "#111111";
   const currentAlign = currentFormatting.align ?? "left";
 
+  const [showLayoutPanel, setShowLayoutPanel] = useState(false);
+  const [popupPos, setPopupPos] = useState({ top: 0, left: 0 });
+  const [newSlidePos, setNewSlidePos] = useState({ top: 0, left: 0 });
+  const layoutBtnRef = useRef(null);
+  const newSlideBtnRef = useRef(null);
+
+  const handleNewSlideToggle = () => {
+    if (!showLayouts && newSlideBtnRef.current) {
+      const rect = newSlideBtnRef.current.getBoundingClientRect();
+      setNewSlidePos({ top: rect.bottom + 4, left: rect.left });
+    }
+    setShowLayouts((v) => !v);
+  };
+
+  const handleLayoutPanelToggle = () => {
+    if (!showLayoutPanel && layoutBtnRef.current) {
+      const rect = layoutBtnRef.current.getBoundingClientRect();
+      setPopupPos({ top: rect.bottom + 4, left: rect.left });
+    }
+    setShowLayoutPanel((v) => !v);
+  };
+
+  useEffect(() => {
+    if (!showLayoutPanel) return;
+    const handler = (e) => {
+      if (layoutBtnRef.current && !layoutBtnRef.current.closest(".layout-apply-container").contains(e.target)) {
+        setShowLayoutPanel(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showLayoutPanel]);
+
+  useEffect(() => {
+    if (!showLayouts) return;
+    const handler = (e) => {
+      if (newSlideBtnRef.current && !newSlideBtnRef.current.closest(".toolbar-dropdown-container").contains(e.target)) {
+        setShowLayouts(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showLayouts]);
+
   return (
     <>
       <div className="ribbon-group clipboard-group">
@@ -115,15 +160,16 @@ export default function HomeTab({
       <div className="ribbon-group slides-group">
         <div className="toolbar-dropdown-container">
           <button
+            ref={newSlideBtnRef}
             className="toolbar-item large"
-            onClick={() => setShowLayouts((v) => !v)}
+            onClick={handleNewSlideToggle}
           >
             <MdAdd />
             <span>New Slide</span>
           </button>
 
           {showLayouts && (
-            <div className="layout-popup">
+            <div className="layout-popup" style={{ top: newSlidePos.top, left: newSlidePos.left }}>
               <h4>Layouts</h4>
 
               {LAYOUTS.map((layout) => (
@@ -145,15 +191,33 @@ export default function HomeTab({
         </div>
 
         <div className="mini-stack text-stack">
-          <button className="mini-text-command" disabled>
-            Layout
-          </button>
-          <button className="mini-text-command" disabled>
-            Reset
-          </button>
-          <button className="mini-text-command" disabled>
-            Section
-          </button>
+          <div className="layout-apply-container">
+            <button
+              ref={layoutBtnRef}
+              className="mini-text-command layout-apply-btn"
+              onClick={handleLayoutPanelToggle}
+            >
+              Layout
+            </button>
+            {showLayoutPanel && (
+              <div className="layout-apply-popup" style={{ top: popupPos.top, left: popupPos.left }}>
+                {LAYOUTS.map((layout) => (
+                  <button
+                    key={layout.id}
+                    className="layout-apply-option"
+                    onClick={() => { onApplyLayout?.(layout.id); setShowLayoutPanel(false); }}
+                  >
+                    <div className={`layout-thumb layout-thumb--${layout.id} layout-thumb--small`}>
+                      {layout.id === "title-content-media" && <div className="layout-thumb-media" />}
+                    </div>
+                    <span>{layout.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button className="mini-text-command" disabled>Reset</button>
+          <button className="mini-text-command" disabled>Section</button>
         </div>
 
         <button
