@@ -131,11 +131,12 @@ export function useEditorActions(
   );
 
   const updateTextElementContent = useCallback(
-    (textElementId, newText) =>
+    (textElementId, newText, htmlContent) =>
       eventBus.dispatch(
         createEditorEvent(EditorEventType.TEXT.UPDATE, {
           textElementId,
           text: newText,
+          html: htmlContent,
           userModified: true,
         }),
       ),
@@ -328,7 +329,7 @@ export function useEditorActions(
         createEditorEvent(EditorEventType.MASTER.ADD_ELEMENT, {
           elementType,
           element,
-        })
+        }),
       ),
     [eventBus],
   );
@@ -340,7 +341,7 @@ export function useEditorActions(
           elementType,
           elementId,
           updates,
-        })
+        }),
       ),
     [eventBus],
   );
@@ -351,7 +352,7 @@ export function useEditorActions(
         createEditorEvent(EditorEventType.MASTER.DELETE_ELEMENT, {
           elementType,
           elementId,
-        })
+        }),
       ),
     [eventBus],
   );
@@ -377,9 +378,7 @@ export function useEditorActions(
 
   const resetLayout = useCallback(
     () =>
-      eventBus.dispatch(
-        createEditorEvent(EditorEventType.LAYOUT.RESET, {}),
-      ),
+      eventBus.dispatch(createEditorEvent(EditorEventType.LAYOUT.RESET, {})),
     [eventBus],
   );
 
@@ -443,9 +442,25 @@ export function useEditorActions(
   const cutElement = useCallback(
     (element) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.ELEMENT.CUT, { element })
+        createEditorEvent(EditorEventType.ELEMENT.CUT, { element }),
       ),
-    [eventBus]
+    [eventBus],
+  );
+
+  const addComment = useCallback(
+    (text, author) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.COMMENT.ADD, { text, author }),
+      ),
+    [eventBus],
+  );
+
+  const deleteComment = useCallback(
+    (commentId) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.COMMENT.DELETE, { commentId }),
+      ),
+    [eventBus],
   );
 
   return {
@@ -499,5 +514,7 @@ export function useEditorActions(
     copyElement,
     pasteElement,
     cutElement,
+    addComment,
+    deleteComment,
   };
 }

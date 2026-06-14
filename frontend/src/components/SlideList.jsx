@@ -10,6 +10,10 @@ export default function SlideList({
   slideWidth,
   slideHeight,
 }) {
+  // commentCounts[i] = number of comments on slide i
+  const commentCounts = (slides ?? []).map(
+    (s) => (s.contents?.comments ?? []).length,
+  );
   const listRef = useRef(null);
   const itemRefs = useRef([]);
   const [draggedIndex, setDraggedIndex] = useState(null);
@@ -117,6 +121,7 @@ export default function SlideList({
             >
               <SlideThumbnail
                 slide={slide}
+                commentCount={commentCounts[index]}
                 slideWidth={slideWidth}
                 slideHeight={slideHeight}
               />

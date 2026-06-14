@@ -29,7 +29,7 @@ export default function ParagraphGroup({
 
   const currentAlign = currentFormatting.align ?? "left";
   const currentListType = currentFormatting["list-type"] ?? null;
-  const currentListLevel = currentFormatting["list-level"] ?? 0;
+  const currentListLevel = currentFormatting["indent-level"] ?? 0;
 
   useEffect(() => {
     if (!showBulletPicker && !showNumberedPicker) return;
@@ -65,7 +65,7 @@ export default function ParagraphGroup({
                   currentListType === "bullet"
                     ? null
                     : (currentFormatting["list-marker"] ?? "•"),
-                "list-level": 0,
+                "indent-level": 0,
               })
             }
           >
@@ -101,12 +101,12 @@ export default function ParagraphGroup({
                           ? {
                               "list-type": null,
                               "list-marker": null,
-                              "list-level": 0,
+                              "indent-level": 0,
                             }
                           : {
                               "list-type": "bullet",
                               "list-marker": marker,
-                              "list-level": currentListLevel,
+                              "indent-level": currentListLevel,
                             },
                       );
                       setShowBulletPicker(false);
@@ -143,7 +143,7 @@ export default function ParagraphGroup({
                   currentListType === "numbered"
                     ? null
                     : (currentFormatting["list-numbered-style"] ?? "decimal"),
-                "list-level": 0,
+                "indent-level": 0,
               })
             }
           >
@@ -179,12 +179,12 @@ export default function ParagraphGroup({
                           ? {
                               "list-type": null,
                               "list-numbered-style": null,
-                              "list-level": 0,
+                              "indent-level": 0,
                             }
                           : {
                               "list-type": "numbered",
                               "list-numbered-style": style,
-                              "list-level": currentListLevel,
+                              "indent-level": currentListLevel,
                             },
                       );
                       setShowNumberedPicker(false);
@@ -227,7 +227,7 @@ export default function ParagraphGroup({
           disabled={!isTextSelected || currentListLevel <= 0}
           title="Decrease list level"
           onClick={() =>
-            fmt({ "list-level": Math.max(0, currentListLevel - 1) })
+            fmt({ "indent-level": Math.max(0, currentListLevel - 1) })
           }
         >
           <MdArrowUpward />
@@ -237,7 +237,7 @@ export default function ParagraphGroup({
           disabled={!isTextSelected || !currentListType}
           title="Increase list level"
           onClick={() =>
-            fmt({ "list-level": Math.min(4, currentListLevel + 1) })
+            fmt({ "indent-level": Math.min(4, currentListLevel + 1) })
           }
         >
           <MdArrowDownward />

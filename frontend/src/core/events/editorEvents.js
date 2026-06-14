@@ -75,6 +75,11 @@ export const EditorEventType = {
     DELETE: "MEDIA.DELETE",
   },
 
+  COMMENT: {
+    ADD: "COMMENT.ADD",
+    DELETE: "COMMENT.DELETE",
+  },
+
   ANIMATION: {
     ADD: "ANIMATION.ADD",
     UPDATE: "ANIMATION.UPDATE",

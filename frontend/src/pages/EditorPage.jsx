@@ -14,6 +14,7 @@ import { usePresentationFonts } from "../hooks/usePresentationFonts";
 import "./EditorPage.css";
 import PreviewModal from "../components/PreviewModal";
 import StatusBar from "../components/StatusBar";
+import CommentsPanel from "../components/CommentsPanel";
 import { getSlideSize } from "../utils/slidesetRenderUtils";
 import FileMenu from "../components/FileMenu";
 import { idbSet } from "../core/persistence/autoSaveService";
@@ -32,6 +33,13 @@ export default function EditorPage() {
   const navigate = useNavigate();
 
   const [previewStartSlide, setPreviewStartSlide] = useState(0);
+  const [showComments, setShowComments] = useState(false);
+  const [composeSession, setComposeSession] = useState(0);
+
+  const handleNewComment = () => {
+    setShowComments(true);
+    setComposeSession((s) => s + 1);
+  };
 
   const {
     zoom,
@@ -102,6 +110,8 @@ export default function EditorPage() {
     copyElement,
     pasteElement,
     cutElement,
+    addComment,
+    deleteComment,
   } = useEditorActions(
     eventBus,
     selectedSlideIndex,
@@ -342,9 +352,22 @@ export default function EditorPage() {
               onCopy={handleCopy}
               onPaste={handlePaste}
               onCut={handleCut}
+              onNewComment={handleNewComment}
             />
           )}
         </div>
+
+        {showComments && (
+          <CommentsPanel
+            key={composeSession}
+            comments={selectedSlide?.contents?.comments ?? []}
+            authorName="User"
+            onAdd={addComment}
+            onDelete={deleteComment}
+            onClose={() => setShowComments(false)}
+            autoCompose={composeSession > 0}
+          />
+        )}
       </div>
 
       <div className="statusbar-overlay">
@@ -357,6 +380,9 @@ export default function EditorPage() {
           onZoomOut={zoomOut}
           showNotes={showNotes}
           onToggleNotes={toggleNotes}
+          showComments={showComments}
+          onToggleComments={() => setShowComments((v) => !v)}
+          commentCount={(selectedSlide?.contents?.comments ?? []).length}
         />
       </div>
 

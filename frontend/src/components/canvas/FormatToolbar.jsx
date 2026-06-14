@@ -10,6 +10,7 @@ import {
 } from "react-icons/md";
 
 let formattingClipboard = null;
+let lastHighlightColor = "#ffff00";
 
 const DEFAULT_FONTS = [
   "Arial",
@@ -24,12 +25,17 @@ const DEFAULT_FONTS = [
   "Roboto",
 ];
 
-const stop = (event) => event.stopPropagation();
+const stop = (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+};
 
 export default function FormatToolbar({
   elementId,
   formatting,
   onFormatTextElement,
+  onHighlight,
+  onNewComment,
   presentation,
   style,
 }) {
@@ -41,6 +47,7 @@ export default function FormatToolbar({
     top: 0,
     left: 0,
   });
+  const [, forceUpdate] = useState(0);
 
   const fmt = (updates) => onFormatTextElement(elementId, updates);
 
@@ -82,235 +89,240 @@ export default function FormatToolbar({
       onMouseDown={stop}
       onClick={stop}
     >
-      <div className="format-row">
-        <select
-          className="font-select"
-          value={currentFont}
-          onChange={(e) => fmt({ font: e.target.value })}
-          title="Font"
-        >
-          {fonts.map((f) => (
-            <option key={f} value={f} style={{ fontFamily: f }}>
-              {f}
-            </option>
-          ))}
-        </select>
-
-        <input
-          className="size-input"
-          type="number"
-          min={6}
-          max={120}
-          value={currentSize}
-          onChange={(e) => fmt({ size: `${e.target.value}px` })}
-          title="Font size"
-        />
-
-        <button
-          type="button"
-          title="Increase font size"
-          onClick={() => fmt({ size: `${Math.min(120, currentSize + 2)}px` })}
-        >
-          A<sup>+</sup>
-        </button>
-
-        <button
-          type="button"
-          title="Decrease font size"
-          onClick={() => fmt({ size: `${Math.max(6, currentSize - 2)}px` })}
-        >
-          A<sup>−</sup>
-        </button>
-
-        <div className="separator" />
-
-        <select
-          className="spacing-select"
-          value={currentLineSpacing}
-          onChange={(e) => fmt({ "line-spacing": `${e.target.value}em` })}
-          title="Line spacing"
-        >
-          <option value={1}>1.0</option>
-          <option value={1.15}>1.15</option>
-          <option value={1.5}>1.5</option>
-          <option value={2}>2.0</option>
-          <option value={2.5}>2.5</option>
-          <option value={3}>3.0</option>
-        </select>
-      </div>
-
-      <div className="format-row">
-        <button
-          type="button"
-          className={`fmt-btn bold ${formatting.weight === "bold" ? "active" : ""}`}
-          title="Bold"
-          onClick={() =>
-            fmt({ weight: formatting.weight === "bold" ? "normal" : "bold" })
-          }
-        >
-          B
-        </button>
-
-        <button
-          type="button"
-          className={`fmt-btn italic ${formatting.italics ? "active" : ""}`}
-          title="Italic"
-          onClick={() => fmt({ italics: !formatting.italics })}
-        >
-          I
-        </button>
-
-        <button
-          type="button"
-          className={`fmt-btn underline ${formatting["text-decoration"] === "underline" ? "active" : ""}`}
-          title="Underline"
-          onClick={() =>
-            fmt({
-              "text-decoration":
-                formatting["text-decoration"] === "underline"
-                  ? "none"
-                  : "underline",
-            })
-          }
-        >
-          U
-        </button>
-
-        <div className="separator" />
-
-        {["left", "center", "right", "justify"].map((align) => (
-          <button
-            key={align}
-            type="button"
-            className={`fmt-btn align-btn ${currentAlign === align ? "active" : ""}`}
-            title={`Align ${align}`}
-            onClick={() => fmt({ align })}
+      {/* Левая часть — два ряда кнопок */}
+      <div className="ft-rows">
+        <div className="format-row">
+          <select
+            className="font-select"
+            value={currentFont}
+            onChange={(e) => fmt({ font: e.target.value })}
+            title="Font"
           >
-            {align === "left" && <MdFormatAlignLeft />}
-            {align === "center" && <MdFormatAlignCenter />}
-            {align === "right" && <MdFormatAlignRight />}
-            {align === "justify" && <MdFormatAlignJustify />}
-          </button>
-        ))}
+            {fonts.map((f) => (
+              <option key={f} value={f} style={{ fontFamily: f }}>
+                {f}
+              </option>
+            ))}
+          </select>
 
-        <div className="separator" />
+          <input
+            className="size-input"
+            type="number"
+            min={6}
+            max={120}
+            value={currentSize}
+            onChange={(e) => fmt({ size: `${e.target.value}px` })}
+            title="Font size"
+          />
 
-        <div className="ft-color-container">
           <button
             type="button"
-            className="color-btn"
-            title="Text color"
-            onClick={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              setColorPickerPos({ top: rect.bottom + 4, left: rect.left });
-              setShowColorPicker((v) => !v);
-              setShowHighlightPicker(false);
-            }}
+            title="Increase font size"
+            onClick={() => fmt({ size: `${Math.min(120, currentSize + 2)}px` })}
           >
-            <span
-              className="color-icon"
-              style={{ borderBottom: `3px solid ${currentColor}` }}
-            >
-              A
-            </span>
-            <span className="ft-color-arrow">▾</span>
+            A<sup>+</sup>
           </button>
 
-          {/* Portal — рендерится в document.body, вне zoom-трансформа канваса.
-              Иначе position:fixed считается от трансформированного предка,
-              и пикер уходит далеко от тулбара. */}
-          {showColorPicker &&
-            createPortal(
-              <ColorPicker
-                color={currentColor}
-                onChange={(c) => fmt({ color: c })}
-                onClose={() => setShowColorPicker(false)}
-                style={{
-                  position: "fixed",
-                  top: colorPickerPos.top,
-                  left: colorPickerPos.left,
-                  zIndex: 99999,
-                }}
-              />,
-              document.body,
-            )}
+          <button
+            type="button"
+            title="Decrease font size"
+            onClick={() => fmt({ size: `${Math.max(6, currentSize - 2)}px` })}
+          >
+            A<sup>−</sup>
+          </button>
+
+          <div className="separator" />
+
+          <select
+            className="spacing-select"
+            value={currentLineSpacing}
+            onChange={(e) => fmt({ "line-spacing": `${e.target.value}em` })}
+            title="Line spacing"
+          >
+            <option value={1}>1.0</option>
+            <option value={1.15}>1.15</option>
+            <option value={1.5}>1.5</option>
+            <option value={2}>2.0</option>
+            <option value={2.5}>2.5</option>
+            <option value={3}>3.0</option>
+          </select>
         </div>
 
-        <div className="ft-color-container">
+        <div className="format-row">
           <button
             type="button"
-            className="color-btn"
-            title="Highlight color"
-            onClick={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              setHighlightPickerPos({ top: rect.bottom + 4, left: rect.left });
-              setShowHighlightPicker((v) => !v);
-              setShowColorPicker(false);
-            }}
+            className={`fmt-btn bold ${formatting.weight === "bold" ? "active" : ""}`}
+            title="Bold"
+            onClick={() =>
+              fmt({ weight: formatting.weight === "bold" ? "normal" : "bold" })
+            }
           >
-            <span
-              className="color-icon highlight-icon"
-              style={{
-                background:
-                  currentHighlight === "transparent"
-                    ? "#ffff00"
-                    : currentHighlight,
+            B
+          </button>
+
+          <button
+            type="button"
+            className={`fmt-btn italic ${formatting.italics ? "active" : ""}`}
+            title="Italic"
+            onClick={() => fmt({ italics: !formatting.italics })}
+          >
+            I
+          </button>
+
+          <button
+            type="button"
+            className={`fmt-btn underline ${formatting["text-decoration"] === "underline" ? "active" : ""}`}
+            title="Underline"
+            onClick={() =>
+              fmt({
+                "text-decoration":
+                  formatting["text-decoration"] === "underline"
+                    ? "none"
+                    : "underline",
+              })
+            }
+          >
+            U
+          </button>
+
+          <div className="separator" />
+
+          {["left", "center", "right", "justify"].map((align) => (
+            <button
+              key={align}
+              type="button"
+              className={`fmt-btn align-btn ${currentAlign === align ? "active" : ""}`}
+              title={`Align ${align}`}
+              onClick={() => fmt({ align })}
+            >
+              {align === "left" && <MdFormatAlignLeft />}
+              {align === "center" && <MdFormatAlignCenter />}
+              {align === "right" && <MdFormatAlignRight />}
+              {align === "justify" && <MdFormatAlignJustify />}
+            </button>
+          ))}
+
+          <div className="separator" />
+
+          <div className="ft-color-container">
+            <button
+              type="button"
+              className="color-btn"
+              title="Text color"
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setColorPickerPos({ top: rect.bottom + 4, left: rect.left });
+                setShowColorPicker((v) => !v);
+                setShowHighlightPicker(false);
               }}
             >
-              A
-            </span>
-            <span className="ft-color-arrow">▾</span>
-          </button>
+              <span
+                className="color-icon"
+                style={{ borderBottom: `3px solid ${currentColor}` }}
+              >
+                A
+              </span>
+              <span className="ft-color-arrow">▾</span>
+            </button>
 
-          {showHighlightPicker &&
-            createPortal(
-              <ColorPicker
-                color={
-                  currentHighlight === "transparent"
-                    ? "#ffff00"
-                    : currentHighlight
-                }
-                onChange={(c) => fmt({ highlight: c })}
-                onClose={() => setShowHighlightPicker(false)}
+            {/* Portal — рендерится в document.body, вне zoom-трансформа канваса.
+              Иначе position:fixed считается от трансформированного предка,
+              и пикер уходит далеко от тулбара. */}
+            {showColorPicker &&
+              createPortal(
+                <ColorPicker
+                  color={currentColor}
+                  onChange={(c) => fmt({ color: c })}
+                  onClose={() => setShowColorPicker(false)}
+                  style={{
+                    position: "fixed",
+                    top: colorPickerPos.top,
+                    left: colorPickerPos.left,
+                    zIndex: 99999,
+                  }}
+                />,
+                document.body,
+              )}
+          </div>
+
+          <div className="ft-color-container">
+            <button
+              type="button"
+              className="color-btn"
+              title="Highlight color"
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setHighlightPickerPos({
+                  top: rect.bottom + 4,
+                  left: rect.left,
+                });
+                setShowHighlightPicker((v) => !v);
+                setShowColorPicker(false);
+              }}
+            >
+              <span
+                className="color-icon highlight-icon"
                 style={{
-                  position: "fixed",
-                  top: highlightPickerPos.top,
-                  left: highlightPickerPos.left,
-                  zIndex: 99999,
+                  background: lastHighlightColor,
                 }}
-              />,
-              document.body,
-            )}
+              >
+                A
+              </span>
+              <span className="ft-color-arrow">▾</span>
+            </button>
+
+            {showHighlightPicker &&
+              createPortal(
+                <ColorPicker
+                  color={
+                    currentHighlight === "transparent"
+                      ? "#ffff00"
+                      : currentHighlight
+                  }
+                  onChange={(c) => {
+                    lastHighlightColor = c;
+                    forceUpdate((n) => n + 1);
+                    onHighlight ? onHighlight(c) : fmt({ highlight: c });
+                  }}
+                  onClose={() => setShowHighlightPicker(false)}
+                  style={{
+                    position: "fixed",
+                    top: highlightPickerPos.top,
+                    left: highlightPickerPos.left,
+                    zIndex: 99999,
+                  }}
+                />,
+                document.body,
+              )}
+          </div>
+
+          <button
+            type="button"
+            className={`fmt-btn painter-btn ${hasPaste ? "painter-paste" : ""} ${justCopied ? "painter-copied" : ""}`}
+            title={hasPaste ? "Apply copied formatting" : "Copy formatting"}
+            onClick={handleFormatPainter}
+          >
+            🖌️
+          </button>
         </div>
-
-        <button
-          type="button"
-          className={`fmt-btn painter-btn ${hasPaste ? "painter-paste" : ""} ${justCopied ? "painter-copied" : ""}`}
-          title={hasPaste ? "Apply copied formatting" : "Copy formatting"}
-          onClick={handleFormatPainter}
-        >
-          🖌️
-        </button>
-
-        <div className="separator" />
-
-        <button
-          type="button"
-          className="fmt-btn clear-btn"
-          title="Clear formatting"
-          onClick={() =>
-            fmt({
-              weight: "normal",
-              italics: false,
-              "text-decoration": "none",
-              color: "var(--text-dark, #111111)",
-              highlight: "transparent",
-            })
-          }
-        >
-          ✕
-        </button>
       </div>
+      {/* /ft-rows */}
+
+      {/* Правая часть — высокая кнопка New Comment */}
+      <div className="ft-separator-v" />
+      <button
+        type="button"
+        className="ft-new-comment-btn"
+        title="New comment"
+        onClick={onNewComment}
+      >
+        <span className="ft-new-comment-icon">💬</span>
+        <span className="ft-new-comment-label">
+          New
+          <br />
+          Comment
+        </span>
+      </button>
     </div>
   );
 }
