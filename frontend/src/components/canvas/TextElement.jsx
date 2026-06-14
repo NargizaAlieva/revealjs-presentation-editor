@@ -38,6 +38,12 @@ export default function TextElement({
     .join("\n");
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
 
+  const listType = formatting["list-type"] ?? null;
+  const listLevel = formatting["list-level"] ?? 0;
+  const listMarker = formatting["list-marker"] ?? "•";
+  const listNumberedStyle = formatting["list-numbered-style"] ?? "decimal";
+  const listIndent = listType ? `${(listLevel + 1) * 24}px` : "0px";
+
   useEffect(() => {
     const el = editableRef.current;
     if (!el) return;
@@ -107,7 +113,15 @@ export default function TextElement({
           color: formatting.color ?? "var(--text-dark, black)",
           fontFamily: formatting.font ?? "inherit",
           backgroundColor: formatting.highlight ?? "transparent",
+          paddingLeft: listType ? `calc(${listIndent} + 1.2em)` : undefined,
+          position: "relative",
         }}
+        data-list-type={listType ?? undefined}
+        data-list-level={listType ? listLevel : undefined}
+        data-list-marker={listType === "bullet" ? listMarker : undefined}
+        data-list-numbered-style={
+          listType === "numbered" ? listNumberedStyle : undefined
+        }
       />
 
       {isSelected &&
