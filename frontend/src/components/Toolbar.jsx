@@ -7,6 +7,7 @@ import TransitionsTab from "./toolbar/TransitionsTab";
 import AnimationsTab from "./toolbar/AnimationsTab";
 import SlideShowTab from "./toolbar/SlideShowTab";
 import DesignTab from "./toolbar/DesignTab";
+import ViewTab from "./toolbar/ViewTab";
 
 const TABS = [
   "File",
@@ -70,6 +71,14 @@ export default function Toolbar({
   onApplyTheme,
   onApplyFont,
   onUpdateDimensions,
+  currentView,
+  onChangeView,
+  showNotes,
+  onToggleNotes,
+  zoom,
+  onZoomIn,
+  onZoomOut,
+  onZoomChange,
 }) {
   const [localActiveTab, setLocalActiveTab] = useState("Home");
   const currentTab = activeTab ?? localActiveTab;
@@ -174,9 +183,16 @@ export default function Toolbar({
         )}
 
         {currentTab === "View" && (
-          <div className="toolbar-placeholder">
-            Preview mode is available in the Slide Show tab.
-          </div>
+          <ViewTab
+            currentView={currentView}
+            onChangeView={onChangeView}
+            showNotes={showNotes}
+            onToggleNotes={onToggleNotes}
+            zoom={zoom}
+            onZoomIn={onZoomIn}
+            onZoomOut={onZoomOut}
+            onZoomChange={onZoomChange}
+          />
         )}
       </div>
     </header>

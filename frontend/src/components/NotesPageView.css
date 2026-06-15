@@ -1,0 +1,69 @@
+.notes-page-view {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: auto;
+    background: #e8e8e8;
+    padding: 32px 24px;
+    gap: 24px;
+}
+
+.notes-page-slide-wrap {
+    display: flex;
+    justify-content: center;
+}
+
+.notes-page-slide-frame {
+    background: white;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+}
+
+/* ── Notes area ── */
+.notes-page-notes-wrap {
+    width: 600px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.notes-page-notes-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.notes-page-textarea {
+    width: 100%;
+    min-height: 200px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    background: white;
+    padding: 12px 14px;
+    font-size: 14px;
+    font-family: inherit;
+    line-height: 1.6;
+    color: #333;
+    resize: vertical;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    box-sizing: border-box;
+}
+
+.notes-page-textarea:focus {
+    outline: none;
+    border-color: #4472c4;
+    box-shadow: 0 0 0 2px rgba(68, 114, 196, 0.15);
+}
+
+.notes-page-textarea::placeholder {
+    color: #bbb;
+    font-style: italic;
+}

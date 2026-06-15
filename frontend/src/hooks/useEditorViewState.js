@@ -7,6 +7,7 @@ export function useEditorViewState() {
   const [showNotes, setShowNotes] = useState(true);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewEffect, setPreviewEffect] = useState(null);
+  const [currentView, setCurrentView] = useState("normal");
 
   return {
     // zoom
@@ -25,21 +26,15 @@ export function useEditorViewState() {
     setActiveTab,
     showNotes,
     toggleNotes: () => setShowNotes((v) => !v),
-
-    // preview
+    currentView,
+    setCurrentView,
     isPreviewOpen,
     openPreview: () => setIsPreviewOpen(true),
     closePreview: () => setIsPreviewOpen(false),
     previewEffect,
     setPreviewEffect,
     triggerAnimationPreview: (elementId, effect, speed) =>
-      setPreviewEffect({
-        type: "animation",
-        elementId,
-        effect,
-        speed,
-        key: Date.now(),
-      }),
+      setPreviewEffect({ type: "animation", elementId, effect, speed, key: Date.now() }),
     triggerTransitionPreview: (effect) =>
       setPreviewEffect({ type: "transition", effect, key: Date.now() }),
   };

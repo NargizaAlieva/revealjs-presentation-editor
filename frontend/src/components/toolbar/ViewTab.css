@@ -1,0 +1,107 @@
+.view-tab-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    height: 100%;
+}
+
+.view-group {
+    flex-direction: column;
+    gap: 0;
+    padding: 4px 10px 18px 8px;
+    border-right: 1px solid #d8d8d8;
+}
+
+.view-buttons-row {
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+    align-items: flex-start;
+}
+
+.view-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 5px;
+    width: 65px;
+    height: 65px;
+    border: 1.5px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    color: #222;
+    font: inherit;
+    /* padding: 6px 4px 4px; */
+    transition: background 0.1s, border-color 0.1s;
+}
+
+.view-btn:hover {
+    background: #f0f4ff;
+    border-color: #c8d0e8;
+}
+
+.view-btn.active {
+    background: #e8eeff;
+    border-color: #4472c4;
+}
+
+.view-btn-icon {
+    color: #4472c4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+}
+
+.view-btn.active .view-btn-icon {
+    color: #2f5596;
+}
+
+.view-btn-label {
+    font-size: 10px;
+    line-height: 1.2;
+    text-align: center;
+    color: #333;
+    white-space: pre-line;
+    max-width: 66px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.view-btn.active .view-btn-label {
+    color: #2f5596;
+    font-weight: 600;
+}
+
+.view-show-group {
+    flex-direction: column;
+    padding: 8px 14px 18px 12px;
+    gap: 0;
+    min-width: 80px;
+}
+
+.view-show-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 2px;
+}
+
+.view-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #333;
+    cursor: pointer;
+    user-select: none;
+}
+
+.view-checkbox-row input[type="checkbox"] {
+    width: 13px;
+    height: 13px;
+    cursor: pointer;
+    accent-color: #4472c4;
+}

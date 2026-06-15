@@ -105,16 +105,18 @@ export function initRevealDeck(
     width,
     height,
     margin: 0,
-    minScale: 0.5,
-    maxScale: 2.0,
+    minScale: 0.1,
+    maxScale: 10,
+    plugins: [],
   });
 
   deck.initialize().then(() => {
-    deck.layout();
-    deck.sync();
-    if (initialSlide > 0) {
-      deck.slide(initialSlide);
-    }
+    requestAnimationFrame(() => {
+      deck.layout();
+      if (initialSlide > 0) {
+        deck.slide(initialSlide);
+      }
+    });
   });
 
   return deck;

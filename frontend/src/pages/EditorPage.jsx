@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import SlideList from "../components/SlideList";
 import Toolbar from "../components/Toolbar";
@@ -15,6 +15,8 @@ import "./EditorPage.css";
 import PreviewModal from "../components/PreviewModal";
 import StatusBar from "../components/StatusBar";
 import CommentsPanel from "../components/CommentsPanel";
+import SlideSorterView from "../components/SlideSorterView";
+import OutlineView from "../components/OutlineView";
 import { getSlideSize } from "../utils/slidesetRenderUtils";
 import FileMenu from "../components/FileMenu";
 import { idbSet } from "../core/persistence/autoSaveService";
@@ -27,6 +29,7 @@ import {
   createPresentation,
   presentationKey,
 } from "../core/persistence/presentationsLibrary";
+import NotesPageView from "../components/NotesPageView";
 
 export default function EditorPage() {
   const { presentationId } = useParams();
@@ -35,11 +38,6 @@ export default function EditorPage() {
   const [previewStartSlide, setPreviewStartSlide] = useState(0);
   const [showComments, setShowComments] = useState(false);
   const [composeSession, setComposeSession] = useState(0);
-
-  const handleNewComment = () => {
-    setShowComments(true);
-    setComposeSession((s) => s + 1);
-  };
 
   const {
     zoom,
@@ -51,6 +49,8 @@ export default function EditorPage() {
     setActiveTab,
     showNotes,
     toggleNotes,
+    currentView,
+    setCurrentView,
     isPreviewOpen,
     openPreview,
     closePreview,
@@ -68,6 +68,14 @@ export default function EditorPage() {
     selectedSlideIndex,
     selectedElementId,
   } = useSlides(state);
+
+  useEffect(() => {
+    if (currentView === "reading") {
+      setPreviewStartSlide(selectedSlideIndex);
+      openPreview();
+      setCurrentView("normal");
+    }
+  }, [currentView]);
 
   usePresentationFonts(presentation);
 
@@ -157,10 +165,15 @@ export default function EditorPage() {
     pasteElement();
   };
 
+  const handleNewComment = () => {
+    setShowComments(true);
+    setComposeSession((s) => s + 1);
+  };
+
   const selectedTextEl = selectedElementId
     ? (selectedSlide?.contents?.text ?? []).find(
-        (t) => t.id === selectedElementId,
-      )
+      (t) => t.id === selectedElementId,
+    )
     : null;
 
   const currentFormatting = selectedTextEl?.paragraphs?.[0]?.formatting ?? {};
@@ -312,85 +325,105 @@ export default function EditorPage() {
           onApplyTheme={updateMasterTheme}
           onApplyFont={updateMasterFormatting}
           onUpdateDimensions={updateMasterDimensions}
+          currentView={currentView}
+          onChangeView={setCurrentView}
+          showNotes={showNotes}
+          onToggleNotes={toggleNotes}
+          zoom={zoom}
+          onZoomIn={zoomIn}
+          onZoomOut={zoomOut}
+          onZoomChange={setZoom}
         />
       </div>
 
       <div className="editor-body">
-        <SlideList
-          slides={slides}
-          selectedSlideId={selectedSlideIndex}
-          onSelectSlide={setSelectedSlideId}
-          onReorderSlide={reorderSlide}
-          slideWidth={slideWidth}
-          slideHeight={slideHeight}
-          presentation={presentation}
-        />
-
-        <div className="editor-main">
-          {selectedSlide && (
-            <EditorCanvas
-              slide={selectedSlide}
-              presentation={presentation}
-              onChangeTextElement={updateTextElementContent}
-              onMoveTextElement={updateElementPosition}
-              onResizeTextElement={updateElementSize}
-              onFormatTextElement={updateTextElementFormatting}
-              onMoveMediaElement={updateElementPosition}
-              onResizeMediaElement={updateElementSize}
-              onDeleteTextElement={deleteElement}
-              onDeleteMedia={deleteMedia}
-              slideNotes={selectedSlide?.contents?.notes ?? ""}
-              onUpdateSlideNotes={updateSlideNotes}
-              zoom={zoom}
-              showNotes={showNotes}
-              onCanvasZoom={handleCanvasZoom}
-              selectedElementId={selectedElementId}
-              onSelectElement={selectElement}
-              onBeginHistory={beginHistory}
-              onCommitHistory={commitHistory}
-              onCancelHistory={cancelHistory}
-              updateElement={updateElement}
-              updateMedia={updateMedia}
-              previewEffect={previewEffect}
-              animations={selectedSlide?.contents?.animations ?? []}
-              showAnimationBadges={activeTab === "Animations"}
-              onUndo={undo}
-              onRedo={redo}
-              onCopy={handleCopy}
-              onPaste={handlePaste}
-              onCut={handleCut}
-              onNewComment={handleNewComment}
-            />
-          )}
-        </div>
-
-        {showComments && (
-          <CommentsPanel
-            key={composeSession}
-            comments={selectedSlide?.contents?.comments ?? []}
-            authorName="User"
-            onAdd={addComment}
-            onDelete={deleteComment}
-            onClose={() => setShowComments(false)}
-            autoCompose={composeSession > 0}
+        {currentView === "slide-sorter" ? (
+          <SlideSorterView
+            slides={slides}
+            selectedSlideIndex={selectedSlideIndex}
+            onSelectSlide={setSelectedSlideId}
+            presentation={presentation}
           />
-        )}
-      </div>
+        ) : currentView === "notes-page" ? (
+          <NotesPageView
+            slide={selectedSlide}
+            presentation={presentation}
+            slideNotes={selectedSlide?.contents?.notes ?? ""}
+            onUpdateSlideNotes={updateSlideNotes}
+            onBeginHistory={beginHistory}
+            onCommitHistory={commitHistory}
+          />
+        ) : (
+          <>
+            {currentView === "outline" ? (
+              <OutlineView
+                slides={slides}
+                selectedSlideIndex={selectedSlideIndex}
+                onSelectSlide={setSelectedSlideId}
+              />
+            ) : (
+              <SlideList
+                slides={slides}
+                selectedSlideId={selectedSlideIndex}
+                onSelectSlide={setSelectedSlideId}
+                onReorderSlide={reorderSlide}
+                slideWidth={slideWidth}
+                slideHeight={slideHeight}
+                presentation={presentation}
+              />
+            )}
 
-      <div className="statusbar-overlay">
-        <StatusBar
-          selectedSlideIndex={selectedSlideIndex}
-          totalSlides={slides.length}
-          zoom={zoom}
-          onZoomChange={setZoom}
-          onZoomIn={zoomIn}
-          onZoomOut={zoomOut}
-          showNotes={showNotes}
-          onToggleNotes={toggleNotes}
-          showComments={showComments}
-          onToggleComments={() => setShowComments((v) => !v)}
-          commentCount={(selectedSlide?.contents?.comments ?? []).length}
-        />
+            <div className="editor-main">
+              {selectedSlide && (
+                <EditorCanvas
+                  slide={selectedSlide}
+                  presentation={presentation}
+                  onChangeTextElement={updateTextElementContent}
+                  onMoveTextElement={updateElementPosition}
+                  onResizeTextElement={updateElementSize}
+                  onFormatTextElement={updateTextElementFormatting}
+                  onMoveMediaElement={updateElementPosition}
+                  onResizeMediaElement={updateElementSize}
+                  onDeleteTextElement={deleteElement}
+                  onDeleteMedia={deleteMedia}
+                  slideNotes={selectedSlide?.contents?.notes ?? ""}
+                  onUpdateSlideNotes={updateSlideNotes}
+                  zoom={zoom}
+                  showNotes={showNotes}
+                  onCanvasZoom={handleCanvasZoom}
+                  selectedElementId={selectedElementId}
+                  onSelectElement={selectElement}
+                  onBeginHistory={beginHistory}
+                  onCommitHistory={commitHistory}
+                  onCancelHistory={cancelHistory}
+                  updateElement={updateElement}
+                  updateMedia={updateMedia}
+                  previewEffect={previewEffect}
+                  animations={selectedSlide?.contents?.animations ?? []}
+                  showAnimationBadges={activeTab === "Animations"}
+                  onUndo={undo}
+                  onRedo={redo}
+                  onCopy={handleCopy}
+                  onPaste={handlePaste}
+                  onCut={handleCut}
+                  onNewComment={handleNewComment}
+                />
+              )}
+            </div>
+
+            {showComments && (
+              <CommentsPanel
+                key={composeSession}
+                comments={selectedSlide?.contents?.comments ?? []}
+                authorName="User"
+                onAdd={addComment}
+                onDelete={deleteComment}
+                onClose={() => setShowComments(false)}
+                autoCompose={composeSession > 0}
+              />
+            )}
+          </>
+        )}
       </div>
 
       {isPreviewOpen && (
