@@ -9,6 +9,7 @@ import ArrangeGroup from "./ArrangeGroup";
 export default function HomeTab({
   onAddSlide,
   onApplyLayout,
+  onResetLayout,
   onDeleteSlide,
   onDuplicateSlide,
   onMoveSlideUp,
@@ -47,6 +48,7 @@ export default function HomeTab({
       <SlidesGroup
         onAddSlide={onAddSlide}
         onApplyLayout={onApplyLayout}
+        onResetLayout={onResetLayout}
         onDeleteSlide={onDeleteSlide}
         onDuplicateSlide={onDuplicateSlide}
         canDelete={canDelete}

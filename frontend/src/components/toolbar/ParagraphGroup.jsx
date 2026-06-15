@@ -55,14 +55,14 @@ export default function ParagraphGroup({
         {/* Bullets split-button */}
         <div className="list-split-btn" ref={bulletPickerRef}>
           <button
-            className={`small-format${currentListType === "bullet" ? " active" : ""}`}
+            className={`small-format${currentListType === "bullets" ? " active" : ""}`}
             disabled={!isTextSelected}
             title="Bulleted list"
             onClick={() =>
               fmt({
-                "list-type": currentListType === "bullet" ? null : "bullet",
+                "list-type": currentListType === "bullets" ? null : "bullets",
                 "list-marker":
-                  currentListType === "bullet"
+                  currentListType === "bullets"
                     ? null
                     : (currentFormatting["list-marker"] ?? "•"),
                 "indent-level": 0,
@@ -90,7 +90,7 @@ export default function ParagraphGroup({
                     key={label}
                     className={`list-picker-cell${
                       (currentFormatting["list-marker"] ?? "•") === marker &&
-                      currentListType === "bullet"
+                      currentListType === "bullets"
                         ? " selected"
                         : ""
                     }`}
@@ -104,7 +104,7 @@ export default function ParagraphGroup({
                               "indent-level": 0,
                             }
                           : {
-                              "list-type": "bullet",
+                              "list-type": "bullets",
                               "list-marker": marker,
                               "indent-level": currentListLevel,
                             },

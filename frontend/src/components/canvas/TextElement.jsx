@@ -46,7 +46,7 @@ const toRoman = (n) => {
 
 // Маркер для конкретной строки
 const getMarker = (index, listType, listMarker, listNumberedStyle) => {
-  if (listType === "bullet") return listMarker ?? "•";
+  if (listType === "bulletы") return listMarker ?? "•";
   const n = index + 1;
   switch (listNumberedStyle) {
     case "lower-alpha":
@@ -103,12 +103,7 @@ export default function TextElement({
     if (!el) return;
     if (document.activeElement === el) return;
 
-    const stored = textElement.htmlContent;
-    if (stored != null) {
-      if (el.innerHTML !== stored) el.innerHTML = stored;
-    } else {
-      if (el.innerText !== text) el.innerText = text;
-    }
+    if (el.innerText !== text) el.innerText = text;
   }, [text, textElement.htmlContent]);
 
   // Позиционируем тулбар над элементом или над курсором (если есть выделение)
@@ -174,7 +169,7 @@ export default function TextElement({
       color === "transparent" ? "inherit" : color,
     );
     // Сохраняем HTML чтобы подсветка пережила ре-рендер
-    onChangeTextElement(textElement.id, el.innerText, el.innerHTML);
+    onChangeTextElement(textElement.id, el.innerText);
   };
 
   // Обновляем позицию при выборе элемента
@@ -271,7 +266,7 @@ export default function TextElement({
             el.innerHTML = "";
           }
 
-          onChangeTextElement(textElement.id, el.innerText, el.innerHTML);
+          onChangeTextElement(textElement.id, el.innerText);
           updateToolbarPosition();
         }}
         onBlur={() => onCommitHistory?.()}
@@ -290,7 +285,7 @@ export default function TextElement({
         }}
         data-list-type={listType ?? undefined}
         data-indent-level={listType ? listLevel : undefined}
-        data-list-marker={listType === "bullet" ? listMarker : undefined}
+        data-list-marker={listType === "bulletы" ? listMarker : undefined}
         data-list-numbered-style={
           listType === "numbered" ? listNumberedStyle : undefined
         }

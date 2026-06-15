@@ -43,6 +43,7 @@ export default function GlobalSettingsPanel({
       updateMasterDimensions(
         { width: selected.width, height: selected.height },
         selected.label,
+        "px",
       );
     }
   };

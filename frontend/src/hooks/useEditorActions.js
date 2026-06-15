@@ -136,7 +136,6 @@ export function useEditorActions(
         createEditorEvent(EditorEventType.TEXT.UPDATE, {
           textElementId,
           text: newText,
-          html: htmlContent,
           userModified: true,
         }),
       ),
@@ -155,9 +154,10 @@ export function useEditorActions(
   );
 
   const updateTextElementParagraphs = useCallback(
-    (elementId, paragraphs) =>
+    (slideIndex, elementId, paragraphs) =>
       eventBus.dispatch(
         createEditorEvent(EditorEventType.TEXT.UPDATE_PARAGRAPHS, {
+          slideIndex,
           elementId,
           paragraphs,
         }),
@@ -296,7 +296,7 @@ export function useEditorActions(
   const updateMasterTheme = useCallback(
     (colorTheme, decorations) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.MASTER.UPDATE_THEME, { colorTheme, decorations }),
+        createEditorEvent(EditorEventType.MASTER.UPDATE_THEME, { colorTheme , decorations }),
       ),
     [eventBus],
   );
