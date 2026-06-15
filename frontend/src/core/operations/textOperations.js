@@ -29,7 +29,6 @@ export const updateTextElement = (
   textElementId,
   newText,
   userModified,
-  htmlContent,
 ) => {
   const slides = [...getSlides(presentation)];
   const slide = slides[slideIndex];
@@ -69,7 +68,6 @@ export const updateTextElement = (
         ...textElement,
         userModified: userModified ?? textElement.userModified,
         paragraphs: updatedParagraphs,
-        ...(htmlContent !== undefined ? { htmlContent } : {}),
       };
     },
   );

@@ -7,6 +7,7 @@ export default function SlidesGroup({
   onAddSlide,
   onApplyLayout,
   onDeleteSlide,
+  onResetLayout,
   onDuplicateSlide,
   canDelete,
 }) {
@@ -143,7 +144,7 @@ export default function SlidesGroup({
             </div>
           )}
         </div>
-        <button className="mini-text-command" disabled>
+        <button className="mini-text-command" onClick={onResetLayout}>
           Reset
         </button>
         <button className="mini-text-command" disabled>

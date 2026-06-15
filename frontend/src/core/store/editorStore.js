@@ -469,7 +469,6 @@ export const editorReducer = (state, event) => {
           event.payload.textElementId,
           event.payload.text,
           event.payload.userModified,
-          event.payload.html,
         ),
         lastEvent: event,
         lastUpdated: Date.now(),
@@ -494,7 +493,7 @@ export const editorReducer = (state, event) => {
         ...state,
         presentation: updateTextElementParagraphs(
           state.presentation,
-          state.selectedSlideIndex,
+          event.payload.slideIndex ?? state.selectedSlideIndex, // ← исправь
           event.payload.elementId,
           event.payload.paragraphs,
         ),

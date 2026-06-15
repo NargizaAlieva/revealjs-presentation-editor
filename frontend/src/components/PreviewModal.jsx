@@ -96,6 +96,7 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
   }, []);
 
   const visibleSlides = getVisibleSlidesForPreview(slides);
+  const masterFont = presentation?.slideset?.master?.formatting?.font;
 
   return (
     <div
@@ -136,7 +137,7 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
                     />
                     {textElements.map((textElement, index) => {
                       const animation = animationMap.get(textElement.id);
-                      const baseStyle = buildTextElementStyle(textElement, index);
+                      const baseStyle = buildTextElementStyle(textElement, index, masterFont);
                       const lines = getTextLines(textElement);
                       const perLine = getPerLineFragments(textElement, animation, lines);
 
@@ -159,7 +160,23 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
                           style={baseStyle}
                           {...fragmentProps}
                         >
-                          {getTextContent(textElement)}
+                          {textElement.paragraphs?.map((para, pIdx) => (
+                            <p key={pIdx} style={{ margin: "0 0 4px 0" }}>
+                              {(para.runs ?? []).map((run, rIdx) => {
+                                const style = {
+                                  fontWeight: run.formatting?.weight,
+                                  fontStyle: run.formatting?.italics ? "italic" : undefined,
+                                  color: run.formatting?.color,
+                                  fontSize: run.formatting?.size,
+                                  textDecoration: run.formatting?.["text-decoration"],
+                                };
+                                if (run.link?.href) {
+                                  return <a key={rIdx} href={run.link.href} target={run.link.target ?? "_blank"} style={style}>{run.text}</a>;
+                                }
+                                return <span key={rIdx} style={style}>{run.text}</span>;
+                              })}
+                            </p>
+                          ))}
                         </div>
                       );
                     })}
