@@ -54,7 +54,6 @@ async function resolveMediaLinks(slides) {
   return resolvedMap;
 }
 
-// ZIP export: images as separate files
 async function resolveMediaForZip(slides) {
   const resolvedMap = new Map();
   let counter = 1;
@@ -205,7 +204,27 @@ function buildTextElementContent(textElement, animation) {
     .join("");
 }
 
-function buildSlideSection(slide, width, height, getSrc, masterFont) {
+function buildDecorationsHtml(presentation, width, height) {
+  const shapes = presentation?.slideset?.master?.decorations?.shapes;
+  if (!shapes?.length) return "";
+
+  const shapeSvgs = shapes.map((s) => {
+    const base = `fill="${s.fill ?? "none"}" stroke="${s.stroke ?? "none"}" stroke-width="${s.strokeWidth ?? 0}" opacity="${s.opacity ?? 1}"`;
+    switch (s.type) {
+      case "rect": return `<rect ${base} x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" rx="${s.rx ?? 0}" ry="${s.ry ?? 0}"/>`;
+      case "circle": return `<circle ${base} cx="${s.cx}" cy="${s.cy}" r="${s.r}"/>`;
+      case "ellipse": return `<ellipse ${base} cx="${s.cx}" cy="${s.cy}" rx="${s.rx}" ry="${s.ry}"/>`;
+      case "polygon": return `<polygon ${base} points="${s.points}"/>`;
+      case "path": return `<path ${base} d="${s.d}"/>`;
+      case "line": return `<line fill="none" stroke="${s.stroke ?? s.fill ?? "none"}" stroke-width="${s.strokeWidth ?? 2}" opacity="${s.opacity ?? 1}" x1="${s.x1}" y1="${s.y1}" x2="${s.x2}" y2="${s.y2}"/>`;
+      default: return "";
+    }
+  }).join("\n        ");
+
+  return `<svg style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden;z-index:0;" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">${shapeSvgs}</svg>`;
+}
+
+function buildSlideSection(slide, width, height, getSrc, masterFont, presentation) {
   const textElements = getTextElements(slide);
   const mediaElements = getMediaElements(slide);
   const transition = slide.contents?.transition ?? "slide";
@@ -273,26 +292,6 @@ function buildSlideSection(slide, width, height, getSrc, masterFont) {
     </section>`;
 }
 
-function buildDecorationsHtml(presentation, width, height) {
-  const shapes = presentation?.slideset?.master?.decorations?.shapes;
-  if (!shapes?.length) return "";
-
-  const shapeSvgs = shapes.map((s) => {
-    const base = `fill="${s.fill ?? "none"}" stroke="${s.stroke ?? "none"}" stroke-width="${s.strokeWidth ?? 0}" opacity="${s.opacity ?? 1}"`;
-    switch (s.type) {
-      case "rect": return `<rect ${base} x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" rx="${s.rx ?? 0}" ry="${s.ry ?? 0}"/>`;
-      case "circle": return `<circle ${base} cx="${s.cx}" cy="${s.cy}" r="${s.r}"/>`;
-      case "ellipse": return `<ellipse ${base} cx="${s.cx}" cy="${s.cy}" rx="${s.rx}" ry="${s.ry}"/>`;
-      case "polygon": return `<polygon ${base} points="${s.points}"/>`;
-      case "path": return `<path ${base} d="${s.d}"/>`;
-      case "line": return `<line fill="none" stroke="${s.stroke ?? s.fill ?? "none"}" stroke-width="${s.strokeWidth ?? 2}" opacity="${s.opacity ?? 1}" x1="${s.x1}" y1="${s.y1}" x2="${s.x2}" y2="${s.y2}"/>`;
-      default: return "";
-    }
-  }).join("\n        ");
-
-  return `<svg style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden;z-index:0;" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">${shapeSvgs}</svg>`;
-}
-
 function buildHtmlContent(title, colorThemeCss, width, height, slideSections) {
   return `<!doctype html>
 <html>
@@ -316,7 +315,7 @@ function buildHtmlContent(title, colorThemeCss, width, height, slideSections) {
       ${slideSections}
     </div>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.js"></script>
   <script>
     Reveal.initialize({
       controls: true,
@@ -328,13 +327,22 @@ function buildHtmlContent(title, colorThemeCss, width, height, slideSections) {
       margin: 0,
       minScale: 0.5,
       maxScale: 2.0,
+      keyboard: true,
+    });
+
+    document.querySelector('.reveal').addEventListener('click', function(e) {
+      if (e.target.closest('.controls') || e.target.closest('a') || e.target.closest('button')) return;
+      if (e.clientX < window.innerWidth / 2) {
+        Reveal.prev();
+      } else {
+        Reveal.next();
+      }
     });
   </script>
 </body>
 </html>`;
 }
 
-// ── Export as single HTML (images embedded as base64) ──
 export async function exportToReveal(presentation) {
   const { width, height } = getSlideSize(presentation);
   const slides = getVisibleSlides(presentation);
@@ -345,11 +353,10 @@ export async function exportToReveal(presentation) {
 
   const resolvedMap = await resolveMediaLinks(slides);
   const getSrc = (fileLink) => resolvedMap.get(fileLink) ?? fileLink;
-
   const masterFont = presentation?.slideset?.master?.formatting?.font;
 
   const slideSections = slides
-    .map((slide) => buildSlideSection(slide, width, height, getSrc, masterFont))
+    .map((slide) => buildSlideSection(slide, width, height, getSrc, masterFont, presentation))
     .join("\n");
 
   const htmlContent = buildHtmlContent(title, colorThemeCss, width, height, slideSections);
@@ -366,11 +373,10 @@ export async function exportToRevealZip(presentation) {
 
   const resolvedMap = await resolveMediaForZip(slides);
   const getSrc = (fileLink) => resolvedMap.get(fileLink)?.src ?? fileLink;
-
   const masterFont = presentation?.slideset?.master?.formatting?.font;
 
   const slideSections = slides
-    .map((slide) => buildSlideSection(slide, width, height, getSrc, masterFont))
+    .map((slide) => buildSlideSection(slide, width, height, getSrc, masterFont, presentation))
     .join("\n");
 
   const htmlContent = buildHtmlContent(title, colorThemeCss, width, height, slideSections);
