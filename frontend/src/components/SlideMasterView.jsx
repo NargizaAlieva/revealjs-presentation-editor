@@ -15,13 +15,13 @@ function renderShapes(shapes) {
       opacity: s.opacity ?? 1,
     };
     switch (s.type) {
-      case "rect": return <rect key={i} {...base} x={s.x} y={s.y} width={s.w} height={s.h} rx={s.rx ?? 0} />;
+      case "rect":   return <rect key={i} {...base} x={s.x} y={s.y} width={s.w} height={s.h} rx={s.rx ?? 0} />;
       case "circle": return <circle key={i} {...base} cx={s.cx} cy={s.cy} r={s.r} />;
-      case "ellipse": return <ellipse key={i} {...base} cx={s.cx} cy={s.cy} rx={s.rx} ry={s.ry} />;
-      case "polygon": return <polygon key={i} {...base} points={s.points} />;
-      case "path": return <path key={i} {...base} d={s.d} />;
-      case "line": return <line key={i} stroke={s.stroke ?? s.fill ?? "none"} strokeWidth={s.strokeWidth ?? 2} opacity={s.opacity ?? 1} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} />;
-      default: return null;
+      case "ellipse":return <ellipse key={i} {...base} cx={s.cx} cy={s.cy} rx={s.rx} ry={s.ry} />;
+      case "polygon":return <polygon key={i} {...base} points={s.points} />;
+      case "path":   return <path key={i} {...base} d={s.d} />;
+      case "line":   return <line key={i} stroke={s.stroke ?? s.fill ?? "none"} strokeWidth={s.strokeWidth ?? 2} opacity={s.opacity ?? 1} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} />;
+      default:       return null;
     }
   });
 }
@@ -128,7 +128,7 @@ function ThemesDropdown({ presentation, onApplyTheme }) {
 
 const SLIDE_SIZES = [
   { label: "Widescreen (16:9)", aspectRatio: "16:9", width: 1280, height: 720 },
-  { label: "Standard (4:3)", aspectRatio: "4:3", width: 1024, height: 768 },
+  { label: "Standard (4:3)",    aspectRatio: "4:3",  width: 1024, height: 768 },
 ];
 
 function SlideSizeDropdown({ presentation, onUpdateDimensions }) {
@@ -267,6 +267,7 @@ export function SlideMasterRibbon({
   masterName, onRenameMaster, selectedMasterLayoutId, onRenameLayout,
   onDeleteLayout, onAddLayoutPlaceholder, onRemoveLayoutPlaceholder,
   onAddTextElement, onImageUpload, onVideoUpload,
+  onAddMasterElement, onDeleteMasterElement,
 }) {
   const imageInputRef = useRef(null);
   const videoInputRef = useRef(null);
@@ -279,9 +280,16 @@ export function SlideMasterRibbon({
     ? (presentation?.slideset?.layouts ?? []).find((l) => l["layout-id"] === selectedMasterLayoutId)
     : null;
 
+  const masterElements = presentation?.slideset?.master?.elements ?? {};
   const layoutPlaceholders = selectedLayout?.placeholders ?? [];
-  const hasTitle = layoutPlaceholders.some((p) => p.role === "title");
-  const hasFooters = layoutPlaceholders.some((p) => p["placeholder-id"]?.startsWith("footer-"));
+
+  const hasTitle = selectedMasterLayoutId
+    ? layoutPlaceholders.some((p) => p.role === "title")
+    : (masterElements.text ?? []).some((el) => el.id === "master-title");
+
+  const hasFooters = selectedMasterLayoutId
+    ? layoutPlaceholders.some((p) => p["placeholder-id"]?.startsWith("footer-"))
+    : (masterElements.text ?? []).some((el) => el.id?.startsWith("master-footer-"));
 
   const TITLE_PLACEHOLDER = {
     "placeholder-id": "title-placeholder",
@@ -296,30 +304,74 @@ export function SlideMasterRibbon({
   };
 
   const FOOTER_PLACEHOLDERS = [
-    { "placeholder-id": "footer-date", position: { x: 60, y: 640 }, width: 260, height: 40, type: "text", role: "footer", padding: { css: "4px" }, background: "#FFFFFF00", formatting: { size: "20px", align: "center" }, promptText: "Date" },
+    { "placeholder-id": "footer-date",   position: { x: 60,  y: 640 }, width: 260, height: 40, type: "text", role: "footer", padding: { css: "4px" }, background: "#FFFFFF00", formatting: { size: "20px", align: "center" }, promptText: "Date" },
     { "placeholder-id": "footer-center", position: { x: 380, y: 640 }, width: 520, height: 40, type: "text", role: "footer", padding: { css: "4px" }, background: "#FFFFFF00", formatting: { size: "20px", align: "center" }, promptText: "Footer" },
-    { "placeholder-id": "footer-page", position: { x: 960, y: 640 }, width: 260, height: 40, type: "text", role: "footer", padding: { css: "4px" }, background: "#FFFFFF00", formatting: { size: "20px", align: "center" }, promptText: "#" },
+    { "placeholder-id": "footer-page",   position: { x: 960, y: 640 }, width: 260, height: 40, type: "text", role: "footer", padding: { css: "4px" }, background: "#FFFFFF00", formatting: { size: "20px", align: "center" }, promptText: "#" },
   ];
 
+  const makeMasterTextEl = (id, position, width, height, text, formatting) => ({
+    id,
+    "placeholder-id": null,
+    position,
+    width,
+    height,
+    rotation: 0,
+    overflow: "shrink-on-overflow",
+    "z-index": 5,
+    background: "#FFFFFF00",
+    userModified: true,
+    paragraphs: [{
+      id: `${id}-p`,
+      formatting,
+      bullets: "none",
+      runs: [{ formatting: {}, "super-sub-script": "normal", text, link: null }],
+    }],
+  });
+
   const handleToggleTitle = () => {
-    if (!selectedMasterLayoutId) return;
-    if (hasTitle) {
-      onRemoveLayoutPlaceholder?.(selectedMasterLayoutId, "title-placeholder");
+    if (selectedMasterLayoutId) {
+      if (hasTitle) {
+        onRemoveLayoutPlaceholder?.(selectedMasterLayoutId, "title-placeholder");
+      } else {
+        onAddLayoutPlaceholder?.(selectedMasterLayoutId, TITLE_PLACEHOLDER);
+      }
     } else {
-      onAddLayoutPlaceholder?.(selectedMasterLayoutId, TITLE_PLACEHOLDER);
+      if (hasTitle) {
+        onDeleteMasterElement?.("text", "master-title");
+      } else {
+        onAddMasterElement?.("text", makeMasterTextEl(
+          "master-title",
+          { x: 120, y: 60 },
+          1040, 110,
+          "Click to edit Master title style",
+          { size: "36px", weight: "bold", align: "center" },
+        ));
+      }
     }
   };
 
   const handleToggleFooters = () => {
-    if (!selectedMasterLayoutId) return;
-    if (hasFooters) {
-      FOOTER_PLACEHOLDERS.forEach((fp) =>
-        onRemoveLayoutPlaceholder?.(selectedMasterLayoutId, fp["placeholder-id"]),
-      );
+    if (selectedMasterLayoutId) {
+      if (hasFooters) {
+        FOOTER_PLACEHOLDERS.forEach((fp) =>
+          onRemoveLayoutPlaceholder?.(selectedMasterLayoutId, fp["placeholder-id"]),
+        );
+      } else {
+        FOOTER_PLACEHOLDERS.forEach((fp) =>
+          onAddLayoutPlaceholder?.(selectedMasterLayoutId, fp),
+        );
+      }
     } else {
-      FOOTER_PLACEHOLDERS.forEach((fp) =>
-        onAddLayoutPlaceholder?.(selectedMasterLayoutId, fp),
-      );
+      if (hasFooters) {
+        ["master-footer-date", "master-footer-center", "master-footer-page"].forEach((id) =>
+          onDeleteMasterElement?.("text", id),
+        );
+      } else {
+        const fmt = { size: "20px", align: "center" };
+        onAddMasterElement?.("text", makeMasterTextEl("master-footer-date",   { x: 60,  y: 640 }, 260, 40, "Date",   fmt));
+        onAddMasterElement?.("text", makeMasterTextEl("master-footer-center", { x: 380, y: 640 }, 520, 40, "Footer", fmt));
+        onAddMasterElement?.("text", makeMasterTextEl("master-footer-page",   { x: 960, y: 640 }, 260, 40, "#",      fmt));
+      }
     }
   };
   const currentName = isRenamingLayout
@@ -354,7 +406,6 @@ export function SlideMasterRibbon({
 
   const handleInsertPlaceholder = (type) => {
     setShowPlaceholderMenu(false);
-    if (!selectedMasterLayoutId) return;
     if (type === "text") {
       onAddTextElement?.();
     } else if (type === "image") {
@@ -404,28 +455,18 @@ export function SlideMasterRibbon({
 
         <div className="ribbon-group master-ribbon-group">
           <div className="master-ribbon-row" style={{ position: "relative" }}>
-            <button className="master-ribbon-btn master-ribbon-btn--large" disabled>
-              <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                <rect x="2" y="4" width="28" height="22" rx="2" stroke="#bbb" strokeWidth="1.2" fill="#f5f5f5" />
-                <rect x="5" y="7" width="22" height="5" rx="1" fill="#e0e0e0" stroke="#bbb" strokeWidth="0.7" />
-                <rect x="5" y="14" width="10" height="9" rx="1" fill="#e0e0e0" stroke="#bbb" strokeWidth="0.7" />
-                <rect x="17" y="14" width="10" height="9" rx="1" fill="#e0e0e0" stroke="#bbb" strokeWidth="0.7" />
-              </svg>
-              <span style={{ color: "#aaa" }}>Master<br />Layout</span>
-            </button>
             <div style={{ position: "relative" }}>
               <button
                 ref={placeholderBtnRef}
                 className="master-ribbon-btn master-ribbon-btn--large"
-                disabled={!selectedMasterLayoutId}
                 onClick={() => setShowPlaceholderMenu((v) => !v)}
               >
                 <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                  <rect x="3" y="5" width="26" height="18" rx="2" stroke={selectedMasterLayoutId ? "#4472c4" : "#aaa"} strokeWidth="1.2" fill={selectedMasterLayoutId ? "#dce6f4" : "#f5f5f5"} strokeDasharray="3 2" />
-                  <line x1="16" y1="10" x2="16" y2="18" stroke={selectedMasterLayoutId ? "#4472c4" : "#aaa"} strokeWidth="1.4" strokeLinecap="round" />
-                  <line x1="12" y1="14" x2="20" y2="14" stroke={selectedMasterLayoutId ? "#4472c4" : "#aaa"} strokeWidth="1.4" strokeLinecap="round" />
+                  <rect x="3" y="5" width="26" height="18" rx="2" stroke="#4472c4" strokeWidth="1.2" fill="#dce6f4" strokeDasharray="3 2" />
+                  <line x1="16" y1="10" x2="16" y2="18" stroke="#4472c4" strokeWidth="1.4" strokeLinecap="round" />
+                  <line x1="12" y1="14" x2="20" y2="14" stroke="#4472c4" strokeWidth="1.4" strokeLinecap="round" />
                 </svg>
-                <span style={{ color: selectedMasterLayoutId ? undefined : "#aaa" }}>Insert<br />Placeholder ▾</span>
+                <span>Insert<br />Placeholder ▾</span>
               </button>
               {showPlaceholderMenu && (
                 <div ref={placeholderMenuRef} className="placeholder-type-menu" style={{
@@ -462,21 +503,21 @@ export function SlideMasterRibbon({
               )}
             </div>
             <div className="master-ribbon-checks">
-              <label className="master-check-row" style={{ opacity: selectedMasterLayoutId ? 1 : 0.4 }}>
+              <label className="master-check-row" style={!selectedMasterLayoutId ? { opacity: 0.4, cursor: "not-allowed" } : {}}>
                 <input
                   type="checkbox"
                   checked={hasTitle}
-                  disabled={!selectedMasterLayoutId}
                   onChange={handleToggleTitle}
+                  disabled={!selectedMasterLayoutId}
                 />
                 {" "}Title
               </label>
-              <label className="master-check-row" style={{ opacity: selectedMasterLayoutId ? 1 : 0.4 }}>
+              <label className="master-check-row" style={!selectedMasterLayoutId ? { opacity: 0.4, cursor: "not-allowed" } : {}}>
                 <input
                   type="checkbox"
                   checked={hasFooters}
-                  disabled={!selectedMasterLayoutId}
                   onChange={handleToggleFooters}
+                  disabled={!selectedMasterLayoutId}
                 />
                 {" "}Footers
               </label>
@@ -598,6 +639,7 @@ export default function SlideMasterView({
 
   const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
   const masterElements = presentation?.slideset?.master?.elements ?? {};
+
   const masterPseudoSlide = {
     contents: {
       text: masterElements.text ?? [],
@@ -608,26 +650,26 @@ export default function SlideMasterView({
 
   const layoutPseudoSlide = selectedLayout
     ? {
-      contents: {
-        text: [
-          ...(selectedLayout.placeholders ?? [])
-            .filter((p) => p.type === "text")
-            .map((p) => createPlaceholderPseudoElement(p, masterFormatting)),
-          ...(selectedLayout.elements?.text ?? []),
-        ],
-        media: [
-          ...(selectedLayout.placeholders ?? [])
-            .filter((p) => p.type === "image" || p.type === "video")
-            .map((p) => createPlaceholderPseudoElement(p, masterFormatting)),
-          ...(selectedLayout.elements?.media ?? []),
-        ],
-        background: "#FFFFFFFF",
-      },
-    }
+        contents: {
+          text: [
+            ...(selectedLayout.placeholders ?? [])
+              .filter((p) => p.type === "text")
+              .map((p) => createPlaceholderPseudoElement(p, masterFormatting)),
+            ...(selectedLayout.elements?.text ?? []),
+          ],
+          media: [
+            ...(selectedLayout.placeholders ?? [])
+              .filter((p) => p.type === "image" || p.type === "video")
+              .map((p) => createPlaceholderPseudoElement(p, masterFormatting)),
+            ...(selectedLayout.elements?.media ?? []),
+          ],
+          background: "#FFFFFFFF",
+        },
+      }
     : null;
 
   const activeSlide = selectedLayout ? layoutPseudoSlide : masterPseudoSlide;
-  const noop = () => { };
+  const noop = () => {};
 
   const handleSelectLayout = (layoutId) => {
     setSelectedLayoutId(layoutId);
@@ -714,12 +756,12 @@ export default function SlideMasterView({
           onChangeTextElement={
             selectedLayout
               ? (id, text) => {
-                if (isLayoutPlaceholder(id)) {
-                  onUpdateLayoutPlaceholder?.(selectedLayout["layout-id"], id, { promptText: text });
-                } else {
-                  onUpdateLayoutElementTextContent?.(selectedLayout["layout-id"], id, text);
+                  if (isLayoutPlaceholder(id)) {
+                    onUpdateLayoutPlaceholder?.(selectedLayout["layout-id"], id, { promptText: text });
+                  } else {
+                    onUpdateLayoutElementTextContent?.(selectedLayout["layout-id"], id, text);
+                  }
                 }
-              }
               : (id, text) => onUpdateMasterTextContent?.(id, text)
           }
           onFormatTextElement={

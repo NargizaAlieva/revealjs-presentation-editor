@@ -157,6 +157,7 @@ export default function EditorPage() {
   const { handleImageUpload } = useImageUpload(addMedia);
   const { handleVideoUpload } = useVideoUpload(addMedia);
   const { handleAddTextElement } = useAddTextElement(addTextElement);
+
   const { handleImageUpload: handleMasterImageUpload } = useImageUpload(
     (mediaElement) => {
       if (selectedMasterLayoutId) {
@@ -424,6 +425,8 @@ export default function EditorPage() {
           onDeleteLayout={deleteLayout}
           onAddLayoutPlaceholder={addLayoutPlaceholder}
           onRemoveLayoutPlaceholder={removeLayoutPlaceholder}
+          onAddMasterElement={addMasterElement}
+          onDeleteMasterElement={deleteMasterElement}
         />
       </div>
 
