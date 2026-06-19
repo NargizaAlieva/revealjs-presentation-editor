@@ -390,6 +390,14 @@ export function useEditorActions(
     [eventBus],
   );
 
+  const deleteLayout = useCallback(
+    (layoutId) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.DELETE, { layoutId }),
+      ),
+    [eventBus],
+  );
+
   const renameLayout = useCallback(
     (layoutId, name) =>
       eventBus.dispatch(
@@ -426,6 +434,14 @@ export function useEditorActions(
     (layoutId, elementId, text) =>
       eventBus.dispatch(
         createEditorEvent(EditorEventType.LAYOUT.UPDATE_ELEMENT_TEXT, { layoutId, elementId, text }),
+      ),
+    [eventBus],
+  );
+
+  const removeLayoutPlaceholder = useCallback(
+    (layoutId, placeholderId) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.REMOVE_PLACEHOLDER, { layoutId, placeholderId }),
       ),
     [eventBus],
   );
@@ -586,12 +602,14 @@ export function useEditorActions(
     updateMasterElement,
     deleteMasterElement,
     updateLayout,
+    deleteLayout,
     renameLayout,
     addLayoutElement,
     updateLayoutElement,
     updateLayoutElementTextContent,
     deleteLayoutElement,
     addLayoutPlaceholder,
+    removeLayoutPlaceholder,
     updateLayoutPlaceholder,
     applyLayout,
     resetLayout,
