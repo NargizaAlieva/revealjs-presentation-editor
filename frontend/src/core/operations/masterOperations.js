@@ -93,6 +93,45 @@ export const deleteMasterElement = (presentation, type, elementId) => ({
 
 const createParagraphId = () => crypto.randomUUID?.() ?? `p-${Date.now()}`;
 
+const RUN_ONLY_KEYS = new Set(["super-sub-script"]);
+
+export const updateMasterTextFormatting = (presentation, elementId, formattingUpdate) => {
+  const elements = presentation?.slideset?.master?.elements?.text ?? [];
+
+  const paragraphUpdate = Object.fromEntries(
+    Object.entries(formattingUpdate).filter(([k]) => !RUN_ONLY_KEYS.has(k)),
+  );
+
+  const updatedText = elements.map((el) => {
+    if (el.id !== elementId) return el;
+    return {
+      ...el,
+      paragraphs: (el.paragraphs ?? []).map((paragraph) => ({
+        ...paragraph,
+        formatting: { ...(paragraph.formatting ?? {}), ...paragraphUpdate },
+        runs: (paragraph.runs ?? []).map((run) => ({
+          ...run,
+          formatting: { ...(run.formatting ?? {}), ...formattingUpdate },
+        })),
+      })),
+    };
+  });
+
+  return {
+    ...presentation,
+    slideset: {
+      ...presentation.slideset,
+      master: {
+        ...presentation.slideset.master,
+        elements: {
+          ...(presentation.slideset.master.elements ?? {}),
+          text: updatedText,
+        },
+      },
+    },
+  };
+};
+
 export const updateMasterTextContent = (presentation, elementId, newText) => {
   const elements = presentation?.slideset?.master?.elements?.text ?? [];
   const updatedText = elements.map((el) => {

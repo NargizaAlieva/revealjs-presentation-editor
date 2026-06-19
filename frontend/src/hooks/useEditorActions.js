@@ -334,6 +334,17 @@ export function useEditorActions(
     [eventBus],
   );
 
+  const updateMasterTextFormatting = useCallback(
+    (elementId, formatting) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.MASTER.UPDATE_TEXT_FORMATTING, {
+          elementId,
+          formatting,
+        }),
+      ),
+    [eventBus],
+  );
+
   const addMasterElement = useCallback(
     (elementType, element) =>
       eventBus.dispatch(
@@ -374,6 +385,85 @@ export function useEditorActions(
         createEditorEvent(EditorEventType.LAYOUT.UPDATE, {
           layoutId,
           placeholders,
+        }),
+      ),
+    [eventBus],
+  );
+
+  const deleteLayout = useCallback(
+    (layoutId) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.DELETE, { layoutId }),
+      ),
+    [eventBus],
+  );
+
+  const renameLayout = useCallback(
+    (layoutId, name) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.RENAME, { layoutId, name }),
+      ),
+    [eventBus],
+  );
+
+  const addLayoutElement = useCallback(
+    (layoutId, elementType, element) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.ADD_ELEMENT, { layoutId, elementType, element }),
+      ),
+    [eventBus],
+  );
+
+  const updateLayoutElement = useCallback(
+    (layoutId, elementType, elementId, updates) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.UPDATE_ELEMENT, { layoutId, elementType, elementId, updates }),
+      ),
+    [eventBus],
+  );
+
+  const deleteLayoutElement = useCallback(
+    (layoutId, elementType, elementId) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.DELETE_ELEMENT, { layoutId, elementType, elementId }),
+      ),
+    [eventBus],
+  );
+
+  const updateLayoutElementTextContent = useCallback(
+    (layoutId, elementId, text) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.UPDATE_ELEMENT_TEXT, { layoutId, elementId, text }),
+      ),
+    [eventBus],
+  );
+
+  const removeLayoutPlaceholder = useCallback(
+    (layoutId, placeholderId) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.REMOVE_PLACEHOLDER, { layoutId, placeholderId }),
+      ),
+    [eventBus],
+  );
+
+  const addLayoutPlaceholder = useCallback(
+    (layoutId, placeholder) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.ADD_PLACEHOLDER, {
+          layoutId,
+          placeholder,
+        }),
+      ),
+    [eventBus],
+  );
+
+  const updateLayoutPlaceholder = useCallback(
+    (layoutId, placeholderId, updates) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.UPDATE_PLACEHOLDER, {
+          layoutId,
+          placeholderId,
+          updates,
         }),
       ),
     [eventBus],
@@ -512,6 +602,15 @@ export function useEditorActions(
     updateMasterElement,
     deleteMasterElement,
     updateLayout,
+    deleteLayout,
+    renameLayout,
+    addLayoutElement,
+    updateLayoutElement,
+    updateLayoutElementTextContent,
+    deleteLayoutElement,
+    addLayoutPlaceholder,
+    removeLayoutPlaceholder,
+    updateLayoutPlaceholder,
     applyLayout,
     resetLayout,
     savePresentation,
@@ -528,5 +627,6 @@ export function useEditorActions(
     addComment,
     deleteComment,
     updateMasterTextContent,
+    updateMasterTextFormatting,
   };
 }
