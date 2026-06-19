@@ -125,8 +125,12 @@ export function initRevealDeck(
 export function buildColorThemeStyle(presentation) {
   const colorTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
   const cssVars = {};
-  colorTheme.forEach((entry) => {
-    cssVars[`--${entry["css-variable-name"]}`] = entry.color;
+  colorTheme.forEach((entry) => { 
+    const color = entry.color;
+    const normalized = typeof color === "string" && color.length === 9 && color.startsWith("#")
+      ? color.slice(0, 7)
+      : color;
+    cssVars[`--${entry["css-variable-name"]}`] = normalized;
   });
   return cssVars;
 }

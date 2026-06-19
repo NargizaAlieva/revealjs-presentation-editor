@@ -52,6 +52,7 @@ export default function HomeTab({
         onDeleteSlide={onDeleteSlide}
         onDuplicateSlide={onDuplicateSlide}
         canDelete={canDelete}
+        presentation={presentation}
       />
 
       <FontGroup

@@ -296,7 +296,7 @@ export function useEditorActions(
   const updateMasterTheme = useCallback(
     (colorTheme, decorations) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.MASTER.UPDATE_THEME, { colorTheme , decorations }),
+        createEditorEvent(EditorEventType.MASTER.UPDATE_THEME, { colorTheme, decorations }),
       ),
     [eventBus],
   );
@@ -318,6 +318,17 @@ export function useEditorActions(
       eventBus.dispatch(
         createEditorEvent(EditorEventType.MASTER.UPDATE_FORMATTING, {
           formatting,
+        }),
+      ),
+    [eventBus],
+  );
+
+  const updateMasterTextContent = useCallback(
+    (elementId, text) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.MASTER.UPDATE_TEXT_CONTENT, {
+          elementId,
+          text,
         }),
       ),
     [eventBus],
@@ -516,5 +527,6 @@ export function useEditorActions(
     cutElement,
     addComment,
     deleteComment,
+    updateMasterTextContent,
   };
 }

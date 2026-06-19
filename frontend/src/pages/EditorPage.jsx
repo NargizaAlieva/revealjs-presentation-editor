@@ -30,6 +30,7 @@ import {
   presentationKey,
 } from "../core/persistence/presentationsLibrary";
 import NotesPageView from "../components/NotesPageView";
+import SlideMasterView from "../components/SlideMasterView";
 
 export default function EditorPage() {
   const { presentationId } = useParams();
@@ -38,6 +39,11 @@ export default function EditorPage() {
   const [previewStartSlide, setPreviewStartSlide] = useState(0);
   const [showComments, setShowComments] = useState(false);
   const [composeSession, setComposeSession] = useState(0);
+  const [isSlideMasterOpen, setIsSlideMasterOpen] = useState(false);
+  const [masterName, setMasterName] = useState("Office Theme");
+  const [selectedMasterElementId, setSelectedMasterElementId] = useState(null);
+  // null = Master selected, string = layout-id selected
+  const [selectedMasterLayoutId, setSelectedMasterLayoutId] = useState(null);
 
   const {
     zoom,
@@ -94,7 +100,7 @@ export default function EditorPage() {
     updateTextElementContent,
     updateTextElementFormatting,
     updateTextElementParagraphs,
-    updateTextRangeFormatting,  
+    updateTextRangeFormatting,
     updateRunLink,
     updateElementPosition,
     updateElementSize,
@@ -110,9 +116,24 @@ export default function EditorPage() {
     applyTransitionToAll,
     applyLayout,
     resetLayout,
+    updateLayout,
+    deleteLayout,
+    renameLayout,
+    addLayoutElement,
+    updateLayoutElement,
+    updateLayoutElementTextContent,
+    deleteLayoutElement,
+    addLayoutPlaceholder,
+    removeLayoutPlaceholder,
+    updateLayoutPlaceholder,
     updateMasterTheme,
     updateMasterFormatting,
     updateMasterDimensions,
+    updateMasterTextContent,
+    updateMasterTextFormatting,
+    addMasterElement,
+    updateMasterElement,
+    deleteMasterElement,
     addAnimation,
     updateAnimation,
     deleteAnimation,
@@ -136,6 +157,63 @@ export default function EditorPage() {
   const { handleImageUpload } = useImageUpload(addMedia);
   const { handleVideoUpload } = useVideoUpload(addMedia);
   const { handleAddTextElement } = useAddTextElement(addTextElement);
+  const { handleImageUpload: handleMasterImageUpload } = useImageUpload(
+    (mediaElement) => {
+      if (selectedMasterLayoutId) {
+        addLayoutElement(selectedMasterLayoutId, "media", mediaElement);
+      } else {
+        addMasterElement("media", mediaElement);
+      }
+    }
+  );
+  const { handleVideoUpload: handleMasterVideoUpload } = useVideoUpload(
+    (mediaElement) => {
+      if (selectedMasterLayoutId) {
+        addLayoutElement(selectedMasterLayoutId, "media", mediaElement);
+      } else {
+        addMasterElement("media", mediaElement);
+      }
+    }
+  );
+  const handleAddMasterTextElement = () => {
+    if (selectedMasterLayoutId) {
+      addLayoutElement(selectedMasterLayoutId, "text", {
+        id: crypto.randomUUID(),
+        "placeholder-id": null,
+        position: { x: 100, y: 100 },
+        width: 300,
+        height: 80,
+        rotation: 0,
+        "z-index": 4,
+        background: "transparent",
+        userModified: true,
+        paragraphs: [{
+          id: crypto.randomUUID(),
+          formatting: { font: "Arial", size: "24px", color: "var(--text-dark)", align: "left" },
+          bullets: "none",
+          runs: [{ formatting: {}, "super-sub-script": "normal", text: "Layout text", link: null }],
+        }],
+      });
+    } else {
+      addMasterElement("text", {
+        id: crypto.randomUUID(),
+        "placeholder-id": null,
+        position: { x: 100, y: 100 },
+        width: 300,
+        height: 80,
+        rotation: 0,
+        "z-index": 10,
+        background: "transparent",
+        userModified: true,
+        paragraphs: [{
+          id: crypto.randomUUID(),
+          formatting: { font: "Arial", size: "24px", color: "var(--text-dark)", align: "left" },
+          bullets: "none",
+          runs: [{ formatting: {}, "super-sub-script": "normal", text: "Master text", link: null }],
+        }],
+      });
+    }
+  };
 
   const exportPresentation = async () => exportToReveal(presentation);
 
@@ -175,8 +253,8 @@ export default function EditorPage() {
 
   const selectedTextEl = selectedElementId
     ? (selectedSlide?.contents?.text ?? []).find(
-      (t) => t.id === selectedElementId,
-    )
+        (t) => t.id === selectedElementId,
+      )
     : null;
 
   const currentFormatting = selectedTextEl?.paragraphs?.[0]?.formatting ?? {};
@@ -295,8 +373,9 @@ export default function EditorPage() {
           canMoveUp={selectedSlideIndex > 0}
           canMoveDown={selectedSlideIndex < slides.length - 1}
           onResetPresentation={resetPresentation}
-          onImageUpload={handleImageUpload}
-          onVideoUpload={handleVideoUpload}
+          onImageUpload={isSlideMasterOpen ? handleMasterImageUpload : handleImageUpload}
+          onVideoUpload={isSlideMasterOpen ? handleMasterVideoUpload : handleVideoUpload}
+          onAddTextElement={isSlideMasterOpen ? handleAddMasterTextElement : handleAddTextElement}
           onToggleSlideHidden={() => toggleSlideHidden(selectedSlideIndex)}
           isSlideHidden={selectedSlide?.hidden}
           onTransitionChange={(transition) => updateSlideTransition(transition)}
@@ -319,7 +398,6 @@ export default function EditorPage() {
           currentFormatting={currentFormatting}
           onFormatChange={handleFormatChange}
           isTextSelected={!!selectedTextEl}
-          onAddTextElement={handleAddTextElement}
           presentation={presentation}
           onCut={handleCut}
           onCopy={handleCopy}
@@ -336,11 +414,58 @@ export default function EditorPage() {
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}
           onZoomChange={setZoom}
+          onOpenSlideMaster={() => setIsSlideMasterOpen(true)}
+          isSlideMasterOpen={isSlideMasterOpen}
+          onCloseSlideMaster={() => setIsSlideMasterOpen(false)}
+          masterName={masterName}
+          onRenameMaster={setMasterName}
+          selectedMasterLayoutId={selectedMasterLayoutId}
+          onRenameLayout={renameLayout}
+          onDeleteLayout={deleteLayout}
+          onAddLayoutPlaceholder={addLayoutPlaceholder}
+          onRemoveLayoutPlaceholder={removeLayoutPlaceholder}
         />
       </div>
 
       <div className="editor-body">
-        {currentView === "slide-sorter" ? (
+        {isSlideMasterOpen ? (
+          <SlideMasterView
+            presentation={presentation}
+            onClose={() => { setIsSlideMasterOpen(false); setSelectedMasterLayoutId(null); }}
+            onSelectedLayoutChange={setSelectedMasterLayoutId}
+            onApplyTheme={updateMasterTheme}
+            onApplyFont={updateMasterFormatting}
+            onUpdateDimensions={updateMasterDimensions}
+            onUpdateLayout={updateLayout}
+            masterName={masterName}
+            selectedMasterElementId={selectedMasterElementId}
+            onSelectMasterElement={setSelectedMasterElementId}
+            onAddMasterElement={addMasterElement}
+            onDeleteMasterElement={deleteMasterElement}
+            onUpdateMasterTextContent={(id, text) =>
+              updateMasterTextContent(id, text)
+            }
+            onUpdateMasterTextFormatting={(id, fmt) =>
+              updateMasterTextFormatting(id, fmt)
+            }
+            onUpdateLayoutPlaceholder={updateLayoutPlaceholder}
+            onUpdateLayoutElement={(layoutId, type, id, updates) => updateLayoutElement(layoutId, type, id, updates)}
+            onUpdateLayoutElementTextContent={(layoutId, id, text) => updateLayoutElementTextContent(layoutId, id, text)}
+            onDeleteLayoutElement={(layoutId, type, id) => deleteLayoutElement(layoutId, type, id)}
+            onUpdateMasterElementPosition={(id, x, y) => {
+              updateMasterElement("text", id, { position: { x, y } });
+              updateMasterElement("media", id, { position: { x, y } });
+            }}
+            onUpdateMasterElementSize={(id, w, h) => {
+              updateMasterElement("text", id, { width: w, height: h });
+              updateMasterElement("media", id, { width: w, height: h });
+            }}
+            onUpdateMasterElement={updateMasterElement}
+            onBeginHistory={beginHistory}
+            onCommitHistory={commitHistory}
+            onCancelHistory={cancelHistory}
+          />
+        ) : currentView === "slide-sorter" ? (
           <SlideSorterView
             slides={slides}
             selectedSlideIndex={selectedSlideIndex}

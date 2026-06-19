@@ -42,6 +42,7 @@ import {
   updateMasterFormatting,
   addMasterElement,
   updateMasterElement,
+  updateMasterTextContent,
   deleteMasterElement,
 } from "../operations/masterOperations";
 import {
@@ -748,6 +749,18 @@ export const editorReducer = (state, event) => {
         lastEvent: event,
         lastUpdated: Date.now(),
       });
+
+    case EditorEventType.MASTER.UPDATE_TEXT_CONTENT:
+      return {
+        ...state,
+        presentation: updateMasterTextContent(
+          state.presentation,
+          event.payload.elementId,
+          event.payload.text,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
 
     case EditorEventType.MASTER.UPDATE_ELEMENT:
       return {

@@ -75,6 +75,7 @@ export default function SlideThumbnail({
           presentation={presentation}
           width={slideWidth}
           height={slideHeight}
+          layoutId={slide?.["layout-id"]}
         />
 
         {textElements.map((textElement) => {
