@@ -296,7 +296,7 @@ export function useEditorActions(
   const updateMasterTheme = useCallback(
     (colorTheme, decorations) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.MASTER.UPDATE_THEME, { colorTheme , decorations }),
+        createEditorEvent(EditorEventType.MASTER.UPDATE_THEME, { colorTheme, decorations }),
       ),
     [eventBus],
   );
@@ -317,6 +317,28 @@ export function useEditorActions(
     (formatting) =>
       eventBus.dispatch(
         createEditorEvent(EditorEventType.MASTER.UPDATE_FORMATTING, {
+          formatting,
+        }),
+      ),
+    [eventBus],
+  );
+
+  const updateMasterTextContent = useCallback(
+    (elementId, text) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.MASTER.UPDATE_TEXT_CONTENT, {
+          elementId,
+          text,
+        }),
+      ),
+    [eventBus],
+  );
+
+  const updateMasterTextFormatting = useCallback(
+    (elementId, formatting) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.MASTER.UPDATE_TEXT_FORMATTING, {
+          elementId,
           formatting,
         }),
       ),
@@ -363,6 +385,69 @@ export function useEditorActions(
         createEditorEvent(EditorEventType.LAYOUT.UPDATE, {
           layoutId,
           placeholders,
+        }),
+      ),
+    [eventBus],
+  );
+
+  const renameLayout = useCallback(
+    (layoutId, name) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.RENAME, { layoutId, name }),
+      ),
+    [eventBus],
+  );
+
+  const addLayoutElement = useCallback(
+    (layoutId, elementType, element) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.ADD_ELEMENT, { layoutId, elementType, element }),
+      ),
+    [eventBus],
+  );
+
+  const updateLayoutElement = useCallback(
+    (layoutId, elementType, elementId, updates) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.UPDATE_ELEMENT, { layoutId, elementType, elementId, updates }),
+      ),
+    [eventBus],
+  );
+
+  const deleteLayoutElement = useCallback(
+    (layoutId, elementType, elementId) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.DELETE_ELEMENT, { layoutId, elementType, elementId }),
+      ),
+    [eventBus],
+  );
+
+  const updateLayoutElementTextContent = useCallback(
+    (layoutId, elementId, text) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.UPDATE_ELEMENT_TEXT, { layoutId, elementId, text }),
+      ),
+    [eventBus],
+  );
+
+  const addLayoutPlaceholder = useCallback(
+    (layoutId, placeholder) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.ADD_PLACEHOLDER, {
+          layoutId,
+          placeholder,
+        }),
+      ),
+    [eventBus],
+  );
+
+  const updateLayoutPlaceholder = useCallback(
+    (layoutId, placeholderId, updates) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.UPDATE_PLACEHOLDER, {
+          layoutId,
+          placeholderId,
+          updates,
         }),
       ),
     [eventBus],
@@ -501,6 +586,13 @@ export function useEditorActions(
     updateMasterElement,
     deleteMasterElement,
     updateLayout,
+    renameLayout,
+    addLayoutElement,
+    updateLayoutElement,
+    updateLayoutElementTextContent,
+    deleteLayoutElement,
+    addLayoutPlaceholder,
+    updateLayoutPlaceholder,
     applyLayout,
     resetLayout,
     savePresentation,
@@ -516,5 +608,7 @@ export function useEditorActions(
     cutElement,
     addComment,
     deleteComment,
+    updateMasterTextContent,
+    updateMasterTextFormatting,
   };
 }

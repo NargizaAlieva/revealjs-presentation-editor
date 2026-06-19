@@ -30,6 +30,13 @@ import {
   applyLayoutToSlide,
   propagateLayoutChanges,
   resetSlideToLayout,
+  renameLayout,
+  addLayoutElement,
+  updateLayoutElement,
+  updateLayoutElementTextContent,
+  deleteLayoutElement,
+  addLayoutPlaceholder,
+  updateLayoutPlaceholder,
 } from "../operations/layoutOperations";
 import {
   addMedia,
@@ -42,6 +49,8 @@ import {
   updateMasterFormatting,
   addMasterElement,
   updateMasterElement,
+  updateMasterTextContent,
+  updateMasterTextFormatting,
   deleteMasterElement,
 } from "../operations/masterOperations";
 import {
@@ -694,6 +703,92 @@ export const editorReducer = (state, event) => {
         lastUpdated: Date.now(),
       });
 
+    case EditorEventType.LAYOUT.RENAME:
+      return withHistory(state, {
+        ...state,
+        presentation: renameLayout(state.presentation, event.payload.layoutId, event.payload.name),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+
+    case EditorEventType.LAYOUT.ADD_ELEMENT:
+      return withHistory(state, {
+        ...state,
+        presentation: addLayoutElement(
+          state.presentation,
+          event.payload.layoutId,
+          event.payload.elementType,
+          event.payload.element,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+
+    case EditorEventType.LAYOUT.UPDATE_ELEMENT:
+      return withHistory(state, {
+        ...state,
+        presentation: updateLayoutElement(
+          state.presentation,
+          event.payload.layoutId,
+          event.payload.elementType,
+          event.payload.elementId,
+          event.payload.updates,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+
+    case EditorEventType.LAYOUT.UPDATE_ELEMENT_TEXT:
+      return withHistory(state, {
+        ...state,
+        presentation: updateLayoutElementTextContent(
+          state.presentation,
+          event.payload.layoutId,
+          event.payload.elementId,
+          event.payload.text,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+
+    case EditorEventType.LAYOUT.DELETE_ELEMENT:
+      return withHistory(state, {
+        ...state,
+        presentation: deleteLayoutElement(
+          state.presentation,
+          event.payload.layoutId,
+          event.payload.elementType,
+          event.payload.elementId,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+
+    case EditorEventType.LAYOUT.ADD_PLACEHOLDER:
+      return withHistory(state, {
+        ...state,
+        presentation: addLayoutPlaceholder(
+          state.presentation,
+          event.payload.layoutId,
+          event.payload.placeholder,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+
+    case EditorEventType.LAYOUT.UPDATE_PLACEHOLDER:
+      return withHistory(state, {
+        ...state,
+        presentation: updateLayoutPlaceholder(
+          state.presentation,
+          event.payload.layoutId,
+          event.payload.placeholderId,
+          event.payload.updates,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+
     case EditorEventType.LAYOUT.RESET:
       return withHistory(state, {
         ...state,
@@ -748,6 +843,30 @@ export const editorReducer = (state, event) => {
         lastEvent: event,
         lastUpdated: Date.now(),
       });
+
+    case EditorEventType.MASTER.UPDATE_TEXT_CONTENT:
+      return {
+        ...state,
+        presentation: updateMasterTextContent(
+          state.presentation,
+          event.payload.elementId,
+          event.payload.text,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+
+    case EditorEventType.MASTER.UPDATE_TEXT_FORMATTING:
+      return {
+        ...state,
+        presentation: updateMasterTextFormatting(
+          state.presentation,
+          event.payload.elementId,
+          event.payload.formatting,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
 
     case EditorEventType.MASTER.UPDATE_ELEMENT:
       return {

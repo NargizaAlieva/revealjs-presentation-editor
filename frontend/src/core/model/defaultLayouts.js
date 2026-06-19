@@ -101,22 +101,27 @@ export const createDefaultLayouts = ({ titleFormatting, bodyFormatting }) => {
   return [
     {
       "layout-id": "title-content",
+      name: "Title and Content",
       placeholders: [makeTitleTop(), makeBodyFull()],
     },
     {
       "layout-id": "title-content-media",
+      name: "Title, Content and Media",
       placeholders: [makeTitleTop(), makeBodyLeft(), makeMediaRight()],
     },
     {
       "layout-id": "two-columns",
+      name: "Two Columns",
       placeholders: [makeTitleTop(), makeLeftColumn(), makeRightColumn()],
     },
     {
       "layout-id": "title-only",
+      name: "Title Only",
       placeholders: [makeTitleTop()],
     },
     {
       "layout-id": "blank",
+      name: "Blank",
       placeholders: [],
     },
 
