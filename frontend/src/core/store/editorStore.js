@@ -30,12 +30,14 @@ import {
   applyLayoutToSlide,
   propagateLayoutChanges,
   resetSlideToLayout,
+  deleteLayout,
   renameLayout,
   addLayoutElement,
   updateLayoutElement,
   updateLayoutElementTextContent,
   deleteLayoutElement,
   addLayoutPlaceholder,
+  removeLayoutPlaceholder,
   updateLayoutPlaceholder,
 } from "../operations/layoutOperations";
 import {
@@ -703,6 +705,14 @@ export const editorReducer = (state, event) => {
         lastUpdated: Date.now(),
       });
 
+    case EditorEventType.LAYOUT.DELETE:
+      return withHistory(state, {
+        ...state,
+        presentation: deleteLayout(state.presentation, event.payload.layoutId),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+
     case EditorEventType.LAYOUT.RENAME:
       return withHistory(state, {
         ...state,
@@ -771,6 +781,18 @@ export const editorReducer = (state, event) => {
           state.presentation,
           event.payload.layoutId,
           event.payload.placeholder,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+
+    case EditorEventType.LAYOUT.REMOVE_PLACEHOLDER:
+      return withHistory(state, {
+        ...state,
+        presentation: removeLayoutPlaceholder(
+          state.presentation,
+          event.payload.layoutId,
+          event.payload.placeholderId,
         ),
         lastEvent: event,
         lastUpdated: Date.now(),

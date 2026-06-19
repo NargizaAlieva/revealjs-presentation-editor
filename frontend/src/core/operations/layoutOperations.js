@@ -140,6 +140,14 @@ export const createPlaceholderPseudoElement = (placeholder, masterFormatting = {
   };
 };
 
+export const deleteLayout = (presentation, layoutId) => {
+  const layouts = getLayouts(presentation).filter((l) => l["layout-id"] !== layoutId);
+  const slides = getSlides(presentation).map((slide) =>
+    slide["layout-id"] === layoutId ? { ...slide, "layout-id": layouts[0]?.["layout-id"] ?? null } : slide,
+  );
+  return setLayouts(setSlides(presentation, slides), layouts);
+};
+
 export const renameLayout = (presentation, layoutId, name) => {
   const layouts = getLayouts(presentation);
   const updatedLayouts = layouts.map((l) =>
@@ -213,6 +221,15 @@ export const deleteLayoutElement = (presentation, layoutId, elementType, element
 
 // Add a new placeholder to a layout and create matching empty elements
 // on every slide that uses this layout.
+export const removeLayoutPlaceholder = (presentation, layoutId, placeholderId) => {
+  const layout = getLayouts(presentation).find((l) => l["layout-id"] === layoutId);
+  if (!layout) return presentation;
+  const updatedPlaceholders = (layout.placeholders ?? []).filter(
+    (p) => p["placeholder-id"] !== placeholderId,
+  );
+  return propagateLayoutChanges(presentation, layoutId, updatedPlaceholders);
+};
+
 export const addLayoutPlaceholder = (presentation, layoutId, placeholder) => {
   const layout = getLayouts(presentation).find((l) => l["layout-id"] === layoutId);
   if (!layout) return presentation;
