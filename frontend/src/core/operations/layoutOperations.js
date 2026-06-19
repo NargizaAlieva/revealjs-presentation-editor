@@ -57,13 +57,189 @@ const updateElementFromPlaceholder = (element, placeholders, isModified) => {
   if (!match) return element;
   if (isModified(element)) return element;
 
-  return {
+  const updated = {
     ...element,
     position: { ...match.position },
     width: match.width,
     height: match.height,
+    rotation: match.rotation ?? element.rotation ?? 0,
     background: match.background ?? element.background,
   };
+
+  if (element.paragraphs) {
+    updated.paragraphs = element.paragraphs.map((p, pIdx) => ({
+      ...p,
+      ...(match.formatting ? { formatting: { ...(p.formatting ?? {}), ...match.formatting } } : {}),
+      runs: p.runs.map((r, rIdx) =>
+        pIdx === 0 && rIdx === 0 && match.promptText !== undefined
+          ? { ...r, text: match.promptText }
+          : r,
+      ),
+    }));
+  }
+
+  return updated;
+};
+
+// ─── Placeholder pseudo-elements (for editing layouts in Slide Master view) ───
+
+const PLACEHOLDER_PROMPTS = {
+  title: "Click to edit Master title style",
+  body: "Click to edit Master text styles",
+};
+
+const placeholderPromptText = (placeholder) =>
+  placeholder.promptText ?? PLACEHOLDER_PROMPTS[placeholder.role] ?? "Click to edit text styles";
+
+export const createPlaceholderPseudoElement = (placeholder, masterFormatting = {}) => {
+  if (placeholder.type === "image" || placeholder.type === "video") {
+    return {
+      id: placeholder["placeholder-id"],
+      "placeholder-id": placeholder["placeholder-id"],
+      "file-link": "",
+      "media-type": placeholder.type === "video" ? "video" : "image",
+      position: { ...placeholder.position },
+      width: placeholder.width,
+      height: placeholder.height,
+      rotation: placeholder.rotation ?? 0,
+      "z-index": 1,
+      scale: 1,
+      crop: [],
+      effects: {},
+      playback: {},
+      isPlaceholder: true,
+    };
+  }
+
+  return {
+    id: placeholder["placeholder-id"],
+    "placeholder-id": placeholder["placeholder-id"],
+    position: { ...placeholder.position },
+    "pos-type": "relative-to-placeholder",
+    width: placeholder.width,
+    height: placeholder.height,
+    rotation: placeholder.rotation ?? 0,
+    overflow: "shrink-on-overflow",
+    "z-index": 1,
+    background: placeholder.background ?? "#FFFFFF00",
+    userModified: false,
+    isPlaceholder: true,
+    paragraphs: [
+      {
+        id: createId("paragraph"),
+        formatting: { ...masterFormatting, ...(placeholder.formatting ?? {}) },
+        bullets: "none",
+        runs: [{
+          formatting: {},
+          "super-sub-script": "normal",
+          text: placeholderPromptText(placeholder),
+          link: null,
+        }],
+      },
+    ],
+  };
+};
+
+export const renameLayout = (presentation, layoutId, name) => {
+  const layouts = getLayouts(presentation);
+  const updatedLayouts = layouts.map((l) =>
+    l["layout-id"] === layoutId ? { ...l, name } : l,
+  );
+  return setLayouts(presentation, updatedLayouts);
+};
+
+// Add a fixed element (text or media) to a layout — appears read-only on all
+// slides that use this layout, similar to how master elements propagate.
+export const addLayoutElement = (presentation, layoutId, elementType, element) => {
+  const layouts = getLayouts(presentation);
+  const updatedLayouts = layouts.map((l) => {
+    if (l["layout-id"] !== layoutId) return l;
+    const elements = l.elements ?? {};
+    const arr = elements[elementType] ?? [];
+    return { ...l, elements: { ...elements, [elementType]: [...arr, element] } };
+  });
+  return setLayouts(presentation, updatedLayouts);
+};
+
+// Update the text content (string) of a layout text element — mirrors updateMasterTextContent.
+export const updateLayoutElementTextContent = (presentation, layoutId, elementId, text) => {
+  const layouts = getLayouts(presentation);
+  const updatedLayouts = layouts.map((l) => {
+    if (l["layout-id"] !== layoutId) return l;
+    const elements = l.elements ?? {};
+    const arr = (elements.text ?? []).map((el) => {
+      if (el.id !== elementId) return el;
+      return {
+        ...el,
+        paragraphs: (el.paragraphs ?? []).map((paragraph, pIdx) => ({
+          ...paragraph,
+          runs: (paragraph.runs ?? []).map((run, rIdx) => ({
+            ...run,
+            text: pIdx === 0 && rIdx === 0 ? text : run.text,
+          })),
+        })),
+      };
+    });
+    return { ...l, elements: { ...elements, text: arr } };
+  });
+  return setLayouts(presentation, updatedLayouts);
+};
+
+// Update a fixed layout element (position, size, formatting, etc.)
+export const updateLayoutElement = (presentation, layoutId, elementType, elementId, updates) => {
+  const layouts = getLayouts(presentation);
+  const updatedLayouts = layouts.map((l) => {
+    if (l["layout-id"] !== layoutId) return l;
+    const elements = l.elements ?? {};
+    const arr = (elements[elementType] ?? []).map((el) =>
+      el.id === elementId ? { ...el, ...updates } : el,
+    );
+    return { ...l, elements: { ...elements, [elementType]: arr } };
+  });
+  return setLayouts(presentation, updatedLayouts);
+};
+
+// Delete a fixed layout element.
+export const deleteLayoutElement = (presentation, layoutId, elementType, elementId) => {
+  const layouts = getLayouts(presentation);
+  const updatedLayouts = layouts.map((l) => {
+    if (l["layout-id"] !== layoutId) return l;
+    const elements = l.elements ?? {};
+    const arr = (elements[elementType] ?? []).filter((el) => el.id !== elementId);
+    return { ...l, elements: { ...elements, [elementType]: arr } };
+  });
+  return setLayouts(presentation, updatedLayouts);
+};
+
+// Add a new placeholder to a layout and create matching empty elements
+// on every slide that uses this layout.
+export const addLayoutPlaceholder = (presentation, layoutId, placeholder) => {
+  const layout = getLayouts(presentation).find((l) => l["layout-id"] === layoutId);
+  if (!layout) return presentation;
+  const updatedPlaceholders = [...(layout.placeholders ?? []), placeholder];
+  return propagateLayoutChanges(presentation, layoutId, updatedPlaceholders);
+};
+
+// Update a single placeholder's geometry/formatting on a layout and
+// propagate the change to every slide that uses this layout.
+export const updateLayoutPlaceholder = (presentation, layoutId, placeholderId, updates) => {
+  const layout = getLayouts(presentation).find((l) => l["layout-id"] === layoutId);
+  if (!layout) return presentation;
+
+  const { formatting: formattingUpdates, ...rest } = updates;
+
+  const updatedPlaceholders = (layout.placeholders ?? []).map((p) => {
+    if (p["placeholder-id"] !== placeholderId) return p;
+    return {
+      ...p,
+      ...rest,
+      ...(formattingUpdates
+        ? { formatting: { ...(p.formatting ?? {}), ...formattingUpdates } }
+        : {}),
+    };
+  });
+
+  return propagateLayoutChanges(presentation, layoutId, updatedPlaceholders);
 };
 
 const isTextModified = (el) => el.userModified === true;
@@ -89,9 +265,8 @@ export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
   const processElement = (el, isModified) => {
     const pid = el["placeholder-id"];
     const match = pid ? placeholderMap.get(pid) : null;
-    console.log("[applyLayout]", pid, match ? "→ updated" : isModified(el) ? "→ kept" : "→ removed");
     if (match) {
-      return { updated: { ...el, position: { ...match.position }, width: match.width, height: match.height, background: match.background ?? el.background } };
+      return { updated: { ...el, position: { ...match.position }, width: match.width, height: match.height, rotation: match.rotation ?? el.rotation ?? 0, background: match.background ?? el.background } };
     }
     if (!pid || isModified(el)) return { kept: el };
     return { remove: true };

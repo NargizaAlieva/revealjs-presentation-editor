@@ -63,8 +63,8 @@ export const createSlideFromLayout = (layout, slideNumber, masterFormatting = {}
       text: textPlaceholders.map((p) =>
         createTextElementFromPlaceholder(
           p,
-          p.role === "title" ? `Slide ${slideNumber}` : "Click to edit text",
-          masterFormatting, // ← add
+          p.promptText ?? (p.role === "title" ? "Click to edit Master title style" : "Click to edit text"),
+          masterFormatting,
         )
       ),
       media: mediaPlaceholders.map(createMediaElementFromPlaceholder),
