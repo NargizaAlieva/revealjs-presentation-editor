@@ -93,6 +93,8 @@ export default function Toolbar({
   onRemoveLayoutPlaceholder,
   onAddMasterElement,
   onDeleteMasterElement,
+  onApplyMasterTransition,
+  onApplyLayoutFont,
 }) {
   const [localActiveTab, setLocalActiveTab] = useState("Home");
   const [masterActiveTab, setMasterActiveTab] = useState("Slide Master");
@@ -159,6 +161,8 @@ export default function Toolbar({
             onRemoveLayoutPlaceholder={onRemoveLayoutPlaceholder}
             onAddMasterElement={onAddMasterElement}
             onDeleteMasterElement={onDeleteMasterElement}
+            onApplyMasterTransition={onApplyMasterTransition}
+            onApplyLayoutFont={onApplyLayoutFont}
             onAddTextElement={onAddTextElement}
             onImageUpload={onImageUpload}
             onVideoUpload={onVideoUpload}

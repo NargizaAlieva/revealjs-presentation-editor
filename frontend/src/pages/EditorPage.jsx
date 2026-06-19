@@ -42,7 +42,6 @@ export default function EditorPage() {
   const [isSlideMasterOpen, setIsSlideMasterOpen] = useState(false);
   const [masterName, setMasterName] = useState("Office Theme");
   const [selectedMasterElementId, setSelectedMasterElementId] = useState(null);
-  // null = Master selected, string = layout-id selected
   const [selectedMasterLayoutId, setSelectedMasterLayoutId] = useState(null);
 
   const {
@@ -126,6 +125,7 @@ export default function EditorPage() {
     addLayoutPlaceholder,
     removeLayoutPlaceholder,
     updateLayoutPlaceholder,
+    updateLayoutElementsFont,
     updateMasterTheme,
     updateMasterFormatting,
     updateMasterDimensions,
@@ -427,6 +427,8 @@ export default function EditorPage() {
           onRemoveLayoutPlaceholder={removeLayoutPlaceholder}
           onAddMasterElement={addMasterElement}
           onDeleteMasterElement={deleteMasterElement}
+          onApplyMasterTransition={(transition, duration) => applyTransitionToAll(transition, duration)}
+          onApplyLayoutFont={updateLayoutElementsFont}
         />
       </div>
 
