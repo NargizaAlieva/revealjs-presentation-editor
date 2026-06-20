@@ -5,9 +5,10 @@ import {
   getMediaElements,
 } from "../../utils/slidesetRenderUtils";
 
-export function buildTextElementStyle(textElement, index, masterFont) {
+export function buildTextElementStyle(textElement, index, masterFormatting = {}) {
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
   const rotation = textElement.rotation ?? 0;
+  const r = (elemVal, masterVal, fallback) => elemVal ?? masterVal ?? fallback;
 
   return {
     position: "absolute",
@@ -19,14 +20,14 @@ export function buildTextElementStyle(textElement, index, masterFont) {
     overflow: "hidden",
     zIndex: textElement["z-index"] ?? index + 1,
     ...(rotation ? { transform: `rotate(${rotation}deg)` } : {}),
-    fontSize: formatting.size ?? (index === 0 ? "44px" : "28px"),
-    fontWeight: formatting.weight ?? (index === 0 ? "bold" : "normal"),
-    fontStyle: formatting.italics ? "italic" : "normal",
-    fontFamily: formatting.font ?? masterFont ?? "inherit",
-    color: formatting.color ?? "var(--text-dark, black)",
-    textAlign: formatting.align ?? "left",
-    textAlignLast: formatting.align === "justify" ? "left" : undefined,
-    lineHeight: formatting["line-spacing"] ?? "1.4",
+    fontSize: r(formatting.size, masterFormatting.size, index === 0 ? "44px" : "28px"),
+    fontWeight: r(formatting.weight, masterFormatting.weight, index === 0 ? "bold" : "normal"),
+    fontStyle: r(formatting.italics, masterFormatting.italics, false) ? "italic" : "normal",
+    fontFamily: r(formatting.font, masterFormatting.font, "inherit"),
+    color: r(formatting.color, masterFormatting.color, "var(--text-dark, black)"),
+    textAlign: r(formatting.align, masterFormatting.align, "left"),
+    textAlignLast: r(formatting.align, masterFormatting.align, "left") === "justify" ? "left" : undefined,
+    lineHeight: r(formatting["line-spacing"], masterFormatting["line-spacing"], "1.4"),
     boxSizing: "border-box",
   };
 }
@@ -125,8 +126,12 @@ export function initRevealDeck(
 export function buildColorThemeStyle(presentation) {
   const colorTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
   const cssVars = {};
-  colorTheme.forEach((entry) => {
-    cssVars[`--${entry["css-variable-name"]}`] = entry.color;
+  colorTheme.forEach((entry) => { 
+    const color = entry.color;
+    const normalized = typeof color === "string" && color.length === 9 && color.startsWith("#")
+      ? color.slice(0, 7)
+      : color;
+    cssVars[`--${entry["css-variable-name"]}`] = normalized;
   });
   return cssVars;
 }

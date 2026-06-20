@@ -28,19 +28,41 @@ export const updateMasterDimensions = (
   },
 });
 
-export const updateMasterFormatting = (presentation, formatting) => ({
-  ...presentation,
-  slideset: {
-    ...presentation.slideset,
-    master: {
-      ...presentation.slideset.master,
-      formatting: {
-        ...(presentation.slideset.master?.formatting ?? {}),
-        ...formatting,
+export const updateMasterFormatting = (presentation, formatting) => {
+  const oldMaster = presentation.slideset?.master?.formatting ?? {};
+  const changedKeys = Object.keys(formatting);
+
+  const slides = (presentation.slideset?.slides ?? []).map((slide) => ({
+    ...slide,
+    contents: {
+      ...slide.contents,
+      text: (slide.contents?.text ?? []).map((el) => ({
+        ...el,
+        paragraphs: (el.paragraphs ?? []).map((p) => {
+          const f = { ...(p.formatting ?? {}) };
+          for (const key of changedKeys) {
+            if (f[key] === undefined || f[key] === oldMaster[key]) {
+              delete f[key];
+            }
+          }
+          return { ...p, formatting: f };
+        }),
+      })),
+    },
+  }));
+
+  return {
+    ...presentation,
+    slideset: {
+      ...presentation.slideset,
+      slides,
+      master: {
+        ...presentation.slideset.master,
+        formatting: { ...oldMaster, ...formatting },
       },
     },
-  },
-});
+  };
+};
 
 export const addMasterElement = (presentation, type, element) => ({
   ...presentation,

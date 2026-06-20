@@ -112,9 +112,11 @@ function applyFragment(innerHtml, wrapperStyle, animation) {
   return `<div class="${classes}" ${dataAttrs} style="${wrapperStyle}">${innerHtml}</div>`;
 }
 
-function buildTextElementStyle(textElement, index, masterFont) {
+function buildTextElementStyle(textElement, index, masterFormatting = {}) {
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
   const rotation = textElement.rotation ?? 0;
+  const r = (elemVal, masterVal, fallback) => elemVal ?? masterVal ?? fallback;
+
   return [
     "position: absolute",
     `left: ${textElement.position?.x ?? 0}px`,
@@ -125,13 +127,13 @@ function buildTextElementStyle(textElement, index, masterFont) {
     "overflow: hidden",
     `z-index: ${textElement["z-index"] ?? index + 1}`,
     ...(rotation ? [`transform: rotate(${rotation}deg)`] : []),
-    `font-size: ${formatting.size ?? (index === 0 ? "44px" : "28px")}`,
-    `font-weight: ${formatting.weight ?? (index === 0 ? "bold" : "normal")}`,
-    `font-style: ${formatting.italics ? "italic" : "normal"}`,
-    `font-family: ${formatting.font ?? masterFont ?? "inherit"}`,
-    `color: ${formatting.color ?? "var(--text-dark, black)"}`,
-    `text-align: ${formatting.align ?? "left"}`,
-    `line-height: ${formatting["line-spacing"] ?? "1.4"}`,
+    `font-size: ${r(formatting.size, masterFormatting.size, index === 0 ? "44px" : "28px")}`,
+    `font-weight: ${r(formatting.weight, masterFormatting.weight, index === 0 ? "bold" : "normal")}`,
+    `font-style: ${r(formatting.italics, masterFormatting.italics, false) ? "italic" : "normal"}`,
+    `font-family: ${r(formatting.font, masterFormatting.font, "inherit")}`,
+    `color: ${r(formatting.color, masterFormatting.color, "var(--text-dark, black)")}`,
+    `text-align: ${r(formatting.align, masterFormatting.align, "left")}`,
+    `line-height: ${r(formatting["line-spacing"], masterFormatting["line-spacing"], "1.4")}`,
     "box-sizing: border-box",
   ].join("; ");
 }
@@ -224,7 +226,7 @@ function buildDecorationsHtml(presentation, width, height) {
   return `<svg style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden;z-index:0;" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">${shapeSvgs}</svg>`;
 }
 
-function buildSlideSection(slide, width, height, getSrc, masterFont, presentation) {
+function buildSlideSection(slide, width, height, getSrc, masterFormatting, presentation) {
   const textElements = getTextElements(slide);
   const mediaElements = getMediaElements(slide);
   const transition = slide.contents?.transition ?? "slide";
@@ -237,7 +239,7 @@ function buildSlideSection(slide, width, height, getSrc, masterFont, presentatio
     .map((textElement, index) => {
       const animation = animationMap.get(textElement.id);
       const sequenceMode = animation?.["effect-options"]?.sequence ?? "as-one-object";
-      const style = buildTextElementStyle(textElement, index, masterFont);
+      const style = buildTextElementStyle(textElement, index, masterFormatting);
       const content = buildTextElementContent(textElement, animation);
       if (!animation || sequenceMode === "as-one-object") {
         return applyFragment(content, style, animation);
@@ -353,10 +355,10 @@ export async function exportToReveal(presentation) {
 
   const resolvedMap = await resolveMediaLinks(slides);
   const getSrc = (fileLink) => resolvedMap.get(fileLink) ?? fileLink;
-  const masterFont = presentation?.slideset?.master?.formatting?.font;
+  const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
 
   const slideSections = slides
-    .map((slide) => buildSlideSection(slide, width, height, getSrc, masterFont, presentation))
+    .map((slide) => buildSlideSection(slide, width, height, getSrc, masterFormatting, presentation))
     .join("\n");
 
   const htmlContent = buildHtmlContent(title, colorThemeCss, width, height, slideSections);
@@ -373,10 +375,10 @@ export async function exportToRevealZip(presentation) {
 
   const resolvedMap = await resolveMediaForZip(slides);
   const getSrc = (fileLink) => resolvedMap.get(fileLink)?.src ?? fileLink;
-  const masterFont = presentation?.slideset?.master?.formatting?.font;
+  const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
 
   const slideSections = slides
-    .map((slide) => buildSlideSection(slide, width, height, getSrc, masterFont, presentation))
+    .map((slide) => buildSlideSection(slide, width, height, getSrc, masterFormatting, presentation))
     .join("\n");
 
   const htmlContent = buildHtmlContent(title, colorThemeCss, width, height, slideSections);

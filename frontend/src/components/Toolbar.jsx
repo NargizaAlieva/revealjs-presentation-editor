@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import "./Toolbar.css";
 import FileTab from "./toolbar/FileTab";
 import HomeTab from "./toolbar/HomeTab";
@@ -8,8 +8,9 @@ import AnimationsTab from "./toolbar/AnimationsTab";
 import SlideShowTab from "./toolbar/SlideShowTab";
 import DesignTab from "./toolbar/DesignTab";
 import ViewTab from "./toolbar/ViewTab";
+import { SlideMasterRibbon } from "./SlideMasterView";
 
-const TABS = [
+const BASE_TABS = [
   "File",
   "Home",
   "Insert",
@@ -75,14 +76,47 @@ export default function Toolbar({
   onChangeView,
   showNotes,
   onToggleNotes,
+  onOpenSlideMaster,
   zoom,
   onZoomIn,
   onZoomOut,
   onZoomChange,
+
+  isSlideMasterOpen,
+  onCloseSlideMaster,
+  masterName,
+  onRenameMaster,
+  selectedMasterLayoutId,
+  onRenameLayout,
+  onDeleteLayout,
+  onAddLayoutPlaceholder,
+  onRemoveLayoutPlaceholder,
+  onAddMasterElement,
+  onDeleteMasterElement,
 }) {
   const [localActiveTab, setLocalActiveTab] = useState("Home");
-  const currentTab = activeTab ?? localActiveTab;
-  const setCurrentTab = onTabChange ?? setLocalActiveTab;
+  const [masterActiveTab, setMasterActiveTab] = useState("Slide Master");
+  const prevMasterOpen = useRef(false);
+
+  if (isSlideMasterOpen && !prevMasterOpen.current) {
+    setMasterActiveTab("Slide Master");
+  }
+  prevMasterOpen.current = isSlideMasterOpen;
+
+  const currentTab = isSlideMasterOpen ? masterActiveTab : (activeTab ?? localActiveTab);
+
+  const setCurrentTab = (tab) => {
+    if (isSlideMasterOpen) {
+      setMasterActiveTab(tab);
+      return;
+    }
+    if (onTabChange) onTabChange(tab);
+    else setLocalActiveTab(tab);
+  };
+
+  const TABS = isSlideMasterOpen
+    ? ["File", "Slide Master", "Home", "Insert", "Transitions", "Animations", "View"]
+    : BASE_TABS;
 
   return (
     <header className="toolbar">
@@ -106,6 +140,28 @@ export default function Toolbar({
             onExportPresentation={onExportPresentation}
             onResetPresentation={onResetPresentation}
             onNewPresentation={onNewPresentation}
+          />
+        )}
+
+        {currentTab === "Slide Master" && (
+          <SlideMasterRibbon
+            onClose={onCloseSlideMaster}
+            presentation={presentation}
+            onApplyTheme={onApplyTheme}
+            onApplyFont={onApplyFont}
+            onUpdateDimensions={onUpdateDimensions}
+            masterName={masterName}
+            onRenameMaster={onRenameMaster}
+            selectedMasterLayoutId={selectedMasterLayoutId}
+            onRenameLayout={onRenameLayout}
+            onDeleteLayout={onDeleteLayout}
+            onAddLayoutPlaceholder={onAddLayoutPlaceholder}
+            onRemoveLayoutPlaceholder={onRemoveLayoutPlaceholder}
+            onAddMasterElement={onAddMasterElement}
+            onDeleteMasterElement={onDeleteMasterElement}
+            onAddTextElement={onAddTextElement}
+            onImageUpload={onImageUpload}
+            onVideoUpload={onVideoUpload}
           />
         )}
 
@@ -141,6 +197,7 @@ export default function Toolbar({
             onVideoUpload={onVideoUpload}
             onAddSlide={onAddSlide}
             onAddTextElement={onAddTextElement}
+            presentation={presentation}
           />
         )}
 
@@ -185,9 +242,14 @@ export default function Toolbar({
         {currentTab === "View" && (
           <ViewTab
             currentView={currentView}
-            onChangeView={onChangeView}
+            onChangeView={(view) => {
+              if (isSlideMasterOpen) onCloseSlideMaster?.();
+              onChangeView(view);
+            }}
             showNotes={showNotes}
             onToggleNotes={onToggleNotes}
+            onOpenSlideMaster={onOpenSlideMaster}
+            isSlideMasterOpen={isSlideMasterOpen}
             zoom={zoom}
             onZoomIn={onZoomIn}
             onZoomOut={onZoomOut}

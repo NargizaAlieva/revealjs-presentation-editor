@@ -96,7 +96,7 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
   }, []);
 
   const visibleSlides = getVisibleSlidesForPreview(slides);
-  const masterFont = presentation?.slideset?.master?.formatting?.font;
+  const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
 
   return (
     <div
@@ -137,7 +137,7 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
                     />
                     {textElements.map((textElement, index) => {
                       const animation = animationMap.get(textElement.id);
-                      const baseStyle = buildTextElementStyle(textElement, index, masterFont);
+                      const baseStyle = buildTextElementStyle(textElement, index, masterFormatting);
                       const lines = getTextLines(textElement);
                       const perLine = getPerLineFragments(textElement, animation, lines);
 

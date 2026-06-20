@@ -86,7 +86,9 @@ export default function TextElement({
     .map((p) => p.runs?.[0]?.text ?? "")
     .join("\n");
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
-  const masterFont = presentation?.slideset?.master?.formatting?.font ?? "inherit";
+  const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
+  const resolveStyle = (elemValue, masterValue, fallback) =>
+    elemValue ?? masterValue ?? fallback;
 
   const listType =
     formatting["list-type"] && formatting["list-type"] !== "none"
@@ -238,11 +240,11 @@ export default function TextElement({
           style={{
             left: 0,
             width: `calc(${listIndent} + 1.2em)`,
-            fontSize: formatting.size ?? "24px",
-            lineHeight: formatting["line-spacing"] ?? 1.2,
-            color: formatting.color ?? "var(--text-dark, black)",
-            fontFamily: formatting.font ?? masterFont,
-            fontWeight: formatting.weight ?? "normal",
+            fontSize: resolveStyle(formatting.size, masterFormatting.size, "24px"),
+            lineHeight: resolveStyle(formatting["line-spacing"], masterFormatting["line-spacing"], 1.2),
+            color: resolveStyle(formatting.color, masterFormatting.color, "var(--text-dark, black)"),
+            fontFamily: resolveStyle(formatting.font, masterFormatting.font, "inherit"),
+            fontWeight: resolveStyle(formatting.weight, masterFormatting.weight, "normal"),
           }}
         >
           {text.split("\n").map((_, i) => (
@@ -271,15 +273,15 @@ export default function TextElement({
         }}
         onBlur={() => onCommitHistory?.()}
         style={{
-          fontSize: formatting.size ?? "24px",
-          fontWeight: formatting.weight ?? "normal",
-          fontStyle: formatting.italics ? "italic" : "normal",
-          textDecoration: formatting["text-decoration"] ?? "none",
-          textAlign: formatting.align ?? "left",
-          textAlignLast: formatting.align === "justify" ? "left" : undefined,
-          lineHeight: formatting["line-spacing"] ?? 1.2,
-          color: formatting.color ?? "var(--text-dark, black)",
-          fontFamily: formatting.font ?? masterFont,
+          fontSize: resolveStyle(formatting.size, masterFormatting.size, "24px"),
+          fontWeight: resolveStyle(formatting.weight, masterFormatting.weight, "normal"),
+          fontStyle: resolveStyle(formatting.italics, masterFormatting.italics, false) ? "italic" : "normal",
+          textDecoration: resolveStyle(formatting["text-decoration"], masterFormatting["text-decoration"], "none"),
+          textAlign: resolveStyle(formatting.align, masterFormatting.align, "left"),
+          textAlignLast: resolveStyle(formatting.align, masterFormatting.align, "left") === "justify" ? "left" : undefined,
+          lineHeight: resolveStyle(formatting["line-spacing"], masterFormatting["line-spacing"], 1.2),
+          color: resolveStyle(formatting.color, masterFormatting.color, "var(--text-dark, black)"),
+          fontFamily: resolveStyle(formatting.font, masterFormatting.font, "inherit"),
           paddingLeft: listType ? `calc(${listIndent} + 1.2em)` : undefined,
           position: "relative",
         }}
