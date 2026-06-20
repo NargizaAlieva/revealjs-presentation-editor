@@ -169,7 +169,7 @@ const SLIDE_SIZES = [
     { label: "Standard (4:3)", aspectRatio: "4:3", width: 1024, height: 768 },
 ];
 
-export const THEME_PALETTE_COLUMNS = [
+const THEME_PALETTE_COLUMNS = [
     ["#FFFFFF", "#F2F2F2", "#D9D9D9", "#BFBFBF", "#A6A6A6", "#808080"],
     ["#000000", "#808080", "#595959", "#404040", "#262626", "#0D0D0D"],
     ["#E7E6E6", "#CFCECE", "#AEABAB", "#757070", "#3B3838", "#191718"],
@@ -182,7 +182,7 @@ export const THEME_PALETTE_COLUMNS = [
     ["#7030A0", "#E2CEED", "#C39BD3", "#A569BD", "#512D6D", "#311B4E"],
 ];
 
-export const STANDARD_COLORS = [
+const STANDARD_COLORS = [
     "#C00000", "#FF0000", "#FFC000", "#FFFF00", "#92D050",
     "#00B050", "#00B0F0", "#0070C0", "#002060", "#7030A0",
 ];

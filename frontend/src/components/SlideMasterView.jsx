@@ -3,8 +3,11 @@ import "./SlideMasterView.css";
 import { buildColorThemeStyle } from "../core/render/revealRenderer";
 import SlideDecorations from "./canvas/SlideDecorations";
 import EditorCanvas from "./EditorCanvas";
-import DesignTab, { DESIGN_THEMES } from "./toolbar/DesignTab";
+import DesignTab, { DESIGN_THEMES, ColorPalettePopup } from "./toolbar/DesignTab";
 import { createPlaceholderPseudoElement } from "../core/operations/layoutOperations";
+import { DEFAULT_FONTS } from "./toolbar/homeTabConstants";
+import { toHex6 } from "../core/utils/colorUtils";
+import { TITLE_PLACEHOLDER, FOOTER_PLACEHOLDERS, createMasterTextElement } from "../core/model/masterDefaults";
 
 function renderShapes(shapes) {
   return shapes.map((s, i) => {
@@ -133,24 +136,39 @@ const SLIDE_SIZES = [
 
 function SlideSizeDropdown({ presentation, onUpdateDimensions }) {
   const [open, setOpen] = useState(false);
+  const [showCustom, setShowCustom] = useState(false);
   const ref = useRef(null);
 
   const currentW = presentation?.slideset?.master?.["slide-dimensions"]?.width ?? 1280;
   const currentH = presentation?.slideset?.master?.["slide-dimensions"]?.height ?? 720;
+  const [customW, setCustomW] = useState(currentW);
+  const [customH, setCustomH] = useState(currentH);
   const currentPreset = SLIDE_SIZES.find(s => s.width === currentW && s.height === currentH);
-  const sizeLabel = currentPreset ? currentPreset.aspectRatio : "Custom";
 
   useEffect(() => {
-    const fn = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const fn = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+        setShowCustom(false);
+      }
+    };
     document.addEventListener("mousedown", fn, true);
     return () => document.removeEventListener("mousedown", fn, true);
   }, []);
+
+  const applyCustom = () => {
+    const w = Math.max(100, parseInt(customW) || 1280);
+    const h = Math.max(100, parseInt(customH) || 720);
+    onUpdateDimensions({ width: w, height: h }, "custom", "px");
+    setOpen(false);
+    setShowCustom(false);
+  };
 
   return (
     <div className="sm-themes-wrap" ref={ref}>
       <button
         className={`master-ribbon-btn master-ribbon-btn--large sm-themes-btn${open ? " open" : ""}`}
-        onClick={() => setOpen(v => !v)}
+        onClick={() => { setOpen(v => !v); setShowCustom(false); }}
         title="Slide Size"
       >
         <svg width="32" height="22" viewBox="0 0 32 22" fill="none">
@@ -170,22 +188,69 @@ function SlideSizeDropdown({ presentation, onUpdateDimensions }) {
                 style={{
                   display: "flex", alignItems: "center", gap: 10,
                   width: "100%", background: isActive ? "#eef1f6" : "none",
-                  border: "none", padding: "8px 10px", cursor: "pointer",
-                  borderRadius: 3, fontFamily: "inherit", fontSize: 12,
+                  border: "none", padding: "8px 12px", cursor: "pointer",
+                  borderRadius: 3, fontFamily: "inherit", textAlign: "left",
                 }}
                 onClick={() => {
                   onUpdateDimensions({ width: size.width, height: size.height }, size.aspectRatio, "px");
                   setOpen(false);
                 }}
               >
-                <svg width={size.aspectRatio === "16:9" ? 28 : 22} height={16} viewBox="0 0 28 16" fill="none">
-                  <rect x="0.5" y="0.5" width="27" height="15" rx="1" stroke="#666" strokeWidth="1" fill="#f8f8f8" />
+                <svg width={size.aspectRatio === "16:9" ? 26 : 20} height={16} viewBox={size.aspectRatio === "16:9" ? "0 0 26 16" : "0 0 20 16"} fill="none" style={{ flexShrink: 0 }}>
+                  <rect x="0.5" y="0.5" width={size.aspectRatio === "16:9" ? 25 : 19} height="15" rx="1" stroke="#888" strokeWidth="1" fill="#f8f8f8" />
                 </svg>
-                <span>{size.label}</span>
-                {isActive && <span style={{ marginLeft: "auto", color: "#4472c4" }}>✓</span>}
+                <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  <span style={{ fontSize: 13, fontWeight: isActive ? 600 : 400, color: "#222" }}>{size.label}</span>
+                  <span style={{ fontSize: 11, color: "#888" }}>{size.width} × {size.height} px</span>
+                </div>
+                {isActive && <span style={{ marginLeft: "auto", color: "#4472c4", fontSize: 14 }}>✓</span>}
               </button>
             );
           })}
+
+          <div style={{ borderTop: "1px solid #e0e0e0", marginTop: 4 }}>
+            <button
+              className="slide-size-option slide-size-custom-btn"
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                width: "100%", border: "none", padding: "8px 10px", cursor: "pointer",
+                borderRadius: 3, fontFamily: "inherit", fontSize: 12,
+                color: "#4472c4", background: "none",
+              }}
+              onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onClick={() => setShowCustom(v => !v)}
+            >
+              ⚙ Custom Slide Size...
+            </button>
+
+            {showCustom && (
+              <div className="slide-size-custom-form" style={{ padding: "8px 10px", display: "flex", flexDirection: "column", gap: 6 }}>
+                <label className="slide-size-custom-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12 }}>
+                  <span>Width (px)</span>
+                  <input type="number" value={customW} min={100} max={9999}
+                    onChange={(e) => setCustomW(e.target.value)}
+                    className="slide-size-custom-input"
+                    style={{ width: 70, fontSize: 12, padding: "2px 4px", border: "1px solid #ccc", borderRadius: 3 }} />
+                </label>
+                <label className="slide-size-custom-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12 }}>
+                  <span>Height (px)</span>
+                  <input type="number" value={customH} min={100} max={9999}
+                    onChange={(e) => setCustomH(e.target.value)}
+                    className="slide-size-custom-input"
+                    style={{ width: 70, fontSize: 12, padding: "2px 4px", border: "1px solid #ccc", borderRadius: 3 }} />
+                </label>
+                <button
+                  onClick={applyCustom}
+                  style={{
+                    padding: "4px 8px", fontSize: 12, background: "#4472c4", color: "#fff",
+                    border: "none", borderRadius: 3, cursor: "pointer", alignSelf: "flex-end",
+                  }}
+                >
+                  Apply
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -267,14 +332,28 @@ export function SlideMasterRibbon({
   masterName, onRenameMaster, selectedMasterLayoutId, onRenameLayout,
   onDeleteLayout, onAddLayoutPlaceholder, onRemoveLayoutPlaceholder,
   onAddTextElement, onImageUpload, onVideoUpload,
-  onAddMasterElement, onDeleteMasterElement,
+  onAddMasterElement, onDeleteMasterElement, onApplyMasterTransition, onApplyLayoutFont,
 }) {
   const imageInputRef = useRef(null);
   const videoInputRef = useRef(null);
   const [renaming, setRenaming] = useState(false);
   const [showPlaceholderMenu, setShowPlaceholderMenu] = useState(false);
+  const [showBgPalette, setShowBgPalette] = useState(false);
   const placeholderBtnRef = useRef(null);
   const placeholderMenuRef = useRef(null);
+
+  const colorTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
+  const currentFont = presentation?.slideset?.master?.formatting?.font ?? "Arial";
+  const bgEntry = colorTheme.find((e) => e["css-variable-name"] === "bg-light");
+  const bgColor = toHex6(bgEntry?.color ?? "#ffffff");
+
+  const applyBg = (hex) => {
+    const newColor = (hex.length === 7 ? hex : hex.slice(0, 7)) + "FF";
+    const updated = colorTheme.map((e) =>
+      e["css-variable-name"] === "bg-light" ? { ...e, color: newColor } : e
+    );
+    onApplyTheme?.(updated, presentation?.slideset?.master?.decorations);
+  };
   const isRenamingLayout = !!selectedMasterLayoutId;
   const selectedLayout = selectedMasterLayoutId
     ? (presentation?.slideset?.layouts ?? []).find((l) => l["layout-id"] === selectedMasterLayoutId)
@@ -291,43 +370,6 @@ export function SlideMasterRibbon({
     ? layoutPlaceholders.some((p) => p["placeholder-id"]?.startsWith("footer-"))
     : (masterElements.text ?? []).some((el) => el.id?.startsWith("master-footer-"));
 
-  const TITLE_PLACEHOLDER = {
-    "placeholder-id": "title-placeholder",
-    position: { x: 120, y: 60 },
-    width: 1040,
-    height: 110,
-    type: "text",
-    role: "title",
-    padding: { css: "8px" },
-    background: "#FFFFFF00",
-    formatting: { size: "36px", weight: "bold", align: "center" },
-  };
-
-  const FOOTER_PLACEHOLDERS = [
-    { "placeholder-id": "footer-date",   position: { x: 60,  y: 640 }, width: 260, height: 40, type: "text", role: "footer", padding: { css: "4px" }, background: "#FFFFFF00", formatting: { size: "20px", align: "center" }, promptText: "Date" },
-    { "placeholder-id": "footer-center", position: { x: 380, y: 640 }, width: 520, height: 40, type: "text", role: "footer", padding: { css: "4px" }, background: "#FFFFFF00", formatting: { size: "20px", align: "center" }, promptText: "Footer" },
-    { "placeholder-id": "footer-page",   position: { x: 960, y: 640 }, width: 260, height: 40, type: "text", role: "footer", padding: { css: "4px" }, background: "#FFFFFF00", formatting: { size: "20px", align: "center" }, promptText: "#" },
-  ];
-
-  const makeMasterTextEl = (id, position, width, height, text, formatting) => ({
-    id,
-    "placeholder-id": null,
-    position,
-    width,
-    height,
-    rotation: 0,
-    overflow: "shrink-on-overflow",
-    "z-index": 5,
-    background: "#FFFFFF00",
-    userModified: true,
-    paragraphs: [{
-      id: `${id}-p`,
-      formatting,
-      bullets: "none",
-      runs: [{ formatting: {}, "super-sub-script": "normal", text, link: null }],
-    }],
-  });
-
   const handleToggleTitle = () => {
     if (selectedMasterLayoutId) {
       if (hasTitle) {
@@ -339,7 +381,7 @@ export function SlideMasterRibbon({
       if (hasTitle) {
         onDeleteMasterElement?.("text", "master-title");
       } else {
-        onAddMasterElement?.("text", makeMasterTextEl(
+        onAddMasterElement?.("text", createMasterTextElement(
           "master-title",
           { x: 120, y: 60 },
           1040, 110,
@@ -368,9 +410,9 @@ export function SlideMasterRibbon({
         );
       } else {
         const fmt = { size: "20px", align: "center" };
-        onAddMasterElement?.("text", makeMasterTextEl("master-footer-date",   { x: 60,  y: 640 }, 260, 40, "Date",   fmt));
-        onAddMasterElement?.("text", makeMasterTextEl("master-footer-center", { x: 380, y: 640 }, 520, 40, "Footer", fmt));
-        onAddMasterElement?.("text", makeMasterTextEl("master-footer-page",   { x: 960, y: 640 }, 260, 40, "#",      fmt));
+        onAddMasterElement?.("text", createMasterTextElement("master-footer-date",   { x: 60,  y: 640 }, 260, 40, "Date",   fmt));
+        onAddMasterElement?.("text", createMasterTextElement("master-footer-center", { x: 380, y: 640 }, 520, 40, "Footer", fmt));
+        onAddMasterElement?.("text", createMasterTextElement("master-footer-page",   { x: 960, y: 640 }, 260, 40, "#",      fmt));
       }
     }
   };
@@ -533,6 +575,62 @@ export function SlideMasterRibbon({
           <span className="ribbon-group-title">Edit Theme</span>
         </div>
 
+        <div className="ribbon-group master-ribbon-group">
+          <div className="master-ribbon-row" style={{ flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 12, color: "#555", width: 80 }}>Background</span>
+              <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+                <button
+                  onClick={() => setShowBgPalette((v) => !v)}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 3,
+                    padding: "2px 5px", border: "1px solid #ccc", borderRadius: 3,
+                    background: "#fff", cursor: "pointer", fontSize: 12,
+                  }}
+                >
+                  <span style={{
+                    display: "inline-block", width: 24, height: 14, borderRadius: 2,
+                    background: bgColor, border: "1px solid #aaa",
+                  }} />
+                  <span style={{ color: "#555" }}>▾</span>
+                </button>
+                {showBgPalette && (
+                  <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 1000 }}>
+                    <ColorPalettePopup
+                      currentColor={bgColor}
+                      onSelect={(hex) => { applyBg(hex); setShowBgPalette(false); }}
+                      onClose={() => setShowBgPalette(false)}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 12, color: "#555", width: 80 }}>Fonts</span>
+              <select
+                value={currentFont}
+                onChange={(e) => {
+                  const font = e.target.value;
+                  if (selectedMasterLayoutId) {
+                    onApplyLayoutFont?.(selectedMasterLayoutId, font);
+                  } else {
+                    onApplyFont?.({ font });
+                  }
+                }}
+                style={{ fontSize: 12, padding: "2px 4px", border: "1px solid #ccc", borderRadius: 3, width: 120 }}
+              >
+                {DEFAULT_FONTS.map((f) => (
+                  <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>
+                ))}
+              </select>
+            </div>
+
+          </div>
+          <span className="ribbon-group-title">Background</span>
+        </div>
+
         <div className="ribbon-group master-ribbon-group sm-edit-theme-group">
           <div className="master-ribbon-row">
             <SlideSizeDropdown presentation={presentation} onUpdateDimensions={onUpdateDimensions} />
@@ -669,7 +767,6 @@ export default function SlideMasterView({
     : null;
 
   const activeSlide = selectedLayout ? layoutPseudoSlide : masterPseudoSlide;
-  const noop = () => {};
 
   const handleSelectLayout = (layoutId) => {
     setSelectedLayoutId(layoutId);

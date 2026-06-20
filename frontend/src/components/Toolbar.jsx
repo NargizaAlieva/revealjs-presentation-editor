@@ -71,6 +71,7 @@ export default function Toolbar({
   canPaste,
   onApplyTheme,
   onApplyFont,
+  onApplyLayoutFont,
   onUpdateDimensions,
   currentView,
   onChangeView,
@@ -132,7 +133,10 @@ export default function Toolbar({
         ))}
       </nav>
 
-      <div className="toolbar-ribbon">
+      <div className="toolbar-ribbon" onMouseDownCapture={(e) => {
+        const tag = e.target.tagName;
+        if (tag !== "SELECT" && tag !== "INPUT" && tag !== "TEXTAREA") e.preventDefault();
+      }}>
         {currentTab === "File" && (
           <FileTab
             onOpenPresentation={onOpenPresentation}
@@ -149,6 +153,7 @@ export default function Toolbar({
             presentation={presentation}
             onApplyTheme={onApplyTheme}
             onApplyFont={onApplyFont}
+            onApplyLayoutFont={onApplyLayoutFont}
             onUpdateDimensions={onUpdateDimensions}
             masterName={masterName}
             onRenameMaster={onRenameMaster}

@@ -23,6 +23,8 @@ const AUTO_SAVE_EVENTS = new Set([
 
   EditorEventType.TEXT.ADD,
   EditorEventType.TEXT.UPDATE_FORMATTING,
+  EditorEventType.TEXT.UPDATE_RANGE_FORMATTING,
+  EditorEventType.TEXT.UPDATE_PARAGRAPHS,
   EditorEventType.TEXT.DELETE,
 
   EditorEventType.MEDIA.ADD,

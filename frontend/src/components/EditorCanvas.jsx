@@ -11,9 +11,16 @@ export default function EditorCanvas({
   slide,
   presentation,
   onChangeTextElement,
+  onChangeParagraphs,
+  onSaveSelection,
   onMoveTextElement,
   onResizeTextElement,
   onFormatTextElement,
+  onFormatTextRangeElement,
+  onStartEditing,
+  onStopEditing,
+  pendingFormatting = {},
+  onClearPendingFormatting,
   onDeleteMedia,
   onMoveMediaElement,
   onResizeMediaElement,
@@ -378,6 +385,14 @@ export default function EditorCanvas({
                       onNewComment={onNewComment}
                       previewClassName={playClass}
                       presentation={presentation}
+                      slide={slide}
+                      onChangeParagraphs={onChangeParagraphs}
+                      onSaveSelection={onSaveSelection}
+                      onFormatTextRangeElement={onFormatTextRangeElement}
+                      onStartEditing={onStartEditing}
+                      onStopEditing={onStopEditing}
+                      pendingFormatting={pendingFormatting}
+                      onClearPendingFormatting={onClearPendingFormatting}
                       animationOrder={
                         showAnimationBadges
                           ? animationSequenceMap.get(textElement.id)

@@ -30,32 +30,11 @@ export const updateMasterDimensions = (
 
 export const updateMasterFormatting = (presentation, formatting) => {
   const oldMaster = presentation.slideset?.master?.formatting ?? {};
-  const changedKeys = Object.keys(formatting);
-
-  const slides = (presentation.slideset?.slides ?? []).map((slide) => ({
-    ...slide,
-    contents: {
-      ...slide.contents,
-      text: (slide.contents?.text ?? []).map((el) => ({
-        ...el,
-        paragraphs: (el.paragraphs ?? []).map((p) => {
-          const f = { ...(p.formatting ?? {}) };
-          for (const key of changedKeys) {
-            if (f[key] === undefined || f[key] === oldMaster[key]) {
-              delete f[key];
-            }
-          }
-          return { ...p, formatting: f };
-        }),
-      })),
-    },
-  }));
 
   return {
     ...presentation,
     slideset: {
       ...presentation.slideset,
-      slides,
       master: {
         ...presentation.slideset.master,
         formatting: { ...oldMaster, ...formatting },
@@ -189,6 +168,22 @@ export const updateMasterTextContent = (presentation, elementId, newText) => {
           text: updatedText,
         },
       },
+    },
+  };
+};
+
+// Update the bg-light entry in the master color-theme with a new hex color.
+export const applyBackgroundColor = (presentation, hex) => {
+  const newColor = (hex.length === 7 ? hex : hex.slice(0, 7)) + "FF";
+  const colorTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
+  const updated = colorTheme.map((e) =>
+    e["css-variable-name"] === "bg-light" ? { ...e, color: newColor } : e,
+  );
+  return {
+    ...presentation,
+    slideset: {
+      ...presentation.slideset,
+      master: { ...presentation.slideset.master, "color-theme": updated },
     },
   };
 };

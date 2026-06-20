@@ -39,6 +39,7 @@ import {
   addLayoutPlaceholder,
   removeLayoutPlaceholder,
   updateLayoutPlaceholder,
+  updateLayoutElementsFont,
 } from "../operations/layoutOperations";
 import {
   addMedia,
@@ -504,7 +505,7 @@ export const editorReducer = (state, event) => {
         ...state,
         presentation: updateTextElementParagraphs(
           state.presentation,
-          event.payload.slideIndex ?? state.selectedSlideIndex, // ← исправь
+          event.payload.slideIndex,
           event.payload.elementId,
           event.payload.paragraphs,
         ),
@@ -521,6 +522,7 @@ export const editorReducer = (state, event) => {
           event.payload.elementId,
           event.payload.paragraphIdx,
           event.payload.rangeStart,
+          event.payload.endParagraphIdx ?? event.payload.paragraphIdx,
           event.payload.rangeEnd,
           event.payload.formatting,
         ),
@@ -700,6 +702,18 @@ export const editorReducer = (state, event) => {
           state.presentation,
           event.payload.layoutId,
           event.payload.placeholders,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+
+    case EditorEventType.LAYOUT.UPDATE_FONT:
+      return withHistory(state, {
+        ...state,
+        presentation: updateLayoutElementsFont(
+          state.presentation,
+          event.payload.layoutId,
+          event.payload.font,
         ),
         lastEvent: event,
         lastUpdated: Date.now(),

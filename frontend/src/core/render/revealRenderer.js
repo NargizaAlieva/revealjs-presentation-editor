@@ -5,10 +5,10 @@ import {
   getMediaElements,
 } from "../../utils/slidesetRenderUtils";
 
-export function buildTextElementStyle(textElement, index, masterFormatting = {}) {
+export function buildTextElementStyle(textElement, index, masterFormatting = {}, placeholderFormatting = {}) {
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
   const rotation = textElement.rotation ?? 0;
-  const r = (elemVal, masterVal, fallback) => elemVal ?? masterVal ?? fallback;
+  const r = (elemVal, phVal, masterVal, fallback) => elemVal ?? phVal ?? masterVal ?? fallback;
 
   return {
     position: "absolute",
@@ -20,14 +20,14 @@ export function buildTextElementStyle(textElement, index, masterFormatting = {})
     overflow: "hidden",
     zIndex: textElement["z-index"] ?? index + 1,
     ...(rotation ? { transform: `rotate(${rotation}deg)` } : {}),
-    fontSize: r(formatting.size, masterFormatting.size, index === 0 ? "44px" : "28px"),
-    fontWeight: r(formatting.weight, masterFormatting.weight, index === 0 ? "bold" : "normal"),
-    fontStyle: r(formatting.italics, masterFormatting.italics, false) ? "italic" : "normal",
-    fontFamily: r(formatting.font, masterFormatting.font, "inherit"),
-    color: r(formatting.color, masterFormatting.color, "var(--text-dark, black)"),
-    textAlign: r(formatting.align, masterFormatting.align, "left"),
-    textAlignLast: r(formatting.align, masterFormatting.align, "left") === "justify" ? "left" : undefined,
-    lineHeight: r(formatting["line-spacing"], masterFormatting["line-spacing"], "1.4"),
+    fontSize: r(formatting.size, placeholderFormatting.size, masterFormatting.size, index === 0 ? "44px" : "28px"),
+    fontWeight: r(formatting.weight, placeholderFormatting.weight, masterFormatting.weight, index === 0 ? "bold" : "normal"),
+    fontStyle: r(formatting.italics, placeholderFormatting.italics, masterFormatting.italics, false) ? "italic" : "normal",
+    fontFamily: r(formatting.font, placeholderFormatting.font, masterFormatting.font, "inherit"),
+    color: r(formatting.color, placeholderFormatting.color, masterFormatting.color, "var(--text-dark, black)"),
+    textAlign: r(formatting.align, placeholderFormatting.align, masterFormatting.align, "left"),
+    textAlignLast: r(formatting.align, placeholderFormatting.align, masterFormatting.align, "left") === "justify" ? "left" : undefined,
+    lineHeight: r(formatting["line-spacing"], placeholderFormatting["line-spacing"], masterFormatting["line-spacing"], "1.4"),
     boxSizing: "border-box",
   };
 }

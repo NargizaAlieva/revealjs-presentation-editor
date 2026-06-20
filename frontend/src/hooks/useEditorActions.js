@@ -166,12 +166,13 @@ export function useEditorActions(
   );
 
   const updateTextRangeFormatting = useCallback(
-    (elementId, paragraphIdx, rangeStart, rangeEnd, formatting) =>
+    (elementId, paragraphIdx, rangeStart, endParagraphIdx, rangeEnd, formatting) =>
       eventBus.dispatch(
         createEditorEvent(EditorEventType.TEXT.UPDATE_RANGE_FORMATTING, {
           elementId,
           paragraphIdx,
           rangeStart,
+          endParagraphIdx,
           rangeEnd,
           formatting,
         }),
@@ -398,6 +399,14 @@ export function useEditorActions(
     [eventBus],
   );
 
+  const applyLayoutFont = useCallback(
+    (layoutId, font) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.UPDATE_FONT, { layoutId, font }),
+      ),
+    [eventBus],
+  );
+
   const renameLayout = useCallback(
     (layoutId, name) =>
       eventBus.dispatch(
@@ -604,6 +613,7 @@ export function useEditorActions(
     updateLayout,
     deleteLayout,
     renameLayout,
+    applyLayoutFont,
     addLayoutElement,
     updateLayoutElement,
     updateLayoutElementTextContent,

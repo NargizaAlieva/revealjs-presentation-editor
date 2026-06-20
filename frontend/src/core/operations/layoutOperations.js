@@ -26,7 +26,7 @@ const createTextFromPlaceholder = (placeholder) => ({
   paragraphs: [
     {
       id: createId("paragraph"),
-      formatting: { ...(placeholder.formatting ?? {}) },
+      formatting: {},
       bullets: "none",
       runs: [{ formatting: {}, "super-sub-script": "normal", text: "", link: null }],
     },
