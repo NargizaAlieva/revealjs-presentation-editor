@@ -8,7 +8,6 @@ export default function SlidesGroup({
   onApplyLayout,
   onDeleteSlide,
   onResetLayout,
-  presentation,
   onDuplicateSlide,
   canDelete,
 }) {
@@ -16,11 +15,6 @@ export default function SlidesGroup({
   const [showLayoutPanel, setShowLayoutPanel] = useState(false);
   const [newSlidePos, setNewSlidePos] = useState({ top: 0, left: 0 });
   const [popupPos, setPopupPos] = useState({ top: 0, left: 0 });
-
-  const presentationLayouts = presentation?.slideset?.layouts ?? [];
-  const layouts = presentationLayouts.length > 0
-    ? presentationLayouts.map((l) => ({ id: l["layout-id"], label: l.name ?? l["layout-id"] }))
-    : LAYOUTS;
 
   const newSlideBtnRef = useRef(null);
   const layoutBtnRef = useRef(null);
@@ -96,7 +90,7 @@ export default function SlidesGroup({
             style={{ top: newSlidePos.top, left: newSlidePos.left }}
           >
             <h4>Layouts</h4>
-            {layouts.map((layout) => (
+            {LAYOUTS.map((layout) => (
               <button
                 key={layout.id}
                 className="layout-option"
@@ -128,7 +122,7 @@ export default function SlidesGroup({
               className="layout-apply-popup"
               style={{ top: popupPos.top, left: popupPos.left }}
             >
-              {layouts.map((layout) => (
+              {LAYOUTS.map((layout) => (
                 <button
                   key={layout.id}
                   className="layout-apply-option"

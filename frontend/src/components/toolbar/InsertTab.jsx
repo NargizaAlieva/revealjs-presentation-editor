@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { MdAdd, MdImage, MdTextFields, MdVideoLibrary } from "react-icons/md";
 
-const FALLBACK_LAYOUTS = [
+const LAYOUTS = [
   { id: "title-content", label: "Title and Content" },
   { id: "title-content-media", label: "Title, Content and Media" },
   { id: "two-columns", label: "Two Columns" },
@@ -9,11 +9,7 @@ const FALLBACK_LAYOUTS = [
   { id: "blank", label: "Blank" },
 ];
 
-export default function InsertTab({ onImageUpload, onVideoUpload, onAddSlide, onAddTextElement, presentation }) {
-  const presentationLayouts = presentation?.slideset?.layouts ?? [];
-  const layouts = presentationLayouts.length > 0
-    ? presentationLayouts.map((l) => ({ id: l["layout-id"], label: l.name ?? l["layout-id"] }))
-    : FALLBACK_LAYOUTS;
+export default function InsertTab({ onImageUpload, onVideoUpload, onAddSlide, onAddTextElement }) {
   const [showLayouts, setShowLayouts] = useState(false);
   const [newSlidePos, setNewSlidePos] = useState({ top: 0, left: 0 });
   const newSlideBtnRef = useRef(null);
@@ -53,7 +49,7 @@ export default function InsertTab({ onImageUpload, onVideoUpload, onAddSlide, on
           {showLayouts && (
             <div className="layout-popup" style={{ top: newSlidePos.top, left: newSlidePos.left }}>
               <h4>Layouts</h4>
-              {layouts.map((layout) => (
+              {LAYOUTS.map((layout) => (
                 <button
                   key={layout.id}
                   className="layout-option"

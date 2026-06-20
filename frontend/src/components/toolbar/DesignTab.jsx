@@ -192,7 +192,7 @@ function toHex6(color) {
     return color ?? "#ffffff";
 }
 
-export function ColorPalettePopup({ currentColor, onSelect, onClose }) {
+function ColorPalettePopup({ currentColor, onSelect, onClose }) {
     const ref = useRef(null);
     useEffect(() => {
         const fn = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose(); };

@@ -4,7 +4,6 @@ import {
   escapeHtml,
   getTextElements,
   getMediaElements,
-  getPlaceholderFormatting,
 } from "../../utils/slidesetRenderUtils";
 import { downloadHtml } from "./downloadHtml";
 import { idbGet } from "../persistence/autoSaveService";
@@ -113,11 +112,9 @@ function applyFragment(innerHtml, wrapperStyle, animation) {
   return `<div class="${classes}" ${dataAttrs} style="${wrapperStyle}">${innerHtml}</div>`;
 }
 
-function buildTextElementStyle(textElement, index, masterFormatting = {}, placeholderFormatting = {}) {
+function buildTextElementStyle(textElement, index, masterFont) {
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
   const rotation = textElement.rotation ?? 0;
-  const r = (elemVal, phVal, masterVal, fallback) => elemVal ?? phVal ?? masterVal ?? fallback;
-
   return [
     "position: absolute",
     `left: ${textElement.position?.x ?? 0}px`,
@@ -128,13 +125,13 @@ function buildTextElementStyle(textElement, index, masterFormatting = {}, placeh
     "overflow: hidden",
     `z-index: ${textElement["z-index"] ?? index + 1}`,
     ...(rotation ? [`transform: rotate(${rotation}deg)`] : []),
-    `font-size: ${r(formatting.size, placeholderFormatting.size, masterFormatting.size, index === 0 ? "44px" : "28px")}`,
-    `font-weight: ${r(formatting.weight, placeholderFormatting.weight, masterFormatting.weight, index === 0 ? "bold" : "normal")}`,
-    `font-style: ${r(formatting.italics, placeholderFormatting.italics, masterFormatting.italics, false) ? "italic" : "normal"}`,
-    `font-family: ${r(formatting.font, placeholderFormatting.font, masterFormatting.font, "inherit")}`,
-    `color: ${r(formatting.color, placeholderFormatting.color, masterFormatting.color, "var(--text-dark, black)")}`,
-    `text-align: ${r(formatting.align, placeholderFormatting.align, masterFormatting.align, "left")}`,
-    `line-height: ${r(formatting["line-spacing"], placeholderFormatting["line-spacing"], masterFormatting["line-spacing"], "1.4")}`,
+    `font-size: ${formatting.size ?? (index === 0 ? "44px" : "28px")}`,
+    `font-weight: ${formatting.weight ?? (index === 0 ? "bold" : "normal")}`,
+    `font-style: ${formatting.italics ? "italic" : "normal"}`,
+    `font-family: ${formatting.font ?? masterFont ?? "inherit"}`,
+    `color: ${formatting.color ?? "var(--text-dark, black)"}`,
+    `text-align: ${formatting.align ?? "left"}`,
+    `line-height: ${formatting["line-spacing"] ?? "1.4"}`,
     "box-sizing: border-box",
   ].join("; ");
 }
@@ -207,37 +204,6 @@ function buildTextElementContent(textElement, animation) {
     .join("");
 }
 
-function buildMasterElementsHtml(presentation, masterFormatting, getSrc) {
-  const masterElements = presentation?.slideset?.master?.elements ?? {};
-  const textElements = masterElements.text ?? [];
-  const mediaElements = masterElements.media ?? [];
-
-  const textsHtml = textElements.map((el, index) => {
-    const style = buildTextElementStyle(el, index, masterFormatting, {});
-    const content = buildTextElementContent(el, null);
-    return `<div style="${style}">${content}</div>`;
-  }).join("");
-
-  const mediaHtml = mediaElements.map((media) => {
-    const src = getSrc(media["file-link"] ?? "");
-    const isVideo = media["media-type"] === "video";
-    const wrapperStyle = [
-      "position: absolute",
-      `left: ${media.position?.x ?? 0}px`,
-      `top: ${media.position?.y ?? 0}px`,
-      `width: ${media.width ?? 100}px`,
-      `height: ${media.height ?? 100}px`,
-      `z-index: ${media["z-index"] ?? 0}`,
-    ].join("; ");
-    const inner = isVideo
-      ? `<video src="${escapeHtml(src)}" style="width:100%;height:100%;object-fit:contain;" preload="metadata"></video>`
-      : `<img src="${escapeHtml(src)}" alt="" style="width:100%;height:100%;object-fit:contain;" />`;
-    return `<div style="${wrapperStyle}">${inner}</div>`;
-  }).join("");
-
-  return textsHtml + mediaHtml;
-}
-
 function buildDecorationsHtml(presentation, width, height) {
   const shapes = presentation?.slideset?.master?.decorations?.shapes;
   if (!shapes?.length) return "";
@@ -258,7 +224,7 @@ function buildDecorationsHtml(presentation, width, height) {
   return `<svg style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden;z-index:0;" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">${shapeSvgs}</svg>`;
 }
 
-function buildSlideSection(slide, width, height, getSrc, masterFormatting, presentation, masterElementsHtml = "") {
+function buildSlideSection(slide, width, height, getSrc, masterFont, presentation) {
   const textElements = getTextElements(slide);
   const mediaElements = getMediaElements(slide);
   const transition = slide.contents?.transition ?? "slide";
@@ -271,8 +237,7 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
     .map((textElement, index) => {
       const animation = animationMap.get(textElement.id);
       const sequenceMode = animation?.["effect-options"]?.sequence ?? "as-one-object";
-      const placeholderFormatting = getPlaceholderFormatting(presentation, slide, textElement);
-      const style = buildTextElementStyle(textElement, index, masterFormatting, placeholderFormatting);
+      const style = buildTextElementStyle(textElement, index, masterFont);
       const content = buildTextElementContent(textElement, animation);
       if (!animation || sequenceMode === "as-one-object") {
         return applyFragment(content, style, animation);
@@ -321,7 +286,6 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
     >
       <div style="position: relative; width: ${width}px; height: ${height}px; overflow: hidden;">
         ${buildDecorationsHtml(presentation, width, height)}
-        ${masterElementsHtml}
         ${textElementsHtml}
         ${mediaElementsHtml}
       </div>
@@ -389,11 +353,10 @@ export async function exportToReveal(presentation) {
 
   const resolvedMap = await resolveMediaLinks(slides);
   const getSrc = (fileLink) => resolvedMap.get(fileLink) ?? fileLink;
-  const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
-  const masterElementsHtml = buildMasterElementsHtml(presentation, masterFormatting, getSrc);
+  const masterFont = presentation?.slideset?.master?.formatting?.font;
 
   const slideSections = slides
-    .map((slide) => buildSlideSection(slide, width, height, getSrc, masterFormatting, presentation, masterElementsHtml))
+    .map((slide) => buildSlideSection(slide, width, height, getSrc, masterFont, presentation))
     .join("\n");
 
   const htmlContent = buildHtmlContent(title, colorThemeCss, width, height, slideSections);
@@ -410,11 +373,10 @@ export async function exportToRevealZip(presentation) {
 
   const resolvedMap = await resolveMediaForZip(slides);
   const getSrc = (fileLink) => resolvedMap.get(fileLink)?.src ?? fileLink;
-  const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
-  const masterElementsHtml = buildMasterElementsHtml(presentation, masterFormatting, getSrc);
+  const masterFont = presentation?.slideset?.master?.formatting?.font;
 
   const slideSections = slides
-    .map((slide) => buildSlideSection(slide, width, height, getSrc, masterFormatting, presentation, masterElementsHtml))
+    .map((slide) => buildSlideSection(slide, width, height, getSrc, masterFont, presentation))
     .join("\n");
 
   const htmlContent = buildHtmlContent(title, colorThemeCss, width, height, slideSections);

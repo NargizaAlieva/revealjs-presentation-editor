@@ -67,7 +67,7 @@ export default function AnimationsTab({
         sequence: animationList.length + 1,
         effect: effectValue,
         speed: 1,
-        "effect-options": { sequence: "as-one-object" },
+        "effect-options": {},
       });
     }
 

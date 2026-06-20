@@ -92,55 +92,6 @@ export function getTextFromTextElement(textElement) {
     );
 }
 
-export function getPlaceholderFormatting(presentation, slide, textElement) {
-  const layoutId = slide?.["layout-id"];
-  const placeholderId = textElement?.["placeholder-id"];
-  if (!layoutId || !placeholderId) return {};
-  const layout = (presentation?.slideset?.layouts ?? []).find(
-    (l) => l["layout-id"] === layoutId,
-  );
-  const placeholder = (layout?.placeholders ?? []).find(
-    (ph) => ph["placeholder-id"] === placeholderId,
-  );
-  return placeholder?.formatting ?? {};
-}
-
-// Keys that are truly run-level (character-level overrides)
-const RUN_LEVEL_KEYS = new Set(["super-sub-script"]);
-
-export function migrateParagraphFormatting(paragraphs, placeholderFormatting, masterFormatting = {}) {
-  if (!paragraphs) return paragraphs;
-  return paragraphs.map((p) => {
-    const userSetKeys = new Set(p.userSetKeys ?? []);
-
-    // Clean paragraph.formatting: remove keys that match placeholder or master (inherited values)
-    const f = { ...(p.formatting ?? {}) };
-    for (const key of Object.keys(f)) {
-      if (userSetKeys.has(key)) continue;
-      if (key in placeholderFormatting) {
-        if (f[key] === placeholderFormatting[key]) delete f[key];
-      } else if (key in masterFormatting) {
-        if (f[key] === masterFormatting[key]) delete f[key];
-      }
-    }
-
-    // Clean run.formatting: remove keys that are identical to paragraph.formatting
-    // (they were copied there, not user-set per-run overrides)
-    // Keep keys that differ from paragraph — those are real per-word overrides
-    const runs = (p.runs ?? []).map((run) => {
-      const rf = Object.fromEntries(
-        Object.entries(run.formatting ?? {}).filter(([k, v]) => {
-          if (RUN_LEVEL_KEYS.has(k)) return true; // always keep run-only keys
-          return v !== f[k]; // keep only if it differs from paragraph
-        }),
-      );
-      return { ...run, formatting: rf };
-    });
-
-    return { ...p, formatting: f, runs };
-  });
-}
-
 export function escapeHtml(value = "") {
     return String(value)
         .replaceAll("&", "&amp;")

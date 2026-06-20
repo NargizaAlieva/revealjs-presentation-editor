@@ -1,4 +1,9 @@
-import { storageAdapter } from "./storageAdapter";
+import {
+  idbGet,
+  idbSet,
+  idbRemove,
+  idbGetAllPresentationIds,
+} from "./autoSaveService";
 
 const INDEX_KEY = "presentations_index";
 
@@ -7,15 +12,15 @@ export function presentationKey(id) {
 }
 
 export async function getIndex() {
-  const stored = await storageAdapter.get(INDEX_KEY);
+  const stored = await idbGet(INDEX_KEY);
   if (stored && stored.length > 0) return stored;
 
-  const ids = await storageAdapter.getAllPresentationIds();
+  const ids = await idbGetAllPresentationIds();
   if (ids.length === 0) return [];
 
   const entries = await Promise.all(
     ids.map(async (id) => {
-      const raw = await storageAdapter.get(presentationKey(id));
+      const raw = await idbGet(presentationKey(id));
       const data = typeof raw === "string" ? JSON.parse(raw) : raw;
       const title =
         data?.slideset?.title ??
@@ -26,7 +31,7 @@ export async function getIndex() {
   );
 
   entries.sort((a, b) => b.updatedAt - a.updatedAt);
-  await storageAdapter.set(INDEX_KEY, entries);
+  await idbSet(INDEX_KEY, entries);
   return entries;
 }
 
@@ -50,18 +55,18 @@ export async function updateIndexEntry(id, title) {
     index.unshift(entry);
   }
   index.sort((a, b) => b.updatedAt - a.updatedAt);
-  await storageAdapter.set(INDEX_KEY, index);
+  await idbSet(INDEX_KEY, index);
 }
 
 export async function deletePresentation(id) {
   const index = await getIndex();
-  await storageAdapter.set(
+  await idbSet(
     INDEX_KEY,
     index.filter((p) => p.id !== id),
   );
-  await storageAdapter.remove(presentationKey(id));
+  await idbRemove(presentationKey(id));
 }
 
 export async function loadPresentation(id) {
-  return storageAdapter.get(presentationKey(id));
+  return idbGet(presentationKey(id));
 }

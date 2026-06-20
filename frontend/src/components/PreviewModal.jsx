@@ -21,7 +21,6 @@ import {
   getFragmentProps,
   getPerLineFragments,
 } from "../core/render/revealRenderer";
-import { getPlaceholderFormatting } from "../utils/slidesetRenderUtils";
 
 function PreviewMediaElement({ media, index, fragmentProps }) {
   const src = useMediaSrc(media["file-link"]);
@@ -97,7 +96,7 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
   }, []);
 
   const visibleSlides = getVisibleSlidesForPreview(slides);
-  const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
+  const masterFont = presentation?.slideset?.master?.formatting?.font;
 
   return (
     <div
@@ -138,8 +137,7 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
                     />
                     {textElements.map((textElement, index) => {
                       const animation = animationMap.get(textElement.id);
-                      const placeholderFormatting = getPlaceholderFormatting(presentation, slide, textElement);
-                      const baseStyle = buildTextElementStyle(textElement, index, masterFormatting, placeholderFormatting);
+                      const baseStyle = buildTextElementStyle(textElement, index, masterFont);
                       const lines = getTextLines(textElement);
                       const perLine = getPerLineFragments(textElement, animation, lines);
 

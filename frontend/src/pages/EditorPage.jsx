@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import SlideList from "../components/SlideList";
 import Toolbar from "../components/Toolbar";
@@ -17,10 +17,7 @@ import StatusBar from "../components/StatusBar";
 import CommentsPanel from "../components/CommentsPanel";
 import SlideSorterView from "../components/SlideSorterView";
 import OutlineView from "../components/OutlineView";
-import { getSlideSize, getPlaceholderFormatting } from "../utils/slidesetRenderUtils";
-import { computeCurrentFormatting, splitFormattingUpdates, resolveEffectiveFormatting } from "../core/text/textFormatting";
-import { getSlideElement } from "../core/operations/slideOperations";
-import { createTextElementDefaults } from "../core/model/masterDefaults";
+import { getSlideSize } from "../utils/slidesetRenderUtils";
 import FileMenu from "../components/FileMenu";
 import { idbSet } from "../core/persistence/autoSaveService";
 import {
@@ -33,7 +30,6 @@ import {
   presentationKey,
 } from "../core/persistence/presentationsLibrary";
 import NotesPageView from "../components/NotesPageView";
-import SlideMasterView from "../components/SlideMasterView";
 
 export default function EditorPage() {
   const { presentationId } = useParams();
@@ -42,15 +38,6 @@ export default function EditorPage() {
   const [previewStartSlide, setPreviewStartSlide] = useState(0);
   const [showComments, setShowComments] = useState(false);
   const [composeSession, setComposeSession] = useState(0);
-  const [isSlideMasterOpen, setIsSlideMasterOpen] = useState(false);
-  const [masterName, setMasterName] = useState("Office Theme");
-  const [selectedMasterElementId, setSelectedMasterElementId] = useState(null);
-  // null = Master selected, string = layout-id selected
-  const [selectedMasterLayoutId, setSelectedMasterLayoutId] = useState(null);
-
-  const [editingTextElementId, setEditingTextElementId] = useState(null);
-  const editingTextElementIdRef = useRef(null);
-  const [pendingFormatting, setPendingFormatting] = useState({});
 
   const {
     zoom,
@@ -72,8 +59,6 @@ export default function EditorPage() {
     triggerAnimationPreview,
     triggerTransitionPreview,
   } = useEditorViewState();
-
-  const activeSelectionRef = useRef(null); // { elementId, paragraphIdx, rangeStart, rangeEnd }
 
   const { state, eventBus, isLoading } = useEditorState(presentationId);
   const {
@@ -109,7 +94,7 @@ export default function EditorPage() {
     updateTextElementContent,
     updateTextElementFormatting,
     updateTextElementParagraphs,
-    updateTextRangeFormatting,
+    updateTextRangeFormatting,  
     updateRunLink,
     updateElementPosition,
     updateElementSize,
@@ -125,25 +110,9 @@ export default function EditorPage() {
     applyTransitionToAll,
     applyLayout,
     resetLayout,
-    updateLayout,
-    deleteLayout,
-    renameLayout,
-    applyLayoutFont,
-    addLayoutElement,
-    updateLayoutElement,
-    updateLayoutElementTextContent,
-    deleteLayoutElement,
-    addLayoutPlaceholder,
-    removeLayoutPlaceholder,
-    updateLayoutPlaceholder,
     updateMasterTheme,
     updateMasterFormatting,
     updateMasterDimensions,
-    updateMasterTextContent,
-    updateMasterTextFormatting,
-    addMasterElement,
-    updateMasterElement,
-    deleteMasterElement,
     addAnimation,
     updateAnimation,
     deleteAnimation,
@@ -168,42 +137,29 @@ export default function EditorPage() {
   const { handleVideoUpload } = useVideoUpload(addMedia);
   const { handleAddTextElement } = useAddTextElement(addTextElement);
 
-  const { handleImageUpload: handleMasterImageUpload } = useImageUpload(
-    (mediaElement) => {
-      if (selectedMasterLayoutId) {
-        addLayoutElement(selectedMasterLayoutId, "media", mediaElement);
-      } else {
-        addMasterElement("media", mediaElement);
-      }
-    }
-  );
-  const { handleVideoUpload: handleMasterVideoUpload } = useVideoUpload(
-    (mediaElement) => {
-      if (selectedMasterLayoutId) {
-        addLayoutElement(selectedMasterLayoutId, "media", mediaElement);
-      } else {
-        addMasterElement("media", mediaElement);
-      }
-    }
-  );
-  const handleAddMasterTextElement = () => {
-    if (selectedMasterLayoutId) {
-      addLayoutElement(selectedMasterLayoutId, "text", createTextElementDefaults(4, "Layout text"));
-    } else {
-      addMasterElement("text", createTextElementDefaults(10, "Master text"));
-    }
-  };
-
   const exportPresentation = async () => exportToReveal(presentation);
 
+  const getSelectedElement = () => {
+    if (!selectedElementId) return null;
+    return (
+      (selectedSlide?.contents?.text ?? []).find(
+        (e) => e.id === selectedElementId,
+      ) ||
+      (selectedSlide?.contents?.media ?? []).find(
+        (e) => e.id === selectedElementId,
+      ) ||
+      null
+    );
+  };
+
   const handleCopy = (elementOrEvent) => {
-    const element = elementOrEvent?.id ? elementOrEvent : getSlideElement(selectedSlide, selectedElementId);
+    const element = elementOrEvent?.id ? elementOrEvent : getSelectedElement();
     if (!element) return;
     copyElement(element);
   };
 
   const handleCut = (elementOrEvent) => {
-    const element = elementOrEvent?.id ? elementOrEvent : getSlideElement(selectedSlide, selectedElementId);
+    const element = elementOrEvent?.id ? elementOrEvent : getSelectedElement();
     if (!element) return;
     cutElement(element);
   };
@@ -219,63 +175,16 @@ export default function EditorPage() {
 
   const selectedTextEl = selectedElementId
     ? (selectedSlide?.contents?.text ?? []).find(
-        (t) => t.id === selectedElementId,
-      )
+      (t) => t.id === selectedElementId,
+    )
     : null;
 
-  const paragraphFormatting = selectedTextEl?.paragraphs?.[0]?.formatting ?? {};
-  const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
-  const placeholderFormatting = selectedTextEl
-    ? getPlaceholderFormatting(presentation, selectedSlide, selectedTextEl)
-    : {};
-  const effectiveFormatting = resolveEffectiveFormatting(masterFormatting, placeholderFormatting, paragraphFormatting);
-
-  const currentFormatting = computeCurrentFormatting({
-    isEditing: editingTextElementId === selectedElementId,
-    activeSelection: activeSelectionRef.current,
-    selectedElementId,
-    selectedTextEl,
-    effectiveFormatting,
-    pendingFormatting,
-  });
-
-  const applyFormatting = (elementId, updates) => {
-    const { runUpdates, paraUpdates } = splitFormattingUpdates(updates);
-
-    const sel = activeSelectionRef.current;
-    const hasRealSelection =
-      sel && sel.elementId === elementId &&
-      !(sel.paragraphIdx === (sel.endParagraphIdx ?? sel.paragraphIdx) && sel.rangeStart === sel.rangeEnd);
-
-    if (hasRealSelection) {
-      if (Object.keys(runUpdates).length > 0)
-        updateTextRangeFormatting(elementId, sel.paragraphIdx, sel.rangeStart, sel.endParagraphIdx ?? sel.paragraphIdx, sel.rangeEnd, runUpdates);
-    } else if (editingTextElementIdRef.current === elementId) {
-      if (Object.keys(runUpdates).length > 0)
-        setPendingFormatting((prev) => ({ ...prev, ...runUpdates }));
-    } else {
-      if (Object.keys(runUpdates).length > 0) updateTextElementFormatting(elementId, runUpdates);
-    }
-
-    if (Object.keys(paraUpdates).length > 0) updateTextElementFormatting(elementId, paraUpdates);
-  };
+  const currentFormatting = selectedTextEl?.paragraphs?.[0]?.formatting ?? {};
 
   const handleFormatChange = (updates) => {
     if (!selectedElementId || !selectedTextEl) return;
-    applyFormatting(selectedElementId, updates);
+    updateTextElementFormatting(selectedElementId, updates);
   };
-
-  const handleStartEditing = useCallback((id) => {
-    editingTextElementIdRef.current = id;
-    setEditingTextElementId(id);
-    setPendingFormatting({});
-  }, []);
-
-  const handleStopEditing = useCallback((id) => {
-    editingTextElementIdRef.current = null;
-    setEditingTextElementId((prev) => (prev === id ? null : prev));
-    setPendingFormatting({});
-  }, []);
 
   const { width: slideWidth, height: slideHeight } = getSlideSize(presentation);
 
@@ -321,15 +230,25 @@ export default function EditorPage() {
     navigate("/");
   };
 
-  const selectedElementRaw = getSlideElement(selectedSlide, selectedElementId);
-  const selectedElement = selectedElementRaw
-    ? {
-        id: selectedElementRaw.id,
-        label: selectedElementRaw.paragraphs
-          ? (selectedElementRaw.paragraphs?.[0]?.runs?.[0]?.text || "Text")
-          : "Image",
-      }
-    : null;
+  const selectedElement = (() => {
+    if (!selectedElementId) return null;
+    const textElement = (selectedSlide?.contents?.text ?? []).find(
+      (item) => item.id === selectedElementId,
+    );
+    if (textElement) {
+      return {
+        id: textElement.id,
+        label: textElement.paragraphs?.[0]?.runs?.[0]?.text || "Text",
+      };
+    }
+    const mediaElement = (selectedSlide?.contents?.media ?? []).find(
+      (item) => item.id === selectedElementId,
+    );
+    if (mediaElement) {
+      return { id: mediaElement.id, label: "Image" };
+    }
+    return null;
+  })();
 
   if (isLoading) {
     return <div className="editor-loading">Loading...</div>;
@@ -376,9 +295,8 @@ export default function EditorPage() {
           canMoveUp={selectedSlideIndex > 0}
           canMoveDown={selectedSlideIndex < slides.length - 1}
           onResetPresentation={resetPresentation}
-          onImageUpload={isSlideMasterOpen ? handleMasterImageUpload : handleImageUpload}
-          onVideoUpload={isSlideMasterOpen ? handleMasterVideoUpload : handleVideoUpload}
-          onAddTextElement={isSlideMasterOpen ? handleAddMasterTextElement : handleAddTextElement}
+          onImageUpload={handleImageUpload}
+          onVideoUpload={handleVideoUpload}
           onToggleSlideHidden={() => toggleSlideHidden(selectedSlideIndex)}
           isSlideHidden={selectedSlide?.hidden}
           onTransitionChange={(transition) => updateSlideTransition(transition)}
@@ -401,6 +319,7 @@ export default function EditorPage() {
           currentFormatting={currentFormatting}
           onFormatChange={handleFormatChange}
           isTextSelected={!!selectedTextEl}
+          onAddTextElement={handleAddTextElement}
           presentation={presentation}
           onCut={handleCut}
           onCopy={handleCopy}
@@ -408,7 +327,6 @@ export default function EditorPage() {
           canPaste={!!state.clipboard}
           onApplyTheme={updateMasterTheme}
           onApplyFont={updateMasterFormatting}
-          onApplyLayoutFont={applyLayoutFont}
           onUpdateDimensions={updateMasterDimensions}
           currentView={currentView}
           onChangeView={setCurrentView}
@@ -418,60 +336,11 @@ export default function EditorPage() {
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}
           onZoomChange={setZoom}
-          onOpenSlideMaster={() => setIsSlideMasterOpen(true)}
-          isSlideMasterOpen={isSlideMasterOpen}
-          onCloseSlideMaster={() => setIsSlideMasterOpen(false)}
-          masterName={masterName}
-          onRenameMaster={setMasterName}
-          selectedMasterLayoutId={selectedMasterLayoutId}
-          onRenameLayout={renameLayout}
-          onDeleteLayout={deleteLayout}
-          onAddLayoutPlaceholder={addLayoutPlaceholder}
-          onRemoveLayoutPlaceholder={removeLayoutPlaceholder}
-          onAddMasterElement={addMasterElement}
-          onDeleteMasterElement={deleteMasterElement}
         />
       </div>
 
       <div className="editor-body">
-        {isSlideMasterOpen ? (
-          <SlideMasterView
-            presentation={presentation}
-            onClose={() => { setIsSlideMasterOpen(false); setSelectedMasterLayoutId(null); }}
-            onSelectedLayoutChange={setSelectedMasterLayoutId}
-            onApplyTheme={updateMasterTheme}
-            onApplyFont={updateMasterFormatting}
-            onUpdateDimensions={updateMasterDimensions}
-            onUpdateLayout={updateLayout}
-            masterName={masterName}
-            selectedMasterElementId={selectedMasterElementId}
-            onSelectMasterElement={setSelectedMasterElementId}
-            onAddMasterElement={addMasterElement}
-            onDeleteMasterElement={deleteMasterElement}
-            onUpdateMasterTextContent={(id, text) =>
-              updateMasterTextContent(id, text)
-            }
-            onUpdateMasterTextFormatting={(id, fmt) =>
-              updateMasterTextFormatting(id, fmt)
-            }
-            onUpdateLayoutPlaceholder={updateLayoutPlaceholder}
-            onUpdateLayoutElement={(layoutId, type, id, updates) => updateLayoutElement(layoutId, type, id, updates)}
-            onUpdateLayoutElementTextContent={(layoutId, id, text) => updateLayoutElementTextContent(layoutId, id, text)}
-            onDeleteLayoutElement={(layoutId, type, id) => deleteLayoutElement(layoutId, type, id)}
-            onUpdateMasterElementPosition={(id, x, y) => {
-              updateMasterElement("text", id, { position: { x, y } });
-              updateMasterElement("media", id, { position: { x, y } });
-            }}
-            onUpdateMasterElementSize={(id, w, h) => {
-              updateMasterElement("text", id, { width: w, height: h });
-              updateMasterElement("media", id, { width: w, height: h });
-            }}
-            onUpdateMasterElement={updateMasterElement}
-            onBeginHistory={beginHistory}
-            onCommitHistory={commitHistory}
-            onCancelHistory={cancelHistory}
-          />
-        ) : currentView === "slide-sorter" ? (
+        {currentView === "slide-sorter" ? (
           <SlideSorterView
             slides={slides}
             selectedSlideIndex={selectedSlideIndex}
@@ -513,19 +382,9 @@ export default function EditorPage() {
                   slide={selectedSlide}
                   presentation={presentation}
                   onChangeTextElement={updateTextElementContent}
-                  onChangeParagraphs={(elementId, paragraphs) =>
-                    updateTextElementParagraphs(selectedSlideIndex, elementId, paragraphs)
-                  }
                   onMoveTextElement={updateElementPosition}
                   onResizeTextElement={updateElementSize}
-                  onFormatTextElement={applyFormatting}
-                  onFormatTextRangeElement={(elementId, paragraphIdx, rangeStart, endParagraphIdx, rangeEnd, formatting) =>
-                    updateTextRangeFormatting(elementId, paragraphIdx, rangeStart, endParagraphIdx, rangeEnd, formatting)
-                  }
-                  onSaveSelection={(elementId, offsets) => {
-                    activeSelectionRef.current = offsets ? { elementId, ...offsets } : null;
-                    if (offsets) setPendingFormatting({});
-                  }}
+                  onFormatTextElement={updateTextElementFormatting}
                   onMoveMediaElement={updateElementPosition}
                   onResizeMediaElement={updateElementSize}
                   onDeleteTextElement={deleteElement}
@@ -551,10 +410,6 @@ export default function EditorPage() {
                   onPaste={handlePaste}
                   onCut={handleCut}
                   onNewComment={handleNewComment}
-                  onStartEditing={handleStartEditing}
-                  onStopEditing={handleStopEditing}
-                  pendingFormatting={editingTextElementId === selectedElementId ? pendingFormatting : {}}
-                  onClearPendingFormatting={() => setPendingFormatting({})}
                 />
               )}
             </div>

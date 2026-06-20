@@ -1,5 +1,75 @@
 import { useCallback, useState } from "react";
-import { snapAngle, computeResize } from "../core/geometry/canvasGeometry";
+
+const SNAP_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315, 360];
+const SNAP_THRESHOLD = 5;
+
+function normalizeAngle(angle) {
+  return ((angle % 360) + 360) % 360;
+}
+
+function snapAngle(angle) {
+  const normalized = normalizeAngle(angle);
+  for (const snap of SNAP_ANGLES) {
+    if (Math.abs(normalized - snap) <= SNAP_THRESHOLD) return snap % 360;
+  }
+  return normalized;
+}
+
+/**
+ * Вычисляет новые position и size при resize с учётом направления ручки.
+ *
+ * dir: 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
+ *
+ * Для ручек nw/n/ne/w — двигаем позицию и уменьшаем размер.
+ * Для ручек se/s/e   — только меняем размер.
+ */
+function computeResize(dir, initial, mouse, canvasWidth, canvasHeight) {
+  const { x, y, width, height } = initial;
+  const dx = mouse.x - initial.mouseX;
+  const dy = mouse.y - initial.mouseY;
+
+  let newX = x,
+    newY = y,
+    newW = width,
+    newH = height;
+
+  // горизонталь
+  if (dir === "nw" || dir === "w" || dir === "sw") {
+    newX = x + dx;
+    newW = width - dx;
+  } else if (dir === "ne" || dir === "e" || dir === "se") {
+    newW = width + dx;
+  }
+
+  // вертикаль
+  if (dir === "nw" || dir === "n" || dir === "ne") {
+    newY = y + dy;
+    newH = height - dy;
+  } else if (dir === "sw" || dir === "s" || dir === "se") {
+    newH = height + dy;
+  }
+
+  // минимальные размеры
+  const minW = 80,
+    minH = 30;
+
+  if (newW < minW) {
+    if (dir === "nw" || dir === "w" || dir === "sw") newX = x + width - minW;
+    newW = minW;
+  }
+  if (newH < minH) {
+    if (dir === "nw" || dir === "n" || dir === "ne") newY = y + height - minH;
+    newH = minH;
+  }
+
+  // не выходим за границы канваса
+  newX = Math.max(0, newX);
+  newY = Math.max(0, newY);
+  newW = Math.min(newW, canvasWidth - newX);
+  newH = Math.min(newH, canvasHeight - newY);
+
+  return { newX, newY, newW, newH };
+}
 
 export function useCanvasInteractions({
   width,
@@ -59,7 +129,7 @@ export function useCanvasInteractions({
   const getRotationAngle = useCallback((mouseX, mouseY, element) => {
     const cx = (element.position?.x ?? 0) + (element.width ?? 300) / 2;
     const cy = (element.position?.y ?? 0) + (element.height ?? 200) / 2;
-    return (Math.atan2(mouseY - cy, mouseX - cx) * 180) / Math.PI;
+    return Math.atan2(mouseY - cy, mouseX - cx) * (180 / Math.PI);
   }, []);
 
   const stopInteraction = useCallback(() => {

@@ -5,10 +5,9 @@ import {
   getMediaElements,
 } from "../../utils/slidesetRenderUtils";
 
-export function buildTextElementStyle(textElement, index, masterFormatting = {}, placeholderFormatting = {}) {
+export function buildTextElementStyle(textElement, index, masterFont) {
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
   const rotation = textElement.rotation ?? 0;
-  const r = (elemVal, phVal, masterVal, fallback) => elemVal ?? phVal ?? masterVal ?? fallback;
 
   return {
     position: "absolute",
@@ -20,14 +19,14 @@ export function buildTextElementStyle(textElement, index, masterFormatting = {},
     overflow: "hidden",
     zIndex: textElement["z-index"] ?? index + 1,
     ...(rotation ? { transform: `rotate(${rotation}deg)` } : {}),
-    fontSize: r(formatting.size, placeholderFormatting.size, masterFormatting.size, index === 0 ? "44px" : "28px"),
-    fontWeight: r(formatting.weight, placeholderFormatting.weight, masterFormatting.weight, index === 0 ? "bold" : "normal"),
-    fontStyle: r(formatting.italics, placeholderFormatting.italics, masterFormatting.italics, false) ? "italic" : "normal",
-    fontFamily: r(formatting.font, placeholderFormatting.font, masterFormatting.font, "inherit"),
-    color: r(formatting.color, placeholderFormatting.color, masterFormatting.color, "var(--text-dark, black)"),
-    textAlign: r(formatting.align, placeholderFormatting.align, masterFormatting.align, "left"),
-    textAlignLast: r(formatting.align, placeholderFormatting.align, masterFormatting.align, "left") === "justify" ? "left" : undefined,
-    lineHeight: r(formatting["line-spacing"], placeholderFormatting["line-spacing"], masterFormatting["line-spacing"], "1.4"),
+    fontSize: formatting.size ?? (index === 0 ? "44px" : "28px"),
+    fontWeight: formatting.weight ?? (index === 0 ? "bold" : "normal"),
+    fontStyle: formatting.italics ? "italic" : "normal",
+    fontFamily: formatting.font ?? masterFont ?? "inherit",
+    color: formatting.color ?? "var(--text-dark, black)",
+    textAlign: formatting.align ?? "left",
+    textAlignLast: formatting.align === "justify" ? "left" : undefined,
+    lineHeight: formatting["line-spacing"] ?? "1.4",
     boxSizing: "border-box",
   };
 }
@@ -126,12 +125,8 @@ export function initRevealDeck(
 export function buildColorThemeStyle(presentation) {
   const colorTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
   const cssVars = {};
-  colorTheme.forEach((entry) => { 
-    const color = entry.color;
-    const normalized = typeof color === "string" && color.length === 9 && color.startsWith("#")
-      ? color.slice(0, 7)
-      : color;
-    cssVars[`--${entry["css-variable-name"]}`] = normalized;
+  colorTheme.forEach((entry) => {
+    cssVars[`--${entry["css-variable-name"]}`] = entry.color;
   });
   return cssVars;
 }

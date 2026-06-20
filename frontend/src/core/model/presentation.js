@@ -9,6 +9,7 @@ const createId = (prefix = "id") => {
 };
 
 const createTextFormatting = ({
+  font = "Arial",
   size = "28px",
   color = "var(--text-dark)",
   weight = "normal",
@@ -18,6 +19,7 @@ const createTextFormatting = ({
   verticalAlign = "top",
   lineSpacing = "1.4em",
 } = {}) => ({
+  font,
   size,
   color,
   weight,
@@ -217,7 +219,7 @@ export const createDefaultPresentation = () => {
                 height: titlePlaceholder.height,
                 zIndex: 1,
                 text: "My First Slide",
-                formatting: {},
+                formatting: titleFormatting,
               }),
               createTextElement({
                 placeholderId: "body-placeholder",
@@ -227,7 +229,7 @@ export const createDefaultPresentation = () => {
                 height: bodyPlaceholder.height,
                 zIndex: 2,
                 text: "Start editing your presentation.",
-                formatting: {},
+                formatting: bodyFormatting,
               }),
             ],
             media: [createMediaElement(mediaPlaceholder)],
