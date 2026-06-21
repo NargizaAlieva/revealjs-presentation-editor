@@ -1,15 +1,11 @@
 import { useMediaSrc } from "../../hooks/useMediaSrc";
 import { buildColorThemeStyle } from "../../core/render/revealRenderer";
+import { extractPlainTextFromParagraphs } from "../../core/text/textFormatting";
 import SlideDecorations from "../canvas/SlideDecorations";
 import "./SlideThumbnail.css";
 
 const THUMB_W = 180;
 const THUMB_H = 101; // 16:9
-
-const getElementText = (textElement) =>
-  (textElement?.paragraphs ?? [])
-    .map((p) => (p.runs ?? []).map((r) => r.text ?? "").join(""))
-    .join(" ");
 
 function ThumbnailMedia({ media }) {
   const src = useMediaSrc(media["file-link"]);
@@ -75,6 +71,7 @@ export default function SlideThumbnail({
           presentation={presentation}
           width={slideWidth}
           height={slideHeight}
+          layoutId={slide?.["layout-id"]}
         />
 
         {textElements.map((textElement) => {
@@ -100,7 +97,7 @@ export default function SlideThumbnail({
                 zIndex: 1,
               }}
             >
-              {getElementText(textElement)}
+              {extractPlainTextFromParagraphs(textElement.paragraphs, " ")}
             </div>
           );
         })}

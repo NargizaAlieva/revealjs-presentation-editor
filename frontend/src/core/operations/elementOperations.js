@@ -1,4 +1,4 @@
-import { getSlides, setSlides } from "../../utils/presentationUtils";
+import { getSlides, setSlides } from "../utils/presentationUtils";
 
 export const moveElement = (presentation, slideIndex, elementId, newPosition) => {
   const slides = [...getSlides(presentation)];

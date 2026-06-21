@@ -1,9 +1,9 @@
-import { createId, getSlides, setSlides } from "../../utils/presentationUtils";
+import { createId, getSlides, setSlides } from "../utils/presentationUtils";
 
 const getLayouts = (presentation) =>
   presentation?.slideset?.layouts ?? [];
 
-const createTextElementFromPlaceholder = (placeholder, defaultText = "", masterFormatting = {}) => ({
+const createTextElementFromPlaceholder = (placeholder, defaultText = "") => ({
   id: createId("text"),
   "placeholder-id": placeholder["placeholder-id"],
   position: { ...placeholder.position },
@@ -17,7 +17,7 @@ const createTextElementFromPlaceholder = (placeholder, defaultText = "", masterF
   paragraphs: [
     {
       id: createId("paragraph"),
-      formatting: { ...masterFormatting, ...(placeholder.formatting ?? {}) }, // ← merge
+      formatting: {},
       bullets: "none",
       runs: [
         {
@@ -47,7 +47,7 @@ const createMediaElementFromPlaceholder = (placeholder) => ({
   playback: {},
 });
 
-export const createSlideFromLayout = (layout, slideNumber, masterFormatting = {}) => {
+export const createSlideFromLayout = (layout, slideNumber) => {
   const placeholders = layout.placeholders ?? [];
 
   const textPlaceholders = placeholders.filter((p) => p.type === "text");
@@ -64,12 +64,11 @@ export const createSlideFromLayout = (layout, slideNumber, masterFormatting = {}
         createTextElementFromPlaceholder(
           p,
           p.promptText ?? (p.role === "title" ? "Click to edit Master title style" : "Click to edit text"),
-          masterFormatting,
         )
       ),
       media: mediaPlaceholders.map(createMediaElementFromPlaceholder),
       shapes: [],
-      tables: [],  
+      tables: [],
       groups: [],
       animations: [],
       background: "#FFFFFFFF",
@@ -82,7 +81,6 @@ export const createSlideFromLayout = (layout, slideNumber, masterFormatting = {}
 export const addSlide = (presentation, layoutId = "title-content") => {
   const layouts = getLayouts(presentation);
   const slides = getSlides(presentation);
-  const masterFormatting = presentation.slideset?.master?.formatting ?? {}; // ← add
 
   const layout = layouts.find((l) => l["layout-id"] === layoutId);
 
@@ -90,7 +88,7 @@ export const addSlide = (presentation, layoutId = "title-content") => {
     throw new Error(`Layout not found: ${layoutId}`);
   }
 
-  const newSlide = createSlideFromLayout(layout, slides.length + 1, masterFormatting); // ← pass
+  const newSlide = createSlideFromLayout(layout, slides.length + 1);
 
   return setSlides(presentation, [...slides, newSlide]);
 };
@@ -226,4 +224,14 @@ export const updateSlideTransition = (presentation, slideIndex, transition) => {
   };
 
   return setSlides(presentation, slides);
+};
+
+// Find a text or media element by id within a slide's contents.
+export const getSlideElement = (slide, elementId) => {
+  if (!elementId || !slide) return null;
+  return (
+    (slide.contents?.text ?? []).find((e) => e.id === elementId) ||
+    (slide.contents?.media ?? []).find((e) => e.id === elementId) ||
+    null
+  );
 };

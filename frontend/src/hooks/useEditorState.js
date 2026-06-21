@@ -1,4 +1,4 @@
-import { useReducer, useEffect, useLayoutEffect, useState } from "react";
+import { useReducer, useEffect, useLayoutEffect, useState, useRef } from "react";
 import {
   createInitialEditorState,
   editorReducer,
@@ -23,22 +23,13 @@ export function useEditorState(presentationId) {
   );
   const [isLoading, setIsLoading] = useState(true);
 
-  const [stateAccessor] = useState(() => {
-    const box = { state: undefined };
-    return {
-      get: () => box.state,
-      set: (s) => {
-        box.state = s;
-      },
-    };
-  });
-
+  const stateRef = useRef(state);
   useLayoutEffect(() => {
-    stateAccessor.set(state);
+    stateRef.current = state;
   });
 
   const [eventBus] = useState(() =>
-    createEventBus(reactDispatch, () => stateAccessor.get(), { storageKey }),
+    createEventBus(reactDispatch, () => stateRef.current, { storageKey }),
   );
 
   useEffect(() => {
@@ -57,7 +48,10 @@ export function useEditorState(presentationId) {
           }),
         );
       })
-      .catch(() => idbRemove(storageKey))
+      .catch((error) => {
+        // Логируем ошибку, но НЕ удаляем данные — пусть пользователь решает
+        console.error("[EditorState] Failed to load presentation from IndexedDB:", error);
+      })
       .finally(() => setIsLoading(false));
   }, [storageKey]);
 

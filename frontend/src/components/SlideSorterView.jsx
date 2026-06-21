@@ -2,6 +2,7 @@ import { useState } from "react";
 import "./SlideSorterView.css";
 import { buildColorThemeStyle } from "../core/render/revealRenderer";
 import SlideDecorations from "./canvas/SlideDecorations";
+import { extractPlainTextFromParagraphs } from "../core/text/textFormatting";
 
 function SlideMiniature({ slide, index, isSelected, onClick, presentation }) {
     const colorThemeStyle = buildColorThemeStyle(presentation);
@@ -34,7 +35,7 @@ function SlideMiniature({ slide, index, isSelected, onClick, presentation }) {
                 }}>
                     <SlideDecorations presentation={presentation} width={width} height={height} />
                     {textElements.map((el, i) => {
-                        const text = (el.paragraphs ?? []).map(p => p.runs?.map(r => r.text).join("") ?? "").join(" ");
+                        const text = extractPlainTextFromParagraphs(el.paragraphs, " ");
                         const fmt = el.paragraphs?.[0]?.formatting ?? {};
                         return (
                             <div key={i} style={{

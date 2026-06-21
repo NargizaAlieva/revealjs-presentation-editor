@@ -32,8 +32,10 @@ export default function HomeTab({
   const presentationFonts = (presentation?.slideset?.fonts ?? [])
     .map((f) => f["font-id"])
     .filter(Boolean);
-  const fonts =
-    presentationFonts.length > 0 ? presentationFonts : DEFAULT_FONTS;
+  const fonts = [
+    ...presentationFonts,
+    ...DEFAULT_FONTS.filter((f) => !presentationFonts.includes(f)),
+  ];
 
   return (
     <>
@@ -52,6 +54,7 @@ export default function HomeTab({
         onDeleteSlide={onDeleteSlide}
         onDuplicateSlide={onDuplicateSlide}
         canDelete={canDelete}
+        presentation={presentation}
       />
 
       <FontGroup

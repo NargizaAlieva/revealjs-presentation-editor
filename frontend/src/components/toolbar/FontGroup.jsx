@@ -17,12 +17,12 @@ export default function FontGroup({
     onFormatChange(updates);
   };
 
-  const currentFont = currentFormatting.font ?? fonts[0] ?? "Arial";
-  const currentSize = parseInt(currentFormatting.size ?? "28", 10);
-  const isBold = currentFormatting.weight === "bold";
-  const isItalic = !!currentFormatting.italics;
+  const currentFont = currentFormatting.font === "mixed" ? "" : (currentFormatting.font ?? fonts[0] ?? "Arial");
+  const currentSize = currentFormatting.size === "mixed" ? "" : parseInt(currentFormatting.size ?? "28", 10);
+  const isBold = currentFormatting.weight === "bold" || currentFormatting.weight === true;
+  const isItalic = currentFormatting.italics === true || currentFormatting.italics === "italic";
   const isUnderline = currentFormatting["text-decoration"] === "underline";
-  const currentColor = currentFormatting.color ?? "#111111";
+  const currentColor = currentFormatting.color === "mixed" ? "#111111" : (currentFormatting.color ?? "#111111");
 
   return (
     <div className="ribbon-group font-group">

@@ -1,7 +1,17 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import "./EditorCanvas.css";
-import { getSlideSize } from "../utils/slidesetRenderUtils";
+import { getSlideSize } from "../core/render/slidesetRenderUtils";
+import { getAnimationDurationMs } from "../core/operations/animationOperations";
 import { buildColorThemeStyle } from "../core/render/revealRenderer";
+import {
+  isEditableTarget,
+  isUndoShortcut,
+  isRedoShortcut,
+  isCopyShortcut,
+  isPasteShortcut,
+  isCutShortcut,
+  isDeleteShortcut,
+} from "../core/events/keyboardShortcuts";
 import { useCanvasInteractions } from "../hooks/useCanvasInteractions";
 import TextElement from "./canvas/TextElement";
 import MediaElement from "./canvas/MediaElement";
@@ -11,9 +21,16 @@ export default function EditorCanvas({
   slide,
   presentation,
   onChangeTextElement,
+  onChangeParagraphs,
+  onSaveSelection,
   onMoveTextElement,
   onResizeTextElement,
   onFormatTextElement,
+  onFormatTextRangeElement,
+  onStartEditing,
+  onStopEditing,
+  pendingFormatting = {},
+  onClearPendingFormatting,
   onDeleteMedia,
   onMoveMediaElement,
   onResizeMediaElement,
@@ -39,6 +56,10 @@ export default function EditorCanvas({
   onPaste,
   onCut,
   onNewComment,
+  hideMasterElements = false,
+  formatPainterClipboard = null,
+  onFormatPainterCopy,
+  onFormatPainterPaste,
 }) {
   const [playingElementId, setPlayingElementId] = useState(null);
   const [playingEffect, setPlayingEffect] = useState(null);
@@ -126,17 +147,10 @@ export default function EditorCanvas({
           }
         });
 
-        const duration =
-          previewEffect.speed === 0.5
-            ? 200
-            : previewEffect.speed === 2
-              ? 2200
-              : 800;
-
         timerId = setTimeout(() => {
           setPlayingElementId(null);
           setPlayingEffect(null);
-        }, duration + 100);
+        }, getAnimationDurationMs(previewEffect.speed) + 100);
       }
 
       if (previewEffect.type === "transition") {
@@ -163,36 +177,21 @@ export default function EditorCanvas({
 
   useEffect(() => {
     const handleKeyDown = (event) => {
-      const isEditableTarget =
-        event.target instanceof HTMLInputElement ||
-        event.target instanceof HTMLTextAreaElement ||
-        event.target.isContentEditable;
+      const editable = isEditableTarget(event.target);
 
-      const key = event.key.toLowerCase();
-
-      const isUndo =
-        (event.ctrlKey || event.metaKey) && !event.shiftKey && key === "z";
-
-      const isRedo =
-        ((event.ctrlKey || event.metaKey) && key === "y") ||
-        ((event.ctrlKey || event.metaKey) && event.shiftKey && key === "z");
-
-      if (isUndo && !isEditableTarget) {
+      if (isUndoShortcut(event) && !editable) {
         event.preventDefault();
         onUndo?.();
         return;
       }
 
-      if (isRedo && !isEditableTarget) {
+      if (isRedoShortcut(event) && !editable) {
         event.preventDefault();
         onRedo?.();
         return;
       }
 
-      const isCopy = (event.ctrlKey || event.metaKey) && key === "c";
-      const isPaste = (event.ctrlKey || event.metaKey) && key === "v";
-
-      if (isCopy && !isEditableTarget && selectedElementId) {
+      if (isCopyShortcut(event) && !editable && selectedElementId) {
         const element =
           textElements.find((el) => el.id === selectedElementId) ||
           mediaElements.find((el) => el.id === selectedElementId);
@@ -200,13 +199,12 @@ export default function EditorCanvas({
         return;
       }
 
-      if (isPaste && !isEditableTarget) {
+      if (isPasteShortcut(event) && !editable) {
         onPaste?.();
         return;
       }
 
-      const isCut = (event.ctrlKey || event.metaKey) && key === "x";
-      if (isCut && !isEditableTarget && selectedElementId) {
+      if (isCutShortcut(event) && !editable && selectedElementId) {
         const element =
           textElements.find((el) => el.id === selectedElementId) ||
           mediaElements.find((el) => el.id === selectedElementId);
@@ -214,8 +212,8 @@ export default function EditorCanvas({
         return;
       }
 
-      if (event.key !== "Delete" && event.key !== "Backspace") return;
-      if (isEditableTarget) return;
+      if (!isDeleteShortcut(event)) return;
+      if (editable) return;
       if (!selectedElementId) return;
 
       const isTextElement = textElements.some(
@@ -346,6 +344,8 @@ export default function EditorCanvas({
                   presentation={presentation}
                   width={width}
                   height={height}
+                  hideMasterElements={hideMasterElements}
+                  layoutId={slide?.["layout-id"]}
                 />
 
                 {textElements.map((textElement) => {
@@ -375,6 +375,17 @@ export default function EditorCanvas({
                       onNewComment={onNewComment}
                       previewClassName={playClass}
                       presentation={presentation}
+                      slide={slide}
+                      onChangeParagraphs={onChangeParagraphs}
+                      onSaveSelection={onSaveSelection}
+                      onFormatTextRangeElement={onFormatTextRangeElement}
+                      onStartEditing={onStartEditing}
+                      onStopEditing={onStopEditing}
+                      pendingFormatting={pendingFormatting}
+                      onClearPendingFormatting={onClearPendingFormatting}
+                      formatPainterClipboard={formatPainterClipboard}
+                      onFormatPainterCopy={onFormatPainterCopy}
+                      onFormatPainterPaste={onFormatPainterPaste}
                       animationOrder={
                         showAnimationBadges
                           ? animationSequenceMap.get(textElement.id)
@@ -468,38 +479,38 @@ export default function EditorCanvas({
                           snapInfo.angle === 135 ||
                           snapInfo.angle === 225 ||
                           snapInfo.angle === 315) && (
-                          <svg
-                            style={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              width: "100%",
-                              height: "100%",
-                              pointerEvents: "none",
-                              overflow: "visible",
-                            }}
-                          >
-                            <line
-                              x1={centerX - 2000}
-                              y1={
-                                centerY +
-                                (snapInfo.angle === 45 || snapInfo.angle === 225
-                                  ? 2000
-                                  : -2000)
-                              }
-                              x2={centerX + 2000}
-                              y2={
-                                centerY +
-                                (snapInfo.angle === 45 || snapInfo.angle === 225
-                                  ? -2000
-                                  : 2000)
-                              }
-                              stroke="#4f46e5"
-                              strokeWidth="1"
-                              opacity="0.7"
-                            />
-                          </svg>
-                        )}
+                            <svg
+                              style={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                width: "100%",
+                                height: "100%",
+                                pointerEvents: "none",
+                                overflow: "visible",
+                              }}
+                            >
+                              <line
+                                x1={centerX - 2000}
+                                y1={
+                                  centerY +
+                                  (snapInfo.angle === 45 || snapInfo.angle === 225
+                                    ? 2000
+                                    : -2000)
+                                }
+                                x2={centerX + 2000}
+                                y2={
+                                  centerY +
+                                  (snapInfo.angle === 45 || snapInfo.angle === 225
+                                    ? -2000
+                                    : 2000)
+                                }
+                                stroke="#4f46e5"
+                                strokeWidth="1"
+                                opacity="0.7"
+                              />
+                            </svg>
+                          )}
 
                         <div
                           style={{

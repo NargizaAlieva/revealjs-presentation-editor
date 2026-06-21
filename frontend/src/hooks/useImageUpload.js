@@ -1,5 +1,6 @@
 import { useCallback } from "react";
-import { idbSet } from "../core/persistence/autoSaveService";
+import { storeMediaFile } from "../core/persistence/mediaStorage";
+import { createImageMediaElement } from "../core/model/mediaDefaults";
 
 export function useImageUpload(addMedia) {
   const handleImageUpload = useCallback(
@@ -7,26 +8,8 @@ export function useImageUpload(addMedia) {
       const file = event.target.files?.[0];
       if (!file || !file.type.startsWith("image/")) return;
 
-      const mediaId = crypto.randomUUID();
-      const key = `media/${mediaId}`;
-
-      await idbSet(key, file);
-
-      addMedia({
-        id: mediaId,
-        "file-link": `indexeddb://${key}`,
-        "media-type": "image",
-        position: { x: 60, y: 60 },
-        width: 300,
-        height: 200,
-        rotation: 0,
-        "z-index": 1,
-        scale: 1,
-        crop: [],
-        effects: {},
-        playback: {},
-      });
-
+      const { mediaId, key } = await storeMediaFile(file);
+      addMedia(createImageMediaElement(mediaId, key));
       event.target.value = "";
     },
     [addMedia],

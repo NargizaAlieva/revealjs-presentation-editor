@@ -1,4 +1,5 @@
 import "./GlobalSettingsPanel.css";
+import { toHex6 } from "../core/utils/colorUtils";
 
 const ASPECT_RATIOS = [
   { label: "16:9", width: 1280, height: 720 },
@@ -14,16 +15,10 @@ const DEFAULT_COLOR_THEME = [
   { "css-variable-name": "accent2", color: "#7c3aed" },
 ];
 
-// Color inputs only support 6-char hex (#RRGGBB). Strip alpha if present (#RRGGBBAA → #RRGGBB).
-const toHex6 = (color) =>
-  typeof color === "string" && color.length === 9
-    ? color.slice(0, 7)
-    : (color ?? "#000000");
-
 export default function GlobalSettingsPanel({
   presentation,
   updateMasterDimensions,
-  updateMasterTheme,
+  onColorChange,
 }) {
   const master = presentation?.slideset?.master ?? {};
   const currentAspectRatio = master["aspect-ratio"] ?? "16:9";
@@ -48,23 +43,8 @@ export default function GlobalSettingsPanel({
     }
   };
 
-  const handleColorChange = (cssVariableName, newColor) => {
-    const originalRaw = (master["color-theme"] ?? DEFAULT_COLOR_THEME).find(
-      (entry) => entry["css-variable-name"] === cssVariableName,
-    )?.color;
-
-    const alpha =
-      typeof originalRaw === "string" && originalRaw.length === 9
-        ? originalRaw.slice(7)
-        : "FF";
-
-    const updatedTheme = colorTheme.map((entry) =>
-      entry["css-variable-name"] === cssVariableName
-        ? { ...entry, color: `${newColor}${alpha}` }
-        : entry,
-    );
-    updateMasterTheme(updatedTheme);
-  };
+  const handleColorChange = (cssVariableName, newColor) =>
+    onColorChange?.(cssVariableName, newColor);
 
   return (
     <div className="global-settings-panel">

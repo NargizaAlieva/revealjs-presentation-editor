@@ -5,15 +5,7 @@ import {
   createPresentation,
 } from "../core/persistence/presentationsLibrary";
 import "./FileMenu.css";
-
-function formatDate(ts) {
-  if (!ts) return "";
-  return new Date(ts).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
+import { greeting, formatDate } from "../core/utils/dateUtils";
 
 export default function FileMenu({
   presentationTitle,
@@ -177,9 +169,3 @@ export default function FileMenu({
   );
 }
 
-function greeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon";
-  return "Good evening";
-}

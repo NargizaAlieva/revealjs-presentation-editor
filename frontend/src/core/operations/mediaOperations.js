@@ -1,4 +1,4 @@
-import { createId, getSlides, setSlides } from "../../utils/presentationUtils";
+import { createId, getSlides, setSlides } from "../utils/presentationUtils";
 
 export const addMedia = (presentation, slideIndex, mediaData) => {
   const slides = [...getSlides(presentation)];

@@ -15,6 +15,7 @@ import { useState, useRef, useEffect } from "react"; import {
   MdExpandMore,
 } from "react-icons/md";
 import "./AnimationsTab.css";
+import { getMaxAnimationSequence, getAnimationDurationMs } from "../../core/operations/animationOperations";
 
 const ANIMATION_EFFECTS = [
   { value: "none", label: "None", icon: MdBlock },
@@ -31,8 +32,9 @@ const ANIMATION_EFFECTS = [
 export default function AnimationsTab({
   selectedElement,
   animations,
-  onAddAnimation,
+  onAddAnimationForElement,
   onUpdateAnimation,
+  onReorderAnimation,
   onDeleteAnimation,
   onAnimationPreview,
 }) {
@@ -44,10 +46,7 @@ export default function AnimationsTab({
 
   const currentEffect = animation?.effect ?? "none";
 
-  const maxSequence = animationList.reduce(
-    (max, item) => Math.max(max, item.sequence ?? 1),
-    0,
-  );
+  const maxSequence = getMaxAnimationSequence(animationList);
 
   const handleEffectClick = (effectValue) => {
     if (!selectedElement) return;
@@ -62,13 +61,7 @@ export default function AnimationsTab({
     if (animation) {
       onUpdateAnimation?.(animation.id, { effect: effectValue });
     } else {
-      onAddAnimation?.({
-        id: selectedElement.id,
-        sequence: animationList.length + 1,
-        effect: effectValue,
-        speed: 1,
-        "effect-options": {},
-      });
+      onAddAnimationForElement?.(selectedElement.id, effectValue, animationList.length + 1);
     }
 
     playPreview(selectedElement.id, effectValue, speed);
@@ -81,8 +74,7 @@ export default function AnimationsTab({
     setIsPlaying(true);
     onAnimationPreview?.(elementId, effect, speed);
 
-    const duration = speed === 0.5 ? 200 : speed === 2 ? 2200 : 800;
-    setTimeout(() => setIsPlaying(false), duration + 100);
+    setTimeout(() => setIsPlaying(false), getAnimationDurationMs(speed) + 100);
   };
 
   const handlePlay = () => {
@@ -92,19 +84,7 @@ export default function AnimationsTab({
 
   const swapSequence = (direction) => {
     if (!animation) return;
-
-    const currentSeq = animation.sequence ?? 1;
-    const targetSeq = currentSeq + direction;
-
-    const neighbor = animationList.find(
-      (item) => (item.sequence ?? 1) === targetSeq,
-    );
-
-    onUpdateAnimation?.(animation.id, { sequence: targetSeq });
-
-    if (neighbor) {
-      onUpdateAnimation?.(neighbor.id, { sequence: currentSeq });
-    }
+    onReorderAnimation?.(animationList, animation.id, direction);
   };
 
   const canMoveEarlier = animation && (animation.sequence ?? 1) > 1;

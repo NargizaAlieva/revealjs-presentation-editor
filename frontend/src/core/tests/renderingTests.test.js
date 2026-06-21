@@ -5,7 +5,7 @@ import {
   getTextElements,
   getMediaElements,
   escapeHtml,
-} from "../../utils/slidesetRenderUtils";
+} from "../render/slidesetRenderUtils";
 import {
   buildTextElementStyle,
   buildMediaElementStyle,

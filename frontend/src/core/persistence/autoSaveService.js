@@ -1,70 +1,18 @@
 import { serializePresentation } from "./serializationOperations";
 import { updateIndexEntry } from "./presentationsLibrary";
 import { EditorEventType } from "../events/editorEvents";
+import { storageAdapter } from "./storageAdapter";
 
 const DEFAULT_STORAGE_KEY = "presentation";
 const DEFAULT_AUTOSAVE_DELAY = 2000;
-const DB_NAME = "editor-db";
-const DB_VERSION = 1;
-const STORE_NAME = "keyval";
+// Набор текста сохраняется с увеличенным debounce, чтобы не перегружать IDB
+const TEXT_UPDATE_AUTOSAVE_DELAY = 5000;
 
-function openDB() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = (e) => {
-      e.target.result.createObjectStore(STORE_NAME);
-    };
-    request.onsuccess = (e) => resolve(e.target.result);
-    request.onerror = (e) => reject(e.target.error);
-  });
-}
-
-export async function idbSet(key, value) {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    tx.objectStore(STORE_NAME).put(value, key);
-    tx.oncomplete = () => resolve();
-    tx.onerror = (e) => reject(e.target.error);
-  });
-}
-
-export async function idbGet(key) {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readonly");
-    const request = tx.objectStore(STORE_NAME).get(key);
-    request.onsuccess = (e) => resolve(e.target.result ?? null);
-    request.onerror = (e) => reject(e.target.error);
-  });
-}
-
-export async function idbGetAllKeys() {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readonly");
-    const request = tx.objectStore(STORE_NAME).getAllKeys();
-    request.onsuccess = (e) => resolve(e.target.result);
-    request.onerror = (e) => reject(e.target.error);
-  });
-}
-
-export async function idbGetAllPresentationIds() {
-  const keys = await idbGetAllKeys();
-  return keys
-    .filter((k) => k.startsWith("presentation-"))
-    .map((k) => k.replace("presentation-", ""));
-}
-
-export async function idbRemove(key) {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    tx.objectStore(STORE_NAME).delete(key);
-    tx.oncomplete = () => resolve();
-    tx.onerror = (e) => reject(e.target.error);
-  });
-}
+export const idbSet = (key, value) => storageAdapter.set(key, value);
+export const idbGet = (key) => storageAdapter.get(key);
+export const idbRemove = (key) => storageAdapter.remove(key);
+export const idbGetAllKeys = () => storageAdapter.getAllKeys();
+export const idbGetAllPresentationIds = () => storageAdapter.getAllPresentationIds();
 
 const AUTO_SAVE_EVENTS = new Set([
   EditorEventType.SLIDE.ADD,
@@ -76,7 +24,10 @@ const AUTO_SAVE_EVENTS = new Set([
   EditorEventType.SLIDE.UPDATE_NOTES,
 
   EditorEventType.TEXT.ADD,
+  EditorEventType.TEXT.UPDATE,
   EditorEventType.TEXT.UPDATE_FORMATTING,
+  EditorEventType.TEXT.UPDATE_RANGE_FORMATTING,
+  EditorEventType.TEXT.UPDATE_PARAGRAPHS,
   EditorEventType.TEXT.DELETE,
 
   EditorEventType.MEDIA.ADD,
@@ -93,6 +44,8 @@ const AUTO_SAVE_EVENTS = new Set([
   EditorEventType.MASTER.UPDATE_THEME,
   EditorEventType.MASTER.UPDATE_DIMENSIONS,
   EditorEventType.MASTER.UPDATE_FORMATTING,
+  EditorEventType.MASTER.TOGGLE_TITLE,
+  EditorEventType.MASTER.TOGGLE_FOOTERS,
 
   EditorEventType.PRESENTATION.UPDATE,
 
@@ -124,7 +77,7 @@ export const createAutosaveService = (
       }
       const id = storageKey.replace("presentation-", "");
       const title = state.presentation?.slideset?.filename ?? "Untitled Presentation";
-      await idbSet(storageKey, serializePresentation(state.presentation));
+      await storageAdapter.set(storageKey, serializePresentation(state.presentation));
       await updateIndexEntry(id, title);
       if (process.env.NODE_ENV === "development") {
         console.log("[AutosaveService] Saved.");
@@ -135,8 +88,18 @@ export const createAutosaveService = (
   };
 
   const scheduleAutosave = createDebounce(persist, delay);
+  const scheduleTextAutosave = createDebounce(persist, TEXT_UPDATE_AUTOSAVE_DELAY);
   const saveImmediately = () => persist();
   const shouldAutosave = (eventType) => AUTO_SAVE_EVENTS.has(eventType);
 
-  return { scheduleAutosave, saveImmediately, shouldAutosave };
+  // TEXT.UPDATE использует более длинный debounce, остальные — стандартный
+  const schedule = (eventType) => {
+    if (eventType === EditorEventType.TEXT.UPDATE) {
+      scheduleTextAutosave();
+    } else {
+      scheduleAutosave();
+    }
+  };
+
+  return { scheduleAutosave: schedule, saveImmediately, shouldAutosave };
 };

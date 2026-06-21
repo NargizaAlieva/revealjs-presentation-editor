@@ -1,75 +1,5 @@
 import { useCallback, useState } from "react";
-
-const SNAP_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315, 360];
-const SNAP_THRESHOLD = 5;
-
-function normalizeAngle(angle) {
-  return ((angle % 360) + 360) % 360;
-}
-
-function snapAngle(angle) {
-  const normalized = normalizeAngle(angle);
-  for (const snap of SNAP_ANGLES) {
-    if (Math.abs(normalized - snap) <= SNAP_THRESHOLD) return snap % 360;
-  }
-  return normalized;
-}
-
-/**
- * Вычисляет новые position и size при resize с учётом направления ручки.
- *
- * dir: 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
- *
- * Для ручек nw/n/ne/w — двигаем позицию и уменьшаем размер.
- * Для ручек se/s/e   — только меняем размер.
- */
-function computeResize(dir, initial, mouse, canvasWidth, canvasHeight) {
-  const { x, y, width, height } = initial;
-  const dx = mouse.x - initial.mouseX;
-  const dy = mouse.y - initial.mouseY;
-
-  let newX = x,
-    newY = y,
-    newW = width,
-    newH = height;
-
-  // горизонталь
-  if (dir === "nw" || dir === "w" || dir === "sw") {
-    newX = x + dx;
-    newW = width - dx;
-  } else if (dir === "ne" || dir === "e" || dir === "se") {
-    newW = width + dx;
-  }
-
-  // вертикаль
-  if (dir === "nw" || dir === "n" || dir === "ne") {
-    newY = y + dy;
-    newH = height - dy;
-  } else if (dir === "sw" || dir === "s" || dir === "se") {
-    newH = height + dy;
-  }
-
-  // минимальные размеры
-  const minW = 80,
-    minH = 30;
-
-  if (newW < minW) {
-    if (dir === "nw" || dir === "w" || dir === "sw") newX = x + width - minW;
-    newW = minW;
-  }
-  if (newH < minH) {
-    if (dir === "nw" || dir === "n" || dir === "ne") newY = y + height - minH;
-    newH = minH;
-  }
-
-  // не выходим за границы канваса
-  newX = Math.max(0, newX);
-  newY = Math.max(0, newY);
-  newW = Math.min(newW, canvasWidth - newX);
-  newH = Math.min(newH, canvasHeight - newY);
-
-  return { newX, newY, newW, newH };
-}
+import { snapAngle, normalizeAngle, computeResize, getElementRotationAngle } from "../core/geometry/canvasGeometry";
 
 export function useCanvasInteractions({
   width,
@@ -126,11 +56,6 @@ export function useCanvasInteractions({
     [zoomScale],
   );
 
-  const getRotationAngle = useCallback((mouseX, mouseY, element) => {
-    const cx = (element.position?.x ?? 0) + (element.width ?? 300) / 2;
-    const cy = (element.position?.y ?? 0) + (element.height ?? 200) / 2;
-    return Math.atan2(mouseY - cy, mouseX - cx) * (180 / Math.PI);
-  }, []);
 
   const stopInteraction = useCallback(() => {
     if (!hasActiveInteraction) return;
@@ -214,7 +139,7 @@ export function useCanvasInteractions({
         const el = textElements.find((e) => e.id === rotatingElement.id);
         if (!el) return;
         const raw =
-          getRotationAngle(mouse.x, mouse.y, el) -
+          getElementRotationAngle(el, mouse.x, mouse.y) -
           (rotatingElement.angleOffset ?? 0);
         const snapped = snapAngle(raw);
         setSnapInfo({
@@ -230,7 +155,7 @@ export function useCanvasInteractions({
         const media = mediaElements.find((e) => e.id === rotatingElement.id);
         if (!media) return;
         const raw =
-          getRotationAngle(mouse.x, mouse.y, media) -
+          getElementRotationAngle(media, mouse.x, mouse.y) -
           (rotatingElement.angleOffset ?? 0);
         const snapped = snapAngle(raw);
         setSnapInfo({
@@ -252,7 +177,6 @@ export function useCanvasInteractions({
       textElements,
       mediaElements,
       getMousePosition,
-      getRotationAngle,
       onMoveTextElement,
       onResizeTextElement,
       onRotateTextElement,
@@ -388,7 +312,7 @@ export function useCanvasInteractions({
       const mouseX = (event.clientX - rect.left) / zoomScale;
       const mouseY = (event.clientY - rect.top) / zoomScale;
       const angleOffset =
-        getRotationAngle(mouseX, mouseY, el) - (el.rotation ?? 0);
+        getElementRotationAngle(el, mouseX, mouseY) - (el.rotation ?? 0);
 
       onBeginHistory?.();
       onSelectElement?.(textElementId);
@@ -399,7 +323,6 @@ export function useCanvasInteractions({
       onBeginHistory,
       onSelectElement,
       zoomScale,
-      getRotationAngle,
     ],
   );
 
@@ -417,7 +340,7 @@ export function useCanvasInteractions({
       const mouseX = (event.clientX - rect.left) / zoomScale;
       const mouseY = (event.clientY - rect.top) / zoomScale;
       const angleOffset =
-        getRotationAngle(mouseX, mouseY, media) - (media.rotation ?? 0);
+        getElementRotationAngle(media, mouseX, mouseY) - (media.rotation ?? 0);
 
       onBeginHistory?.();
       onSelectElement?.(mediaId);
@@ -428,7 +351,6 @@ export function useCanvasInteractions({
       onBeginHistory,
       onSelectElement,
       zoomScale,
-      getRotationAngle,
     ],
   );
 

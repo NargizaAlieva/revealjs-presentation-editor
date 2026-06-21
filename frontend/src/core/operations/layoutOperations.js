@@ -1,7 +1,14 @@
-import { createId, getSlides, setSlides } from "../../utils/presentationUtils";
+import { createId, getSlides, setSlides } from "../utils/presentationUtils";
 
 const getLayouts = (presentation) =>
   presentation?.slideset?.layouts ?? [];
+
+// Map layouts to simple {id, label} display objects for UI dropdowns and pickers.
+export const getLayoutDisplayList = (presentation) =>
+  getLayouts(presentation).map((l) => ({
+    id: l["layout-id"],
+    label: l.name ?? l["layout-id"],
+  }));
 
 const setLayouts = (presentation, layouts) => ({
   ...presentation,
@@ -11,7 +18,19 @@ const setLayouts = (presentation, layouts) => ({
   },
 });
 
-const createTextFromPlaceholder = (placeholder, masterFormatting = {}) => ({
+const getPlaceholderDefaultText = (placeholder) => {
+  if (placeholder.promptText) return placeholder.promptText;
+  switch (placeholder.role) {
+    case "title": return "Click to edit title";
+    case "subtitle": return "Click to edit subtitle";
+    case "footer": return "Footer";
+    case "date": return "Date";
+    case "page-number": return "#";
+    default: return "Click to edit text";
+  }
+};
+
+const createTextFromPlaceholder = (placeholder) => ({
   id: createId("text"),
   "placeholder-id": placeholder["placeholder-id"],
   position: { ...placeholder.position },
@@ -26,9 +45,9 @@ const createTextFromPlaceholder = (placeholder, masterFormatting = {}) => ({
   paragraphs: [
     {
       id: createId("paragraph"),
-      formatting: { ...masterFormatting, ...(placeholder.formatting ?? {}) }, // ← merge
+      formatting: placeholder.formatting ?? {},
       bullets: "none",
-      runs: [{ formatting: {}, "super-sub-script": "normal", text: "", link: null }],
+      runs: [{ formatting: {}, "super-sub-script": "normal", text: getPlaceholderDefaultText(placeholder), link: null }],
     },
   ],
 });
@@ -219,6 +238,27 @@ export const deleteLayoutElement = (presentation, layoutId, elementType, element
   return setLayouts(presentation, updatedLayouts);
 };
 
+// Update font on all text elements in a layout.
+export const updateLayoutElementsFont = (presentation, layoutId, font) => {
+  const layouts = getLayouts(presentation).map((l) => {
+    if (l["layout-id"] !== layoutId) return l;
+    return {
+      ...l,
+      elements: {
+        ...(l.elements ?? {}),
+        text: (l.elements?.text ?? []).map((el) => ({
+          ...el,
+          paragraphs: (el.paragraphs ?? []).map((p) => ({
+            ...p,
+            formatting: { ...(p.formatting ?? {}), font },
+          })),
+        })),
+      },
+    };
+  });
+  return setLayouts(presentation, layouts);
+};
+
 // Add a new placeholder to a layout and create matching empty elements
 // on every slide that uses this layout.
 export const removeLayoutPlaceholder = (presentation, layoutId, placeholderId) => {
@@ -314,7 +354,7 @@ export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
   for (const placeholder of placeholders) {
     const pid = placeholder["placeholder-id"];
     if (!pid || handledPids.has(pid)) continue;
-    if (placeholder.type === "text") newText.push(createTextFromPlaceholder(placeholder, masterFormatting));
+    if (placeholder.type === "text") newText.push(createTextFromPlaceholder(placeholder));
     else if (placeholder.type === "image" || placeholder.type === "video") newMedia.push(createMediaFromPlaceholder(placeholder));
   }
 
@@ -360,7 +400,7 @@ export const propagateLayoutChanges = (
       const pid = placeholder["placeholder-id"];
       if (!pid || handledPids.has(pid)) continue;
       if (placeholder.type === "text") {
-        newText.push(createTextFromPlaceholder(placeholder, masterFormatting));
+        newText.push(createTextFromPlaceholder(placeholder));
       } else if (placeholder.type === "image" || placeholder.type === "video") {
         newMedia.push(createMediaFromPlaceholder(placeholder));
       }
@@ -413,7 +453,6 @@ export const resetSlideToLayout = (presentation, slideIndex) => {
         height: match.height,
         background: match.background ?? el.background,
         rotation: 0,
-        userModified: false,
       };
     });
 
@@ -442,7 +481,7 @@ export const resetSlideToLayout = (presentation, slideIndex) => {
   for (const placeholder of placeholders) {
     const pid = placeholder["placeholder-id"];
     if (!pid || handledPids.has(pid)) continue;
-    if (placeholder.type === "text") newText.push(createTextFromPlaceholder(placeholder, masterFormatting));
+    if (placeholder.type === "text") newText.push(createTextFromPlaceholder(placeholder));
     else if (placeholder.type === "image" || placeholder.type === "video") newMedia.push(createMediaFromPlaceholder(placeholder));
   }
 

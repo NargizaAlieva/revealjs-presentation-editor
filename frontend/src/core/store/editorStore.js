@@ -39,6 +39,7 @@ import {
   addLayoutPlaceholder,
   removeLayoutPlaceholder,
   updateLayoutPlaceholder,
+  updateLayoutElementsFont,
 } from "../operations/layoutOperations";
 import {
   addMedia,
@@ -54,6 +55,8 @@ import {
   updateMasterTextContent,
   updateMasterTextFormatting,
   deleteMasterElement,
+  toggleMasterTitle,
+  toggleMasterFooters,
 } from "../operations/masterOperations";
 import {
   addAnimation,
@@ -72,6 +75,7 @@ export const createInitialEditorState = () => ({
   future: [],
   pendingSnapshot: null,
   clipboard: null,
+  formatPainterClipboard: null,
 });
 
 const HISTORY_LIMIT = 50;
@@ -252,6 +256,23 @@ export const editorReducer = (state, event) => {
         lastUpdated: Date.now(),
       });
     }
+
+    case EditorEventType.FORMAT_PAINTER.COPY:
+      return {
+        ...state,
+        formatPainterClipboard: { formatting: event.payload.formatting, sourceElementId: event.payload.elementId },
+        lastEvent: event,
+      };
+
+    case EditorEventType.FORMAT_PAINTER.PASTE:
+      return {
+        ...state,
+        formatPainterClipboard: null,
+        lastEvent: event,
+      };
+
+    case EditorEventType.FORMAT_PAINTER.CLEAR:
+      return { ...state, formatPainterClipboard: null, lastEvent: event };
 
     case EditorEventType.PRESENTATION.CREATE:
       return { ...createInitialEditorState(), lastEvent: event };
@@ -504,7 +525,7 @@ export const editorReducer = (state, event) => {
         ...state,
         presentation: updateTextElementParagraphs(
           state.presentation,
-          event.payload.slideIndex ?? state.selectedSlideIndex, // ← исправь
+          event.payload.slideIndex,
           event.payload.elementId,
           event.payload.paragraphs,
         ),
@@ -521,6 +542,7 @@ export const editorReducer = (state, event) => {
           event.payload.elementId,
           event.payload.paragraphIdx,
           event.payload.rangeStart,
+          event.payload.endParagraphIdx ?? event.payload.paragraphIdx,
           event.payload.rangeEnd,
           event.payload.formatting,
         ),
@@ -700,6 +722,18 @@ export const editorReducer = (state, event) => {
           state.presentation,
           event.payload.layoutId,
           event.payload.placeholders,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+
+    case EditorEventType.LAYOUT.UPDATE_FONT:
+      return withHistory(state, {
+        ...state,
+        presentation: updateLayoutElementsFont(
+          state.presentation,
+          event.payload.layoutId,
+          event.payload.font,
         ),
         lastEvent: event,
         lastUpdated: Date.now(),
@@ -911,6 +945,22 @@ export const editorReducer = (state, event) => {
           event.payload.elementType,
           event.payload.elementId,
         ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+
+    case EditorEventType.MASTER.TOGGLE_TITLE:
+      return withHistory(state, {
+        ...state,
+        presentation: toggleMasterTitle(state.presentation, event.payload.layoutId ?? null),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+
+    case EditorEventType.MASTER.TOGGLE_FOOTERS:
+      return withHistory(state, {
+        ...state,
+        presentation: toggleMasterFooters(state.presentation, event.payload.layoutId ?? null),
         lastEvent: event,
         lastUpdated: Date.now(),
       });

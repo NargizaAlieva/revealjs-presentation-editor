@@ -1,29 +1,5 @@
 import { useState, useCallback } from "react";
-
-const findMatches = (slides, query) => {
-  if (!query.trim()) return [];
-  const q = query.toLowerCase();
-  const results = [];
-
-  slides.forEach((slide, slideIndex) => {
-    (slide.contents?.text ?? []).forEach((el) => {
-      el.paragraphs?.forEach((para, paragraphIdx) => {
-        para.runs?.forEach((run, runIdx) => {
-          const text = run.text ?? "";
-          let start = 0;
-          while (true) {
-            const idx = text.toLowerCase().indexOf(q, start);
-            if (idx === -1) break;
-            results.push({ slideIndex, elementId: el.id, paragraphIdx, runIdx, start: idx, end: idx + query.length });
-            start = idx + 1;
-          }
-        });
-      });
-    });
-  });
-
-  return results;
-};
+import { findMatches, applyReplacement, batchReplaceAll } from "../core/text/findReplace";
 
 export function useFindReplace(slides, onSlideChange, onReplaceText) {
   const [isOpen, setIsOpen] = useState(false);
@@ -73,8 +49,7 @@ export function useFindReplace(slides, onSlideChange, onReplaceText) {
     const run = el.paragraphs?.[match.paragraphIdx]?.runs?.[match.runIdx];
     if (!run) return;
 
-    const newText = run.text.slice(0, match.start) + replacement + run.text.slice(match.end);
-    onReplaceText(match.slideIndex, match.elementId, newText);
+    onReplaceText(match.slideIndex, match.elementId, applyReplacement(run.text, match, replacement));
 
     const found = findMatches(slides, query);
     setMatches(found);
@@ -82,25 +57,9 @@ export function useFindReplace(slides, onSlideChange, onReplaceText) {
   }, [matches, currentMatch, slides, query, onReplaceText]);
 
   const replaceAll = useCallback((replacement) => {
-    const byElement = new Map();
-    matches.forEach((m) => {
-      if (!byElement.has(m.elementId)) byElement.set(m.elementId, []);
-      byElement.get(m.elementId).push(m);
+    batchReplaceAll(matches, slides, replacement).forEach(({ slideIndex, elementId, newText }) => {
+      onReplaceText(slideIndex, elementId, newText);
     });
-
-    byElement.forEach((elementMatches, elementId) => {
-      const slide = slides[elementMatches[0].slideIndex];
-      const el = (slide?.contents?.text ?? []).find((e) => e.id === elementId);
-      if (!el) return;
-
-      const sorted = [...elementMatches].sort((a, b) => b.start - a.start);
-      let text = el.paragraphs?.[sorted[0].paragraphIdx]?.runs?.[sorted[0].runIdx]?.text ?? "";
-      sorted.forEach((m) => {
-        text = text.slice(0, m.start) + replacement + text.slice(m.end);
-      });
-      onReplaceText(elementMatches[0].slideIndex, elementId, text);
-    });
-
     setMatches([]);
     setCurrentMatch(0);
   }, [matches, slides, onReplaceText]);

@@ -1,4 +1,4 @@
-import { getSlides, setSlides } from "../../utils/presentationUtils";
+import { getSlides, setSlides } from "../utils/presentationUtils";
 
 export const addAnimation = (presentation, slideIndex, animation) => {
   const slides = [...getSlides(presentation)];
@@ -39,6 +39,33 @@ export const updateAnimation = (presentation, slideIndex, animationId, updates) 
   };
 
   return setSlides(presentation, slides);
+};
+
+// Build a new animation model object with sensible defaults.
+export const createAnimation = (elementId, effect, sequence) => ({
+  id: elementId,
+  sequence,
+  effect,
+  speed: 1,
+  "effect-options": { sequence: "as-one-object" },
+});
+
+export const getMaxAnimationSequence = (animations) =>
+  (animations ?? []).reduce((max, item) => Math.max(max, item.sequence ?? 1), 0);
+
+export const getAnimationDurationMs = (speed) =>
+  speed === 0.5 ? 200 : speed === 2 ? 2200 : 800;
+
+export const reorderAnimation = (animations, animationId, direction) => {
+  const list = animations ?? [];
+  const item = list.find((a) => a.id === animationId);
+  if (!item) return [];
+  const currentSeq = item.sequence ?? 1;
+  const targetSeq = currentSeq + direction;
+  const neighbor = list.find((a) => (a.sequence ?? 1) === targetSeq);
+  const updates = [{ id: animationId, sequence: targetSeq }];
+  if (neighbor) updates.push({ id: neighbor.id, sequence: currentSeq });
+  return updates;
 };
 
 export const deleteAnimation = (presentation, slideIndex, animationId) => {

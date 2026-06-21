@@ -1,4 +1,5 @@
 import "./OutlineView.css";
+import { extractPlainTextFromParagraphs } from "../core/text/textFormatting";
 
 export default function OutlineView({ slides, selectedSlideIndex, onSelectSlide }) {
     return (
@@ -19,9 +20,7 @@ export default function OutlineView({ slides, selectedSlideIndex, onSelectSlide 
                                 <span className="outline-empty">Click to add text</span>
                             ) : (
                                 textElements.map((el, elIndex) => {
-                                    const text = (el.paragraphs ?? [])
-                                        .map(p => p.runs?.map(r => r.text).join("") ?? "")
-                                        .join("\n");
+                                    const text = extractPlainTextFromParagraphs(el.paragraphs, "\n");
                                     const isTitle = elIndex === 0;
                                     return (
                                         <div

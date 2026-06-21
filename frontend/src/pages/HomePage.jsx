@@ -6,16 +6,7 @@ import {
   deletePresentation,
 } from "../core/persistence/presentationsLibrary";
 import "./HomePage.css";
-
-function formatDate(ts) {
-  if (!ts) return "";
-  const d = new Date(ts);
-  return d.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
+import { greeting as getGreeting, formatDate } from "../core/utils/dateUtils";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -112,9 +103,3 @@ export default function HomePage() {
   );
 }
 
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon";
-  return "Good evening";
-}

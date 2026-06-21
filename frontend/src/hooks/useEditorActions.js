@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { idbRemove } from "../core/persistence/autoSaveService";
 import { EditorEventType, createEditorEvent } from "../core";
+import { createAnimation, reorderAnimation } from "../core/operations/animationOperations";
 
 export function useEditorActions(
   eventBus,
@@ -166,12 +167,13 @@ export function useEditorActions(
   );
 
   const updateTextRangeFormatting = useCallback(
-    (elementId, paragraphIdx, rangeStart, rangeEnd, formatting) =>
+    (elementId, paragraphIdx, rangeStart, endParagraphIdx, rangeEnd, formatting) =>
       eventBus.dispatch(
         createEditorEvent(EditorEventType.TEXT.UPDATE_RANGE_FORMATTING, {
           elementId,
           paragraphIdx,
           rangeStart,
+          endParagraphIdx,
           rangeEnd,
           formatting,
         }),
@@ -250,6 +252,16 @@ export function useEditorActions(
     [eventBus],
   );
 
+  const addAnimationForElement = useCallback(
+    (elementId, effectValue, sequence) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.ANIMATION.ADD, {
+          animation: createAnimation(elementId, effectValue, sequence),
+        }),
+      ),
+    [eventBus],
+  );
+
   const updateAnimation = useCallback(
     (animationId, updates) =>
       eventBus.dispatch(
@@ -258,6 +270,21 @@ export function useEditorActions(
           updates,
         }),
       ),
+    [eventBus],
+  );
+
+  const reorderAnimations = useCallback(
+    (animationList, animationId, direction) => {
+      const updates = reorderAnimation(animationList, animationId, direction);
+      updates.forEach(({ id, sequence }) =>
+        eventBus.dispatch(
+          createEditorEvent(EditorEventType.ANIMATION.UPDATE, {
+            animationId: id,
+            updates: { sequence },
+          }),
+        ),
+      );
+    },
     [eventBus],
   );
 
@@ -379,6 +406,35 @@ export function useEditorActions(
     [eventBus],
   );
 
+  const toggleTitle = useCallback(
+    (layoutId) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.MASTER.TOGGLE_TITLE, { layoutId: layoutId ?? null }),
+      ),
+    [eventBus],
+  );
+
+  const toggleFooters = useCallback(
+    (layoutId) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.MASTER.TOGGLE_FOOTERS, { layoutId: layoutId ?? null }),
+      ),
+    [eventBus],
+  );
+
+  const formatPainterCopy = useCallback(
+    (elementId, formatting) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.FORMAT_PAINTER.COPY, { elementId, formatting }),
+      ),
+    [eventBus],
+  );
+
+  const formatPainterPaste = useCallback(
+    () => eventBus.dispatch(createEditorEvent(EditorEventType.FORMAT_PAINTER.PASTE, {})),
+    [eventBus],
+  );
+
   const updateLayout = useCallback(
     (layoutId, placeholders) =>
       eventBus.dispatch(
@@ -394,6 +450,14 @@ export function useEditorActions(
     (layoutId) =>
       eventBus.dispatch(
         createEditorEvent(EditorEventType.LAYOUT.DELETE, { layoutId }),
+      ),
+    [eventBus],
+  );
+
+  const applyLayoutFont = useCallback(
+    (layoutId, font) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.UPDATE_FONT, { layoutId, font }),
       ),
     [eventBus],
   );
@@ -593,17 +657,25 @@ export function useEditorActions(
     updateMedia,
     deleteMedia,
     addAnimation,
+    addAnimationForElement,
     updateAnimation,
+    reorderAnimations,
     deleteAnimation,
+
     updateMasterTheme,
     updateMasterDimensions,
     updateMasterFormatting,
     addMasterElement,
     updateMasterElement,
     deleteMasterElement,
+    toggleTitle,
+    toggleFooters,
+    formatPainterCopy,
+    formatPainterPaste,
     updateLayout,
     deleteLayout,
     renameLayout,
+    applyLayoutFont,
     addLayoutElement,
     updateLayoutElement,
     updateLayoutElementTextContent,

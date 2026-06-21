@@ -9,9 +9,6 @@ import {
   MdFormatAlignJustify,
 } from "react-icons/md";
 
-let formattingClipboard = null;
-let lastHighlightColor = "#ffff00";
-
 const DEFAULT_FONTS = [
   "Arial",
   "Georgia",
@@ -38,7 +35,12 @@ export default function FormatToolbar({
   onNewComment,
   presentation,
   style,
+  hasSelection = false,
+  formatPainterClipboard = null,
+  onFormatPainterCopy,
+  onFormatPainterPaste,
 }) {
+  const [lastHighlightColor, setLastHighlightColor] = useState("#ffff00");
   const [justCopied, setJustCopied] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showHighlightPicker, setShowHighlightPicker] = useState(false);
@@ -47,36 +49,38 @@ export default function FormatToolbar({
     top: 0,
     left: 0,
   });
-  const [, forceUpdate] = useState(0);
 
   const fmt = (updates) => onFormatTextElement(elementId, updates);
 
   const presentationFonts = (presentation?.slideset?.fonts ?? [])
     .map((f) => f["font-id"])
     .filter(Boolean);
-  const fonts =
-    presentationFonts.length > 0 ? presentationFonts : DEFAULT_FONTS;
+  const fonts = [
+    ...presentationFonts,
+    ...DEFAULT_FONTS.filter((f) => !presentationFonts.includes(f)),
+  ];
 
   const currentSize = parseInt(formatting.size ?? "24", 10);
   const currentFont = formatting.font ?? fonts[0] ?? "Arial";
-  const currentAlign = formatting.align ?? "left";
+  const currentAlign = formatting.align === "mixed" ? null : (formatting.align ?? "left");
   const currentColor = formatting.color ?? "#111111";
   const currentHighlight = formatting.highlight ?? "transparent";
   const currentLineSpacing = parseFloat(formatting["line-spacing"] ?? "1.15");
 
+  // Allow paste from same element only when text is selected (intra-element format painting)
   const hasPaste =
-    formattingClipboard !== null &&
-    formattingClipboard.sourceElementId !== elementId;
+    formatPainterClipboard !== null &&
+    (formatPainterClipboard.sourceElementId !== elementId || hasSelection);
 
   const handleFormatPainter = () => {
     if (hasPaste) {
-      fmt({ ...formattingClipboard.formatting });
-      formattingClipboard = null;
+      fmt({ ...formatPainterClipboard.formatting });
+      onFormatPainterPaste?.();
     } else {
-      formattingClipboard = {
-        formatting: { ...formatting },
-        sourceElementId: elementId,
-      };
+      onFormatPainterCopy?.(
+        elementId,
+        Object.fromEntries(Object.entries(formatting).filter(([, v]) => v !== "mixed")),
+      );
       setJustCopied(true);
       setTimeout(() => setJustCopied(false), 1500);
     }
@@ -87,6 +91,10 @@ export default function FormatToolbar({
       className="format-toolbar"
       style={style}
       onMouseDown={stop}
+      onMouseDownCapture={(e) => {
+        const tag = e.target.tagName;
+        if (tag !== "SELECT" && tag !== "INPUT" && tag !== "TEXTAREA") e.preventDefault();
+      }}
       onClick={stop}
     >
       {/* Левая часть — два ряда кнопок */}
@@ -95,6 +103,7 @@ export default function FormatToolbar({
           <select
             className="font-select"
             value={currentFont}
+            onMouseDown={(e) => e.stopPropagation()}
             onChange={(e) => fmt({ font: e.target.value })}
             title="Font"
           >
@@ -111,6 +120,7 @@ export default function FormatToolbar({
             min={6}
             max={120}
             value={currentSize}
+            onMouseDown={(e) => e.stopPropagation()}
             onChange={(e) => fmt({ size: `${e.target.value}px` })}
             title="Font size"
           />
@@ -136,6 +146,7 @@ export default function FormatToolbar({
           <select
             className="spacing-select"
             value={currentLineSpacing}
+            onMouseDown={(e) => e.stopPropagation()}
             onChange={(e) => fmt({ "line-spacing": `${e.target.value}em` })}
             title="Line spacing"
           >
@@ -162,9 +173,9 @@ export default function FormatToolbar({
 
           <button
             type="button"
-            className={`fmt-btn italic ${formatting.italics ? "active" : ""}`}
+            className={`fmt-btn italic ${formatting.italics === true ? "active" : ""}`}
             title="Italic"
-            onClick={() => fmt({ italics: !formatting.italics })}
+            onClick={() => fmt({ italics: formatting.italics === true ? false : true })}
           >
             I
           </button>
@@ -280,8 +291,7 @@ export default function FormatToolbar({
                       : currentHighlight
                   }
                   onChange={(c) => {
-                    lastHighlightColor = c;
-                    forceUpdate((n) => n + 1);
+                    setLastHighlightColor(c);
                     onHighlight ? onHighlight(c) : fmt({ highlight: c });
                   }}
                   onClose={() => setShowHighlightPicker(false)}
