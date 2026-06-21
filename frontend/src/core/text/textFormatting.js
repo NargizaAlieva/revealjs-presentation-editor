@@ -17,10 +17,49 @@ export const splitFormattingUpdates = (updates) => {
   return { runUpdates, paraUpdates };
 };
 
+// Return the effective formatting of the run that contains the cursor position.
+// Falls back to the last run if cursor is at the end, or paragraph formatting if no runs.
+export const getFormattingAtCursor = (textElement, selection) => {
+  if (!selection) return {};
+  const paragraphs = textElement?.paragraphs ?? [];
+  const para = paragraphs[selection.paragraphIdx];
+  if (!para) return {};
+  const paraFmt = para.formatting ?? {};
+  const runs = para.runs ?? [];
+
+  // If cursor is at the very start of a non-first paragraph (i.e. just after Enter),
+  // inherit the formatting of the last character of the previous paragraph.
+  if (selection.rangeStart === 0 && selection.paragraphIdx > 0) {
+    const prevPara = paragraphs[selection.paragraphIdx - 1];
+    if (prevPara) {
+      const prevRuns = prevPara.runs ?? [];
+      const prevParaFmt = prevPara.formatting ?? {};
+      if (prevRuns.length) {
+        return { ...prevParaFmt, ...(prevRuns[prevRuns.length - 1].formatting ?? {}) };
+      }
+      return prevParaFmt;
+    }
+  }
+
+  if (!runs.length) return paraFmt;
+  // Look at the character to the LEFT of the cursor (PowerPoint behavior).
+  const lookupPos = Math.max(0, selection.rangeStart - 1);
+  let offset = 0;
+  for (const run of runs) {
+    const start = offset;
+    const end = offset + run.text.length;
+    if (lookupPos >= start && lookupPos < end) {
+      return { ...paraFmt, ...(run.formatting ?? {}) };
+    }
+    offset = end;
+  }
+  return { ...paraFmt, ...(runs[runs.length - 1].formatting ?? {}) };
+};
+
 // Compute the effective formatting shown in the toolbar for the three editing states:
 // State 1 (not editing): element-level paragraph formatting merged with master/placeholder
 // State 2 (editing + real selection): run-level formatting of selected range ("mixed" when runs disagree)
-// State 3 (editing + collapsed cursor): effectiveFormatting merged with pendingFormatting
+// State 3 (editing + collapsed cursor): run formatting at cursor merged with pendingFormatting
 export const computeCurrentFormatting = ({
   isEditing,
   activeSelection,
@@ -62,6 +101,12 @@ export const computeCurrentFormatting = ({
       result[key] = vals.every((v) => v === vals[0]) ? vals[0] : "mixed";
     }
     return result;
+  }
+
+  // State 3: collapsed cursor — show formatting of the run at cursor position
+  if (sel && sel.elementId === selectedElementId && selectedTextEl) {
+    const cursorFmt = getFormattingAtCursor(selectedTextEl, sel);
+    return { ...effectiveFormatting, ...cursorFmt, ...pendingFormatting };
   }
 
   return { ...effectiveFormatting, ...pendingFormatting };

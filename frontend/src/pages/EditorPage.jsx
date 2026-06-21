@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import SlideList from "../components/SlideList";
 import Toolbar from "../components/Toolbar";
@@ -9,7 +9,6 @@ import { useEditorActions } from "../hooks/useEditorActions";
 import { useEditorViewState } from "../hooks/useEditorViewState";
 import { useImageUpload } from "../hooks/useImageUpload";
 import { useVideoUpload } from "../hooks/useVideoUpload";
-import { useAddTextElement } from "../hooks/useAddTextElement";
 import { usePresentationFonts } from "../hooks/usePresentationFonts";
 import "./EditorPage.css";
 import PreviewModal from "../components/PreviewModal";
@@ -18,8 +17,12 @@ import CommentsPanel from "../components/CommentsPanel";
 import SlideSorterView from "../components/SlideSorterView";
 import OutlineView from "../components/OutlineView";
 import { getSlideSize, getPlaceholderFormatting } from "../core/render/slidesetRenderUtils";
-import { computeCurrentFormatting, splitFormattingUpdates, resolveEffectiveFormatting, getSelectionFormatting } from "../core/text/textFormatting";
+import { computeCurrentFormatting, splitFormattingUpdates, resolveEffectiveFormatting, getSelectionFormatting, RUN_LEVEL_KEYS } from "../core/text/textFormatting";
 import { getSlideElement } from "../core/operations/slideOperations";
+import { getElementLabel } from "../core/operations/elementOperations";
+import { getPresentationTitle } from "../core/operations/presentationOperations";
+import { getSlideTransition } from "../core/model/transitionDefaults";
+import { importPresentationFromJson } from "../core/persistence/importPresentation";
 import { createTextElementDefaults } from "../core/model/masterDefaults";
 import { updateThemeBackground } from "../core/model/designThemes";
 import { clampSlideDimension } from "../core/model/slideSizes";
@@ -34,8 +37,8 @@ import {
   deletePresentation,
   createPresentation,
   savePresentation,
-} from "../core/persistence/presentationsLibrary";
-import { downloadPresentationAsJson } from "../core/persistence/serializationOperations";
+  downloadPresentationAsJson,
+} from "../core/persistence/persistenceFacade";
 import NotesPageView from "../components/NotesPageView";
 import SlideMasterView from "../components/SlideMasterView";
 
@@ -231,7 +234,10 @@ export default function EditorPage() {
 
   const { handleImageUpload } = useImageUpload(addMedia);
   const { handleVideoUpload } = useVideoUpload(addMedia);
-  const { handleAddTextElement } = useAddTextElement(addTextElement);
+  const handleAddTextElement = useCallback(
+    () => addTextElement(createTextElementDefaults(10, "")),
+    [addTextElement],
+  );
 
   const { handleImageUpload: handleMasterImageUpload } = useImageUpload(
     (mediaElement) => {
@@ -348,8 +354,15 @@ export default function EditorPage() {
       if (Object.keys(runUpdates).length > 0)
         updateTextRangeFormatting(elementId, sel.paragraphIdx, sel.rangeStart, sel.endParagraphIdx ?? sel.paragraphIdx, sel.rangeEnd, runUpdates);
     } else if (editingTextElementIdRef.current === elementId) {
-      if (Object.keys(runUpdates).length > 0)
-        setPendingFormatting((prev) => ({ ...prev, ...runUpdates }));
+      if (Object.keys(runUpdates).length > 0) {
+        // Base: run-level keys from currentFormatting (cursor position), excluding "mixed" values.
+        // This preserves bold when user adds italic (and vice-versa) without bringing in
+        // paragraph-level or "mixed" values that would corrupt buildPendingFormattingStyles.
+        const cursorRunBase = Object.fromEntries(
+          Object.entries(currentFormatting).filter(([k, v]) => RUN_LEVEL_KEYS.has(k) && v !== "mixed")
+        );
+        setPendingFormatting((prev) => ({ ...cursorRunBase, ...prev, ...runUpdates }));
+      }
     } else {
       if (Object.keys(runUpdates).length > 0) updateTextElementFormatting(elementId, runUpdates);
     }
@@ -376,9 +389,14 @@ export default function EditorPage() {
   };
 
   const handleStartEditing = useCallback((id) => {
+    // Only reset pending when switching to a different element.
+    // Refocusing the same element (e.g. after font/size change from toolbar) must keep pending
+    // so the format applies to the next typed character.
+    if (editingTextElementIdRef.current !== id) {
+      setPendingFormatting({});
+    }
     editingTextElementIdRef.current = id;
     setEditingTextElementId(id);
-    setPendingFormatting({});
   }, []);
 
   const handleStopEditing = useCallback((id) => {
@@ -387,28 +405,34 @@ export default function EditorPage() {
     setPendingFormatting({});
   }, []);
 
-  const { width: slideWidth, height: slideHeight } = getSlideSize(presentation);
+  const { width: slideWidth, height: slideHeight } = useMemo(
+    () => getSlideSize(presentation),
+    [presentation],
+  );
 
-  const currentTransition = selectedSlide?.contents?.transition ?? "none";
-  const currentDuration = selectedSlide?.contents?.transitionDuration ?? 0.75;
+  const { transition: currentTransition, duration: currentDuration } = useMemo(
+    () => getSlideTransition(selectedSlide),
+    [selectedSlide],
+  );
 
-  const presentationTitle =
-    presentation?.slideset?.title ??
-    presentation?.slideset?.filename ??
-    "Untitled Presentation";
+  const presentationTitle = useMemo(
+    () => getPresentationTitle(presentation),
+    [presentation],
+  );
 
   const handleSaveAs = () => downloadPresentationAsJson(presentation);
 
+  const handleNew = async () => {
+    const id = await createPresentation(getPresentationTitle(null));
+    navigate(`/editor/${id}`);
+  };
+
   const handleLoadFile = async (jsonText) => {
     try {
-      const data = JSON.parse(jsonText);
-      const id = await createPresentation(
-        data?.slideset?.title ?? "Imported Presentation",
-      );
-      await savePresentation(id, data);
+      const id = await importPresentationFromJson(jsonText);
       navigate(`/editor/${id}`);
     } catch (e) {
-      console.error("Failed to load file:", e);
+      console.error("[EditorPage] Failed to import file:", e);
     }
   };
 
@@ -423,14 +447,12 @@ export default function EditorPage() {
   };
 
   const selectedElementRaw = getSlideElement(selectedSlide, selectedElementId);
-  const selectedElement = selectedElementRaw
-    ? {
-        id: selectedElementRaw.id,
-        label: selectedElementRaw.paragraphs
-          ? (selectedElementRaw.paragraphs?.[0]?.runs?.[0]?.text || "Text")
-          : "Image",
-      }
-    : null;
+  const selectedElement = useMemo(
+    () => selectedElementRaw
+      ? { id: selectedElementRaw.id, label: getElementLabel(selectedElementRaw) }
+      : null,
+    [selectedElementRaw],
+  );
 
   if (isLoading) {
     return <div className="editor-loading">Loading...</div>;
@@ -442,6 +464,7 @@ export default function EditorPage() {
         presentationTitle={presentationTitle}
         onClose={() => setActiveTab("Home")}
         onGoHome={() => navigate("/")}
+        onNew={handleNew}
         onSave={savePresentation}
         onSaveAs={handleSaveAs}
         onExport={exportPresentation}
@@ -638,7 +661,12 @@ export default function EditorPage() {
                     const sel = offsets ? { elementId, ...offsets } : null;
                     activeSelectionRef.current = sel;
                     setActiveSelection(sel);
-                    if (offsets) setPendingFormatting({});
+                    // Clear pending only on real (non-collapsed) selection — collapsed cursor
+                    // should keep pending so the next typed character uses the chosen format.
+                    const isRealSel = offsets &&
+                      !(offsets.paragraphIdx === (offsets.endParagraphIdx ?? offsets.paragraphIdx) &&
+                        offsets.rangeStart === offsets.rangeEnd);
+                    if (isRealSel) setPendingFormatting({});
                   }}
                   onMoveMediaElement={updateElementPosition}
                   onResizeMediaElement={updateElementSize}

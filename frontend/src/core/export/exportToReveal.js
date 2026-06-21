@@ -7,7 +7,7 @@ import {
   getPlaceholderFormatting,
 } from "../render/slidesetRenderUtils";
 import { downloadHtml } from "./downloadHtml";
-import { idbGet } from "../persistence/autoSaveService";
+import { getMediaFile } from "../persistence/persistenceFacade";
 import JSZip from "jszip";
 
 function buildColorThemeCss(presentation) {
@@ -45,7 +45,7 @@ async function resolveMediaLinks(slides) {
       const fileLink = media["file-link"];
       if (fileLink?.startsWith("indexeddb://")) {
         const key = fileLink.replace("indexeddb://", "");
-        const blob = await idbGet(key);
+        const blob = await getMediaFile(key);
         if (blob) {
           resolvedMap.set(fileLink, await blobToDataUrl(blob));
         }
@@ -64,7 +64,7 @@ async function resolveMediaForZip(slides) {
       if (!fileLink || resolvedMap.has(fileLink)) continue;
       if (fileLink.startsWith("indexeddb://")) {
         const key = fileLink.replace("indexeddb://", "");
-        const blob = await idbGet(key);
+        const blob = await getMediaFile(key);
         if (blob) {
           const ext = blob.type.split("/")[1] ?? "jpg";
           const filename = `media/image_${counter++}.${ext}`;

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { idbGet } from "../core/persistence/autoSaveService";
+import { getMediaFile } from "../core/persistence/persistenceFacade";
 
 export function usePresentationFonts(presentation) {
   useEffect(() => {
@@ -19,7 +19,7 @@ export function usePresentationFonts(presentation) {
 
             if (src.startsWith("indexeddb://")) {
               const key = src.replace("indexeddb://", "");
-              const blob = await idbGet(key);
+              const blob = await getMediaFile(key);
               if (!blob) return null;
               const url = URL.createObjectURL(blob);
               objectUrls.push(url);

@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { storeMediaFile } from "../core/persistence/mediaStorage";
+import { storeMediaFile } from "../core/persistence/persistenceFacade";
 import { createVideoMediaElement } from "../core/model/mediaDefaults";
 
 export function useVideoUpload(addMedia) {

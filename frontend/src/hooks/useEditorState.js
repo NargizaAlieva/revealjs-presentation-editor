@@ -6,8 +6,7 @@ import {
   EditorEventType,
   createEditorEvent,
 } from "../core";
-import { idbGet, idbRemove } from "../core/persistence/autoSaveService";
-import { updateIndexEntry } from "../core/persistence/presentationsLibrary";
+import { storageGet, storageRemove, updateIndexEntry, getSetting } from "../core/persistence/persistenceFacade";
 
 const AUTOSAVE_SETTING_KEY = "autosaveEnabled";
 
@@ -33,14 +32,11 @@ export function useEditorState(presentationId) {
   );
 
   useEffect(() => {
-    idbGet(storageKey)
+    storageGet(storageKey)
       .then((saved) => {
         if (!saved) return;
-        const savedAutosaveEnabled = localStorage.getItem(AUTOSAVE_SETTING_KEY);
-        const autosaveEnabled =
-          savedAutosaveEnabled === null
-            ? true
-            : savedAutosaveEnabled === "true";
+        const raw = getSetting(AUTOSAVE_SETTING_KEY);
+        const autosaveEnabled = raw === null ? true : raw === "true";
         reactDispatch(
           createEditorEvent(EditorEventType.PRESENTATION.LOAD, {
             jsonString: saved,

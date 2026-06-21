@@ -1,5 +1,14 @@
 import { getSlides, setSlides } from "../utils/presentationUtils";
 
+// Returns a human-readable label for any slide element (text or media).
+export const getElementLabel = (element) => {
+  if (!element) return null;
+  if (element.paragraphs) {
+    return element.paragraphs?.[0]?.runs?.[0]?.text || "Text";
+  }
+  return "Image";
+};
+
 export const moveElement = (presentation, slideIndex, elementId, newPosition) => {
   const slides = [...getSlides(presentation)];
   const slide = slides[slideIndex];

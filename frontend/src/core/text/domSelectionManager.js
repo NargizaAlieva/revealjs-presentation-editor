@@ -3,12 +3,16 @@
 // Parse a DOM element's inline style into a run formatting object
 export const parseSpanStyle = (style) => {
   const f = {};
-  if (style.fontWeight && style.fontWeight !== "normal" && style.fontWeight !== "400")
-    f.weight = style.fontWeight;
+  // Store weight even when "normal" — needed so an explicit normal span correctly
+  // overrides a bold ancestor when the spans are nested by onBeforeInput insertion.
+  if (style.fontWeight)
+    f.weight = (style.fontWeight === "400") ? "normal" : style.fontWeight;
   if (style.fontStyle === "italic") f.italics = true;
   if (style.color) f.color = style.color;
   if (style.fontSize) f.size = style.fontSize;
-  if (style.fontFamily) f.font = style.fontFamily;
+  // Browser normalises multi-word names: Times New Roman → "Times New Roman" (with quotes).
+  // Strip surrounding CSS quotes so the stored value matches the SELECT option values.
+  if (style.fontFamily) f.font = style.fontFamily.replace(/^["']|["']$/g, "").trim();
   if (style.textDecoration && style.textDecoration !== "none")
     f["text-decoration"] = style.textDecoration;
   if (style.backgroundColor && style.backgroundColor !== "transparent")
@@ -127,6 +131,93 @@ export const restoreSelectionToDOM = (el, paragraphs, sel) => {
   const domSel = window.getSelection();
   domSel?.removeAllRanges();
   domSel?.addRange(range);
+};
+
+// Get cursor position as { paragraphIdx, rangeStart, rangeEnd } for a collapsed selection.
+// Returns null when selection is non-collapsed or outside the given element.
+//
+// Mirrors domToParagraphs paragraph-boundary logic:
+//   - <br>       → always starts a new paragraph
+//   - <div>/<p>  → starts a new paragraph only when the current one already has content
+//                  (matches Chrome's behaviour of wrapping lines in <div> after Enter)
+export const getCollapsedCursorOffset = (el) => {
+  const sel = window.getSelection();
+  if (!sel?.rangeCount || !sel.isCollapsed) return null;
+  const range = sel.getRangeAt(0);
+  if (!el.contains(range.startContainer)) return null;
+
+  let paragraphIdx = 0;
+  let rangeStart = 0;
+  let found = false;
+  let currentParaHasContent = false;
+
+  // Count text/paragraph boundaries inside a node without checking for the cursor.
+  const countContent = (node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      rangeStart += node.textContent.length;
+      if (node.textContent.length > 0) currentParaHasContent = true;
+    } else if (node.nodeName === "BR") {
+      paragraphIdx++;
+      rangeStart = 0;
+      currentParaHasContent = false;
+    } else if (node.nodeName === "DIV" || node.nodeName === "P") {
+      if (currentParaHasContent) { paragraphIdx++; rangeStart = 0; currentParaHasContent = false; }
+      node.childNodes.forEach(countContent);
+    } else {
+      node.childNodes.forEach(countContent);
+    }
+  };
+
+  const walk = (node) => {
+    if (found) return;
+
+    // Block elements (DIV/P) create a paragraph boundary if current paragraph has content.
+    // This increment must happen BEFORE we check whether this node is the startContainer,
+    // so that a cursor at the start of a new <div> gets the correct paragraphIdx.
+    const isBlock = node.nodeName === "DIV" || node.nodeName === "P";
+    if (isBlock && currentParaHasContent) {
+      paragraphIdx++;
+      rangeStart = 0;
+      currentParaHasContent = false;
+    }
+
+    if (node === range.startContainer) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        rangeStart += range.startOffset;
+      } else {
+        // Element node: range.startOffset is a child-node index, not a char offset.
+        // Count the content of the first <startOffset> children to get the char position.
+        for (let i = 0; i < range.startOffset; i++) countContent(node.childNodes[i]);
+      }
+      found = true;
+      return;
+    }
+
+    if (node.nodeType === Node.TEXT_NODE) {
+      rangeStart += node.textContent.length;
+      if (node.textContent.length > 0) currentParaHasContent = true;
+    } else if (node.nodeName === "BR") {
+      paragraphIdx++;
+      rangeStart = 0;
+      currentParaHasContent = false;
+    } else {
+      node.childNodes.forEach(walk);
+    }
+  };
+
+  // Special case: cursor is directly inside the root element (startContainer === el).
+  // range.startOffset is a child-node index, not a character offset.
+  // Count content of the first <startOffset> children to get the correct position.
+  if (el === range.startContainer) {
+    for (let i = 0; i < range.startOffset; i++) countContent(el.childNodes[i]);
+    return { paragraphIdx, rangeStart, rangeEnd: rangeStart };
+  }
+
+  el.childNodes.forEach(walk);
+
+  // If walk completed without finding startContainer, return the accumulated position.
+  // This handles edge cases where the cursor sits logically at the end of all content.
+  return { paragraphIdx, rangeStart, rangeEnd: rangeStart };
 };
 
 // Get current DOM selection as { paragraphIdx, rangeStart, endParagraphIdx, rangeEnd }

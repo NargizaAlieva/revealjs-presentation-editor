@@ -4,7 +4,7 @@ import {
   getIndex,
   createPresentation,
   deletePresentation,
-} from "../core/persistence/presentationsLibrary";
+} from "../core/persistence/persistenceFacade";
 import "./HomePage.css";
 import { greeting as getGreeting, formatDate } from "../core/utils/dateUtils";
 

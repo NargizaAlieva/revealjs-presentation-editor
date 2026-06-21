@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { idbRemove } from "../core/persistence/autoSaveService";
+import { storageRemove } from "../core/persistence/persistenceFacade";
 import { EditorEventType, createEditorEvent } from "../core";
 import { createAnimation, reorderAnimation } from "../core/operations/animationOperations";
 
@@ -563,7 +563,7 @@ export function useEditorActions(
     const key = presentationId
       ? `presentation-${presentationId}`
       : "presentation";
-    idbRemove(key).finally(() => window.location.reload());
+    storageRemove(key).finally(() => window.location.reload());
   }, [presentationId]);
 
   const undo = useCallback(

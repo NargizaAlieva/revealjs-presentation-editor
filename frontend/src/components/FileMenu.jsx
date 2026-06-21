@@ -1,15 +1,13 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  getIndex,
-  createPresentation,
-} from "../core/persistence/presentationsLibrary";
+import { useRecentPresentations } from "../hooks/useRecentPresentations";
 import "./FileMenu.css";
 import { greeting, formatDate } from "../core/utils/dateUtils";
 
 export default function FileMenu({
   presentationTitle,
   onClose,
+  onNew,
   onSave,
   onSaveAs,
   onExport,
@@ -19,12 +17,8 @@ export default function FileMenu({
 }) {
   const navigate = useNavigate();
   const [activeItem, setActiveItem] = useState("Home");
-  const [recent, setRecent] = useState([]);
+  const { recent } = useRecentPresentations();
   const fileInputRef = useRef(null);
-
-  useEffect(() => {
-    getIndex().then(setRecent);
-  }, []);
 
   const handleNav = (item) => {
     if (item === "Close") { onClose(); return; }
@@ -44,10 +38,7 @@ export default function FileMenu({
     e.target.value = "";
   };
 
-  const handleNew = async () => {
-    const id = await createPresentation("Untitled Presentation");
-    navigate(`/editor/${id}`);
-  };
+  const handleNew = () => onNew?.();
 
   const NAV_ITEMS = [
     { label: "Home",       section: "top" },

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { idbGet } from "../core/persistence/autoSaveService";
+import { getMediaFile } from "../core/persistence/persistenceFacade";
 
 export function useMediaSrc(fileLink) {
   const [src, setSrc] = useState(() => {
@@ -27,7 +27,7 @@ export function useMediaSrc(fileLink) {
       }
 
       const key = fileLink.replace("indexeddb://", "");
-      const blob = await idbGet(key);
+      const blob = await getMediaFile(key);
       if (cancelled || !blob) return;
 
       objectUrl = URL.createObjectURL(blob);
