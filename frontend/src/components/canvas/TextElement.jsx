@@ -62,6 +62,7 @@ export default function TextElement({
   formatPainterClipboard = null,
   onFormatPainterCopy,
   onFormatPainterPaste,
+  clearSelectionSignal = 0,
 }) {
   const [toolbarPos, setToolbarPos] = useState({ top: 0, left: 0 });
   const editableRef = useRef(null);
@@ -69,6 +70,14 @@ export default function TextElement({
   const lastTypedHTMLRef = useRef(null);
   const savedSelectionRef = useRef(null);
   const lastSyncedParagraphsRef = useRef(null);
+
+  // When EditorPage signals that the user clicked outside all toolbars and
+  // text elements, clear the saved selection so the next toolbar action
+  // applies to the whole element rather than a stale range.
+  useEffect(() => {
+    if (clearSelectionSignal === 0) return;
+    savedSelectionRef.current = null;
+  }, [clearSelectionSignal]);
 
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
   const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
@@ -185,6 +194,7 @@ export default function TextElement({
   return (
     <div
       ref={elementRef}
+      data-element-id={textElement.id}
       className={["draggable", isSelected ? "selected" : "", previewClassName]
         .filter(Boolean)
         .join(" ")}
@@ -317,15 +327,13 @@ export default function TextElement({
               relatedTarget.closest?.(".toolbar") ||
               relatedTarget.closest?.(".toolbar-ribbon") ||
               relatedTarget.closest?.(".bg-palette-popup"));
+          const domSel = window.getSelection();
+          const hasRealSelection = domSel && !domSel.isCollapsed && domSel.rangeCount > 0;
           if (goingToToolbar) {
-            // Keep savedSelectionRef only if there is an actual (non-collapsed) DOM selection.
-            const domSel = window.getSelection();
-            const hasRealSelection = domSel && !domSel.isCollapsed && domSel.rangeCount > 0;
             if (!hasRealSelection) {
               savedSelectionRef.current = null;
               onSaveSelection?.(textElement.id, null);
             }
-            // Stay in editing mode — toolbar action should still use editing state
           } else {
             savedSelectionRef.current = null;
             onSaveSelection?.(textElement.id, null);

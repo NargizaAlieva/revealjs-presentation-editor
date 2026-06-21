@@ -60,6 +60,7 @@ export default function EditorCanvas({
   formatPainterClipboard = null,
   onFormatPainterCopy,
   onFormatPainterPaste,
+  clearSelectionSignal = 0,
 }) {
   const [playingElementId, setPlayingElementId] = useState(null);
   const [playingEffect, setPlayingEffect] = useState(null);
@@ -378,6 +379,7 @@ export default function EditorCanvas({
                       slide={slide}
                       onChangeParagraphs={onChangeParagraphs}
                       onSaveSelection={onSaveSelection}
+                      clearSelectionSignal={clearSelectionSignal}
                       onFormatTextRangeElement={onFormatTextRangeElement}
                       onStartEditing={onStartEditing}
                       onStopEditing={onStopEditing}

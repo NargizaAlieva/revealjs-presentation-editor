@@ -647,6 +647,7 @@ export default function SlideMasterView({
   onCancelHistory,
   selectedMasterElementId,
   onSelectMasterElement,
+  onSaveSelection,
   onSelectedLayoutChange,
   onToggleTitle,
   onToggleFooters,
@@ -789,6 +790,7 @@ export default function SlideMasterView({
               ? (id, fmt) => handlePlaceholderUpdate(id, { formatting: fmt })
               : (id, fmt) => onUpdateMasterTextFormatting?.(id, fmt)
           }
+          onSaveSelection={onSaveSelection}
           onMoveTextElement={
             selectedLayout
               ? (id, x, y) => handlePlaceholderUpdate(id, { position: { x, y } })

@@ -154,13 +154,14 @@ export const getSelectionFormatting = (textElement, selection) => {
   for (let pIdx = paragraphIdx; pIdx <= epIdx; pIdx++) {
     const para = paragraphs[pIdx];
     if (!para) continue;
+    const thisParaFmt = para.formatting ?? {};
     const pStart = pIdx === paragraphIdx ? rangeStart : 0;
     const pEnd = pIdx === epIdx ? rangeEnd : Infinity;
     let offset = 0;
     for (const run of para.runs ?? []) {
       const start = offset;
       const end = offset + run.text.length;
-      if (end > pStart && start < pEnd) overlapping.push(run.formatting ?? {});
+      if (end > pStart && start < pEnd) overlapping.push({ runFmt: run.formatting ?? {}, paraFmt: thisParaFmt });
       offset = end;
     }
   }
@@ -168,11 +169,11 @@ export const getSelectionFormatting = (textElement, selection) => {
 
   const allKeys = new Set([
     ...Object.keys(paraFmt),
-    ...overlapping.flatMap((f) => Object.keys(f)),
+    ...overlapping.flatMap(({ runFmt, paraFmt: pf }) => [...Object.keys(runFmt), ...Object.keys(pf)]),
   ]);
   const result = { ...paraFmt };
   for (const key of allKeys) {
-    const vals = overlapping.map((f) => f[key] ?? paraFmt[key]);
+    const vals = overlapping.map(({ runFmt, paraFmt: pf }) => runFmt[key] ?? pf[key]);
     result[key] = vals.every((v) => v === vals[0]) ? vals[0] : "mixed";
   }
   return result;

@@ -51,7 +51,7 @@ export const createTextElementDefaults = (zIndex = 4, labelText = "Text") => ({
   userModified: true,
   paragraphs: [{
     id: crypto.randomUUID(),
-    formatting: { font: "Arial", size: "24px", color: "var(--text-dark)", align: "left" },
+    formatting: { size: "24px", color: "var(--text-dark)", align: "left" },
     bullets: "none",
     runs: [{ formatting: {}, "super-sub-script": "normal", text: labelText, link: null }],
   }],

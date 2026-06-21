@@ -52,6 +52,8 @@ export default function EditorPage() {
   // null = Master selected, string = layout-id selected
   const [selectedMasterLayoutId, setSelectedMasterLayoutId] = useState(null);
 
+  const [masterActiveSelection, setMasterActiveSelection] = useState(null);
+
   const [editingTextElementId, setEditingTextElementId] = useState(null);
   const editingTextElementIdRef = useRef(null);
   const [pendingFormatting, setPendingFormatting] = useState({});
@@ -79,6 +81,7 @@ export default function EditorPage() {
 
   const activeSelectionRef = useRef(null); // { elementId, paragraphIdx, rangeStart, rangeEnd }
   const [activeSelection, setActiveSelection] = useState(null);
+  const [clearSelectionSignal, setClearSelectionSignal] = useState(0);
 
   const { state, eventBus, isLoading } = useEditorState(presentationId);
   const {
@@ -88,6 +91,40 @@ export default function EditorPage() {
     selectedSlideIndex,
     selectedElementId,
   } = useSlides(state);
+
+  // When selectedElementId changes, clear any stale selection/editing state
+  // that may have survived (e.g. going editing → HomeTab → canvas skips onBlur).
+  useEffect(() => {
+    if (activeSelectionRef.current && activeSelectionRef.current.elementId !== selectedElementId) {
+      activeSelectionRef.current = null;
+      setActiveSelection(null);
+    }
+  }, [selectedElementId]);
+
+  // Global mousedown: clear stale saved selection when the user clicks outside
+  // the active text element and outside any toolbar. Covers the gap where
+  // contentEditable already lost focus on a toolbar click, so a subsequent
+  // canvas click never triggers another onBlur to clean up.
+  useEffect(() => {
+    if (!selectedElementId) return;
+    const handler = (e) => {
+      if (!activeSelectionRef.current) return;
+      const inToolbar =
+        e.target.closest?.(".format-toolbar") ||
+        e.target.closest?.(".toolbar-ribbon") ||
+        e.target.closest?.(".toolbar") ||
+        e.target.closest?.(".bg-palette-popup") ||
+        e.target.closest?.(".sz-dropdown");
+      const inElement = e.target.closest?.(`[data-element-id="${selectedElementId}"]`);
+      if (!inElement && !inToolbar) {
+        activeSelectionRef.current = null;
+        setActiveSelection(null);
+        setClearSelectionSignal((n) => n + 1);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [selectedElementId]);
 
   useEffect(() => {
     if (currentView === "reading") {
@@ -251,29 +288,50 @@ export default function EditorPage() {
       )
     : null;
 
-  const paragraphFormatting = selectedTextEl?.paragraphs?.[0]?.formatting ?? {};
+  const masterSelectedTextEl = isSlideMasterOpen && selectedMasterElementId
+    ? (() => {
+        // Element may be in master elements OR in the selected layout's elements
+        const masterEl = (presentation?.slideset?.master?.elements?.text ?? [])
+          .find((t) => t.id === selectedMasterElementId);
+        if (masterEl) return masterEl;
+        if (selectedMasterLayoutId) {
+          const layout = (presentation?.slideset?.layouts ?? [])
+            .find((l) => l["layout-id"] === selectedMasterLayoutId);
+          return (layout?.elements?.text ?? []).find((t) => t.id === selectedMasterElementId) ?? null;
+        }
+        return null;
+      })()
+    : null;
+
+  const activeTextEl = isSlideMasterOpen ? masterSelectedTextEl : selectedTextEl;
+  const activeElementId = isSlideMasterOpen ? selectedMasterElementId : selectedElementId;
+  const activeSelectionForFormatting = isSlideMasterOpen ? masterActiveSelection : activeSelection;
+
+  const paragraphFormatting = activeTextEl?.paragraphs?.[0]?.formatting ?? {};
   const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
-  const placeholderFormatting = selectedTextEl
-    ? getPlaceholderFormatting(presentation, selectedSlide, selectedTextEl)
+  const placeholderFormatting = activeTextEl && !isSlideMasterOpen
+    ? getPlaceholderFormatting(presentation, selectedSlide, activeTextEl)
     : {};
   const effectiveFormatting = resolveEffectiveFormatting(masterFormatting, placeholderFormatting, paragraphFormatting);
 
-  const isEditingSelected = editingTextElementId === selectedElementId;
+  const isEditingSelected = isSlideMasterOpen
+    ? !!masterActiveSelection
+    : editingTextElementId === selectedElementId;
   const hasRealSelection =
-    activeSelection &&
-    activeSelection.elementId === selectedElementId &&
-    !(activeSelection.paragraphIdx === (activeSelection.endParagraphIdx ?? activeSelection.paragraphIdx) &&
-      activeSelection.rangeStart === activeSelection.rangeEnd);
+    activeSelectionForFormatting &&
+    activeSelectionForFormatting.elementId === activeElementId &&
+    !(activeSelectionForFormatting.paragraphIdx === (activeSelectionForFormatting.endParagraphIdx ?? activeSelectionForFormatting.paragraphIdx) &&
+      activeSelectionForFormatting.rangeStart === activeSelectionForFormatting.rangeEnd);
   const selectionFormatting = hasRealSelection
-    ? { ...effectiveFormatting, ...(getSelectionFormatting(selectedTextEl, activeSelection) ?? {}) }
+    ? { ...effectiveFormatting, ...(getSelectionFormatting(activeTextEl, activeSelectionForFormatting) ?? {}) }
     : null;
   const currentFormatting = selectionFormatting
     ? { ...selectionFormatting, ...pendingFormatting }
     : computeCurrentFormatting({
         isEditing: isEditingSelected,
-        activeSelection,
-        selectedElementId,
-        selectedTextEl,
+        activeSelection: activeSelectionForFormatting,
+        selectedElementId: activeElementId,
+        selectedTextEl: activeTextEl,
         effectiveFormatting,
         pendingFormatting,
       });
@@ -300,7 +358,20 @@ export default function EditorPage() {
   };
 
   const handleFormatChange = (updates) => {
-    if (!selectedElementId || !selectedTextEl) return;
+    if (!activeElementId || !activeTextEl) return;
+
+    if (isSlideMasterOpen) {
+      // Master mode: no range formatting at store level, always update whole element.
+      if (selectedMasterLayoutId) {
+        // Layout element — mirror what the popup does via handlePlaceholderUpdate
+        updateLayoutElement(selectedMasterLayoutId, "text", activeElementId, { formatting: updates });
+      } else {
+        // Master element — uses its own operation that correctly strips run-level keys
+        updateMasterTextFormatting(activeElementId, updates);
+      }
+      return;
+    }
+
     applyFormatting(selectedElementId, updates);
   };
 
@@ -431,7 +502,7 @@ export default function EditorPage() {
           onResetLayout={resetLayout}
           currentFormatting={currentFormatting}
           onFormatChange={handleFormatChange}
-          isTextSelected={!!selectedTextEl}
+          isTextSelected={!!(isSlideMasterOpen ? masterSelectedTextEl : selectedTextEl)}
           presentation={presentation}
           onCut={handleCut}
           onCopy={handleCopy}
@@ -481,6 +552,9 @@ export default function EditorPage() {
             masterName={masterName}
             selectedMasterElementId={selectedMasterElementId}
             onSelectMasterElement={setSelectedMasterElementId}
+            onSaveSelection={(elementId, offsets) => {
+              setMasterActiveSelection(offsets ? { elementId, ...offsets } : null);
+            }}
             onAddMasterElement={addMasterElement}
             onDeleteMasterElement={deleteMasterElement}
             onUpdateMasterTextContent={(id, text) =>
@@ -559,6 +633,7 @@ export default function EditorPage() {
                   onFormatTextRangeElement={(elementId, paragraphIdx, rangeStart, endParagraphIdx, rangeEnd, formatting) =>
                     updateTextRangeFormatting(elementId, paragraphIdx, rangeStart, endParagraphIdx, rangeEnd, formatting)
                   }
+                  clearSelectionSignal={clearSelectionSignal}
                   onSaveSelection={(elementId, offsets) => {
                     const sel = offsets ? { elementId, ...offsets } : null;
                     activeSelectionRef.current = sel;

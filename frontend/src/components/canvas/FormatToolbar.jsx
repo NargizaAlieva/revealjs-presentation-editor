@@ -60,8 +60,8 @@ export default function FormatToolbar({
     ...DEFAULT_FONTS.filter((f) => !presentationFonts.includes(f)),
   ];
 
-  const currentSize = parseInt(formatting.size ?? "24", 10);
-  const currentFont = formatting.font ?? fonts[0] ?? "Arial";
+  const currentSize = formatting.size === "mixed" ? "" : parseInt(formatting.size ?? "24", 10);
+  const currentFont = formatting.font === "mixed" ? "" : (formatting.font ?? fonts[0] ?? "Arial");
   const currentAlign = formatting.align === "mixed" ? null : (formatting.align ?? "left");
   const currentColor = formatting.color ?? "#111111";
   const currentHighlight = formatting.highlight ?? "transparent";
@@ -104,9 +104,10 @@ export default function FormatToolbar({
             className="font-select"
             value={currentFont}
             onMouseDown={(e) => e.stopPropagation()}
-            onChange={(e) => fmt({ font: e.target.value })}
+            onChange={(e) => { if (e.target.value) fmt({ font: e.target.value }); }}
             title="Font"
           >
+            {currentFont === "" && <option value="">—</option>}
             {fonts.map((f) => (
               <option key={f} value={f} style={{ fontFamily: f }}>
                 {f}
@@ -120,15 +121,16 @@ export default function FormatToolbar({
             min={6}
             max={120}
             value={currentSize}
+            placeholder="—"
             onMouseDown={(e) => e.stopPropagation()}
-            onChange={(e) => fmt({ size: `${e.target.value}px` })}
+            onChange={(e) => { if (e.target.value) fmt({ size: `${e.target.value}px` }); }}
             title="Font size"
           />
 
           <button
             type="button"
             title="Increase font size"
-            onClick={() => fmt({ size: `${Math.min(120, currentSize + 2)}px` })}
+            onClick={() => fmt({ size: `${Math.min(120, (currentSize || 24) + 2)}px` })}
           >
             A<sup>+</sup>
           </button>
@@ -136,7 +138,7 @@ export default function FormatToolbar({
           <button
             type="button"
             title="Decrease font size"
-            onClick={() => fmt({ size: `${Math.max(6, currentSize - 2)}px` })}
+            onClick={() => fmt({ size: `${Math.max(6, (currentSize || 24) - 2)}px` })}
           >
             A<sup>−</sup>
           </button>
