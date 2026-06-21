@@ -114,23 +114,95 @@ export const updateMasterTheme = (presentation, colorTheme, decorations) => ({
   },
 });
 
+const scaleElement = (el, scaleX, scaleY) => ({
+  ...el,
+  position: {
+    x: Math.round(el.position.x * scaleX),
+    y: Math.round(el.position.y * scaleY),
+  },
+  width: Math.round(el.width * scaleX),
+  height: Math.round(el.height * scaleY),
+});
+
+const scalePlaceholder = (p, scaleX, scaleY) => ({
+  ...p,
+  position: {
+    x: Math.round(p.position.x * scaleX),
+    y: Math.round(p.position.y * scaleY),
+  },
+  width: Math.round(p.width * scaleX),
+  height: Math.round(p.height * scaleY),
+});
+
+const scaleElements = (elements, scaleX, scaleY) => ({
+  text: (elements?.text ?? []).map((el) => scaleElement(el, scaleX, scaleY)),
+  media: (elements?.media ?? []).map((el) => scaleElement(el, scaleX, scaleY)),
+});
+
 export const updateMasterDimensions = (
   presentation,
   slideDimensions,
   aspectRatio,
   dimensionUnits,
-) => ({
-  ...presentation,
-  slideset: {
-    ...presentation.slideset,
-    master: {
-      ...presentation.slideset.master,
-      "slide-dimensions": slideDimensions,
-      "aspect-ratio": aspectRatio,
-      "dimension-units": dimensionUnits,
+) => {
+  const oldDim = presentation?.slideset?.master?.["slide-dimensions"];
+  const oldW = oldDim?.width || 960;
+  const oldH = oldDim?.height || 540;
+  const newW = slideDimensions.width;
+  const newH = slideDimensions.height;
+
+  if (oldW === newW && oldH === newH) {
+    return {
+      ...presentation,
+      slideset: {
+        ...presentation.slideset,
+        master: {
+          ...presentation.slideset.master,
+          "slide-dimensions": slideDimensions,
+          "aspect-ratio": aspectRatio,
+          "dimension-units": dimensionUnits,
+        },
+      },
+    };
+  }
+
+  const scaleX = newW / oldW;
+  const scaleY = newH / oldH;
+
+  const oldMaster = presentation.slideset.master;
+  const scaledMasterElements = scaleElements(oldMaster.elements ?? {}, scaleX, scaleY);
+
+  const scaledLayouts = (presentation.slideset.layouts ?? []).map((layout) => ({
+    ...layout,
+    placeholders: (layout.placeholders ?? []).map((p) => scalePlaceholder(p, scaleX, scaleY)),
+    elements: scaleElements(layout.elements ?? {}, scaleX, scaleY),
+  }));
+
+  const scaledSlides = (presentation.slideset.slides ?? []).map((slide) => ({
+    ...slide,
+    contents: {
+      ...slide.contents,
+      text: (slide.contents?.text ?? []).map((el) => scaleElement(el, scaleX, scaleY)),
+      media: (slide.contents?.media ?? []).map((el) => scaleElement(el, scaleX, scaleY)),
     },
-  },
-});
+  }));
+
+  return {
+    ...presentation,
+    slideset: {
+      ...presentation.slideset,
+      master: {
+        ...oldMaster,
+        "slide-dimensions": slideDimensions,
+        "aspect-ratio": aspectRatio,
+        "dimension-units": dimensionUnits,
+        elements: scaledMasterElements,
+      },
+      layouts: scaledLayouts,
+      slides: scaledSlides,
+    },
+  };
+};
 
 export const updateMasterFormatting = (presentation, formatting) => {
   const oldMaster = presentation.slideset?.master?.formatting ?? {};
