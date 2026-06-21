@@ -114,29 +114,25 @@ export const updateMasterTheme = (presentation, colorTheme, decorations) => ({
   },
 });
 
-const scaleElement = (el, scaleX, scaleY) => ({
-  ...el,
-  position: {
-    x: Math.round(el.position.x * scaleX),
-    y: Math.round(el.position.y * scaleY),
-  },
-  width: Math.round(el.width * scaleX),
-  height: Math.round(el.height * scaleY),
-});
+const scaleElement = (el, scaleX, scaleY, newW, newH) => {
+  const w = Math.max(20, Math.min(Math.round((el.width ?? 100) * scaleX), newW));
+  const h = Math.max(10, Math.min(Math.round((el.height ?? 50) * scaleY), newH));
+  const x = Math.max(0, Math.min(Math.round((el.position?.x ?? 0) * scaleX), newW - w));
+  const y = Math.max(0, Math.min(Math.round((el.position?.y ?? 0) * scaleY), newH - h));
+  return { ...el, position: { x, y }, width: w, height: h };
+};
 
-const scalePlaceholder = (p, scaleX, scaleY) => ({
-  ...p,
-  position: {
-    x: Math.round(p.position.x * scaleX),
-    y: Math.round(p.position.y * scaleY),
-  },
-  width: Math.round(p.width * scaleX),
-  height: Math.round(p.height * scaleY),
-});
+const scalePlaceholder = (p, scaleX, scaleY, newW, newH) => {
+  const w = Math.max(20, Math.min(Math.round((p.width ?? 100) * scaleX), newW));
+  const h = Math.max(10, Math.min(Math.round((p.height ?? 50) * scaleY), newH));
+  const x = Math.max(0, Math.min(Math.round((p.position?.x ?? 0) * scaleX), newW - w));
+  const y = Math.max(0, Math.min(Math.round((p.position?.y ?? 0) * scaleY), newH - h));
+  return { ...p, position: { x, y }, width: w, height: h };
+};
 
-const scaleElements = (elements, scaleX, scaleY) => ({
-  text: (elements?.text ?? []).map((el) => scaleElement(el, scaleX, scaleY)),
-  media: (elements?.media ?? []).map((el) => scaleElement(el, scaleX, scaleY)),
+const scaleElements = (elements, scaleX, scaleY, newW, newH) => ({
+  text: (elements?.text ?? []).map((el) => scaleElement(el, scaleX, scaleY, newW, newH)),
+  media: (elements?.media ?? []).map((el) => scaleElement(el, scaleX, scaleY, newW, newH)),
 });
 
 export const updateMasterDimensions = (
@@ -170,20 +166,20 @@ export const updateMasterDimensions = (
   const scaleY = newH / oldH;
 
   const oldMaster = presentation.slideset.master;
-  const scaledMasterElements = scaleElements(oldMaster.elements ?? {}, scaleX, scaleY);
+  const scaledMasterElements = scaleElements(oldMaster.elements ?? {}, scaleX, scaleY, newW, newH);
 
   const scaledLayouts = (presentation.slideset.layouts ?? []).map((layout) => ({
     ...layout,
-    placeholders: (layout.placeholders ?? []).map((p) => scalePlaceholder(p, scaleX, scaleY)),
-    elements: scaleElements(layout.elements ?? {}, scaleX, scaleY),
+    placeholders: (layout.placeholders ?? []).map((p) => scalePlaceholder(p, scaleX, scaleY, newW, newH)),
+    elements: scaleElements(layout.elements ?? {}, scaleX, scaleY, newW, newH),
   }));
 
   const scaledSlides = (presentation.slideset.slides ?? []).map((slide) => ({
     ...slide,
     contents: {
       ...slide.contents,
-      text: (slide.contents?.text ?? []).map((el) => scaleElement(el, scaleX, scaleY)),
-      media: (slide.contents?.media ?? []).map((el) => scaleElement(el, scaleX, scaleY)),
+      text: (slide.contents?.text ?? []).map((el) => scaleElement(el, scaleX, scaleY, newW, newH)),
+      media: (slide.contents?.media ?? []).map((el) => scaleElement(el, scaleX, scaleY, newW, newH)),
     },
   }));
 
