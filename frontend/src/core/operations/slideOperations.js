@@ -1,5 +1,8 @@
 import { createId, getSlides, setSlides } from "../utils/presentationUtils";
 
+// Sentinel value meaning "use the theme background color" (no custom per-slide background)
+export const TRANSPARENT_SLIDE_BG = "#FFFFFFFF";
+
 const getLayouts = (presentation) =>
   presentation?.slideset?.layouts ?? [];
 
@@ -200,6 +203,12 @@ export const updateSlideNotes = (presentation, slideIndex, notes) => {
 
   return setSlides(presentation, slides);
 };
+
+export const getSlideCommentCount = (slide) =>
+  (slide?.contents?.comments ?? []).length;
+
+export const getSlideCommentCounts = (slides) =>
+  (slides ?? []).map(getSlideCommentCount);
 
 export const toggleSlideHidden = (presentation, slideIndex) => {
   const slides = [...getSlides(presentation)];

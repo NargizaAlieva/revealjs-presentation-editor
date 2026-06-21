@@ -223,3 +223,14 @@ export const getSelectionFormatting = (textElement, selection) => {
   }
   return result;
 };
+
+// Normalize a formatting object into display-ready values for toolbar controls.
+// Returns consistent types so toolbar components don't need parsing logic.
+export const parseFormattingForDisplay = (formatting = {}, fallbackFont = "Arial") => ({
+  currentSize:        formatting.size === "mixed" ? "" : parseInt(formatting.size ?? "24", 10),
+  currentFont:        formatting.font === "mixed" ? "" : (formatting.font ?? fallbackFont),
+  currentAlign:       formatting.align === "mixed" ? null : (formatting.align ?? "left"),
+  currentColor:       formatting.color ?? "#111111",
+  currentHighlight:   formatting.highlight ?? "transparent",
+  currentLineSpacing: parseFloat(formatting["line-spacing"] ?? "1.15"),
+});

@@ -1,16 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { MdAdd, MdImage, MdTextFields, MdVideoLibrary } from "react-icons/md";
-
-const FALLBACK_LAYOUTS = [
-  { id: "title-content", label: "Title and Content" },
-  { id: "title-content-media", label: "Title, Content and Media" },
-  { id: "two-columns", label: "Two Columns" },
-  { id: "title-only", label: "Title Only" },
-  { id: "blank", label: "Blank" },
-];
+import { LAYOUTS } from "./homeTabConstants";
 
 export default function InsertTab({ onImageUpload, onVideoUpload, onAddSlide, onAddTextElement, layouts: propLayouts }) {
-  const layouts = (propLayouts && propLayouts.length > 0) ? propLayouts : FALLBACK_LAYOUTS;
+  const layouts = (propLayouts && propLayouts.length > 0) ? propLayouts : LAYOUTS;
   const [showLayouts, setShowLayouts] = useState(false);
   const [newSlidePos, setNewSlidePos] = useState({ top: 0, left: 0 });
   const newSlideBtnRef = useRef(null);

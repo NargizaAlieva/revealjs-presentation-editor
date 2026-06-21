@@ -2,26 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import "./DesignTab.css";
 import { DEFAULT_FONTS } from "./homeTabConstants";
 import { toHex6, toHex9 } from "../../core/utils/colorUtils";
-import { DESIGN_THEMES, findActiveTheme, updateThemeBackground } from "../../core/model/designThemes";
+import { DESIGN_THEMES, findActiveTheme, updateThemeBackground, THEME_PALETTE_COLUMNS, STANDARD_COLORS } from "../../core/model/designThemes";
 import { SLIDE_SIZES, clampSlideDimension } from "../../core/model/slideSizes";
-
-const THEME_PALETTE_COLUMNS = [
-    ["#FFFFFF", "#F2F2F2", "#D9D9D9", "#BFBFBF", "#A6A6A6", "#808080"],
-    ["#000000", "#808080", "#595959", "#404040", "#262626", "#0D0D0D"],
-    ["#E7E6E6", "#CFCECE", "#AEABAB", "#757070", "#3B3838", "#191718"],
-    ["#44546A", "#D6DCE4", "#ADB9CA", "#8497B0", "#2E74B5", "#1F4E79"],
-    ["#4472C4", "#D9E2F3", "#B4C7E7", "#2F75B6", "#1F4E79", "#0D2B4A"],
-    ["#ED7D31", "#FCE4D6", "#F8CBAD", "#F4B183", "#C55A11", "#843C0C"],
-    ["#A9D18E", "#E2EFD9", "#C6E0B4", "#70AD47", "#375623", "#1E3A14"],
-    ["#FFD700", "#FFF2CC", "#FFE699", "#FFD966", "#BF8F00", "#7F6000"],
-    ["#FF0000", "#FFCCCC", "#FF9999", "#FF6666", "#C00000", "#800000"],
-    ["#7030A0", "#E2CEED", "#C39BD3", "#A569BD", "#512D6D", "#311B4E"],
-];
-
-const STANDARD_COLORS = [
-    "#C00000", "#FF0000", "#FFC000", "#FFFF00", "#92D050",
-    "#00B050", "#00B0F0", "#0070C0", "#002060", "#7030A0",
-];
+import { renderShapes } from "../../core/render/shapeRenderer";
 
 
 export function ColorPalettePopup({ currentColor, onSelect, onClose }) {
@@ -73,20 +56,6 @@ export function ColorPalettePopup({ currentColor, onSelect, onClose }) {
     );
 }
 
-function renderShapes(shapes) {
-    return shapes.map((s, i) => {
-        const base = { fill: s.fill ?? "none", stroke: s.stroke ?? "none", strokeWidth: s.strokeWidth ?? 0, opacity: s.opacity ?? 1 };
-        switch (s.type) {
-            case "rect": return <rect key={i} {...base} x={s.x} y={s.y} width={s.w} height={s.h} rx={s.rx ?? 0} />;
-            case "circle": return <circle key={i} {...base} cx={s.cx} cy={s.cy} r={s.r} />;
-            case "ellipse": return <ellipse key={i} {...base} cx={s.cx} cy={s.cy} rx={s.rx} ry={s.ry} />;
-            case "polygon": return <polygon key={i} {...base} points={s.points} />;
-            case "path": return <path key={i} {...base} d={s.d} />;
-            case "line": return <line key={i} stroke={s.stroke ?? s.fill ?? "none"} strokeWidth={s.strokeWidth ?? 2} opacity={s.opacity ?? 1} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} />;
-            default: return null;
-        }
-    });
-}
 
 function ThemeThumbnail({ theme, isActive, onClick }) {
     const { bg, header, dots } = theme.preview;

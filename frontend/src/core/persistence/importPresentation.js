@@ -1,5 +1,5 @@
 import { createPresentation, savePresentation } from "./persistenceFacade";
-import { DEFAULT_PRESENTATION_TITLE } from "../operations/presentationOperations";
+import { DEFAULT_PRESENTATION_TITLE } from "../utils/presentationUtils";
 
 // Parse, validate, persist an imported JSON file and return the new presentation id.
 // Throws if the JSON is malformed or doesn't look like a presentation.

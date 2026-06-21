@@ -13,6 +13,8 @@ import {
   isDeleteShortcut,
 } from "../core/events/keyboardShortcuts";
 import { useCanvasInteractions } from "../hooks/useCanvasInteractions";
+import { findElementInSlide } from "../core/operations/elementOperations";
+import { TRANSPARENT_SLIDE_BG } from "../core/operations/slideOperations";
 import TextElement from "./canvas/TextElement";
 import MediaElement from "./canvas/MediaElement";
 import SlideDecorations from "./canvas/SlideDecorations";
@@ -193,10 +195,8 @@ export default function EditorCanvas({
       }
 
       if (isCopyShortcut(event) && !editable && selectedElementId) {
-        const element =
-          textElements.find((el) => el.id === selectedElementId) ||
-          mediaElements.find((el) => el.id === selectedElementId);
-        if (element) onCopy?.(element);
+        const found = findElementInSlide(textElements, mediaElements, selectedElementId);
+        if (found) onCopy?.(found.element);
         return;
       }
 
@@ -206,10 +206,8 @@ export default function EditorCanvas({
       }
 
       if (isCutShortcut(event) && !editable && selectedElementId) {
-        const element =
-          textElements.find((el) => el.id === selectedElementId) ||
-          mediaElements.find((el) => el.id === selectedElementId);
-        if (element) onCut?.(element);
+        const found = findElementInSlide(textElements, mediaElements, selectedElementId);
+        if (found) onCut?.(found.element);
         return;
       }
 
@@ -217,20 +215,13 @@ export default function EditorCanvas({
       if (editable) return;
       if (!selectedElementId) return;
 
-      const isTextElement = textElements.some(
-        (element) => element.id === selectedElementId,
-      );
+      const found = findElementInSlide(textElements, mediaElements, selectedElementId);
+      if (!found) return;
 
-      const isMediaElement = mediaElements.some(
-        (element) => element.id === selectedElementId,
-      );
-
-      if (isTextElement) {
+      if (found.type === "text") {
         onDeleteTextElement(selectedElementId);
         onSelectElement?.(null);
-      }
-
-      if (isMediaElement) {
+      } else {
         onDeleteMedia(selectedElementId);
         onSelectElement?.(null);
       }
@@ -327,7 +318,7 @@ export default function EditorCanvas({
                   width: `${width}px`,
                   height: `${height}px`,
                   background:
-                    !slide?.contents?.background || slide.contents.background === "#FFFFFFFF"
+                    !slide?.contents?.background || slide.contents.background === TRANSPARENT_SLIDE_BG
                       ? "var(--bg-light, white)"
                       : slide.contents.background,
                   color: "var(--text-dark, black)",

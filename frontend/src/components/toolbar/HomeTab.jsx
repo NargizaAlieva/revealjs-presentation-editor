@@ -1,5 +1,5 @@
 import "./HomeTab.css";
-import { DEFAULT_FONTS } from "./homeTabConstants";
+import { getAvailableFonts } from "../../core/model/fontConfig";
 import ClipboardGroup from "./ClipboardGroup";
 import SlidesGroup from "./SlidesGroup";
 import FontGroup from "./FontGroup";
@@ -29,13 +29,7 @@ export default function HomeTab({
   hasSelection = false,
   canPaste = false,
 }) {
-  const presentationFonts = (presentation?.slideset?.fonts ?? [])
-    .map((f) => f["font-id"])
-    .filter(Boolean);
-  const fonts = [
-    ...presentationFonts,
-    ...DEFAULT_FONTS.filter((f) => !presentationFonts.includes(f)),
-  ];
+  const fonts = getAvailableFonts(presentation);
 
   return (
     <>

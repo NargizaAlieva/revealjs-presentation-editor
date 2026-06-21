@@ -8,6 +8,12 @@ export const toRoman = (n) => {
   return result;
 };
 
+const LIST_INDENT_PX = 24;
+export const MAX_LIST_INDENT_LEVEL = 4;
+
+export const getListIndent = (level, listType) =>
+  listType ? `${(Math.min(level, MAX_LIST_INDENT_LEVEL) + 1) * LIST_INDENT_PX}px` : "0px";
+
 export const getListMarker = (index, listType, listMarker, listNumberedStyle) => {
   if (listType === "bullets") return listMarker ?? "•";
   const n = index + 1;

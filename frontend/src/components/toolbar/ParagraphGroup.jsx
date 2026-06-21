@@ -10,6 +10,7 @@ import {
   MdArrowDownward,
 } from "react-icons/md";
 import { BULLET_STYLES, NUMBERED_STYLES } from "./homeTabConstants";
+import { getListMarker, MAX_LIST_INDENT_LEVEL } from "../../core/utils/listUtils";
 import "./ParagraphGroup.css";
 
 export default function ParagraphGroup({
@@ -194,21 +195,13 @@ export default function ParagraphGroup({
                       <span className="list-picker-none">None</span>
                     ) : (
                       <span className="list-picker-preview">
-                        {["1", "2", "3"].map((n, i) => (
+                        {[0, 1, 2].map((i) => (
                           <span key={i} className="list-picker-row">
                             <span
                               className="list-picker-marker"
                               style={{ fontVariantNumeric: "tabular-nums" }}
                             >
-                              {style === "decimal"
-                                ? `${n}.`
-                                : style === "lower-alpha"
-                                  ? `${String.fromCharCode(96 + Number(n))}.`
-                                  : style === "upper-alpha"
-                                    ? `${String.fromCharCode(64 + Number(n))}.`
-                                    : style === "lower-roman"
-                                      ? ["i.", "ii.", "iii."][i]
-                                      : ["I.", "II.", "III."][i]}
+                              {getListMarker(i, "numbered", null, style)}
                             </span>
                             <span className="list-picker-line" />
                           </span>
@@ -237,7 +230,7 @@ export default function ParagraphGroup({
           disabled={!isTextSelected || !currentListType}
           title="Increase list level"
           onClick={() =>
-            fmt({ "indent-level": Math.min(4, currentListLevel + 1) })
+            fmt({ "indent-level": Math.min(MAX_LIST_INDENT_LEVEL, currentListLevel + 1) })
           }
         >
           <MdArrowDownward />

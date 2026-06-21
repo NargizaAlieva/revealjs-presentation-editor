@@ -1,11 +1,7 @@
 import { useReducer, useEffect, useLayoutEffect, useState, useRef } from "react";
-import {
-  createInitialEditorState,
-  editorReducer,
-  createEventBus,
-  EditorEventType,
-  createEditorEvent,
-} from "../core";
+import { createInitialEditorState, editorReducer } from "../core/store/editorStore";
+import { createEventBus } from "../core/events/eventBus";
+import { EditorEventType, createEditorEvent } from "../core/events/editorEvents";
 import { storageGet, storageRemove, updateIndexEntry, getSetting } from "../core/persistence/persistenceFacade";
 
 const AUTOSAVE_SETTING_KEY = "autosaveEnabled";

@@ -1,33 +1,8 @@
-import { useState, useRef, useEffect } from "react"; import {
-  MdBlock,
-  MdCloseFullscreen,
-  MdNorth,
-  MdOpacity,
-  MdPreview,
-  MdSouth,
-  MdSpeed,
-  MdStrikethroughS,
-  MdWest,
-  MdEast,
-  MdZoomOutMap,
-  MdArrowUpward,
-  MdArrowDownward,
-  MdExpandMore,
-} from "react-icons/md";
+import { useState, useRef, useEffect } from "react";
+import { MdPreview, MdSpeed, MdArrowUpward, MdArrowDownward, MdExpandMore } from "react-icons/md";
 import "./AnimationsTab.css";
-import { getMaxAnimationSequence, getAnimationDurationMs } from "../../core/operations/animationOperations";
-
-const ANIMATION_EFFECTS = [
-  { value: "none", label: "None", icon: MdBlock },
-  { value: "fade-in", label: "Fade", icon: MdOpacity },
-  { value: "fade-up", label: "Fade Up", icon: MdNorth },
-  { value: "fade-down", label: "Fade Down", icon: MdSouth },
-  { value: "fade-left", label: "Fade Left", icon: MdWest },
-  { value: "fade-right", label: "Fade Right", icon: MdEast },
-  { value: "grow", label: "Grow", icon: MdZoomOutMap },
-  { value: "shrink", label: "Shrink", icon: MdCloseFullscreen },
-  { value: "strike", label: "Strike", icon: MdStrikethroughS },
-];
+import { getMaxAnimationSequence, getAnimationDurationMs, findAnimationForElement, getNextAnimationSequence } from "../../core/operations/animationOperations";
+import { ANIMATION_EFFECTS } from "../../core/model/animationConfig";
 
 export default function AnimationsTab({
   selectedElement,
@@ -41,7 +16,7 @@ export default function AnimationsTab({
   const animationList = animations ?? [];
 
   const animation = selectedElement
-    ? animationList.find((item) => item.id === selectedElement.id)
+    ? findAnimationForElement(animationList, selectedElement.id)
     : null;
 
   const currentEffect = animation?.effect ?? "none";
@@ -61,7 +36,7 @@ export default function AnimationsTab({
     if (animation) {
       onUpdateAnimation?.(animation.id, { effect: effectValue });
     } else {
-      onAddAnimationForElement?.(selectedElement.id, effectValue, animationList.length + 1);
+      onAddAnimationForElement?.(selectedElement.id, effectValue, getNextAnimationSequence(animationList));
     }
 
     playPreview(selectedElement.id, effectValue, speed);

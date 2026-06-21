@@ -178,6 +178,35 @@ export const updateThemeBackground = (colorTheme, hex9Color) =>
     e["css-variable-name"] === "bg-light" ? { ...e, color: hex9Color } : e,
   );
 
+// Minimal default color theme used as a fallback when a presentation has no theme configured
+export const DEFAULT_COLOR_THEME = [
+  { "css-variable-name": "bg-light",   color: "#ffffff" },
+  { "css-variable-name": "bg-dark",    color: "#191919" },
+  { "css-variable-name": "text-dark",  color: "#000000" },
+  { "css-variable-name": "text-light", color: "#ffffff" },
+  { "css-variable-name": "accent1",    color: "#4f46e5" },
+  { "css-variable-name": "accent2",    color: "#7c3aed" },
+];
+
+// Color picker palette columns used in the background color picker
+export const THEME_PALETTE_COLUMNS = [
+  ["#FFFFFF", "#F2F2F2", "#D9D9D9", "#BFBFBF", "#A6A6A6", "#808080"],
+  ["#000000", "#808080", "#595959", "#404040", "#262626", "#0D0D0D"],
+  ["#E7E6E6", "#CFCECE", "#AEABAB", "#757070", "#3B3838", "#191718"],
+  ["#44546A", "#D6DCE4", "#ADB9CA", "#8497B0", "#2E74B5", "#1F4E79"],
+  ["#4472C4", "#D9E2F3", "#B4C7E7", "#2F75B6", "#1F4E79", "#0D2B4A"],
+  ["#ED7D31", "#FCE4D6", "#F8CBAD", "#F4B183", "#C55A11", "#843C0C"],
+  ["#A9D18E", "#E2EFD9", "#C6E0B4", "#70AD47", "#375623", "#1E3A14"],
+  ["#FFD700", "#FFF2CC", "#FFE699", "#FFD966", "#BF8F00", "#7F6000"],
+  ["#FF0000", "#FFCCCC", "#FF9999", "#FF6666", "#C00000", "#800000"],
+  ["#7030A0", "#E2CEED", "#C39BD3", "#A569BD", "#512D6D", "#311B4E"],
+];
+
+export const STANDARD_COLORS = [
+  "#C00000", "#FF0000", "#FFC000", "#FFFF00", "#92D050",
+  "#00B050", "#00B0F0", "#0070C0", "#002060", "#7030A0",
+];
+
 export const findActiveTheme = (colorTheme) => {
   const currentAccent1 = (colorTheme ?? []).find(
     (e) => e["css-variable-name"] === "accent1",

@@ -1,3 +1,5 @@
+export { DEFAULT_FONTS, FONT_SIZES } from "../../core/model/fontConfig";
+
 export const BULLET_STYLES = [
   { marker: null, label: "None" },
   { marker: "•", label: "Filled circle" },
@@ -24,22 +26,4 @@ export const LAYOUTS = [
   { id: "two-columns", label: "Two Columns" },
   { id: "title-only", label: "Title Only" },
   { id: "blank", label: "Blank" },
-];
-
-export const DEFAULT_FONTS = [
-  "Sora",
-  "Arial",
-  "Georgia",
-  "Times New Roman",
-  "Courier New",
-  "Verdana",
-  "Trebuchet MS",
-  "Roboto",
-  "Source Sans Pro",
-  "Impact",
-  "Comic Sans MS",
-];
-
-export const FONT_SIZES = [
-  8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 54, 60, 72,
 ];

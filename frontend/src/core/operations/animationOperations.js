@@ -53,6 +53,12 @@ export const createAnimation = (elementId, effect, sequence) => ({
 export const getMaxAnimationSequence = (animations) =>
   (animations ?? []).reduce((max, item) => Math.max(max, item.sequence ?? 1), 0);
 
+export const findAnimationForElement = (animations, elementId) =>
+  (animations ?? []).find((a) => a.id === elementId) ?? null;
+
+export const getNextAnimationSequence = (animations) =>
+  (animations ?? []).length + 1;
+
 export const getAnimationDurationMs = (speed) =>
   speed === 0.5 ? 200 : speed === 2 ? 2200 : 800;
 

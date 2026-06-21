@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import "./SlideList.css";
 import SlideThumbnail from "./slides/SlideThumbnail";
+import { getSlideCommentCounts } from "../core/operations/slideOperations";
 
 export default function SlideList({
   slides,
@@ -11,10 +12,7 @@ export default function SlideList({
   slideHeight,
   presentation,
 }) {
-  // commentCounts[i] = number of comments on slide i
-  const commentCounts = (slides ?? []).map(
-    (s) => (s.contents?.comments ?? []).length,
-  );
+  const commentCounts = getSlideCommentCounts(slides);
   const listRef = useRef(null);
   const itemRefs = useRef([]);
   const [draggedIndex, setDraggedIndex] = useState(null);

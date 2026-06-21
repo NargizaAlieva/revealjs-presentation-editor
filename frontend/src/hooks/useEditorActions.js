@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { storageRemove } from "../core/persistence/persistenceFacade";
-import { EditorEventType, createEditorEvent } from "../core";
+import { EditorEventType, createEditorEvent } from "../core/events/editorEvents";
 import { createAnimation, reorderAnimation } from "../core/operations/animationOperations";
 
 export function useEditorActions(

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { MdAdd, MdDelete, MdContentCopy } from "react-icons/md";
 import { LAYOUTS } from "./homeTabConstants";
+import { getLayoutDisplayList } from "../../core/operations/layoutOperations";
 import "./SlidesGroup.css";
 
 export default function SlidesGroup({
@@ -17,10 +18,8 @@ export default function SlidesGroup({
   const [newSlidePos, setNewSlidePos] = useState({ top: 0, left: 0 });
   const [popupPos, setPopupPos] = useState({ top: 0, left: 0 });
 
-  const presentationLayouts = presentation?.slideset?.layouts ?? [];
-  const layouts = presentationLayouts.length > 0
-    ? presentationLayouts.map((l) => ({ id: l["layout-id"], label: l.name ?? l["layout-id"] }))
-    : LAYOUTS;
+  const derivedLayouts = getLayoutDisplayList(presentation);
+  const layouts = derivedLayouts.length > 0 ? derivedLayouts : LAYOUTS;
 
   const newSlideBtnRef = useRef(null);
   const layoutBtnRef = useRef(null);

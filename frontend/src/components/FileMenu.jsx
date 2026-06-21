@@ -4,6 +4,18 @@ import { useRecentPresentations } from "../hooks/useRecentPresentations";
 import "./FileMenu.css";
 import { greeting, formatDate } from "../core/utils/dateUtils";
 
+const NAV_ITEMS = [
+  { label: "Home",        section: "top" },
+  { label: "New",         section: "top" },
+  { label: "Open",        section: "top" },
+  { label: "Save",        section: "top" },
+  { label: "Save As",     section: "top" },
+  { label: "Export HTML", section: "top" },
+  { label: "Export ZIP",  section: "top" },
+  { label: "Delete",      section: "danger" },
+  { label: "Close",       section: "bottom" },
+];
+
 export default function FileMenu({
   presentationTitle,
   onClose,
@@ -39,18 +51,6 @@ export default function FileMenu({
   };
 
   const handleNew = () => onNew?.();
-
-  const NAV_ITEMS = [
-    { label: "Home",       section: "top" },
-    { label: "New",        section: "top" },
-    { label: "Open",       section: "top" },
-    { label: "Save",       section: "top" },
-    { label: "Save As",    section: "top" },
-    { label: "Export HTML",section: "top" },
-    { label: "Export ZIP", section: "top" },
-    { label: "Delete",     section: "danger" },
-    { label: "Close",      section: "bottom" },
-  ];
 
   return (
     <div className="file-menu">

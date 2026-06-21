@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { findElementInSlide, getElementLabel } from "../core/operations/elementOperations";
 
 export function useSlides(state) {
   const presentation = state.presentation;
@@ -7,22 +8,16 @@ export function useSlides(state) {
   const selectedSlide = slides[selectedSlideIndex] ?? null;
   const selectedElementId = state.selectedElementId ?? null;
 
-    const selectedElement = useMemo(() => {
-      if (!selectedElementId) return null;
-      const text = (selectedSlide?.contents?.text ?? []).find(
-        (e) => e.id === selectedElementId,
-      );
-      if (text)
-        return {
-          id: text.id,
-          label: text.paragraphs?.[0]?.runs?.[0]?.text || "Text",
-        };
-      const media = (selectedSlide?.contents?.media ?? []).find(
-        (e) => e.id === selectedElementId,
-      );
-      if (media) return { id: media.id, label: "Image" };
-      return null;
-    }, [selectedSlide, selectedElementId]);
+  const selectedElement = useMemo(() => {
+    if (!selectedElementId) return null;
+    const found = findElementInSlide(
+      selectedSlide?.contents?.text ?? [],
+      selectedSlide?.contents?.media ?? [],
+      selectedElementId,
+    );
+    if (!found) return null;
+    return { id: found.element.id, label: getElementLabel(found.element) };
+  }, [selectedSlide, selectedElementId]);
 
   return {
     presentation,

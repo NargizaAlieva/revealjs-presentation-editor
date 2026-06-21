@@ -1,22 +1,7 @@
 import { useState } from "react";
 import { MdPreview, MdSpeed, MdSelectAll } from "react-icons/md";
 import "./TransitionsTab.css";
-
-
-const TRANSITIONS = [
-  { value: "none", label: "None" },
-  { value: "fade", label: "Fade" },
-  { value: "slide", label: "Slide" },
-  { value: "convex", label: "Convex" },
-  { value: "concave", label: "Concave" },
-  { value: "zoom", label: "Zoom" },
-];
-
-const SPEEDS = [
-  { value: 0.3, label: "Fast" },
-  { value: 0.75, label: "Medium" },
-  { value: 1.5, label: "Slow" },
-];
+import { TRANSITIONS, TRANSITION_SPEEDS, DEFAULT_TRANSITION_DURATION, PREVIEW_TRANSITION_MS } from "../../core/model/transitionDefaults";
 
 export default function TransitionsTab({
   currentTransition,
@@ -28,12 +13,12 @@ export default function TransitionsTab({
 }) {
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const duration = currentDuration ?? 0.75;
+  const duration = currentDuration ?? DEFAULT_TRANSITION_DURATION;
 
   const triggerPreview = (value) => {
     setIsPlaying(true);
     onTransitionPreview?.(value);
-    setTimeout(() => setIsPlaying(false), 1200);
+    setTimeout(() => setIsPlaying(false), PREVIEW_TRANSITION_MS);
   };
 
   const handleClick = (value) => {
@@ -82,7 +67,7 @@ export default function TransitionsTab({
       <div className="ribbon-group ribbon-group--timing-panel">
         <div className="speed-group">
           <div className="speed-options">
-            {SPEEDS.map((option) => (
+            {TRANSITION_SPEEDS.map((option) => (
               <button
                 key={option.value}
                 type="button"

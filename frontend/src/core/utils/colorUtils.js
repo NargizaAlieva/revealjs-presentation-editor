@@ -9,3 +9,7 @@ export const toHex6 = (color) => {
 // Ensure a hex color has an opaque alpha suffix (RRGGBBFF format)
 export const toHex9 = (hex) =>
   (hex.length === 7 ? hex : hex.slice(0, 7)) + "FF";
+
+// Normalize a color theme array: convert all color values to 6-digit hex strings.
+export const normalizeColorTheme = (colorTheme) =>
+  (colorTheme ?? []).map((entry) => ({ ...entry, color: toHex6(entry.color) }));

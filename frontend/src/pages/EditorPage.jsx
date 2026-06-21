@@ -16,11 +16,11 @@ import StatusBar from "../components/StatusBar";
 import CommentsPanel from "../components/CommentsPanel";
 import SlideSorterView from "../components/SlideSorterView";
 import OutlineView from "../components/OutlineView";
-import { getSlideSize, getPlaceholderFormatting } from "../core/render/slidesetRenderUtils";
-import { computeCurrentFormatting, splitFormattingUpdates, resolveEffectiveFormatting, getSelectionFormatting, RUN_LEVEL_KEYS } from "../core/text/textFormatting";
+import { getSlideSize } from "../core/render/slidesetRenderUtils";
+import { findMasterTextElement, computeFormattingState, useApplyFormatting } from "../hooks/useFormattingState";
 import { getSlideElement } from "../core/operations/slideOperations";
 import { getElementLabel } from "../core/operations/elementOperations";
-import { getPresentationTitle } from "../core/operations/presentationOperations";
+import { getPresentationTitle } from "../core/utils/presentationUtils";
 import { getSlideTransition } from "../core/model/transitionDefaults";
 import { importPresentationFromJson } from "../core/persistence/importPresentation";
 import { createTextElementDefaults } from "../core/model/masterDefaults";
@@ -294,81 +294,36 @@ export default function EditorPage() {
       )
     : null;
 
-  const masterSelectedTextEl = isSlideMasterOpen && selectedMasterElementId
-    ? (() => {
-        // Element may be in master elements OR in the selected layout's elements
-        const masterEl = (presentation?.slideset?.master?.elements?.text ?? [])
-          .find((t) => t.id === selectedMasterElementId);
-        if (masterEl) return masterEl;
-        if (selectedMasterLayoutId) {
-          const layout = (presentation?.slideset?.layouts ?? [])
-            .find((l) => l["layout-id"] === selectedMasterLayoutId);
-          return (layout?.elements?.text ?? []).find((t) => t.id === selectedMasterElementId) ?? null;
-        }
-        return null;
-      })()
+  const masterSelectedTextEl = isSlideMasterOpen
+    ? findMasterTextElement(presentation, selectedMasterLayoutId, selectedMasterElementId)
     : null;
 
   const activeTextEl = isSlideMasterOpen ? masterSelectedTextEl : selectedTextEl;
   const activeElementId = isSlideMasterOpen ? selectedMasterElementId : selectedElementId;
   const activeSelectionForFormatting = isSlideMasterOpen ? masterActiveSelection : activeSelection;
-
-  const paragraphFormatting = activeTextEl?.paragraphs?.[0]?.formatting ?? {};
-  const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
-  const placeholderFormatting = activeTextEl && !isSlideMasterOpen
-    ? getPlaceholderFormatting(presentation, selectedSlide, activeTextEl)
-    : {};
-  const effectiveFormatting = resolveEffectiveFormatting(masterFormatting, placeholderFormatting, paragraphFormatting);
-
   const isEditingSelected = isSlideMasterOpen
     ? !!masterActiveSelection
     : editingTextElementId === selectedElementId;
-  const hasRealSelection =
-    activeSelectionForFormatting &&
-    activeSelectionForFormatting.elementId === activeElementId &&
-    !(activeSelectionForFormatting.paragraphIdx === (activeSelectionForFormatting.endParagraphIdx ?? activeSelectionForFormatting.paragraphIdx) &&
-      activeSelectionForFormatting.rangeStart === activeSelectionForFormatting.rangeEnd);
-  const selectionFormatting = hasRealSelection
-    ? { ...effectiveFormatting, ...(getSelectionFormatting(activeTextEl, activeSelectionForFormatting) ?? {}) }
-    : null;
-  const currentFormatting = selectionFormatting
-    ? { ...selectionFormatting, ...pendingFormatting }
-    : computeCurrentFormatting({
-        isEditing: isEditingSelected,
-        activeSelection: activeSelectionForFormatting,
-        selectedElementId: activeElementId,
-        selectedTextEl: activeTextEl,
-        effectiveFormatting,
-        pendingFormatting,
-      });
 
-  const applyFormatting = (elementId, updates) => {
-    const { runUpdates, paraUpdates } = splitFormattingUpdates(updates);
+  const { currentFormatting, hasRealSelection } = computeFormattingState({
+    presentation,
+    selectedSlide,
+    activeTextEl,
+    activeElementId,
+    activeSelectionForFormatting,
+    isSlideMasterOpen,
+    isEditingSelected,
+    pendingFormatting,
+  });
 
-    const sel = activeSelectionRef.current;
-    const hasRealSelection =
-      sel && sel.elementId === elementId &&
-      !(sel.paragraphIdx === (sel.endParagraphIdx ?? sel.paragraphIdx) && sel.rangeStart === sel.rangeEnd);
-
-    if (hasRealSelection) {
-      if (Object.keys(runUpdates).length > 0)
-        updateTextRangeFormatting(elementId, sel.paragraphIdx, sel.rangeStart, sel.endParagraphIdx ?? sel.paragraphIdx, sel.rangeEnd, runUpdates);
-    } else if (editingTextElementIdRef.current === elementId) {
-      if (Object.keys(runUpdates).length > 0) {
-        // Base: run-level keys from currentFormatting (cursor position), excluding "mixed" values.
-        // This preserves bold when user adds italic (and vice-versa) without bringing in
-        // paragraph-level or "mixed" values that would corrupt buildPendingFormattingStyles.
-        const cursorRunBase = Object.fromEntries(
-          Object.entries(currentFormatting).filter(([k, v]) => RUN_LEVEL_KEYS.has(k) && v !== "mixed")
-        );
-        setPendingFormatting((prev) => ({ ...cursorRunBase, ...prev, ...runUpdates }));
-      }
-    } else {
-      if (Object.keys(runUpdates).length > 0) updateTextElementFormatting(elementId, runUpdates);
-    }
-
-    if (Object.keys(paraUpdates).length > 0) updateTextElementFormatting(elementId, paraUpdates);
-  };
+  const applyFormatting = useApplyFormatting({
+    activeSelectionRef,
+    editingTextElementIdRef,
+    currentFormatting,
+    updateTextRangeFormatting,
+    updateTextElementFormatting,
+    setPendingFormatting,
+  });
 
   const handleFormatChange = (updates) => {
     if (!activeElementId || !activeTextEl) return;

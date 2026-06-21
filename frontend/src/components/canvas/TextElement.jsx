@@ -12,7 +12,7 @@ import {
   resolveTextStyle,
   resolveEffectiveFormatting,
 } from "../../core/text/textFormatting";
-import { getListMarker } from "../../core/utils/listUtils";
+import { getListMarker, getListIndent } from "../../core/utils/listUtils";
 import {
   getCaretOffset,
   setCaretOffset,
@@ -108,7 +108,7 @@ export default function TextElement({
   const listLevel = formatting["indent-level"] ?? 0;
   const listMarker = formatting["list-marker"] ?? "•";
   const listNumberedStyle = formatting["list-numbered-style"] ?? "decimal";
-  const listIndent = listType ? `${(listLevel + 1) * 24}px` : "0px";
+  const listIndent = getListIndent(listLevel, listType);
 
   // Save current selection offsets (called from onMouseUp / onKeyUp inside contentEditable).
   // Using these events (not selectionchange) avoids false triggers from toolbar clicks.

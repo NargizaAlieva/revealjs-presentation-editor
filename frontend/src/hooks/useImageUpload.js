@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { storeMediaFile } from "../core/persistence/persistenceFacade";
-import { createImageMediaElement } from "../core/model/mediaDefaults";
+import { createImageMediaElement } from "../core/operations/mediaOperations";
 
 export function useImageUpload(addMedia) {
   const handleImageUpload = useCallback(

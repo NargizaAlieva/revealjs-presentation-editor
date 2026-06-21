@@ -8,19 +8,8 @@ import {
   MdFormatAlignRight,
   MdFormatAlignJustify,
 } from "react-icons/md";
-
-const DEFAULT_FONTS = [
-  "Arial",
-  "Georgia",
-  "Times New Roman",
-  "Courier New",
-  "Verdana",
-  "Trebuchet MS",
-  "Impact",
-  "Comic Sans MS",
-  "Source Sans Pro",
-  "Roboto",
-];
+import { getAvailableFonts } from "../../core/model/fontConfig";
+import { parseFormattingForDisplay } from "../../core/text/textFormatting";
 
 const stop = (event) => {
   event.preventDefault();
@@ -52,20 +41,9 @@ export default function FormatToolbar({
 
   const fmt = (updates) => onFormatTextElement(elementId, updates);
 
-  const presentationFonts = (presentation?.slideset?.fonts ?? [])
-    .map((f) => f["font-id"])
-    .filter(Boolean);
-  const fonts = [
-    ...presentationFonts,
-    ...DEFAULT_FONTS.filter((f) => !presentationFonts.includes(f)),
-  ];
-
-  const currentSize = formatting.size === "mixed" ? "" : parseInt(formatting.size ?? "24", 10);
-  const currentFont = formatting.font === "mixed" ? "" : (formatting.font ?? fonts[0] ?? "Arial");
-  const currentAlign = formatting.align === "mixed" ? null : (formatting.align ?? "left");
-  const currentColor = formatting.color ?? "#111111";
-  const currentHighlight = formatting.highlight ?? "transparent";
-  const currentLineSpacing = parseFloat(formatting["line-spacing"] ?? "1.15");
+  const fonts = getAvailableFonts(presentation);
+  const { currentSize, currentFont, currentAlign, currentColor, currentHighlight, currentLineSpacing } =
+    parseFormattingForDisplay(formatting, fonts[0]);
 
   // Allow paste from same element only when text is selected (intra-element format painting)
   const hasPaste =
@@ -238,9 +216,6 @@ export default function FormatToolbar({
               <span className="ft-color-arrow">▾</span>
             </button>
 
-            {/* Portal — рендерится в document.body, вне zoom-трансформа канваса.
-              Иначе position:fixed считается от трансформированного предка,
-              и пикер уходит далеко от тулбара. */}
             {showColorPicker &&
               createPortal(
                 <ColorPicker

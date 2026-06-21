@@ -1,5 +1,14 @@
 import { getSlides, setSlides } from "../utils/presentationUtils";
 
+// Find an element by id across text and media arrays. Returns { element, type } or null.
+export const findElementInSlide = (textElements, mediaElements, elementId) => {
+  const text = textElements.find((el) => el.id === elementId);
+  if (text) return { element: text, type: "text" };
+  const media = mediaElements.find((el) => el.id === elementId);
+  if (media) return { element: media, type: "media" };
+  return null;
+};
+
 // Returns a human-readable label for any slide element (text or media).
 export const getElementLabel = (element) => {
   if (!element) return null;
