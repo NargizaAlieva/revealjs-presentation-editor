@@ -16,22 +16,13 @@ export const createEventBus = (reactDispatch, getState, { storageKey } = {}) => 
       try {
         reactDispatch(event);
 
-        // Persist autosave toggle as a side-effect here (not in the reducer,
-        // which must remain pure). Wrapped in try/catch — localStorage may be
-        // unavailable in private-browsing or quota-exceeded scenarios.
         if (event.type === EditorEventType.PRESENTATION.TOGGLE_AUTOSAVE) {
           try {
             const nextEnabled = !getState()?.autosaveEnabled;
             setSetting(AUTOSAVE_SETTING_KEY, String(nextEnabled));
-          } catch {
-            // localStorage unavailable — setting won't survive a reload, but
-            // the in-memory toggle still works for the current session.
-          }
+          } catch {}
         }
 
-        // Yield to React via a microtask so that stateRef (updated by
-        // useLayoutEffect after reactDispatch) is current before we read it.
-        // queueMicrotask is faster and more predictable than setTimeout(0).
         await new Promise((resolve) => queueMicrotask(resolve));
 
         if (event.type === EditorEventType.PRESENTATION.SAVE) {

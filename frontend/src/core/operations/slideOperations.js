@@ -1,6 +1,5 @@
 import { createId, getSlides, setSlides } from "../utils/presentationUtils";
 
-// Sentinel value meaning "use the theme background color" (no custom per-slide background)
 export const TRANSPARENT_SLIDE_BG = "#FFFFFFFF";
 
 const getLayouts = (presentation) =>

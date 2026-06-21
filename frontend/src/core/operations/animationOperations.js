@@ -41,7 +41,6 @@ export const updateAnimation = (presentation, slideIndex, animationId, updates) 
   return setSlides(presentation, slides);
 };
 
-// Build a new animation model object with sensible defaults.
 export const createAnimation = (elementId, effect, sequence) => ({
   id: elementId,
   sequence,

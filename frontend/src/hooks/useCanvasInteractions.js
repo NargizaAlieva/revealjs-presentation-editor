@@ -25,7 +25,6 @@ export function useCanvasInteractions({
   const [draggingElementId, setDraggingElementId] = useState(null);
   const [draggingMediaId, setDraggingMediaId] = useState(null);
 
-  // resizingState хранит начальное состояние + направление ручки
   const [resizingState, setResizingState] = useState(null);
 
   const [rotatingElement, setRotatingElement] = useState(null);
@@ -91,7 +90,6 @@ export function useCanvasInteractions({
         );
       }
 
-      // ── drag media ─────────────────────────────────────────────────
       if (draggingMediaId) {
         const media = mediaElements.find((e) => e.id === draggingMediaId);
         if (!media) return;
@@ -108,7 +106,6 @@ export function useCanvasInteractions({
         );
       }
 
-      // ── resize text (8 направлений) ────────────────────────────────
       if (resizingState?.type === "text") {
         const { newX, newY, newW, newH } = computeResize(
           resizingState.dir,
@@ -121,7 +118,6 @@ export function useCanvasInteractions({
         onResizeTextElement(resizingState.id, newW, newH);
       }
 
-      // ── resize media (8 направлений) ───────────────────────────────
       if (resizingState?.type === "media") {
         const { newX, newY, newW, newH } = computeResize(
           resizingState.dir,
@@ -134,7 +130,6 @@ export function useCanvasInteractions({
         onResizeMediaElement(resizingState.id, newW, newH);
       }
 
-      // ── rotate text ────────────────────────────────────────────────
       if (rotatingElement?.type === "text") {
         const el = textElements.find((e) => e.id === rotatingElement.id);
         if (!el) return;
@@ -150,7 +145,6 @@ export function useCanvasInteractions({
         onRotateTextElement?.(rotatingElement.id, snapped);
       }
 
-      // ── rotate media ───────────────────────────────────────────────
       if (rotatingElement?.type === "media") {
         const media = mediaElements.find((e) => e.id === rotatingElement.id);
         if (!media) return;
@@ -231,7 +225,6 @@ export function useCanvasInteractions({
     [mediaElements, onBeginHistory, onSelectElement, zoomScale],
   );
 
-  // dir: 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
   const startResizingText = useCallback(
     (event, textElementId, dir = "se") => {
       event.preventDefault();

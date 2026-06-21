@@ -160,7 +160,6 @@ export const DESIGN_THEMES = [
   },
 ];
 
-// Update a single color-theme entry by css-variable-name, preserving the original alpha channel.
 export const updateThemeColor = (colorTheme, cssVariableName, newHex6) => {
   return (colorTheme ?? []).map((entry) => {
     if (entry["css-variable-name"] !== cssVariableName) return entry;
@@ -172,13 +171,11 @@ export const updateThemeColor = (colorTheme, cssVariableName, newHex6) => {
   });
 };
 
-// Return a new colorTheme array with the bg-light entry updated to the given 9-digit hex color.
 export const updateThemeBackground = (colorTheme, hex9Color) =>
   (colorTheme ?? []).map((e) =>
     e["css-variable-name"] === "bg-light" ? { ...e, color: hex9Color } : e,
   );
 
-// Minimal default color theme used as a fallback when a presentation has no theme configured
 export const DEFAULT_COLOR_THEME = [
   { "css-variable-name": "bg-light",   color: "#ffffff" },
   { "css-variable-name": "bg-dark",    color: "#191919" },
@@ -188,7 +185,6 @@ export const DEFAULT_COLOR_THEME = [
   { "css-variable-name": "accent2",    color: "#7c3aed" },
 ];
 
-// Color picker palette columns used in the background color picker
 export const THEME_PALETTE_COLUMNS = [
   ["#FFFFFF", "#F2F2F2", "#D9D9D9", "#BFBFBF", "#A6A6A6", "#808080"],
   ["#000000", "#808080", "#595959", "#404040", "#262626", "#0D0D0D"],

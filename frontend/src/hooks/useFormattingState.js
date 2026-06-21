@@ -8,7 +8,6 @@ import {
 } from "../core/text/textFormatting";
 import { getPlaceholderFormatting } from "../core/render/slidesetRenderUtils";
 
-// Finds a text element in master elements or in a layout's elements.
 export const findMasterTextElement = (presentation, selectedMasterLayoutId, selectedMasterElementId) => {
   if (!selectedMasterElementId) return null;
   const masterEl = (presentation?.slideset?.master?.elements?.text ?? [])
@@ -22,7 +21,6 @@ export const findMasterTextElement = (presentation, selectedMasterLayoutId, sele
   return null;
 };
 
-// Returns the current formatting state for the active text element.
 export const computeFormattingState = ({
   presentation,
   selectedSlide,
@@ -72,8 +70,6 @@ export const computeFormattingState = ({
   return { currentFormatting, hasRealSelection, effectiveFormatting };
 };
 
-// Builds an applyFormatting callback that dispatches to the correct core operation
-// depending on whether there is a real text selection, cursor, or no editing.
 export const useApplyFormatting = ({
   activeSelectionRef,
   editingTextElementIdRef,
@@ -122,6 +118,5 @@ export const useApplyFormatting = ({
       if (Object.keys(paraUpdates).length > 0)
         updateTextElementFormatting(elementId, paraUpdates);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentFormatting, updateTextRangeFormatting, updateTextElementFormatting, setPendingFormatting],
   );

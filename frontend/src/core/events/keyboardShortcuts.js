@@ -1,5 +1,3 @@
-// Pure keyboard shortcut detection — no DOM side effects, no React.
-
 export const isEditableTarget = (target) =>
   target instanceof HTMLInputElement ||
   target instanceof HTMLTextAreaElement ||

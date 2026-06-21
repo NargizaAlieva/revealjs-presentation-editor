@@ -1,17 +1,11 @@
-// DOM selection utilities — require browser environment (Range, Selection APIs).
-
-// Parse a DOM element's inline style into a run formatting object
 export const parseSpanStyle = (style) => {
   const f = {};
-  // Store weight even when "normal" — needed so an explicit normal span correctly
-  // overrides a bold ancestor when the spans are nested by onBeforeInput insertion.
+  
   if (style.fontWeight)
     f.weight = (style.fontWeight === "400") ? "normal" : style.fontWeight;
   if (style.fontStyle === "italic") f.italics = true;
   if (style.color) f.color = style.color;
   if (style.fontSize) f.size = style.fontSize;
-  // Browser normalises multi-word names: Times New Roman → "Times New Roman" (with quotes).
-  // Strip surrounding CSS quotes so the stored value matches the SELECT option values.
   if (style.fontFamily) f.font = style.fontFamily.replace(/^["']|["']$/g, "").trim();
   if (style.textDecoration && style.textDecoration !== "none")
     f["text-decoration"] = style.textDecoration;
@@ -20,7 +14,6 @@ export const parseSpanStyle = (style) => {
   return f;
 };
 
-// Walk contentEditable DOM and convert it back to the paragraphs data model
 export const domToParagraphs = (el, existingParagraphs) => {
   const paragraphs = [[]];
 
@@ -67,7 +60,6 @@ export const domToParagraphs = (el, existingParagraphs) => {
   });
 };
 
-// Get the caret position as a global character offset within contentEditable
 export const getCaretOffset = (el) => {
   const sel = window.getSelection();
   if (!sel?.rangeCount) return 0;
@@ -78,7 +70,6 @@ export const getCaretOffset = (el) => {
   return pre.toString().length;
 };
 
-// Find the text node and local offset for a given global character offset
 export const getNodeAtOffset = (el, targetOffset) => {
   const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
   let chars = 0;
@@ -93,7 +84,6 @@ export const getNodeAtOffset = (el, targetOffset) => {
   return last ? { node: last, offset: last.textContent.length } : null;
 };
 
-// Move the caret to a global character offset
 export const setCaretOffset = (el, offset) => {
   const pos = getNodeAtOffset(el, offset);
   if (!pos) return;
@@ -105,7 +95,6 @@ export const setCaretOffset = (el, offset) => {
   sel?.addRange(range);
 };
 
-// Convert { paragraphIdx, charOffset } to global char offset across paragraphs
 export const paragraphToGlobal = (paragraphs, pIdx, charOffset) => {
   let global = charOffset;
   for (let i = 0; i < pIdx; i++) {
@@ -114,8 +103,6 @@ export const paragraphToGlobal = (paragraphs, pIdx, charOffset) => {
   return global;
 };
 
-// Restore a saved selection (paragraphIdx / rangeStart / endParagraphIdx / rangeEnd)
-// back into the DOM after innerHTML re-render
 export const restoreSelectionToDOM = (el, paragraphs, sel) => {
   if (!sel) return;
   const { paragraphIdx, rangeStart, endParagraphIdx, rangeEnd } = sel;
@@ -133,13 +120,6 @@ export const restoreSelectionToDOM = (el, paragraphs, sel) => {
   domSel?.addRange(range);
 };
 
-// Get cursor position as { paragraphIdx, rangeStart, rangeEnd } for a collapsed selection.
-// Returns null when selection is non-collapsed or outside the given element.
-//
-// Mirrors domToParagraphs paragraph-boundary logic:
-//   - <br>       → always starts a new paragraph
-//   - <div>/<p>  → starts a new paragraph only when the current one already has content
-//                  (matches Chrome's behaviour of wrapping lines in <div> after Enter)
 export const getCollapsedCursorOffset = (el) => {
   const sel = window.getSelection();
   if (!sel?.rangeCount || !sel.isCollapsed) return null;
@@ -151,7 +131,6 @@ export const getCollapsedCursorOffset = (el) => {
   let found = false;
   let currentParaHasContent = false;
 
-  // Count text/paragraph boundaries inside a node without checking for the cursor.
   const countContent = (node) => {
     if (node.nodeType === Node.TEXT_NODE) {
       rangeStart += node.textContent.length;
@@ -171,9 +150,6 @@ export const getCollapsedCursorOffset = (el) => {
   const walk = (node) => {
     if (found) return;
 
-    // Block elements (DIV/P) create a paragraph boundary if current paragraph has content.
-    // This increment must happen BEFORE we check whether this node is the startContainer,
-    // so that a cursor at the start of a new <div> gets the correct paragraphIdx.
     const isBlock = node.nodeName === "DIV" || node.nodeName === "P";
     if (isBlock && currentParaHasContent) {
       paragraphIdx++;
@@ -185,8 +161,6 @@ export const getCollapsedCursorOffset = (el) => {
       if (node.nodeType === Node.TEXT_NODE) {
         rangeStart += range.startOffset;
       } else {
-        // Element node: range.startOffset is a child-node index, not a char offset.
-        // Count the content of the first <startOffset> children to get the char position.
         for (let i = 0; i < range.startOffset; i++) countContent(node.childNodes[i]);
       }
       found = true;
@@ -205,9 +179,6 @@ export const getCollapsedCursorOffset = (el) => {
     }
   };
 
-  // Special case: cursor is directly inside the root element (startContainer === el).
-  // range.startOffset is a child-node index, not a character offset.
-  // Count content of the first <startOffset> children to get the correct position.
   if (el === range.startContainer) {
     for (let i = 0; i < range.startOffset; i++) countContent(el.childNodes[i]);
     return { paragraphIdx, rangeStart, rangeEnd: rangeStart };
@@ -215,13 +186,9 @@ export const getCollapsedCursorOffset = (el) => {
 
   el.childNodes.forEach(walk);
 
-  // If walk completed without finding startContainer, return the accumulated position.
-  // This handles edge cases where the cursor sits logically at the end of all content.
   return { paragraphIdx, rangeStart, rangeEnd: rangeStart };
 };
 
-// Get current DOM selection as { paragraphIdx, rangeStart, endParagraphIdx, rangeEnd }
-// Returns null when selection is collapsed or outside the given element
 export const getSelectionOffsets = (el) => {
   const sel = window.getSelection();
   if (!sel?.rangeCount || sel.isCollapsed) return null;

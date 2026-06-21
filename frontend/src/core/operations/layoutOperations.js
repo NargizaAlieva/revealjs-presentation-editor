@@ -3,7 +3,6 @@ import { createId, getSlides, setSlides } from "../utils/presentationUtils";
 const getLayouts = (presentation) =>
   presentation?.slideset?.layouts ?? [];
 
-// Map layouts to simple {id, label} display objects for UI dropdowns and pickers.
 export const getLayoutDisplayList = (presentation) =>
   getLayouts(presentation).map((l) => ({
     id: l["layout-id"],
@@ -100,8 +99,6 @@ const updateElementFromPlaceholder = (element, placeholders, isModified) => {
   return updated;
 };
 
-// ─── Placeholder pseudo-elements (for editing layouts in Slide Master view) ───
-
 const PLACEHOLDER_PROMPTS = {
   title: "Click to edit Master title style",
   body: "Click to edit Master text styles",
@@ -175,8 +172,6 @@ export const renameLayout = (presentation, layoutId, name) => {
   return setLayouts(presentation, updatedLayouts);
 };
 
-// Add a fixed element (text or media) to a layout — appears read-only on all
-// slides that use this layout, similar to how master elements propagate.
 export const addLayoutElement = (presentation, layoutId, elementType, element) => {
   const layouts = getLayouts(presentation);
   const updatedLayouts = layouts.map((l) => {
@@ -188,7 +183,6 @@ export const addLayoutElement = (presentation, layoutId, elementType, element) =
   return setLayouts(presentation, updatedLayouts);
 };
 
-// Update the text content (string) of a layout text element — mirrors updateMasterTextContent.
 export const updateLayoutElementTextContent = (presentation, layoutId, elementId, text) => {
   const layouts = getLayouts(presentation);
   const updatedLayouts = layouts.map((l) => {
@@ -212,7 +206,6 @@ export const updateLayoutElementTextContent = (presentation, layoutId, elementId
   return setLayouts(presentation, updatedLayouts);
 };
 
-// Update a fixed layout element (position, size, formatting, etc.)
 export const updateLayoutElement = (presentation, layoutId, elementType, elementId, updates) => {
   const layouts = getLayouts(presentation);
   const updatedLayouts = layouts.map((l) => {
@@ -226,7 +219,6 @@ export const updateLayoutElement = (presentation, layoutId, elementType, element
   return setLayouts(presentation, updatedLayouts);
 };
 
-// Delete a fixed layout element.
 export const deleteLayoutElement = (presentation, layoutId, elementType, elementId) => {
   const layouts = getLayouts(presentation);
   const updatedLayouts = layouts.map((l) => {
@@ -238,7 +230,6 @@ export const deleteLayoutElement = (presentation, layoutId, elementType, element
   return setLayouts(presentation, updatedLayouts);
 };
 
-// Update font on all text elements in a layout.
 export const updateLayoutElementsFont = (presentation, layoutId, font) => {
   const layouts = getLayouts(presentation).map((l) => {
     if (l["layout-id"] !== layoutId) return l;
@@ -259,8 +250,6 @@ export const updateLayoutElementsFont = (presentation, layoutId, font) => {
   return setLayouts(presentation, layouts);
 };
 
-// Add a new placeholder to a layout and create matching empty elements
-// on every slide that uses this layout.
 export const removeLayoutPlaceholder = (presentation, layoutId, placeholderId) => {
   const layout = getLayouts(presentation).find((l) => l["layout-id"] === layoutId);
   if (!layout) return presentation;
@@ -277,8 +266,6 @@ export const addLayoutPlaceholder = (presentation, layoutId, placeholder) => {
   return propagateLayoutChanges(presentation, layoutId, updatedPlaceholders);
 };
 
-// Update a single placeholder's geometry/formatting on a layout and
-// propagate the change to every slide that uses this layout.
 export const updateLayoutPlaceholder = (presentation, layoutId, placeholderId, updates) => {
   const layout = getLayouts(presentation).find((l) => l["layout-id"] === layoutId);
   if (!layout) return presentation;

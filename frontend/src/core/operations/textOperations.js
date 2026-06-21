@@ -5,14 +5,11 @@ const createParagraphId = () =>
     ? `paragraph-${globalThis.crypto.randomUUID()}`
     : `paragraph-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-// Keys that belong only to runs (character-level), not to paragraphs
 const RUN_ONLY_KEYS = new Set(["super-sub-script"]);
-// Keys that belong only to paragraphs, never to runs
 const PARAGRAPH_ONLY_KEYS = new Set([
   "align", "vertical-align", "line-spacing", "list-type",
   "list-style", "indent-level", "margin",
 ]);
-// Keys that can exist on both runs and paragraphs (run overrides paragraph)
 const SHARED_KEYS = new Set(["weight", "italics", "text-decoration", "color", "size", "font", "highlight"]);
 
 export const addTextElement = (presentation, slideIndex, textElement) => {
@@ -111,8 +108,6 @@ export const updateTextFormatting = (
         Object.entries(formattingUpdate).filter(([k]) => RUN_ONLY_KEYS.has(k)),
       );
 
-      // Keys being set at paragraph level that should be stripped from runs
-      // so the paragraph-level value applies uniformly to the whole element.
       const sharedKeysBeingSet = Object.keys(paragraphUpdate).filter((k) => SHARED_KEYS.has(k));
 
       const updatedParagraphs = (textElement.paragraphs ?? []).map(
@@ -195,7 +190,6 @@ export const updateTextRangeFormatting = (
   const slide = slides[slideIndex];
   if (!slide) return presentation;
 
-  // Strip "mixed" sentinel values — they are UI-only and must never be stored in run data
   const cleanFormatting = Object.fromEntries(
     Object.entries(formatting).filter(([, v]) => v !== "mixed"),
   );
@@ -211,7 +205,6 @@ export const updateTextRangeFormatting = (
       const pRangeStart = pIdx === startParagraphIdx ? rangeStart : 0;
       const pRangeEnd = pIdx === endParagraphIdx ? rangeEnd : paraLen;
 
-      // Nothing to format in this paragraph
       if (pRangeStart >= pRangeEnd) return para;
 
       const newRuns = [];

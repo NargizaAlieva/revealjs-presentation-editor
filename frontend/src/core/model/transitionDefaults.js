@@ -21,5 +21,4 @@ export const TRANSITION_SPEEDS = [
   { value: 1.5,  label: "Slow" },
 ];
 
-// Duration in ms to keep the "playing" state active during a transition preview
 export const PREVIEW_TRANSITION_MS = 900;

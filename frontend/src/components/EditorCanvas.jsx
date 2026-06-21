@@ -180,7 +180,12 @@ export default function EditorCanvas({
 
   useEffect(() => {
     const handleKeyDown = (event) => {
-      const editable = isEditableTarget(event.target);
+      const target = event.target;
+      const inCanvas = containerRef.current?.contains(target);
+      const onBody = target === document.body || target === document.documentElement;
+      if (!inCanvas && !onBody) return;
+
+      const editable = isEditableTarget(target);
 
       if (isUndoShortcut(event) && !editable) {
         event.preventDefault();
@@ -227,13 +232,10 @@ export default function EditorCanvas({
       }
     };
 
-    const container = containerRef.current;
-    if (!container) return;
-
-    container.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      container.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [
     selectedElementId,

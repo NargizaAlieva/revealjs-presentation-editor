@@ -5,7 +5,6 @@ import { storageAdapter } from "./storageAdapter";
 
 const DEFAULT_STORAGE_KEY = "presentation";
 const DEFAULT_AUTOSAVE_DELAY = 2000;
-// Набор текста сохраняется с увеличенным debounce, чтобы не перегружать IDB
 const TEXT_UPDATE_AUTOSAVE_DELAY = 5000;
 
 export const idbSet = (key, value) => storageAdapter.set(key, value);
@@ -92,7 +91,6 @@ export const createAutosaveService = (
   const saveImmediately = () => persist();
   const shouldAutosave = (eventType) => AUTO_SAVE_EVENTS.has(eventType);
 
-  // TEXT.UPDATE использует более длинный debounce, остальные — стандартный
   const schedule = (eventType) => {
     if (eventType === EditorEventType.TEXT.UPDATE) {
       scheduleTextAutosave();

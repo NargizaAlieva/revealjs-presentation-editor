@@ -1,5 +1,3 @@
-// Pure geometry utilities for canvas element manipulation — no DOM, no React.
-
 export const SNAP_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315, 360];
 export const SNAP_THRESHOLD = 5;
 
@@ -13,11 +11,6 @@ export const snapAngle = (angle) => {
   return normalized;
 };
 
-// Compute new position and size when resizing an element by dragging a handle.
-// dir: 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
-// initial: { x, y, width, height, mouseX, mouseY }
-// mouse: { x, y } — current mouse position
-// Returns: { newX, newY, newW, newH }
 export const computeResize = (dir, initial, mouse, canvasWidth, canvasHeight) => {
   const { x, y, width, height } = initial;
   const dx = mouse.x - initial.mouseX;
@@ -50,11 +43,9 @@ export const computeResize = (dir, initial, mouse, canvasWidth, canvasHeight) =>
   return { newX, newY, newW, newH };
 };
 
-// Compute rotation angle (degrees) from element center to current mouse position
 export const getRotationAngle = (centerX, centerY, mouseX, mouseY) =>
   (Math.atan2(mouseY - centerY, mouseX - centerX) * 180) / Math.PI + 90;
 
-// Compute rotation angle from an element's bounding-box center to the mouse — encapsulates center calculation.
 export const getElementRotationAngle = (element, mouseX, mouseY) => {
   const cx = (element.position?.x ?? 0) + (element.width ?? 300) / 2;
   const cy = (element.position?.y ?? 0) + (element.height ?? 200) / 2;

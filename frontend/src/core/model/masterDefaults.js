@@ -1,5 +1,3 @@
-// Default placeholder and element definitions for the Slide Master model.
-
 export const TITLE_PLACEHOLDER = {
   "placeholder-id": "title-placeholder",
   position: { x: 120, y: 60 },
@@ -18,7 +16,6 @@ export const FOOTER_PLACEHOLDERS = [
   { "placeholder-id": "footer-page",   position: { x: 960, y: 640 }, width: 260, height: 40, type: "text", role: "footer", padding: { css: "4px" }, background: "#FFFFFF00", formatting: { size: "20px", align: "center" }, promptText: "#" },
 ];
 
-// Factory: build a master text element with proper paragraph/run structure
 export const createMasterTextElement = (id, position, width, height, text, formatting) => ({
   id,
   "placeholder-id": null,
@@ -38,7 +35,6 @@ export const createMasterTextElement = (id, position, width, height, text, forma
   }],
 });
 
-// Factory: build a generic text element for slide layouts or master
 export const createTextElementDefaults = (zIndex = 4, labelText = "Text") => ({
   id: crypto.randomUUID(),
   "placeholder-id": null,

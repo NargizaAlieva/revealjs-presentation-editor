@@ -2,7 +2,6 @@ const DB_NAME = "editor-db";
 const DB_VERSION = 1;
 const STORE_NAME = "keyval";
 
-// Singleton promise — открываем соединение один раз и переиспользуем
 let dbPromise = null;
 
 function openDB() {
@@ -14,7 +13,7 @@ function openDB() {
       };
       request.onsuccess = (e) => resolve(e.target.result);
       request.onerror = (e) => {
-        dbPromise = null; // сбрасываем, чтобы следующий вызов попробовал снова
+        dbPromise = null; 
         reject(e.target.error);
       };
     });

@@ -1,7 +1,3 @@
-// Pure text search and replace operations over the presentation data model.
-
-// Find all occurrences of query across all slides → paragraphs → runs.
-// Returns array of match descriptors with location and character offsets.
 export const findMatches = (slides, query) => {
   if (!query.trim()) return [];
   const q = query.toLowerCase();
@@ -27,12 +23,9 @@ export const findMatches = (slides, query) => {
   return results;
 };
 
-// Apply a single replacement at the given match offset within a run's text.
 export const applyReplacement = (originalText, match, replacement) =>
   originalText.slice(0, match.start) + replacement + originalText.slice(match.end);
 
-// Apply all replacements for a single element, processing in reverse order
-// to avoid offset drift when replacement length differs from match length.
 export const applyAllReplacements = (elementMatches, originalText, replacement) => {
   const sorted = [...elementMatches].sort((a, b) => b.start - a.start);
   let text = originalText;
@@ -42,8 +35,6 @@ export const applyAllReplacements = (elementMatches, originalText, replacement) 
   return text;
 };
 
-// Group all matches by element and compute the replacement text for each.
-// Returns an array of { slideIndex, elementId, newText } ready for dispatch.
 export const batchReplaceAll = (matches, slides, replacement) => {
   const byElement = new Map();
   matches.forEach((m) => {

@@ -1,4 +1,3 @@
-// Renders an array of theme decoration shapes into SVG elements.
 export const renderShapes = (shapes) =>
   (shapes ?? []).map((s, i) => {
     const base = {

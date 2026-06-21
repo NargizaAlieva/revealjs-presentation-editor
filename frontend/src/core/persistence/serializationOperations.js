@@ -1,7 +1,6 @@
 import { validateSlideset } from "../model/slidesetValidation";
 import { migrateParagraphFormatting } from "../render/slidesetRenderUtils";
 
-// Collect all unique font names used across the presentation and populate slideset.fonts[]
 const collectUsedFonts = (presentation) => {
   const fontNames = new Set();
 
@@ -12,17 +11,14 @@ const collectUsedFonts = (presentation) => {
   const slideset = presentation?.slideset;
   if (!slideset) return presentation;
 
-  // master formatting
   scanFormatting(slideset.master?.formatting);
 
-  // layout placeholder formatting
   for (const layout of slideset.layouts ?? []) {
     for (const ph of layout.placeholders ?? []) {
       scanFormatting(ph.formatting);
     }
   }
 
-  // master elements
   for (const el of slideset.master?.elements?.text ?? []) {
     for (const para of el.paragraphs ?? []) {
       scanFormatting(para.formatting);
@@ -30,7 +26,6 @@ const collectUsedFonts = (presentation) => {
     }
   }
 
-  // slides text elements
   for (const slide of slideset.slides ?? []) {
     for (const el of slide.contents?.text ?? []) {
       for (const para of el.paragraphs ?? []) {
@@ -40,7 +35,6 @@ const collectUsedFonts = (presentation) => {
     }
   }
 
-  // Build fonts array: keep existing entries (preserve font-file paths), add new ones
   const existingFonts = slideset.fonts ?? [];
   const existingIds = new Set(existingFonts.map((f) => f["font-id"]));
   const merged = [

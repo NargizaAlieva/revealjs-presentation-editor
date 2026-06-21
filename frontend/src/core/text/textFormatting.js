@@ -1,12 +1,8 @@
-// Pure formatting functions — no DOM dependency.
-
-// Keys that apply at run level (character-level); all others are paragraph-level.
 export const RUN_LEVEL_KEYS = new Set([
   "weight", "italics", "text-decoration", "color", "size", "font",
   "super-sub-script", "highlight",
 ]);
 
-// Split a formatting update object into run-level and paragraph-level parts.
 export const splitFormattingUpdates = (updates) => {
   const runUpdates = {};
   const paraUpdates = {};
@@ -17,8 +13,6 @@ export const splitFormattingUpdates = (updates) => {
   return { runUpdates, paraUpdates };
 };
 
-// Return the effective formatting of the run that contains the cursor position.
-// Falls back to the last run if cursor is at the end, or paragraph formatting if no runs.
 export const getFormattingAtCursor = (textElement, selection) => {
   if (!selection) return {};
   const paragraphs = textElement?.paragraphs ?? [];
@@ -27,8 +21,6 @@ export const getFormattingAtCursor = (textElement, selection) => {
   const paraFmt = para.formatting ?? {};
   const runs = para.runs ?? [];
 
-  // If cursor is at the very start of a non-first paragraph (i.e. just after Enter),
-  // inherit the formatting of the last character of the previous paragraph.
   if (selection.rangeStart === 0 && selection.paragraphIdx > 0) {
     const prevPara = paragraphs[selection.paragraphIdx - 1];
     if (prevPara) {
@@ -42,7 +34,6 @@ export const getFormattingAtCursor = (textElement, selection) => {
   }
 
   if (!runs.length) return paraFmt;
-  // Look at the character to the LEFT of the cursor (PowerPoint behavior).
   const lookupPos = Math.max(0, selection.rangeStart - 1);
   let offset = 0;
   for (const run of runs) {
@@ -56,10 +47,6 @@ export const getFormattingAtCursor = (textElement, selection) => {
   return { ...paraFmt, ...(runs[runs.length - 1].formatting ?? {}) };
 };
 
-// Compute the effective formatting shown in the toolbar for the three editing states:
-// State 1 (not editing): element-level paragraph formatting merged with master/placeholder
-// State 2 (editing + real selection): run-level formatting of selected range ("mixed" when runs disagree)
-// State 3 (editing + collapsed cursor): run formatting at cursor merged with pendingFormatting
 export const computeCurrentFormatting = ({
   isEditing,
   activeSelection,
@@ -103,7 +90,6 @@ export const computeCurrentFormatting = ({
     return result;
   }
 
-  // State 3: collapsed cursor — show formatting of the run at cursor position
   if (sel && sel.elementId === selectedElementId && selectedTextEl) {
     const cursorFmt = getFormattingAtCursor(selectedTextEl, sel);
     return { ...effectiveFormatting, ...cursorFmt, ...pendingFormatting };
@@ -115,7 +101,6 @@ export const computeCurrentFormatting = ({
 export const escapeHTML = (str) =>
   (str ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-// Normalize bold value from boolean or string to valid CSS font-weight
 export const resolveWeight = (elemValue, phValue, masterValue) => {
   const v = elemValue ?? phValue ?? masterValue;
   if (v === true || v === "bold") return "bold";
@@ -123,14 +108,12 @@ export const resolveWeight = (elemValue, phValue, masterValue) => {
   return v ?? "normal";
 };
 
-// Merge master → placeholder → paragraph formatting layers
 export const resolveEffectiveFormatting = (masterFormatting = {}, placeholderFormatting = {}, paragraphFormatting = {}) => ({
   ...masterFormatting,
   ...placeholderFormatting,
   ...paragraphFormatting,
 });
 
-// Build inline CSS string for a single run's formatting
 export const buildRunStyles = (runFormatting = {}) => {
   const styles = [];
   if (runFormatting.weight != null) {
@@ -149,7 +132,6 @@ export const buildRunStyles = (runFormatting = {}) => {
   return styles.join(";");
 };
 
-// Render runs array to HTML string
 export const runsToHTML = (runs) =>
   (runs ?? []).map((run) => {
     const styles = buildRunStyles(run.formatting ?? {});
@@ -157,11 +139,9 @@ export const runsToHTML = (runs) =>
     return styles ? `<span style="${styles}">${text}</span>` : text;
   }).join("");
 
-// Render paragraphs array to HTML string
 export const paragraphsToHTML = (paragraphs) =>
   (paragraphs ?? []).map((p) => runsToHTML(p.runs)).join("<br>");
 
-// Build inline CSS string for pendingFormatting (used in onBeforeInput span)
 export const buildPendingFormattingStyles = (pendingFormatting = {}) => {
   const styleMap = {
     weight: (v) => `font-weight:${v === true || v === "bold" ? "bold" : "normal"}`,
@@ -186,8 +166,6 @@ export const extractPlainTextFromParagraphs = (paragraphs = [], separator = "\n"
     .map((p) => (p.runs ?? []).map((r) => r.text ?? "").join(""))
     .join(separator);
 
-// Compute formatting of the currently selected runs.
-// Returns "mixed" for keys where selected runs disagree.
 export const getSelectionFormatting = (textElement, selection) => {
   if (!selection) return null;
   const { paragraphIdx, rangeStart, endParagraphIdx, rangeEnd } = selection;
@@ -224,8 +202,6 @@ export const getSelectionFormatting = (textElement, selection) => {
   return result;
 };
 
-// Normalize a formatting object into display-ready values for toolbar controls.
-// Returns consistent types so toolbar components don't need parsing logic.
 export const parseFormattingForDisplay = (formatting = {}, fallbackFont = "Arial") => ({
   currentSize:        formatting.size === "mixed" ? "" : parseInt(formatting.size ?? "24", 10),
   currentFont:        formatting.font === "mixed" ? "" : (formatting.font ?? fallbackFont),

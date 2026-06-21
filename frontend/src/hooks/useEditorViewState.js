@@ -10,7 +10,6 @@ export function useEditorViewState() {
   const [currentView, setCurrentView] = useState("normal");
 
   return {
-    // zoom
     zoom,
     setZoom,
     zoomIn: () => setZoom((z) => Math.min(200, z + 10)),
@@ -18,7 +17,6 @@ export function useEditorViewState() {
     handleCanvasZoom: (delta) =>
       setZoom((z) => Math.min(200, Math.max(25, z + delta))),
 
-    // toolbar/notes
     showUI,
     openUI: () => setShowUI(true),
     closeUI: () => setShowUI(false),

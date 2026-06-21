@@ -41,7 +41,6 @@ export function useEditorState(presentationId) {
         );
       })
       .catch((error) => {
-        // Логируем ошибку, но НЕ удаляем данные — пусть пользователь решает
         console.error("[EditorState] Failed to load presentation from IndexedDB:", error);
       })
       .finally(() => setIsLoading(false));
