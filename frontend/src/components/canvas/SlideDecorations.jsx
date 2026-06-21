@@ -66,7 +66,7 @@ export default function SlideDecorations({ presentation, width, height, hideMast
             overflow: "hidden",
             zIndex: 0,
           }}
-          viewBox={`0 0 ${width} ${height}`}
+          viewBox="0 0 1280 720"
           preserveAspectRatio="none"
         >
           {decorations.shapes.map((shape, i) => {
