@@ -232,13 +232,23 @@ function SlideSizeDropdown({ presentation, onUpdateDimensions }) {
 }
 
 function MasterThumb({ label, isSelected, onClick, presentation, layout, isMaster }) {
+  const containerRef = useRef(null);
+  const [thumbW, setThumbW] = useState(isMaster ? 160 : 140);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => setThumbW(entry.contentRect.width));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const colorThemeStyle = buildColorThemeStyle(presentation);
   const dims = presentation?.slideset?.master?.["slide-dimensions"];
   const width = dims?.width ?? 1280;
   const height = dims?.height ?? 720;
-  const THUMB_W = isMaster ? 160 : 140;
-  const scale = THUMB_W / width;
-  const thumbH = height * scale;
+  const scale = thumbW / width;
+  const thumbH = Math.round(height * scale);
   const bgColor = presentation?.slideset?.master?.["color-theme"]
     ?.find((e) => e["css-variable-name"] === "bg-light")?.color ?? "#fff";
 
@@ -247,7 +257,7 @@ function MasterThumb({ label, isSelected, onClick, presentation, layout, isMaste
       className={`master-thumb-wrap${isSelected ? " selected" : ""}${isMaster ? " is-master" : " is-layout"}`}
       onClick={onClick}
     >
-      <div className="master-thumb-frame" style={{ ...colorThemeStyle, width: THUMB_W, height: thumbH }}>
+      <div ref={containerRef} className="master-thumb-frame" style={{ ...colorThemeStyle, width: "100%", height: thumbH }}>
         <div style={{
           position: "relative", width, height,
           transform: `scale(${scale})`, transformOrigin: "top left",
@@ -621,6 +631,30 @@ export default function SlideMasterView({
 }) {
   const [canvasZoom, setCanvasZoom] = useState(75);
   const canvasAreaRef = useRef(null);
+  const [panelWidth, setPanelWidth] = useState(200);
+  const isDraggingResize = useRef(false);
+  const resizeStartX = useRef(0);
+  const resizeStartWidth = useRef(0);
+
+  const onResizerMouseDown = (e) => {
+    e.preventDefault();
+    isDraggingResize.current = true;
+    resizeStartX.current = e.clientX;
+    resizeStartWidth.current = panelWidth;
+
+    const onMouseMove = (ev) => {
+      if (!isDraggingResize.current) return;
+      const delta = ev.clientX - resizeStartX.current;
+      setPanelWidth(Math.min(400, Math.max(140, resizeStartWidth.current + delta)));
+    };
+    const onMouseUp = () => {
+      isDraggingResize.current = false;
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+  };
 
   const layouts = presentation?.slideset?.layouts ?? [];
   const selectedLayout = selectedMasterLayoutId
@@ -655,7 +689,8 @@ export default function SlideMasterView({
 
   return (
     <div className="slide-master-body slide-master-body--full">
-      <div className="master-panel">
+      <div className="master-panel" style={{ width: panelWidth }}>
+        <div className="master-panel-resizer" onMouseDown={onResizerMouseDown} />
         <MasterThumb
           label="Office Theme"
           isSelected={selectedMasterLayoutId === null}

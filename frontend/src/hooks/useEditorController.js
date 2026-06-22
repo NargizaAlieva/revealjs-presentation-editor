@@ -130,6 +130,7 @@ export function useEditorController() {
     applyTransitionToAll,
     applyLayout,
     resetLayout,
+    addLayout,
     updateLayout,
     deleteLayout,
     renameLayout,
@@ -518,7 +519,7 @@ useEffect(() => {
   const { handleVideoUpload } = useVideoUpload(addMedia);
 
   const handleAddTextElement = useCallback(
-    () => addTextElement(createTextElementDefaults(10, "")),
+    () => addTextElement(createTextElementDefaults(10, "Click to edit text")),
     [addTextElement],
   );
 
@@ -1240,6 +1241,7 @@ useEffect(() => {
     updateTransitionDuration,
     applyLayout,
     resetLayout,
+    addLayout: () => addLayout(selectedMasterLayoutId),
     updateLayout,
     deleteLayout,
     renameLayout,

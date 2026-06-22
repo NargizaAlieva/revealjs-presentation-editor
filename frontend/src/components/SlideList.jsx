@@ -1,7 +1,10 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import "./SlideList.css";
 import SlideThumbnail from "./slides/SlideThumbnail";
 import { getSlideCommentCounts } from "../core/operations/slideOperations";
+
+const MIN_WIDTH = 140;
+const MAX_WIDTH = 400;
 
 export default function SlideList({
   slides,
@@ -14,6 +17,30 @@ export default function SlideList({
 }) {
   const commentCounts = getSlideCommentCounts(slides);
   const listRef = useRef(null);
+  const [panelWidth, setPanelWidth] = useState(220);
+  const isDraggingResize = useRef(false);
+  const startX = useRef(0);
+  const startWidth = useRef(0);
+
+  const onResizerMouseDown = useCallback((e) => {
+    e.preventDefault();
+    isDraggingResize.current = true;
+    startX.current = e.clientX;
+    startWidth.current = panelWidth;
+
+    const onMouseMove = (ev) => {
+      if (!isDraggingResize.current) return;
+      const delta = ev.clientX - startX.current;
+      setPanelWidth(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth.current + delta)));
+    };
+    const onMouseUp = () => {
+      isDraggingResize.current = false;
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+  }, [panelWidth]);
   const itemRefs = useRef([]);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
@@ -81,7 +108,8 @@ export default function SlideList({
   };
 
   return (
-    <aside className="slide-list" ref={listRef}>
+    <aside className="slide-list" ref={listRef} style={{ width: panelWidth }}>
+      <div className="slide-list-resizer" onMouseDown={onResizerMouseDown} />
       {(slides ?? []).map((slide, index) => {
         const slideTitle = slide.title?.content ?? `Slide ${index + 1}`;
         const isHidden = slide.hidden ?? false;

@@ -1,11 +1,10 @@
+import { useRef, useState, useEffect } from "react";
 import { useMediaSrc } from "../../hooks/useMediaSrc";
-import { buildColorThemeStyle } from "../../core/render/revealRenderer";
+import { buildColorThemeStyle, buildTextElementStyle } from "../../core/render/revealRenderer";
 import { extractPlainTextFromParagraphs } from "../../core/text/textFormatting";
+import { getPlaceholderFormatting } from "../../core/render/slidesetRenderUtils";
 import SlideDecorations from "../canvas/SlideDecorations";
 import "./SlideThumbnail.css";
-
-const THUMB_W = 180;
-const THUMB_H = 101; // 16:9
 
 function ThumbnailMedia({ media }) {
   const src = useMediaSrc(media["file-link"]);
@@ -33,15 +32,31 @@ export default function SlideThumbnail({
   presentation,
   commentCount = 0,
 }) {
+  const containerRef = useRef(null);
+  const [thumbW, setThumbW] = useState(160);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => {
+      setThumbW(entry.contentRect.width);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const textElements = slide?.contents?.text ?? [];
   const mediaElements = slide?.contents?.media ?? [];
-  const scale = THUMB_W / slideWidth;
+  const scale = thumbW / slideWidth;
+  const thumbH = Math.round(thumbW * slideHeight / slideWidth);
   const colorThemeStyle = buildColorThemeStyle(presentation);
+  const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
 
   return (
     <div
+      ref={containerRef}
       className="slide-thumbnail"
-      style={{ width: THUMB_W, height: THUMB_H, ...colorThemeStyle }}
+      style={{ width: "100%", height: thumbH, ...colorThemeStyle }}
     >
       {commentCount > 0 && (
         <div
@@ -51,7 +66,6 @@ export default function SlideThumbnail({
           💬 {commentCount}
         </div>
       )}
-      {/* Inner div at full slide size, scaled down — matches EditorCanvas exactly */}
       <div
         className="slide-thumbnail-inner"
         style={{
@@ -74,29 +88,11 @@ export default function SlideThumbnail({
           layoutId={slide?.["layout-id"]}
         />
 
-        {textElements.filter((element) => !element.hidden).map((textElement) => {
-          const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
+        {textElements.filter((element) => !element.hidden).map((textElement, index) => {
+          const placeholderFormatting = getPlaceholderFormatting(presentation, slide, textElement);
+          const style = buildTextElementStyle(textElement, index, masterFormatting, placeholderFormatting);
           return (
-            <div
-              key={textElement.id}
-              style={{
-                position: "absolute",
-                left: textElement.position?.x ?? 0,
-                top: textElement.position?.y ?? 0,
-                width: textElement.width ?? 300,
-                height: textElement.height ?? 80,
-                fontSize: formatting.size ?? "16px",
-                fontWeight: formatting.weight ?? "normal",
-                fontStyle: formatting.italics ? "italic" : "normal",
-                textAlign: formatting.align ?? "left",
-                color: formatting.color ?? "var(--text-dark, #111)",
-                lineHeight: formatting["line-spacing"] ?? 1.2,
-                overflow: "hidden",
-                boxSizing: "border-box",
-                padding: "8px",
-                zIndex: 1,
-              }}
-            >
+            <div key={textElement.id} style={{ ...style, overflow: "hidden", zIndex: 1 }}>
               {extractPlainTextFromParagraphs(textElement.paragraphs, " ")}
             </div>
           );

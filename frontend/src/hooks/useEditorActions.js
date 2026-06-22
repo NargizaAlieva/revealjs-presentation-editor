@@ -497,6 +497,11 @@ export function useEditorActions(
     [eventBus],
   );
 
+  const addLayout = useCallback(
+    (afterLayoutId = null) => eventBus.dispatch(createEditorEvent(EditorEventType.LAYOUT.ADD, { afterLayoutId })),
+    [eventBus],
+  );
+
   const deleteLayout = useCallback(
     (layoutId) =>
       eventBus.dispatch(
@@ -787,6 +792,7 @@ export function useEditorActions(
     toggleFooters,
     formatPainterCopy,
     formatPainterPaste,
+    addLayout,
     updateLayout,
     deleteLayout,
     renameLayout,

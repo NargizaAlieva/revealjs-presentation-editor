@@ -172,16 +172,23 @@ export const createPlaceholderPseudoElement = (placeholder, masterFormatting = {
   };
 };
 
-export const addLayout = (presentation) => {
+export const addLayout = (presentation, afterLayoutId = null) => {
   const layouts = getLayouts(presentation);
   const id = `custom-layout-${Date.now()}`;
+  const customCount = layouts.filter((l) => l["layout-id"].startsWith("custom-layout-")).length + 1;
   const newLayout = {
     "layout-id": id,
-    name: "Custom Layout",
+    name: `${customCount}_Custom Layout`,
     placeholders: [],
     elements: { text: [], media: [] },
   };
-  return setLayouts(presentation, [...layouts, newLayout]);
+  if (!afterLayoutId) {
+    return setLayouts(presentation, [newLayout, ...layouts]);
+  }
+  const idx = layouts.findIndex((l) => l["layout-id"] === afterLayoutId);
+  const insertAt = idx === -1 ? layouts.length : idx + 1;
+  const updated = [...layouts.slice(0, insertAt), newLayout, ...layouts.slice(insertAt)];
+  return setLayouts(presentation, updated);
 };
 
 export const deleteLayout = (presentation, layoutId) => {

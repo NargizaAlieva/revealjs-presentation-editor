@@ -123,6 +123,7 @@ export default function EditorPage() {
           masterName={ctrl.masterName}
           onRenameMaster={ctrl.setMasterName}
           selectedMasterLayoutId={ctrl.selectedMasterLayoutId}
+          onInsertLayout={ctrl.addLayout}
           onRenameLayout={ctrl.renameLayout}
           onDeleteLayout={ctrl.deleteLayout}
           onAddLayoutPlaceholder={ctrl.addLayoutPlaceholder}

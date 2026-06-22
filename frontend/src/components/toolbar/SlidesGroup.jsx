@@ -6,8 +6,8 @@ import {
   MdVisibility,
   MdVisibilityOff,
 } from "react-icons/md";
-import { LAYOUTS } from "./homeTabConstants";
 import { getLayoutDisplayList } from "../../core/operations/layoutOperations";
+import LayoutThumb from "./LayoutThumb";
 import "./SlidesGroup.css";
 
 export default function SlidesGroup({
@@ -26,8 +26,7 @@ export default function SlidesGroup({
   const [newSlidePos, setNewSlidePos] = useState({ top: 0, left: 0 });
   const [popupPos, setPopupPos] = useState({ top: 0, left: 0 });
 
-  const derivedLayouts = getLayoutDisplayList(presentation);
-  const layouts = derivedLayouts.length > 0 ? derivedLayouts : LAYOUTS;
+  const layouts = presentation?.slideset?.layouts ?? [];
 
   const newSlideBtnRef = useRef(null);
   const layoutBtnRef = useRef(null);
@@ -85,6 +84,23 @@ export default function SlidesGroup({
     return () => document.removeEventListener("mousedown", handler);
   }, [showLayoutPanel]);
 
+  const LayoutGrid = ({ onSelect }) => (
+    <div className="layout-grid">
+      {layouts.map((layout) => (
+        <button
+          key={layout["layout-id"]}
+          className="layout-grid-item"
+          onClick={() => onSelect(layout["layout-id"])}
+        >
+          <div className="layout-grid-thumb">
+            <LayoutThumb layout={layout} presentation={presentation} />
+          </div>
+          <span className="layout-grid-label">{layout.name ?? layout["layout-id"]}</span>
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div className="ribbon-group slides-group">
       <div className="toolbar-dropdown-container">
@@ -103,20 +119,7 @@ export default function SlidesGroup({
             style={{ top: newSlidePos.top, left: newSlidePos.left }}
           >
             <h4>Layouts</h4>
-            {layouts.map((layout) => (
-              <button
-                key={layout.id}
-                className="layout-option"
-                onClick={() => handleLayoutSelect(layout.id)}
-              >
-                <div className={`layout-thumb layout-thumb--${layout.id}`}>
-                  {layout.id === "title-content-media" && (
-                    <div className="layout-thumb-media" />
-                  )}
-                </div>
-                <span>{layout.label}</span>
-              </button>
-            ))}
+            <LayoutGrid onSelect={handleLayoutSelect} />
           </div>
         )}
       </div>
@@ -135,25 +138,8 @@ export default function SlidesGroup({
               className="layout-apply-popup"
               style={{ top: popupPos.top, left: popupPos.left }}
             >
-              {layouts.map((layout) => (
-                <button
-                  key={layout.id}
-                  className="layout-apply-option"
-                  onClick={() => {
-                    onApplyLayout?.(layout.id);
-                    setShowLayoutPanel(false);
-                  }}
-                >
-                  <div
-                    className={`layout-thumb layout-thumb--${layout.id} layout-thumb--small`}
-                  >
-                    {layout.id === "title-content-media" && (
-                      <div className="layout-thumb-media" />
-                    )}
-                  </div>
-                  <span>{layout.label}</span>
-                </button>
-              ))}
+              <h4>Layouts</h4>
+              <LayoutGrid onSelect={(id) => { onApplyLayout?.(id); setShowLayoutPanel(false); }} />
             </div>
           )}
         </div>

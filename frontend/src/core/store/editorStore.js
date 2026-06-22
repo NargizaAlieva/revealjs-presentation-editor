@@ -858,7 +858,7 @@ export const editorReducer = (state, event) => {
     case EditorEventType.LAYOUT.ADD:
       return withHistory(state, {
         ...state,
-        presentation: addLayout(state.presentation),
+        presentation: addLayout(state.presentation, event.payload?.afterLayoutId ?? null),
         lastEvent: event,
         lastUpdated: Date.now(),
       });

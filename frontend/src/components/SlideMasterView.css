@@ -189,9 +189,8 @@
 }
 
 .master-panel {
-    width: 200px;
-    min-width: 160px;
     flex-shrink: 0;
+    position: relative;
     background: #3a3a3a;
     overflow-y: auto;
     display: flex;
@@ -200,11 +199,28 @@
     gap: 8px;
 }
 
+.master-panel-resizer {
+    position: absolute;
+    top: 0;
+    right: -3px;
+    width: 6px;
+    height: 100%;
+    cursor: col-resize;
+    z-index: 10;
+}
+
+.master-panel-resizer:hover,
+.master-panel-resizer:active {
+    background: #4f46e5;
+    opacity: 0.4;
+}
+
 .master-thumb-wrap {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     gap: 5px;
+    width: 100%;
     cursor: pointer;
     padding: 4px;
     border-radius: 3px;
@@ -230,6 +246,7 @@
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
     position: relative;
     flex-shrink: 0;
+    width: 100%;
 }
 
 .master-thumb-label {
