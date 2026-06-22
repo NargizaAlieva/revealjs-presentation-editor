@@ -27,6 +27,7 @@ import {
   updateSlideNotes,
 } from "../operations/slideOperations";
 import {
+  addLayout,
   applyLayoutToSlide,
   propagateLayoutChanges,
   resetSlideToLayout,
@@ -732,6 +733,14 @@ export const editorReducer = (state, event) => {
           event.payload.layoutId,
           event.payload.font,
         ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+
+    case EditorEventType.LAYOUT.ADD:
+      return withHistory(state, {
+        ...state,
+        presentation: addLayout(state.presentation),
         lastEvent: event,
         lastUpdated: Date.now(),
       });

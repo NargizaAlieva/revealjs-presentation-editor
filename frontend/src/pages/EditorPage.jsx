@@ -82,7 +82,7 @@ export default function EditorPage() {
     triggerTransitionPreview,
   } = useEditorViewState();
 
-  const activeSelectionRef = useRef(null); // { elementId, paragraphIdx, rangeStart, rangeEnd }
+  const activeSelectionRef = useRef(null); 
   const [activeSelection, setActiveSelection] = useState(null);
   const [clearSelectionSignal, setClearSelectionSignal] = useState(0);
 
@@ -95,19 +95,12 @@ export default function EditorPage() {
     selectedElementId,
   } = useSlides(state);
 
-  // When selectedElementId changes, clear any stale selection/editing state
-  // that may have survived (e.g. going editing → HomeTab → canvas skips onBlur).
   useEffect(() => {
     if (activeSelectionRef.current && activeSelectionRef.current.elementId !== selectedElementId) {
       activeSelectionRef.current = null;
       setActiveSelection(null);
     }
   }, [selectedElementId]);
-
-  // Global mousedown: clear stale saved selection when the user clicks outside
-  // the active text element and outside any toolbar. Covers the gap where
-  // contentEditable already lost focus on a toolbar click, so a subsequent
-  // canvas click never triggers another onBlur to clean up.
   useEffect(() => {
     if (!selectedElementId) return;
     const handler = (e) => {
@@ -168,6 +161,7 @@ export default function EditorPage() {
     updateSlideTransition,
     updateTransitionDuration,
     applyTransitionToAll,
+    addLayout,
     applyLayout,
     resetLayout,
     updateLayout,
@@ -215,17 +209,14 @@ export default function EditorPage() {
     presentationId,
   );
 
-  // Derived layout list — computed here so InsertTab stays pure
   const layouts = getLayoutDisplayList(presentation);
 
-  // Master background: EditorPage owns the data + action, SlideMasterRibbon just passes hex
   const handleApplyBackground = useCallback((hex) => {
     const colorTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
     const decorations = presentation?.slideset?.master?.decorations;
     updateMasterTheme(updateThemeBackground(colorTheme, toHex9(hex)), decorations);
   }, [presentation, updateMasterTheme]);
 
-  // Clamped dimensions: validation happens here, not in UI widgets
   const handleUpdateDimensions = useCallback((dimensions, aspectRatio, units) => {
     const w = clampSlideDimension(dimensions.width, 1280);
     const h = clampSlideDimension(dimensions.height, 720);
@@ -329,12 +320,9 @@ export default function EditorPage() {
     if (!activeElementId || !activeTextEl) return;
 
     if (isSlideMasterOpen) {
-      // Master mode: no range formatting at store level, always update whole element.
       if (selectedMasterLayoutId) {
-        // Layout element — mirror what the popup does via handlePlaceholderUpdate
         updateLayoutElement(selectedMasterLayoutId, "text", activeElementId, { formatting: updates });
       } else {
-        // Master element — uses its own operation that correctly strips run-level keys
         updateMasterTextFormatting(activeElementId, updates);
       }
       return;
@@ -344,9 +332,6 @@ export default function EditorPage() {
   };
 
   const handleStartEditing = useCallback((id) => {
-    // Only reset pending when switching to a different element.
-    // Refocusing the same element (e.g. after font/size change from toolbar) must keep pending
-    // so the format applies to the next typed character.
     if (editingTextElementIdRef.current !== id) {
       setPendingFormatting({});
     }
@@ -404,7 +389,7 @@ export default function EditorPage() {
   const selectedElementRaw = getSlideElement(selectedSlide, selectedElementId);
   const selectedElement = useMemo(
     () => selectedElementRaw
-      ? { id: selectedElementRaw.id, label: getElementLabel(selectedElementRaw) }
+      ? { id: selectedElementRaw.id, label: getElementLabel(selectedElementRaw), paragraphs: selectedElementRaw.paragraphs }
       : null,
     [selectedElementRaw],
   );
@@ -506,6 +491,7 @@ export default function EditorPage() {
           masterName={masterName}
           onRenameMaster={setMasterName}
           selectedMasterLayoutId={selectedMasterLayoutId}
+          onInsertLayout={addLayout}
           onRenameLayout={renameLayout}
           onDeleteLayout={deleteLayout}
           onAddLayoutPlaceholder={addLayoutPlaceholder}
@@ -526,6 +512,7 @@ export default function EditorPage() {
             onApplyTheme={updateMasterTheme}
             onApplyFont={updateMasterFormatting}
             onUpdateDimensions={handleUpdateDimensions}
+            onInsertLayout={addLayout}
             onUpdateLayout={updateLayout}
             masterName={masterName}
             selectedMasterElementId={selectedMasterElementId}
