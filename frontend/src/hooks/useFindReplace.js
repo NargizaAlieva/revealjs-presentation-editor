@@ -1,11 +1,20 @@
 import { useState, useCallback } from "react";
 import { findMatches, applyReplacement, batchReplaceAll } from "../core/text/findReplace";
 
-export function useFindReplace(slides, onSlideChange, onReplaceText) {
+export function useFindReplace(
+  slides,
+  onSlideChange,
+  onReplaceText,
+  onReplaceAllText,
+) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [matches, setMatches] = useState([]);
   const [currentMatch, setCurrentMatch] = useState(0);
+  const [options, setOptions] = useState({
+    matchCase: false,
+    wholeWords: false,
+  });
 
   const open = useCallback(() => setIsOpen(true), []);
 
@@ -16,26 +25,29 @@ export function useFindReplace(slides, onSlideChange, onReplaceText) {
     setCurrentMatch(0);
   }, []);
 
-  const search = useCallback((q) => {
+  const search = useCallback((q, nextOptions = options) => {
     setQuery(q);
-    const found = findMatches(slides, q);
+    setOptions(nextOptions);
+    const found = findMatches(slides, q, nextOptions);
     setMatches(found);
     setCurrentMatch(0);
-    if (found.length > 0) onSlideChange(found[0].slideIndex);
-  }, [slides, onSlideChange]);
+    if (found.length > 0) {
+      onSlideChange(found[0].slideIndex, found[0].elementId);
+    }
+  }, [slides, onSlideChange, options]);
 
   const next = useCallback(() => {
     if (!matches.length) return;
     const idx = (currentMatch + 1) % matches.length;
     setCurrentMatch(idx);
-    onSlideChange(matches[idx].slideIndex);
+    onSlideChange(matches[idx].slideIndex, matches[idx].elementId);
   }, [matches, currentMatch, onSlideChange]);
 
   const prev = useCallback(() => {
     if (!matches.length) return;
     const idx = (currentMatch - 1 + matches.length) % matches.length;
     setCurrentMatch(idx);
-    onSlideChange(matches[idx].slideIndex);
+    onSlideChange(matches[idx].slideIndex, matches[idx].elementId);
   }, [matches, currentMatch, onSlideChange]);
 
   const replace = useCallback((replacement) => {
@@ -75,20 +87,44 @@ export function useFindReplace(slides, onSlideChange, onReplaceText) {
     const nextIdx = Math.min(currentMatch, Math.max(0, newMatches.length - 1));
     setMatches(newMatches);
     setCurrentMatch(nextIdx);
-    if (newMatches.length > 0) onSlideChange(newMatches[nextIdx].slideIndex);
+    if (newMatches.length > 0) {
+      onSlideChange(
+        newMatches[nextIdx].slideIndex,
+        newMatches[nextIdx].elementId,
+      );
+    }
   }, [matches, currentMatch, slides, onReplaceText, onSlideChange]);
 
   const replaceAll = useCallback((replacement) => {
-    batchReplaceAll(matches, slides, replacement).forEach(
-      ({ slideIndex, elementId, paragraphIdx, runIdx, newText }) => {
-        onReplaceText(slideIndex, elementId, paragraphIdx, runIdx, newText);
-      },
-    );
+    const operations = batchReplaceAll(matches, slides, replacement);
+    if (onReplaceAllText) {
+      onReplaceAllText(operations);
+    } else {
+      operations.forEach(
+        ({ slideIndex, elementId, paragraphIdx, runIdx, newText }) => {
+          onReplaceText(slideIndex, elementId, paragraphIdx, runIdx, newText);
+        },
+      );
+    }
     setMatches([]);
     setCurrentMatch(0);
-  }, [matches, slides, onReplaceText]);
+  }, [matches, slides, onReplaceText, onReplaceAllText]);
 
   const activeMatch = matches[currentMatch] ?? null;
 
-  return { isOpen, open, close, query, search, matches, currentMatch, next, prev, activeMatch, replace, replaceAll };
+  return {
+    isOpen,
+    open,
+    close,
+    query,
+    options,
+    search,
+    matches,
+    currentMatch,
+    next,
+    prev,
+    activeMatch,
+    replace,
+    replaceAll,
+  };
 }

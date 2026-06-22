@@ -15,6 +15,7 @@ const RESIZE_HANDLES = [
 export default function MediaElement({
   media,
   isSelected,
+  isPrimarySelected = isSelected,
   onSelect,
   onStartDrag,
   onStartResize,
@@ -45,8 +46,17 @@ export default function MediaElement({
         transformOrigin: "center center",
       }}
       onMouseDown={(event) => {
-        onSelect(media.id);
-        onStartDrag(event, media.id);
+        onSelect(media.id, {
+          nativeEvent: event,
+          preserveIfSelected:
+            isSelected &&
+            !event.ctrlKey &&
+            !event.metaKey &&
+            !event.shiftKey,
+        });
+        if (!event.ctrlKey && !event.metaKey && !event.shiftKey) {
+          onStartDrag(event, media.id);
+        }
       }}
     >
       {animationOrder != null && (
@@ -59,9 +69,9 @@ export default function MediaElement({
             src={resolvedSrc}
             className="canvas-media"
             style={{ width: "100%", height: "100%", objectFit: "contain" }}
-            controls={isSelected}
+            controls={isPrimarySelected}
           />
-          {!isSelected && (
+          {!isPrimarySelected && (
             <div style={{ position: "absolute", inset: 0, cursor: "move" }} />
           )}
         </>
@@ -74,7 +84,7 @@ export default function MediaElement({
         />
       )}
 
-      {isSelected &&
+      {isPrimarySelected &&
         RESIZE_HANDLES.map(({ dir, cursor }) => (
           <div
             key={dir}
@@ -87,7 +97,7 @@ export default function MediaElement({
           />
         ))}
 
-      {isSelected && (
+      {isPrimarySelected && (
         <button
           type="button"
           className="media-rotate-handle"

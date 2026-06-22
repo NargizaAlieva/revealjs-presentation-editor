@@ -74,7 +74,7 @@ export default function SlideThumbnail({
           layoutId={slide?.["layout-id"]}
         />
 
-        {textElements.map((textElement) => {
+        {textElements.filter((element) => !element.hidden).map((textElement) => {
           const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
           return (
             <div
@@ -102,7 +102,7 @@ export default function SlideThumbnail({
           );
         })}
 
-        {mediaElements.map((media) => (
+        {mediaElements.filter((element) => !element.hidden).map((media) => (
           <ThumbnailMedia key={media.id} media={media} />
         ))}
       </div>

@@ -47,9 +47,12 @@ export default function AnimationsTab({
 
   const playPreview = (elementId, effect, speed) => {
     setIsPlaying(true);
-    onAnimationPreview?.(elementId, effect, speed);
+    const byParagraph = animation?.["effect-options"]?.sequence === "by-paragraph";
+    const paragraphCount = byParagraph ? (selectedElement?.paragraphs?.length ?? 1) : 1;
+    onAnimationPreview?.(elementId, effect, speed, { byParagraph, paragraphCount });
 
-    setTimeout(() => setIsPlaying(false), getAnimationDurationMs(speed) + 100);
+    const duration = getAnimationDurationMs(speed);
+    setTimeout(() => setIsPlaying(false), duration * paragraphCount + 100);
   };
 
   const handlePlay = () => {

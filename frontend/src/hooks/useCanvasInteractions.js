@@ -190,7 +190,7 @@ export function useCanvasInteractions({
       if (!el) return;
 
       onBeginHistory?.();
-      onSelectElement?.(textElementId);
+      onSelectElement?.(textElementId, { preserveIfSelected: true });
 
       const rect =
         event.currentTarget.parentElement.parentElement.getBoundingClientRect();
@@ -213,7 +213,7 @@ export function useCanvasInteractions({
       if (!media) return;
 
       onBeginHistory?.();
-      onSelectElement?.(mediaId);
+      onSelectElement?.(mediaId, { preserveIfSelected: true });
 
       const rect = event.currentTarget.parentElement.getBoundingClientRect();
       setDraggingMediaId(mediaId);
@@ -240,7 +240,7 @@ export function useCanvasInteractions({
       const mouseY = (event.clientY - rect.top) / zoomScale;
 
       onBeginHistory?.();
-      onSelectElement?.(textElementId);
+      onSelectElement?.(textElementId, { preserveIfSelected: true });
       setResizingState({
         type: "text",
         id: textElementId,
@@ -273,7 +273,7 @@ export function useCanvasInteractions({
       const mouseY = (event.clientY - rect.top) / zoomScale;
 
       onBeginHistory?.();
-      onSelectElement?.(mediaId);
+      onSelectElement?.(mediaId, { preserveIfSelected: true });
       setResizingState({
         type: "media",
         id: mediaId,
@@ -308,7 +308,7 @@ export function useCanvasInteractions({
         getElementRotationAngle(el, mouseX, mouseY) - (el.rotation ?? 0);
 
       onBeginHistory?.();
-      onSelectElement?.(textElementId);
+      onSelectElement?.(textElementId, { preserveIfSelected: true });
       setRotatingElement({ type: "text", id: textElementId, angleOffset });
     },
     [
@@ -336,7 +336,7 @@ export function useCanvasInteractions({
         getElementRotationAngle(media, mouseX, mouseY) - (media.rotation ?? 0);
 
       onBeginHistory?.();
-      onSelectElement?.(mediaId);
+      onSelectElement?.(mediaId, { preserveIfSelected: true });
       setRotatingElement({ type: "media", id: mediaId, angleOffset });
     },
     [

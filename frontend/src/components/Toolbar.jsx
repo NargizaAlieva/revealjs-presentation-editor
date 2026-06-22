@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef,useEffect } from "react";
 import "./Toolbar.css";
 import FileTab from "./toolbar/FileTab";
 import HomeTab from "./toolbar/HomeTab";
@@ -64,6 +64,7 @@ export default function Toolbar({
   onAddTextElement,
   currentFormatting,
   onFormatChange,
+  onChangeCase,
   isTextSelected,
   presentation,
   onNewPresentation,
@@ -71,7 +72,17 @@ export default function Toolbar({
   onCut,
   onCopy,
   onPaste,
+  onUndo,
+  onRedo,
   canPaste,
+  canUndo,
+  canRedo,
+  onFind,
+  onReplace,
+  onSelectAll,
+  onSelectObjects,
+  onOpenSelectionPane,
+  objectSelectionMode,
   onApplyTheme,
   onApplyFont,
   onApplyLayoutFont,
@@ -91,6 +102,7 @@ export default function Toolbar({
   masterName,
   onRenameMaster,
   selectedMasterLayoutId,
+  onInsertLayout,
   onRenameLayout,
   onDeleteLayout,
   onAddLayoutPlaceholder,
@@ -104,12 +116,16 @@ export default function Toolbar({
   const [masterActiveTab, setMasterActiveTab] = useState("Slide Master");
   const prevMasterOpen = useRef(false);
 
+useEffect(() => {
   if (isSlideMasterOpen && !prevMasterOpen.current) {
     setMasterActiveTab("Slide Master");
   }
   prevMasterOpen.current = isSlideMasterOpen;
+}, [isSlideMasterOpen]);
 
-  const currentTab = isSlideMasterOpen ? masterActiveTab : (activeTab ?? localActiveTab);
+  const currentTab = isSlideMasterOpen
+    ? masterActiveTab
+    : (activeTab ?? localActiveTab);
 
   const setCurrentTab = (tab) => {
     if (isSlideMasterOpen) {
@@ -121,7 +137,15 @@ export default function Toolbar({
   };
 
   const TABS = isSlideMasterOpen
-    ? ["File", "Slide Master", "Home", "Insert", "Transitions", "Animations", "View"]
+    ? [
+        "File",
+        "Slide Master",
+        "Home",
+        "Insert",
+        "Transitions",
+        "Animations",
+        "View",
+      ]
     : BASE_TABS;
 
   return (
@@ -138,10 +162,14 @@ export default function Toolbar({
         ))}
       </nav>
 
-      <div className="toolbar-ribbon" onMouseDownCapture={(e) => {
-        const tag = e.target.tagName;
-        if (tag !== "SELECT" && tag !== "INPUT" && tag !== "TEXTAREA") e.preventDefault();
-      }}>
+      <div
+        className="toolbar-ribbon"
+        onMouseDownCapture={(e) => {
+          const tag = e.target.tagName;
+          if (tag !== "SELECT" && tag !== "INPUT" && tag !== "TEXTAREA")
+            e.preventDefault();
+        }}
+      >
         {currentTab === "File" && (
           <FileTab
             onOpenPresentation={onOpenPresentation}
@@ -164,6 +192,7 @@ export default function Toolbar({
             masterName={masterName}
             onRenameMaster={onRenameMaster}
             selectedMasterLayoutId={selectedMasterLayoutId}
+            onInsertLayout={onInsertLayout}
             onRenameLayout={onRenameLayout}
             onDeleteLayout={onDeleteLayout}
             onAddLayoutPlaceholder={onAddLayoutPlaceholder}
@@ -194,13 +223,24 @@ export default function Toolbar({
             isSlideHidden={isSlideHidden}
             currentFormatting={currentFormatting}
             onFormatChange={onFormatChange}
+            onChangeCase={onChangeCase}
             isTextSelected={isTextSelected}
             presentation={presentation}
             onCut={onCut}
             onCopy={onCopy}
             onPaste={onPaste}
+            onUndo={onUndo}
+            onRedo={onRedo}
             hasSelection={!!selectedElement}
             canPaste={canPaste}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            onFind={onFind}
+            onReplace={onReplace}
+            onSelectAll={onSelectAll}
+            onSelectObjects={onSelectObjects}
+            onOpenSelectionPane={onOpenSelectionPane}
+            objectSelectionMode={objectSelectionMode}
           />
         )}
 

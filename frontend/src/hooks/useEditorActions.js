@@ -1,7 +1,13 @@
 import { useCallback } from "react";
 import { storageRemove } from "../core/persistence/persistenceFacade";
-import { EditorEventType, createEditorEvent } from "../core/events/editorEvents";
-import { createAnimation, reorderAnimation } from "../core/operations/animationOperations";
+import {
+  EditorEventType,
+  createEditorEvent,
+} from "../core/events/editorEvents";
+import {
+  createAnimation,
+  reorderAnimation,
+} from "../core/operations/animationOperations";
 
 export function useEditorActions(
   eventBus,
@@ -132,7 +138,7 @@ export function useEditorActions(
   );
 
   const updateTextElementContent = useCallback(
-    (textElementId, newText, htmlContent) =>
+    (textElementId, newText) =>
       eventBus.dispatch(
         createEditorEvent(EditorEventType.TEXT.UPDATE, {
           textElementId,
@@ -154,6 +160,18 @@ export function useEditorActions(
     [eventBus],
   );
 
+  const updateParagraphFormatting = useCallback(
+    (elementId, paragraphIdx, formatting) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.TEXT.UPDATE_PARAGRAPH_FORMATTING, {
+          elementId,
+          paragraphIdx,
+          formatting,
+        }),
+      ),
+    [eventBus],
+  );
+
   const updateTextElementParagraphs = useCallback(
     (slideIndex, elementId, paragraphs) =>
       eventBus.dispatch(
@@ -167,7 +185,14 @@ export function useEditorActions(
   );
 
   const updateTextRangeFormatting = useCallback(
-    (elementId, paragraphIdx, rangeStart, endParagraphIdx, rangeEnd, formatting) =>
+    (
+      elementId,
+      paragraphIdx,
+      rangeStart,
+      endParagraphIdx,
+      rangeEnd,
+      formatting,
+    ) =>
       eventBus.dispatch(
         createEditorEvent(EditorEventType.TEXT.UPDATE_RANGE_FORMATTING, {
           elementId,
@@ -204,9 +229,20 @@ export function useEditorActions(
   );
 
   const selectElement = useCallback(
-    (elementId) =>
+    (elementId, options = {}) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.ELEMENT.SELECT, { elementId }),
+        createEditorEvent(EditorEventType.ELEMENT.SELECT, {
+          elementId,
+          ...options,
+        }),
+      ),
+    [eventBus],
+  );
+
+  const selectElements = useCallback(
+    (elementIds) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.ELEMENT.SELECT, { elementIds }),
       ),
     [eventBus],
   );
@@ -323,7 +359,10 @@ export function useEditorActions(
   const updateMasterTheme = useCallback(
     (colorTheme, decorations) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.MASTER.UPDATE_THEME, { colorTheme, decorations }),
+        createEditorEvent(EditorEventType.MASTER.UPDATE_THEME, {
+          colorTheme,
+          decorations,
+        }),
       ),
     [eventBus],
   );
@@ -409,7 +448,9 @@ export function useEditorActions(
   const toggleTitle = useCallback(
     (layoutId) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.MASTER.TOGGLE_TITLE, { layoutId: layoutId ?? null }),
+        createEditorEvent(EditorEventType.MASTER.TOGGLE_TITLE, {
+          layoutId: layoutId ?? null,
+        }),
       ),
     [eventBus],
   );
@@ -417,7 +458,9 @@ export function useEditorActions(
   const toggleFooters = useCallback(
     (layoutId) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.MASTER.TOGGLE_FOOTERS, { layoutId: layoutId ?? null }),
+        createEditorEvent(EditorEventType.MASTER.TOGGLE_FOOTERS, {
+          layoutId: layoutId ?? null,
+        }),
       ),
     [eventBus],
   );
@@ -425,13 +468,19 @@ export function useEditorActions(
   const formatPainterCopy = useCallback(
     (elementId, formatting) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.FORMAT_PAINTER.COPY, { elementId, formatting }),
+        createEditorEvent(EditorEventType.FORMAT_PAINTER.COPY, {
+          elementId,
+          formatting,
+        }),
       ),
     [eventBus],
   );
 
   const formatPainterPaste = useCallback(
-    () => eventBus.dispatch(createEditorEvent(EditorEventType.FORMAT_PAINTER.PASTE, {})),
+    () =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.FORMAT_PAINTER.PASTE, {}),
+      ),
     [eventBus],
   );
 
@@ -457,7 +506,10 @@ export function useEditorActions(
   const applyLayoutFont = useCallback(
     (layoutId, font) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.LAYOUT.UPDATE_FONT, { layoutId, font }),
+        createEditorEvent(EditorEventType.LAYOUT.UPDATE_FONT, {
+          layoutId,
+          font,
+        }),
       ),
     [eventBus],
   );
@@ -473,7 +525,11 @@ export function useEditorActions(
   const addLayoutElement = useCallback(
     (layoutId, elementType, element) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.LAYOUT.ADD_ELEMENT, { layoutId, elementType, element }),
+        createEditorEvent(EditorEventType.LAYOUT.ADD_ELEMENT, {
+          layoutId,
+          elementType,
+          element,
+        }),
       ),
     [eventBus],
   );
@@ -481,7 +537,12 @@ export function useEditorActions(
   const updateLayoutElement = useCallback(
     (layoutId, elementType, elementId, updates) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.LAYOUT.UPDATE_ELEMENT, { layoutId, elementType, elementId, updates }),
+        createEditorEvent(EditorEventType.LAYOUT.UPDATE_ELEMENT, {
+          layoutId,
+          elementType,
+          elementId,
+          updates,
+        }),
       ),
     [eventBus],
   );
@@ -489,7 +550,11 @@ export function useEditorActions(
   const deleteLayoutElement = useCallback(
     (layoutId, elementType, elementId) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.LAYOUT.DELETE_ELEMENT, { layoutId, elementType, elementId }),
+        createEditorEvent(EditorEventType.LAYOUT.DELETE_ELEMENT, {
+          layoutId,
+          elementType,
+          elementId,
+        }),
       ),
     [eventBus],
   );
@@ -497,7 +562,11 @@ export function useEditorActions(
   const updateLayoutElementTextContent = useCallback(
     (layoutId, elementId, text) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.LAYOUT.UPDATE_ELEMENT_TEXT, { layoutId, elementId, text }),
+        createEditorEvent(EditorEventType.LAYOUT.UPDATE_ELEMENT_TEXT, {
+          layoutId,
+          elementId,
+          text,
+        }),
       ),
     [eventBus],
   );
@@ -505,7 +574,10 @@ export function useEditorActions(
   const removeLayoutPlaceholder = useCallback(
     (layoutId, placeholderId) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.LAYOUT.REMOVE_PLACEHOLDER, { layoutId, placeholderId }),
+        createEditorEvent(EditorEventType.LAYOUT.REMOVE_PLACEHOLDER, {
+          layoutId,
+          placeholderId,
+        }),
       ),
     [eventBus],
   );
@@ -592,9 +664,21 @@ export function useEditorActions(
   );
 
   const copyElement = useCallback(
-    (element) =>
+    (elementOrElements) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.ELEMENT.COPY, { element }),
+        createEditorEvent(EditorEventType.ELEMENT.COPY, {
+          elements: Array.isArray(elementOrElements)
+            ? elementOrElements
+            : [elementOrElements],
+        }),
+      ),
+    [eventBus],
+  );
+
+  const updateElements = useCallback(
+    (updates) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.ELEMENT.UPDATE_MANY, { updates }),
       ),
     [eventBus],
   );
@@ -605,9 +689,23 @@ export function useEditorActions(
   );
 
   const cutElement = useCallback(
-    (element) =>
+    (elementOrElements) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.ELEMENT.CUT, { element }),
+        createEditorEvent(EditorEventType.ELEMENT.CUT, {
+          elements: Array.isArray(elementOrElements)
+            ? elementOrElements
+            : [elementOrElements],
+        }),
+      ),
+    [eventBus],
+  );
+
+  const deleteSelectedElements = useCallback(
+    (elementIds) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.ELEMENT.DELETE_SELECTION, {
+          elementIds,
+        }),
       ),
     [eventBus],
   );
@@ -643,15 +741,18 @@ export function useEditorActions(
     applyTransitionToAll,
     updateSlideNotes,
     selectElement,
+    selectElements,
     addTextElement,
     updateTextElementContent,
     updateTextElementFormatting,
+    updateParagraphFormatting,
     updateTextElementParagraphs,
     updateTextRangeFormatting,
     updateRunLink,
     updateElementPosition,
     updateElementSize,
     updateElement,
+    updateElements,
     deleteElement,
     addMedia,
     updateMedia,
@@ -696,6 +797,7 @@ export function useEditorActions(
     copyElement,
     pasteElement,
     cutElement,
+    deleteSelectedElements,
     addComment,
     deleteComment,
     updateMasterTextContent,

@@ -12,6 +12,7 @@ import {
   addTextElement,
   updateTextElement,
   updateTextFormatting,
+  updateSingleParagraphFormatting,
   updateTextElementParagraphs,
   updateTextRangeFormatting,
   updateRunLink,
@@ -27,6 +28,7 @@ import {
   updateSlideNotes,
 } from "../operations/slideOperations";
 import {
+  addLayout,
   applyLayoutToSlide,
   propagateLayoutChanges,
   resetSlideToLayout,
@@ -68,6 +70,7 @@ export const createInitialEditorState = () => ({
   presentation: createDefaultPresentation(),
   selectedSlideIndex: 0,
   selectedElementId: null,
+  selectedElementIds: [],
   autosaveEnabled: true,
   lastEvent: null,
   lastUpdated: Date.now(),
@@ -85,6 +88,7 @@ function createHistorySnapshot(state) {
     presentation: structuredClone(state.presentation),
     selectedSlideIndex: state.selectedSlideIndex,
     selectedElementId: state.selectedElementId,
+    selectedElementIds: [...(state.selectedElementIds ?? [])],
   };
 }
 
@@ -129,6 +133,7 @@ export const editorReducer = (state, event) => {
         presentation: state.pendingSnapshot.presentation,
         selectedSlideIndex: state.pendingSnapshot.selectedSlideIndex,
         selectedElementId: state.pendingSnapshot.selectedElementId,
+        selectedElementIds: state.pendingSnapshot.selectedElementIds ?? [],
         pendingSnapshot: null,
         lastEvent: event,
         lastUpdated: Date.now(),
@@ -144,6 +149,7 @@ export const editorReducer = (state, event) => {
         presentation: previousState.presentation,
         selectedSlideIndex: previousState.selectedSlideIndex,
         selectedElementId: previousState.selectedElementId,
+        selectedElementIds: previousState.selectedElementIds ?? [],
         past: state.past.slice(0, -1),
         future: [createHistorySnapshot(state), ...state.future],
         pendingSnapshot: null,
@@ -162,6 +168,7 @@ export const editorReducer = (state, event) => {
         presentation: nextState.presentation,
         selectedSlideIndex: nextState.selectedSlideIndex,
         selectedElementId: nextState.selectedElementId,
+        selectedElementIds: nextState.selectedElementIds ?? [],
         past: [...state.past, createHistorySnapshot(state)].slice(
           -HISTORY_LIMIT,
         ),
@@ -173,37 +180,47 @@ export const editorReducer = (state, event) => {
     }
 
     case EditorEventType.ELEMENT.COPY: {
+      const elements = event.payload.elements ??
+        (event.payload.element ? [event.payload.element] : []);
       return {
         ...state,
-        clipboard: structuredClone(event.payload.element),
+        clipboard: structuredClone(elements),
       };
     }
 
     case EditorEventType.ELEMENT.PASTE: {
-      if (!state.clipboard) return state;
+      const clipboard = Array.isArray(state.clipboard)
+        ? state.clipboard
+        : state.clipboard
+          ? [state.clipboard]
+          : [];
+      if (clipboard.length === 0) return state;
 
       const slides = [...(state.presentation.slideset?.slides ?? [])];
       const slide = slides[state.selectedSlideIndex];
       if (!slide) return state;
 
-      const newElement = {
-        ...structuredClone(state.clipboard),
+      const newElements = clipboard.map((source) => ({
+        ...structuredClone(source),
         id: crypto.randomUUID(),
         position: {
-          x: (state.clipboard.position?.x ?? 0) + 20,
-          y: (state.clipboard.position?.y ?? 0) + 20,
+          x: (source.position?.x ?? 0) + 20,
+          y: (source.position?.y ?? 0) + 20,
         },
-      };
-
-      const isMedia = state.clipboard["media-type"] !== undefined;
+      }));
+      const newText = newElements.filter(
+        (element) => element["media-type"] === undefined,
+      );
+      const newMedia = newElements.filter(
+        (element) => element["media-type"] !== undefined,
+      );
 
       slides[state.selectedSlideIndex] = {
         ...slide,
         contents: {
           ...slide.contents,
-          ...(isMedia
-            ? { media: [...(slide.contents?.media ?? []), newElement] }
-            : { text: [...(slide.contents?.text ?? []), newElement] }),
+          text: [...(slide.contents?.text ?? []), ...newText],
+          media: [...(slide.contents?.media ?? []), ...newMedia],
         },
       };
 
@@ -213,15 +230,18 @@ export const editorReducer = (state, event) => {
           ...state.presentation,
           slideset: { ...state.presentation.slideset, slides },
         },
-        selectedElementId: newElement.id,
+        selectedElementId: newElements.at(-1)?.id ?? null,
+        selectedElementIds: newElements.map((element) => element.id),
         lastEvent: event,
         lastUpdated: Date.now(),
       });
     }
 
     case EditorEventType.ELEMENT.CUT: {
-      const element = event.payload.element;
-      const isMedia = element["media-type"] !== undefined;
+      const elements = event.payload.elements ??
+        (event.payload.element ? [event.payload.element] : []);
+      if (elements.length === 0) return state;
+      const ids = new Set(elements.map((element) => element.id));
       const slides = [...(state.presentation.slideset?.slides ?? [])];
       const slide = slides[state.selectedSlideIndex];
       if (!slide) return state;
@@ -230,28 +250,47 @@ export const editorReducer = (state, event) => {
         ...slide,
         contents: {
           ...slide.contents,
-          ...(isMedia
-            ? {
-              media: (slide.contents?.media ?? []).filter(
-                (el) => el.id !== element.id,
-              ),
-            }
-            : {
-              text: (slide.contents?.text ?? []).filter(
-                (el) => el.id !== element.id,
-              ),
-            }),
+          text: (slide.contents?.text ?? []).filter((el) => !ids.has(el.id)),
+          media: (slide.contents?.media ?? []).filter((el) => !ids.has(el.id)),
         },
       };
 
       return withHistory(state, {
         ...state,
-        clipboard: structuredClone(element),
+        clipboard: structuredClone(elements),
         presentation: {
           ...state.presentation,
           slideset: { ...state.presentation.slideset, slides },
         },
         selectedElementId: null,
+        selectedElementIds: [],
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+    }
+
+    case EditorEventType.ELEMENT.DELETE_SELECTION: {
+      const ids = new Set(event.payload.elementIds ?? []);
+      if (ids.size === 0) return state;
+      const slides = [...(state.presentation.slideset?.slides ?? [])];
+      const slide = slides[state.selectedSlideIndex];
+      if (!slide) return state;
+      slides[state.selectedSlideIndex] = {
+        ...slide,
+        contents: {
+          ...slide.contents,
+          text: (slide.contents?.text ?? []).filter((el) => !ids.has(el.id)),
+          media: (slide.contents?.media ?? []).filter((el) => !ids.has(el.id)),
+        },
+      };
+      return withHistory(state, {
+        ...state,
+        presentation: {
+          ...state.presentation,
+          slideset: { ...state.presentation.slideset, slides },
+        },
+        selectedElementId: null,
+        selectedElementIds: [],
         lastEvent: event,
         lastUpdated: Date.now(),
       });
@@ -260,7 +299,10 @@ export const editorReducer = (state, event) => {
     case EditorEventType.FORMAT_PAINTER.COPY:
       return {
         ...state,
-        formatPainterClipboard: { formatting: event.payload.formatting, sourceElementId: event.payload.elementId },
+        formatPainterClipboard: {
+          formatting: event.payload.formatting,
+          sourceElementId: event.payload.elementId,
+        },
         lastEvent: event,
       };
 
@@ -297,6 +339,7 @@ export const editorReducer = (state, event) => {
         autosaveEnabled: event.payload.autosaveEnabled ?? true,
         selectedSlideIndex: 0,
         selectedElementId: null,
+        selectedElementIds: [],
         past: [],
         future: [],
         pendingSnapshot: null,
@@ -333,6 +376,7 @@ export const editorReducer = (state, event) => {
         ...state,
         selectedSlideIndex: event.payload.slideIndex,
         selectedElementId: null,
+        selectedElementIds: [],
         lastEvent: event,
         lastUpdated: Date.now(),
       };
@@ -348,6 +392,7 @@ export const editorReducer = (state, event) => {
         presentation: updatedPresentation,
         selectedSlideIndex: updatedPresentation.slideset.slides.length - 1,
         selectedElementId: null,
+        selectedElementIds: [],
         lastEvent: event,
         lastUpdated: Date.now(),
       });
@@ -368,6 +413,7 @@ export const editorReducer = (state, event) => {
           Math.min(state.selectedSlideIndex, slides.length - 1),
         ),
         selectedElementId: null,
+        selectedElementIds: [],
         lastEvent: event,
         lastUpdated: Date.now(),
       });
@@ -382,6 +428,7 @@ export const editorReducer = (state, event) => {
         ),
         selectedSlideIndex: state.selectedSlideIndex + 1,
         selectedElementId: null,
+        selectedElementIds: [],
         lastEvent: event,
         lastUpdated: Date.now(),
       });
@@ -396,6 +443,7 @@ export const editorReducer = (state, event) => {
         ),
         selectedSlideIndex: event.payload.toIndex,
         selectedElementId: null,
+        selectedElementIds: [],
         lastEvent: event,
         lastUpdated: Date.now(),
       });
@@ -469,7 +517,7 @@ export const editorReducer = (state, event) => {
         ...state,
         presentation: updateSlideNotes(
           state.presentation,
-          state.selectedSlideIndex,
+          event.payload.slideIndex ?? state.selectedSlideIndex,
           event.payload.notes,
         ),
         lastEvent: event,
@@ -485,6 +533,7 @@ export const editorReducer = (state, event) => {
           event.payload.textElement,
         ),
         selectedElementId: event.payload.textElement.id,
+        selectedElementIds: [event.payload.textElement.id],
         lastEvent: event,
         lastUpdated: Date.now(),
       });
@@ -513,6 +562,21 @@ export const editorReducer = (state, event) => {
           event.payload.formatting,
         ),
         selectedElementId: event.payload.textElementId,
+        selectedElementIds: [event.payload.textElementId],
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+
+    case EditorEventType.TEXT.UPDATE_PARAGRAPH_FORMATTING:
+      return withHistory(state, {
+        ...state,
+        presentation: updateSingleParagraphFormatting(
+          state.presentation,
+          state.selectedSlideIndex,
+          event.payload.elementId,
+          event.payload.paragraphIdx,
+          event.payload.formatting,
+        ),
         lastEvent: event,
         lastUpdated: Date.now(),
       });
@@ -572,17 +636,38 @@ export const editorReducer = (state, event) => {
           event.payload.elementId,
         ),
         selectedElementId: null,
+        selectedElementIds: [],
         lastEvent: event,
         lastUpdated: Date.now(),
       });
 
     case EditorEventType.ELEMENT.SELECT:
-      return {
-        ...state,
-        selectedElementId: event.payload.elementId,
-        lastEvent: event,
-        lastUpdated: Date.now(),
-      };
+      {
+        const currentIds = state.selectedElementIds ?? [];
+        const explicitIds = event.payload.elementIds;
+        let selectedElementIds;
+        if (explicitIds) {
+          selectedElementIds = [...new Set(explicitIds.filter(Boolean))];
+        } else if (!event.payload.elementId) {
+          selectedElementIds = [];
+        } else if (event.payload.preserveIfSelected &&
+          currentIds.includes(event.payload.elementId)) {
+          selectedElementIds = currentIds;
+        } else if (event.payload.toggle) {
+          selectedElementIds = currentIds.includes(event.payload.elementId)
+            ? currentIds.filter((id) => id !== event.payload.elementId)
+            : [...currentIds, event.payload.elementId];
+        } else {
+          selectedElementIds = [event.payload.elementId];
+        }
+        return {
+          ...state,
+          selectedElementIds,
+          selectedElementId: selectedElementIds.at(-1) ?? null,
+          lastEvent: event,
+          lastUpdated: Date.now(),
+        };
+      }
 
     case EditorEventType.ELEMENT.MOVE:
       return {
@@ -623,6 +708,40 @@ export const editorReducer = (state, event) => {
         lastUpdated: Date.now(),
       };
 
+    case EditorEventType.ELEMENT.UPDATE_MANY: {
+      const updatesById = new Map(
+        (event.payload.updates ?? []).map((entry) => [
+          entry.elementId,
+          entry.updates,
+        ]),
+      );
+      if (updatesById.size === 0) return state;
+      const slides = [...(state.presentation.slideset?.slides ?? [])];
+      const slide = slides[state.selectedSlideIndex];
+      if (!slide) return state;
+      const applyUpdates = (element) =>
+        updatesById.has(element.id)
+          ? { ...element, ...updatesById.get(element.id) }
+          : element;
+      slides[state.selectedSlideIndex] = {
+        ...slide,
+        contents: {
+          ...slide.contents,
+          text: (slide.contents?.text ?? []).map(applyUpdates),
+          media: (slide.contents?.media ?? []).map(applyUpdates),
+        },
+      };
+      return withHistory(state, {
+        ...state,
+        presentation: {
+          ...state.presentation,
+          slideset: { ...state.presentation.slideset, slides },
+        },
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+    }
+
     case EditorEventType.MEDIA.ADD:
       return withHistory(state, {
         ...state,
@@ -632,6 +751,7 @@ export const editorReducer = (state, event) => {
           event.payload.mediaElement,
         ),
         selectedElementId: event.payload.mediaElement.id,
+        selectedElementIds: [event.payload.mediaElement.id],
         lastEvent: event,
         lastUpdated: Date.now(),
       });
@@ -645,6 +765,7 @@ export const editorReducer = (state, event) => {
           event.payload.mediaId,
         ),
         selectedElementId: null,
+        selectedElementIds: [],
         lastEvent: event,
         lastUpdated: Date.now(),
       });
@@ -658,7 +779,6 @@ export const editorReducer = (state, event) => {
           event.payload.mediaId,
           event.payload.updates,
         ),
-        selectedElementId: event.payload.mediaId,
         lastEvent: event,
         lastUpdated: Date.now(),
       };
@@ -736,6 +856,14 @@ export const editorReducer = (state, event) => {
         lastUpdated: Date.now(),
       });
 
+    case EditorEventType.LAYOUT.ADD:
+      return withHistory(state, {
+        ...state,
+        presentation: addLayout(state.presentation),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+
     case EditorEventType.LAYOUT.DELETE:
       return withHistory(state, {
         ...state,
@@ -747,7 +875,11 @@ export const editorReducer = (state, event) => {
     case EditorEventType.LAYOUT.RENAME:
       return withHistory(state, {
         ...state,
-        presentation: renameLayout(state.presentation, event.payload.layoutId, event.payload.name),
+        presentation: renameLayout(
+          state.presentation,
+          event.payload.layoutId,
+          event.payload.name,
+        ),
         lastEvent: event,
         lastUpdated: Date.now(),
       });
@@ -856,7 +988,11 @@ export const editorReducer = (state, event) => {
     case EditorEventType.MASTER.UPDATE_THEME:
       return withHistory(state, {
         ...state,
-        presentation: updateMasterTheme(state.presentation, event.payload.colorTheme, event.payload.decorations),
+        presentation: updateMasterTheme(
+          state.presentation,
+          event.payload.colorTheme,
+          event.payload.decorations,
+        ),
         lastEvent: event,
         lastUpdated: Date.now(),
       });
@@ -949,7 +1085,10 @@ export const editorReducer = (state, event) => {
     case EditorEventType.MASTER.TOGGLE_TITLE:
       return withHistory(state, {
         ...state,
-        presentation: toggleMasterTitle(state.presentation, event.payload.layoutId ?? null),
+        presentation: toggleMasterTitle(
+          state.presentation,
+          event.payload.layoutId ?? null,
+        ),
         lastEvent: event,
         lastUpdated: Date.now(),
       });
@@ -957,7 +1096,10 @@ export const editorReducer = (state, event) => {
     case EditorEventType.MASTER.TOGGLE_FOOTERS:
       return withHistory(state, {
         ...state,
-        presentation: toggleMasterFooters(state.presentation, event.payload.layoutId ?? null),
+        presentation: toggleMasterFooters(
+          state.presentation,
+          event.payload.layoutId ?? null,
+        ),
         lastEvent: event,
         lastUpdated: Date.now(),
       });

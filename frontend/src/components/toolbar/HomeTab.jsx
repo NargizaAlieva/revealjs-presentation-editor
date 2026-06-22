@@ -4,7 +4,7 @@ import ClipboardGroup from "./ClipboardGroup";
 import SlidesGroup from "./SlidesGroup";
 import FontGroup from "./FontGroup";
 import ParagraphGroup from "./ParagraphGroup";
-import ArrangeGroup from "./ArrangeGroup";
+import EditingGroup from "./EditingGroup";
 
 export default function HomeTab({
   onAddSlide,
@@ -12,22 +12,29 @@ export default function HomeTab({
   onResetLayout,
   onDeleteSlide,
   onDuplicateSlide,
-  onMoveSlideUp,
-  onMoveSlideDown,
   canDelete,
-  canMoveUp,
-  canMoveDown,
   onToggleSlideHidden,
   isSlideHidden,
   currentFormatting = {},
   onFormatChange,
+  onChangeCase,
   isTextSelected = false,
   presentation,
   onCut,
   onCopy,
   onPaste,
+  onUndo,
+  onRedo,
   hasSelection = false,
   canPaste = false,
+  canUndo = false,
+  canRedo = false,
+  onFind,
+  onReplace,
+  onSelectAll,
+  onSelectObjects,
+  onOpenSelectionPane,
+  objectSelectionMode,
 }) {
   const fonts = getAvailableFonts(presentation);
 
@@ -37,8 +44,12 @@ export default function HomeTab({
         onCut={onCut}
         onCopy={onCopy}
         onPaste={onPaste}
+        onUndo={onUndo}
+        onRedo={onRedo}
         hasSelection={hasSelection}
         canPaste={canPaste}
+        canUndo={canUndo}
+        canRedo={canRedo}
       />
 
       <SlidesGroup
@@ -48,6 +59,8 @@ export default function HomeTab({
         onDeleteSlide={onDeleteSlide}
         onDuplicateSlide={onDuplicateSlide}
         canDelete={canDelete}
+        onToggleSlideHidden={onToggleSlideHidden}
+        isSlideHidden={isSlideHidden}
         presentation={presentation}
       />
 
@@ -56,6 +69,7 @@ export default function HomeTab({
         isTextSelected={isTextSelected}
         fonts={fonts}
         onFormatChange={onFormatChange}
+        onChangeCase={onChangeCase}
       />
 
       <ParagraphGroup
@@ -64,13 +78,13 @@ export default function HomeTab({
         onFormatChange={onFormatChange}
       />
 
-      <ArrangeGroup
-        onToggleSlideHidden={onToggleSlideHidden}
-        isSlideHidden={isSlideHidden}
-        onMoveSlideUp={onMoveSlideUp}
-        onMoveSlideDown={onMoveSlideDown}
-        canMoveUp={canMoveUp}
-        canMoveDown={canMoveDown}
+      <EditingGroup
+        onFind={onFind}
+        onReplace={onReplace}
+        onSelectAll={onSelectAll}
+        onSelectObjects={onSelectObjects}
+        onOpenSelectionPane={onOpenSelectionPane}
+        objectSelectionMode={objectSelectionMode}
       />
     </>
   );

@@ -10,14 +10,13 @@ import {
   buildMediaElementStyle,
   buildSlideContainerStyle,
   buildColorThemeStyle,
-  getTextContent,
   getTextLines,
   getVisibleSlidesForPreview,
   getSlideTextElements,
   getSlideMediaElements,
   getSlideDimensions,
   getSlideTransition,
-  buildAnimationMap,
+  buildAdjustedAnimationMap,
   getFragmentProps,
   getPerLineFragments,
 } from "../core/render/revealRenderer";
@@ -118,7 +117,7 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
             {visibleSlides.map((slide, slideIndex) => {
               const textElements = getSlideTextElements(slide);
               const mediaElements = getSlideMediaElements(slide);
-              const animationMap = buildAnimationMap(slide);
+              const animationMap = buildAdjustedAnimationMap(slide);
 
               return (
                 <section
@@ -136,7 +135,7 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
                       width={width}
                       height={height}
                     />
-                    {textElements.map((textElement, index) => {
+                    {textElements.filter((element) => !element.hidden).map((textElement, index) => {
                       const animation = animationMap.get(textElement.id);
                       const placeholderFormatting = getPlaceholderFormatting(presentation, slide, textElement);
                       const baseStyle = buildTextElementStyle(textElement, index, masterFormatting, placeholderFormatting);
@@ -183,7 +182,7 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
                       );
                     })}
 
-                    {mediaElements.map((media, index) => {
+                    {mediaElements.filter((element) => !element.hidden).map((media, index) => {
                       const fragmentProps = getFragmentProps(animationMap.get(media.id));
                       return (
                         <PreviewMediaElement

@@ -21,3 +21,6 @@ export const isCutShortcut = (event) =>
 
 export const isDeleteShortcut = (event) =>
   event.key === "Delete" || event.key === "Backspace";
+
+export const isSelectAllShortcut = (event) =>
+  (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "a";

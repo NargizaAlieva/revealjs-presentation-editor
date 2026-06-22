@@ -1,18 +1,40 @@
-export const findMatches = (slides, query) => {
+const isWordCharacter = (character) =>
+  character !== undefined && /[\p{L}\p{N}_]/u.test(character);
+
+export const findMatches = (
+  slides,
+  query,
+  { matchCase = false, wholeWords = false } = {},
+) => {
   if (!query.trim()) return [];
-  const q = query.toLowerCase();
+  const q = matchCase ? query : query.toLowerCase();
   const results = [];
 
   slides.forEach((slide, slideIndex) => {
     (slide.contents?.text ?? []).forEach((el) => {
       el.paragraphs?.forEach((para, paragraphIdx) => {
         para.runs?.forEach((run, runIdx) => {
-          const text = run.text ?? "";
+          const originalText = run.text ?? "";
+          const text = matchCase ? originalText : originalText.toLowerCase();
           let start = 0;
           while (true) {
-            const idx = text.toLowerCase().indexOf(q, start);
+            const idx = text.indexOf(q, start);
             if (idx === -1) break;
-            results.push({ slideIndex, elementId: el.id, paragraphIdx, runIdx, start: idx, end: idx + query.length });
+            const end = idx + query.length;
+            const isWholeWord =
+              !isWordCharacter(originalText[idx - 1]) &&
+              !isWordCharacter(originalText[end]);
+
+            if (!wholeWords || isWholeWord) {
+              results.push({
+                slideIndex,
+                elementId: el.id,
+                paragraphIdx,
+                runIdx,
+                start: idx,
+                end,
+              });
+            }
             start = idx + 1;
           }
         });

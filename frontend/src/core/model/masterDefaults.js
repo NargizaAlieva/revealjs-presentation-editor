@@ -1,13 +1,26 @@
 export const TITLE_PLACEHOLDER = {
   "placeholder-id": "title-placeholder",
-  position: { x: 120, y: 60 },
+  position: { x: 120, y: 80 },
   width: 1040,
-  height: 110,
+  height: 90,
   type: "text",
   role: "title",
   padding: { css: "8px" },
   background: "#FFFFFF00",
-  formatting: { size: "36px", weight: "bold", align: "center" },
+  formatting: {
+    size: "44px",
+    color: "var(--text-dark)",
+    weight: "bold",
+    italics: false,
+    "text-decoration": "none",
+    "line-spacing": "1.2em",
+    "list-type": "none",
+    "list-style": {},
+    "indent-level": 0,
+    margin: "0",
+    align: "center",
+    "vertical-align": "middle",
+  },
 };
 
 export const FOOTER_PLACEHOLDERS = [

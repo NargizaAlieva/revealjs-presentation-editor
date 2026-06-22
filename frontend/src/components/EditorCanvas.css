@@ -10,6 +10,16 @@
   overflow: hidden;
 }
 
+.object-selection-mode .draggable,
+.object-selection-mode .canvas-media-wrapper {
+  cursor: default;
+}
+
+.object-selection-mode [contenteditable] {
+  cursor: default;
+  user-select: none;
+}
+
 .slide-workspace {
   flex: 1;
   min-height: 0;
@@ -86,6 +96,11 @@
   animation-duration: 800ms;
   animation-fill-mode: both;
   animation-timing-function: ease-out;
+}
+
+[data-para].play-effect {
+  display: inline-block;
+  width: 100%;
 }
 
 .play-fade-in {
@@ -194,26 +209,25 @@
   }
 }
 
-.play-strike input,
-.play-strike textarea {
+.play-strike,
+.play-strike * {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
   animation-name: previewStrike;
   animation-duration: 800ms;
-  text-decoration-thickness: 2px;
   animation-fill-mode: both;
   animation-timing-function: ease-out;
 }
 
 @keyframes previewStrike {
-  0% {
-    text-decoration: none;
+  from {
+    text-decoration-color: transparent;
   }
-
-  100% {
-    text-decoration: line-through;
+  to {
+    text-decoration-color: currentColor;
   }
 }
 
-/* shrink-down */
 .play-shrink-down {
   animation-name: previewShrinkDown;
 }
@@ -230,7 +244,6 @@
   }
 }
 
-/* fade-out */
 .play-fade-out {
   animation-name: previewFadeOut;
 }
@@ -245,7 +258,6 @@
   }
 }
 
-/* fade-in-then-out */
 .play-fade-in-then-out {
   animation-name: previewFadeInThenOut;
 }
@@ -264,7 +276,6 @@
   }
 }
 
-/* fade-in-then-semi-out */
 .play-fade-in-then-semi-out {
   animation-name: previewFadeInThenSemiOut;
 }
@@ -515,4 +526,3 @@
 
   pointer-events: none;
 }
-

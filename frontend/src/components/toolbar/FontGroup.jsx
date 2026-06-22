@@ -1,12 +1,22 @@
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
+  MdArrowDropDown,
+  MdBorderColor,
   MdFormatBold,
+  MdFormatClear,
+  MdFormatColorText,
   MdFormatItalic,
+  MdFormatStrikethrough,
   MdFormatUnderlined,
 } from "react-icons/md";
-import "./FontGroup.css"
+import ColorPicker from "../canvas/ColorPicker";
+import "./FontGroup.css";
 
-const SIZES = [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 54, 60, 72, 96];
+const SIZES = [
+  8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 54, 60,
+  72, 96,
+];
 
 function SizePicker({ value, disabled, onChange }) {
   const [open, setOpen] = useState(false);
@@ -15,31 +25,25 @@ function SizePicker({ value, disabled, onChange }) {
   const wrapRef = useRef(null);
   const listRef = useRef(null);
 
-  // Sync external value → input when not focused
-  useEffect(() => {
-    setInputVal(value === "" ? "" : String(value));
-  }, [value]);
-
-  // Close on outside click
   useEffect(() => {
     if (!open) return;
-    const handler = (e) => {
-      if (!wrapRef.current?.contains(e.target)) setOpen(false);
+    const handler = (event) => {
+      if (!wrapRef.current?.contains(event.target)) setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  // Scroll selected item into view when list opens
   useEffect(() => {
     if (!open || !listRef.current) return;
-    const active = listRef.current.querySelector(".sz-active");
-    active?.scrollIntoView({ block: "nearest" });
+    listRef.current
+      .querySelector(".sz-active")
+      ?.scrollIntoView({ block: "nearest" });
   }, [open]);
 
-  const commit = (val) => {
-    const n = parseInt(val, 10);
-    if (n >= 1 && n <= 400) onChange(n);
+  const commit = (valueToCommit) => {
+    const number = parseInt(valueToCommit, 10);
+    if (number >= 1 && number <= 400) onChange(number);
     setOpen(false);
   };
 
@@ -50,36 +54,111 @@ function SizePicker({ value, disabled, onChange }) {
         type="text"
         disabled={disabled}
         value={inputVal}
-        onChange={(e) => setInputVal(e.target.value)}
+        onChange={(event) => setInputVal(event.target.value)}
         onFocus={() => {
-            const r = wrapRef.current?.getBoundingClientRect();
-            if (r) setDropPos({ top: r.bottom + 2, left: r.left, width: r.width });
-            setOpen(true);
-          }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") { commit(inputVal); e.target.blur(); }
-          if (e.key === "Escape") { setOpen(false); e.target.blur(); }
-        }}
-        onBlur={(e) => {
-          // only commit if focus didn't move into the list
-          if (!wrapRef.current?.contains(e.relatedTarget)) {
-            commit(inputVal);
+          const rect = wrapRef.current?.getBoundingClientRect();
+          if (rect) {
+            setDropPos({
+              top: rect.bottom + 2,
+              left: rect.left,
+              width: rect.width,
+            });
           }
+          setOpen(true);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            commit(inputVal);
+            event.target.blur();
+          }
+          if (event.key === "Escape") {
+            setOpen(false);
+            event.target.blur();
+          }
+        }}
+        onBlur={(event) => {
+          if (!wrapRef.current?.contains(event.relatedTarget)) commit(inputVal);
         }}
       />
       {open && (
-        <ul className="sz-dropdown" ref={listRef} onMouseDown={(e) => e.preventDefault()} style={{ top: dropPos.top, left: dropPos.left, minWidth: dropPos.width }}>
-          {SIZES.map((s) => (
+        <ul
+          className="sz-dropdown"
+          ref={listRef}
+          onMouseDown={(event) => event.preventDefault()}
+          style={{
+            top: dropPos.top,
+            left: dropPos.left,
+            minWidth: dropPos.width,
+          }}
+        >
+          {SIZES.map((size) => (
             <li
-              key={s}
-              className={`sz-item${String(s) === String(value) ? " sz-active" : ""}`}
-              onClick={() => { setInputVal(String(s)); commit(s); }}
+              key={size}
+              className={`sz-item${
+                String(size) === String(value) ? " sz-active" : ""
+              }`}
+              onClick={() => {
+                setInputVal(String(size));
+                commit(size);
+              }}
             >
-              {s}
+              {size}
             </li>
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+function ColorCommand({
+  disabled,
+  title,
+  color,
+  icon,
+  onChange,
+  allowNoColor = false,
+  onNoColor,
+  className = "",
+}) {
+  const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+
+  return (
+    <div className="font-color-wrap">
+      <button
+        type="button"
+        className={`font-command font-color-command ${className}`}
+        disabled={disabled}
+        title={title}
+        onClick={(event) => {
+          const rect = event.currentTarget.getBoundingClientRect();
+          setPosition({ top: rect.bottom + 4, left: rect.left });
+          setOpen((visible) => !visible);
+        }}
+      >
+        {icon}
+        <span className="font-color-bar" style={{ background: color }} />
+        <span className="font-command-arrow">▼</span>
+      </button>
+
+      {open &&
+        createPortal(
+          <ColorPicker
+            color={color}
+            allowNoColor={allowNoColor}
+            onNoColor={onNoColor}
+            onChange={onChange}
+            onClose={() => setOpen(false)}
+            style={{
+              position: "fixed",
+              top: position.top,
+              left: position.left,
+              zIndex: 99999,
+            }}
+          />,
+          document.body,
+        )}
     </div>
   );
 }
@@ -89,97 +168,203 @@ export default function FontGroup({
   isTextSelected = false,
   fonts = [],
   onFormatChange,
+  onChangeCase,
 }) {
+  const [showCaseMenu, setShowCaseMenu] = useState(false);
+  const caseRef = useRef(null);
+
+  useEffect(() => {
+    if (!showCaseMenu) return;
+    const close = (event) => {
+      if (!caseRef.current?.contains(event.target)) setShowCaseMenu(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [showCaseMenu]);
+
   const fmt = (updates) => {
-    if (!isTextSelected || !onFormatChange) return;
-    onFormatChange(updates);
+    if (isTextSelected && onFormatChange) onFormatChange(updates);
   };
 
-  const currentFont = currentFormatting.font === "mixed" ? "" : (currentFormatting.font ?? fonts[0] ?? "Arial");
-  const currentSize = currentFormatting.size === "mixed" ? "" : parseInt(currentFormatting.size ?? "28", 10);
-  const isBold = currentFormatting.weight === "bold" || currentFormatting.weight === true;
-  const isItalic = currentFormatting.italics === true || currentFormatting.italics === "italic";
-  const isUnderline = currentFormatting["text-decoration"] === "underline";
-  const currentColor = currentFormatting.color === "mixed" ? "#111111" : (currentFormatting.color ?? "#111111");
+  const currentFont =
+    currentFormatting.font === "mixed"
+      ? ""
+      : (currentFormatting.font ?? fonts[0] ?? "Arial");
+  const currentSize =
+    currentFormatting.size === "mixed"
+      ? ""
+      : parseInt(currentFormatting.size ?? "28", 10);
+  const isBold =
+    currentFormatting.weight === "bold" || currentFormatting.weight === true;
+  const isItalic =
+    currentFormatting.italics === true ||
+    currentFormatting.italics === "italic";
+  const decoration = currentFormatting["text-decoration"] ?? "none";
+  const isUnderline = decoration.includes("underline");
+  const isStrikethrough = decoration.includes("line-through");
+  const currentColor =
+    currentFormatting.color === "mixed"
+      ? "#111111"
+      : (currentFormatting.color ?? "#111111");
+  const currentHighlight =
+    currentFormatting.highlight === "mixed" ||
+    !currentFormatting.highlight ||
+    currentFormatting.highlight === "transparent"
+      ? "#fff200"
+      : currentFormatting.highlight;
+
+  const toggleDecoration = (name, active) => {
+    const values = new Set(
+      decoration === "none" ? [] : decoration.split(/\s+/).filter(Boolean),
+    );
+    if (active) values.delete(name);
+    else values.add(name);
+    fmt({
+      "text-decoration":
+        values.size > 0 ? [...values].join(" ") : "none",
+    });
+  };
+
+  const clearFormatting = () =>
+    fmt({
+      font: null,
+      size: null,
+      color: null,
+      weight: "normal",
+      italics: false,
+      "text-decoration": "none",
+      highlight: null,
+      "super-sub-script": null,
+    });
 
   return (
     <div className="ribbon-group font-group">
-      <div className="font-row">
+      <div className="font-row font-row-top">
         <select
           className="toolbar-select"
           disabled={!isTextSelected}
           value={currentFont}
-          onChange={(e) => { if (e.target.value) fmt({ font: e.target.value }); }}
+          onChange={(event) => {
+            if (event.target.value) fmt({ font: event.target.value });
+          }}
         >
           {currentFont === "" && <option value="">—</option>}
-          {fonts.map((f) => (
-            <option key={f} value={f} style={{ fontFamily: f }}>
-              {f}
+          {fonts.map((font) => (
+            <option key={font} value={font} style={{ fontFamily: font }}>
+              {font}
             </option>
           ))}
         </select>
 
         <SizePicker
+          key={currentSize}
           value={currentSize}
           disabled={!isTextSelected}
-          onChange={(n) => fmt({ size: `${n}px` })}
+          onChange={(size) => fmt({ size: `${size}px` })}
         />
+
+        <button
+          className="font-command font-size-command"
+          disabled={!isTextSelected}
+          title="Increase font size"
+          onClick={() => fmt({ "font-size-delta": 2 })}
+        >
+          A<sup>+</sup>
+        </button>
+        <button
+          className="font-command font-size-command"
+          disabled={!isTextSelected}
+          title="Decrease font size"
+          onClick={() => fmt({ "font-size-delta": -2 })}
+        >
+          A<sup>−</sup>
+        </button>
       </div>
 
-      <div className="font-row">
+      <div className="font-row font-row-bottom">
         <button
-          className={`small-format${isBold ? " active" : ""}`}
+          className={`font-command${isBold ? " active" : ""}`}
           disabled={!isTextSelected}
           title="Bold"
           onClick={() => fmt({ weight: isBold ? "normal" : "bold" })}
         >
           <MdFormatBold />
         </button>
-
         <button
-          className={`small-format${isItalic ? " active" : ""}`}
+          className={`font-command${isItalic ? " active" : ""}`}
           disabled={!isTextSelected}
           title="Italic"
           onClick={() => fmt({ italics: !isItalic })}
         >
           <MdFormatItalic />
         </button>
-
         <button
-          className={`small-format${isUnderline ? " active" : ""}`}
+          className={`font-command${isUnderline ? " active" : ""}`}
           disabled={!isTextSelected}
           title="Underline"
-          onClick={() =>
-            fmt({ "text-decoration": isUnderline ? "none" : "underline" })
-          }
+          onClick={() => toggleDecoration("underline", isUnderline)}
         >
           <MdFormatUnderlined />
         </button>
-
         <button
-          className="small-format"
+          className={`font-command${isStrikethrough ? " active" : ""}`}
           disabled={!isTextSelected}
-          title="Increase font size"
-          onClick={() => fmt({ size: `${Math.min(120, (currentSize || 28) + 2)}px` })}
+          title="Strikethrough"
+          onClick={() => toggleDecoration("line-through", isStrikethrough)}
         >
-          A<sup>+</sup>
+          <MdFormatStrikethrough />
+        </button>
+        <button
+          className="font-command"
+          disabled={!isTextSelected}
+          title="Clear all formatting"
+          onClick={clearFormatting}
+        >
+          <MdFormatClear />
         </button>
 
-        <label
-          className={`small-format color-format-btn${!isTextSelected ? " disabled" : ""}`}
-          title="Text color"
-        >
-          <span style={{ borderBottom: `2px solid ${isTextSelected ? currentColor : "#888"}` }}>
-            A
-          </span>
-          <input
-            type="color"
-            value={currentColor.length === 7 ? currentColor : "#111111"}
+        <div className="font-case-wrap" ref={caseRef}>
+          <button
+            className="font-command font-case-command"
             disabled={!isTextSelected}
-            onChange={(e) => fmt({ color: e.target.value })}
-            style={{ display: "none" }}
-          />
-        </label>
+            title="Change case"
+            onClick={() => setShowCaseMenu((open) => !open)}
+          >
+            Aa <MdArrowDropDown />
+          </button>
+          {showCaseMenu && (
+            <div className="font-case-menu">
+              <button onClick={() => onChangeCase?.("sentence")}>
+                Sentence case
+              </button>
+              <button onClick={() => onChangeCase?.("lower")}>lowercase</button>
+              <button onClick={() => onChangeCase?.("upper")}>UPPERCASE</button>
+              <button onClick={() => onChangeCase?.("title")}>
+                Capitalize Each Word
+              </button>
+              <button onClick={() => onChangeCase?.("toggle")}>
+                tOGGLE cASE
+              </button>
+            </div>
+          )}
+        </div>
+
+        <ColorCommand
+          disabled={!isTextSelected}
+          title="Text highlight color"
+          color={currentHighlight}
+          icon={<MdBorderColor />}
+          onChange={(color) => fmt({ highlight: color })}
+          allowNoColor
+          onNoColor={() => fmt({ highlight: null })}
+        />
+        <ColorCommand
+          disabled={!isTextSelected}
+          title="Font color"
+          color={currentColor}
+          icon={<MdFormatColorText />}
+          onChange={(color) => fmt({ color })}
+        />
       </div>
 
       <div className="ribbon-group-title">Font</div>

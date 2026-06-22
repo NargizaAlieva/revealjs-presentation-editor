@@ -11,6 +11,7 @@ import {
   isPasteShortcut,
   isCutShortcut,
   isDeleteShortcut,
+  isSelectAllShortcut,
 } from "../core/events/keyboardShortcuts";
 import { useCanvasInteractions } from "../hooks/useCanvasInteractions";
 import { findElementInSlide } from "../core/operations/elementOperations";
@@ -43,7 +44,11 @@ export default function EditorCanvas({
   showNotes = true,
   onCanvasZoom,
   selectedElementId,
+  selectedElementIds = [],
   onSelectElement,
+  onDeleteSelection,
+  onSelectAll,
+  objectSelectionMode = false,
   onBeginHistory,
   onCommitHistory,
   onCancelHistory,
@@ -66,6 +71,8 @@ export default function EditorCanvas({
 }) {
   const [playingElementId, setPlayingElementId] = useState(null);
   const [playingEffect, setPlayingEffect] = useState(null);
+  const [playingParagraphIndex, setPlayingParagraphIndex] = useState(null);
+  const [playingByParagraph, setPlayingByParagraph] = useState(false);
   const [playingTransition, setPlayingTransition] = useState(null);
 
   const workspaceRef = useRef(null);
@@ -79,12 +86,12 @@ export default function EditorCanvas({
   const scaledHeight = height * zoomScale;
 
   const textElements = useMemo(
-    () => slide?.contents?.text ?? [],
+    () => (slide?.contents?.text ?? []).filter((element) => !element.hidden),
     [slide?.contents?.text],
   );
 
   const mediaElements = useMemo(
-    () => slide?.contents?.media ?? [],
+    () => (slide?.contents?.media ?? []).filter((element) => !element.hidden),
     [slide?.contents?.media],
   );
 
@@ -140,20 +147,62 @@ export default function EditorCanvas({
       if (cancelled) return;
 
       if (previewEffect.type === "animation") {
-        setPlayingElementId(null);
-        setPlayingEffect(null);
+        const duration = getAnimationDurationMs(previewEffect.speed);
 
-        rafId = requestAnimationFrame(() => {
-          if (!cancelled) {
-            setPlayingElementId(previewEffect.elementId);
-            setPlayingEffect(previewEffect.effect);
+        if (previewEffect.byParagraph && previewEffect.paragraphCount > 1) {
+          setPlayingByParagraph(true);
+          setPlayingElementId(previewEffect.elementId);
+          setPlayingEffect(previewEffect.effect);
+          setPlayingParagraphIndex(null);
+
+          const N = previewEffect.paragraphCount;
+          const timers = [];
+          for (let i = 0; i < N; i++) {
+            timers.push(
+              setTimeout(
+                () => {
+                  if (!cancelled) setPlayingParagraphIndex(i);
+                },
+                30 + i * (duration + 50),
+              ),
+            );
           }
-        });
+          timers.push(
+            setTimeout(
+              () => {
+                if (!cancelled) {
+                  setPlayingByParagraph(false);
+                  setPlayingElementId(null);
+                  setPlayingEffect(null);
+                  setPlayingParagraphIndex(null);
+                }
+              },
+              30 + N * (duration + 50) + 100,
+            ),
+          );
 
-        timerId = setTimeout(() => {
+          timerId = { cancel: () => timers.forEach(clearTimeout) };
+        } else {
+          setPlayingByParagraph(false);
           setPlayingElementId(null);
           setPlayingEffect(null);
-        }, getAnimationDurationMs(previewEffect.speed) + 100);
+          setPlayingParagraphIndex(null);
+
+          rafId = requestAnimationFrame(() => {
+            if (!cancelled) {
+              setPlayingElementId(previewEffect.elementId);
+              setPlayingEffect(previewEffect.effect);
+            }
+          });
+
+          timerId = setTimeout(
+            () => {
+              setPlayingElementId(null);
+              setPlayingEffect(null);
+            },
+            getAnimationDurationMs(previewEffect.speed) + 100,
+          );
+        }
       }
 
       if (previewEffect.type === "transition") {
@@ -174,7 +223,11 @@ export default function EditorCanvas({
     return () => {
       cancelled = true;
       if (rafId) cancelAnimationFrame(rafId);
-      if (timerId) clearTimeout(timerId);
+      if (timerId?.cancel) {
+        timerId.cancel();
+        setPlayingByParagraph(false);
+        setPlayingParagraphIndex(null);
+      } else if (timerId) clearTimeout(timerId);
     };
   }, [previewEffect]);
 
@@ -182,10 +235,17 @@ export default function EditorCanvas({
     const handleKeyDown = (event) => {
       const target = event.target;
       const inCanvas = containerRef.current?.contains(target);
-      const onBody = target === document.body || target === document.documentElement;
+      const onBody =
+        target === document.body || target === document.documentElement;
       if (!inCanvas && !onBody) return;
 
       const editable = isEditableTarget(target);
+
+      if (isSelectAllShortcut(event) && !editable) {
+        event.preventDefault();
+        onSelectAll?.();
+        return;
+      }
 
       if (isUndoShortcut(event) && !editable) {
         event.preventDefault();
@@ -200,8 +260,7 @@ export default function EditorCanvas({
       }
 
       if (isCopyShortcut(event) && !editable && selectedElementId) {
-        const found = findElementInSlide(textElements, mediaElements, selectedElementId);
-        if (found) onCopy?.(found.element);
+        onCopy?.();
         return;
       }
 
@@ -211,8 +270,7 @@ export default function EditorCanvas({
       }
 
       if (isCutShortcut(event) && !editable && selectedElementId) {
-        const found = findElementInSlide(textElements, mediaElements, selectedElementId);
-        if (found) onCut?.(found.element);
+        onCut?.();
         return;
       }
 
@@ -220,7 +278,16 @@ export default function EditorCanvas({
       if (editable) return;
       if (!selectedElementId) return;
 
-      const found = findElementInSlide(textElements, mediaElements, selectedElementId);
+      if (selectedElementIds.length > 1) {
+        onDeleteSelection?.();
+        return;
+      }
+
+      const found = findElementInSlide(
+        textElements,
+        mediaElements,
+        selectedElementId,
+      );
       if (!found) return;
 
       if (found.type === "text") {
@@ -239,6 +306,7 @@ export default function EditorCanvas({
     };
   }, [
     selectedElementId,
+    selectedElementIds,
     textElements,
     mediaElements,
     onDeleteTextElement,
@@ -249,6 +317,8 @@ export default function EditorCanvas({
     onCopy,
     onPaste,
     onCut,
+    onDeleteSelection,
+    onSelectAll,
   ]);
 
   useEffect(() => {
@@ -269,7 +339,9 @@ export default function EditorCanvas({
   if (!slide) {
     return (
       <main
-        className="canvas-wrapper"
+        className={`canvas-wrapper ${
+          objectSelectionMode ? "object-selection-mode" : ""
+        }`}
         style={colorThemeStyle}
         ref={containerRef}
         tabIndex={-1}
@@ -287,7 +359,9 @@ export default function EditorCanvas({
 
   return (
     <main
-      className="canvas-wrapper"
+      className={`canvas-wrapper ${
+        objectSelectionMode ? "object-selection-mode" : ""
+      }`}
       style={colorThemeStyle}
       ref={containerRef}
       tabIndex={-1}
@@ -320,7 +394,8 @@ export default function EditorCanvas({
                   width: `${width}px`,
                   height: `${height}px`,
                   background:
-                    !slide?.contents?.background || slide.contents.background === TRANSPARENT_SLIDE_BG
+                    !slide?.contents?.background ||
+                    slide.contents.background === TRANSPARENT_SLIDE_BG
                       ? "var(--bg-light, white)"
                       : slide.contents.background,
                   color: "var(--text-dark, black)",
@@ -343,8 +418,10 @@ export default function EditorCanvas({
                 />
 
                 {textElements.map((textElement) => {
+                  const isPlaying = playingElementId === textElement.id;
+                  const isByParagraph = isPlaying && playingByParagraph;
                   const playClass =
-                    playingElementId === textElement.id
+                    isPlaying && !isByParagraph
                       ? `play-effect play-${playingEffect}`
                       : "";
 
@@ -352,8 +429,10 @@ export default function EditorCanvas({
                     <TextElement
                       key={textElement.id}
                       textElement={textElement}
-                      isSelected={selectedElementId === textElement.id}
+                      isSelected={selectedElementIds.includes(textElement.id)}
+                      isPrimarySelected={selectedElementId === textElement.id}
                       onSelect={onSelectElement}
+                      objectSelectionMode={objectSelectionMode}
                       onChangeTextElement={onChangeTextElement}
                       onFormatTextElement={onFormatTextElement}
                       onDeleteTextElement={(id) => {
@@ -363,11 +442,17 @@ export default function EditorCanvas({
                       onStartDrag={startDraggingText}
                       onStartResize={startResizingText}
                       onStartRotate={startRotatingText}
+                      onAutoFit={updateElement}
+                      slideHeight={height}
                       onBeginHistory={onBeginHistory}
                       onCommitHistory={onCommitHistory}
                       onCancelHistory={onCancelHistory}
                       onNewComment={onNewComment}
                       previewClassName={playClass}
+                      activeParagraphIndex={
+                        isByParagraph ? playingParagraphIndex : null
+                      }
+                      activeEffect={isByParagraph ? playingEffect : null}
                       presentation={presentation}
                       slide={slide}
                       onChangeParagraphs={onChangeParagraphs}
@@ -400,7 +485,8 @@ export default function EditorCanvas({
                     <MediaElement
                       key={media.id}
                       media={media}
-                      isSelected={selectedElementId === media.id}
+                      isSelected={selectedElementIds.includes(media.id)}
+                      isPrimarySelected={selectedElementId === media.id}
                       onSelect={onSelectElement}
                       onStartDrag={startDraggingMedia}
                       onStartResize={startResizingMedia}
@@ -474,38 +560,38 @@ export default function EditorCanvas({
                           snapInfo.angle === 135 ||
                           snapInfo.angle === 225 ||
                           snapInfo.angle === 315) && (
-                            <svg
-                              style={{
-                                position: "absolute",
-                                top: 0,
-                                left: 0,
-                                width: "100%",
-                                height: "100%",
-                                pointerEvents: "none",
-                                overflow: "visible",
-                              }}
-                            >
-                              <line
-                                x1={centerX - 2000}
-                                y1={
-                                  centerY +
-                                  (snapInfo.angle === 45 || snapInfo.angle === 225
-                                    ? 2000
-                                    : -2000)
-                                }
-                                x2={centerX + 2000}
-                                y2={
-                                  centerY +
-                                  (snapInfo.angle === 45 || snapInfo.angle === 225
-                                    ? -2000
-                                    : 2000)
-                                }
-                                stroke="#4f46e5"
-                                strokeWidth="1"
-                                opacity="0.7"
-                              />
-                            </svg>
-                          )}
+                          <svg
+                            style={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              width: "100%",
+                              height: "100%",
+                              pointerEvents: "none",
+                              overflow: "visible",
+                            }}
+                          >
+                            <line
+                              x1={centerX - 2000}
+                              y1={
+                                centerY +
+                                (snapInfo.angle === 45 || snapInfo.angle === 225
+                                  ? 2000
+                                  : -2000)
+                              }
+                              x2={centerX + 2000}
+                              y2={
+                                centerY +
+                                (snapInfo.angle === 45 || snapInfo.angle === 225
+                                  ? -2000
+                                  : 2000)
+                              }
+                              stroke="#4f46e5"
+                              strokeWidth="1"
+                              opacity="0.7"
+                            />
+                          </svg>
+                        )}
 
                         <div
                           style={{
