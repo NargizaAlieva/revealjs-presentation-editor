@@ -195,7 +195,7 @@ useEffect(() => {
     onSaveSelection?.(textElement.id, offsets);
   };
 
-  const innerHTML = paragraphsToHTML(textElement.paragraphs);
+  const innerHTML = paragraphsToHTML(textElement.paragraphs, masterFormatting, placeholderFormatting);
 
   useEffect(() => {
     const el = editableRef.current;
@@ -643,7 +643,7 @@ useEffect(() => {
           sel.addRange(newRange);
           if (onChangeParagraphs) {
             const newParagraphs = domToParagraphs(el, textElement.paragraphs);
-            lastTypedHTMLRef.current = paragraphsToHTML(newParagraphs);
+            lastTypedHTMLRef.current = paragraphsToHTML(newParagraphs, masterFormatting, placeholderFormatting);
             onChangeParagraphs(textElement.id, newParagraphs);
           } else {
             onChangeTextElement(textElement.id, el.innerText);
@@ -659,7 +659,7 @@ useEffect(() => {
           }
           if (onChangeParagraphs) {
             const paragraphs = domToParagraphs(el, textElement.paragraphs);
-            lastTypedHTMLRef.current = paragraphsToHTML(paragraphs);
+            lastTypedHTMLRef.current = paragraphsToHTML(paragraphs, masterFormatting, placeholderFormatting);
             onChangeParagraphs(textElement.id, paragraphs);
           } else {
             onChangeTextElement(textElement.id, el.innerText);

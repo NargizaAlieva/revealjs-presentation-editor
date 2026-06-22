@@ -44,7 +44,8 @@ const createTextFromPlaceholder = (placeholder) => ({
   paragraphs: [
     {
       id: createId("paragraph"),
-      formatting: placeholder.formatting ?? {},
+      formatting: {},
+      userSetKeys: [],
       bullets: "none",
       runs: [{ formatting: {}, "super-sub-script": "normal", text: getPlaceholderDefaultText(placeholder), link: null }],
     },
@@ -73,27 +74,41 @@ const updateElementFromPlaceholder = (element, placeholders, isModified) => {
   );
 
   if (!match) return element;
-  if (isModified(element)) return element;
+
+  const geometryModified = isModified(element);
 
   const updated = {
     ...element,
-    position: { ...match.position },
-    width: match.width,
-    height: match.height,
-    rotation: match.rotation ?? element.rotation ?? 0,
-    background: match.background ?? element.background,
+    ...(geometryModified ? {} : {
+      position: { ...match.position },
+      width: match.width,
+      height: match.height,
+      rotation: match.rotation ?? element.rotation ?? 0,
+      background: match.background ?? element.background,
+    }),
   };
 
   if (element.paragraphs) {
-    updated.paragraphs = element.paragraphs.map((p, pIdx) => ({
-      ...p,
-      ...(match.formatting ? { formatting: { ...(p.formatting ?? {}), ...match.formatting } } : {}),
-      runs: p.runs.map((r, rIdx) =>
-        pIdx === 0 && rIdx === 0 && match.promptText !== undefined
-          ? { ...r, text: match.promptText }
-          : r,
-      ),
-    }));
+    updated.paragraphs = element.paragraphs.map((p, pIdx) => {
+      const userSetKeys = new Set(p.userSetKeys ?? []);
+      const current = p.formatting ?? {};
+      const merged = {};
+      for (const [k, v] of Object.entries(current)) {
+        if (userSetKeys.has(k)) merged[k] = v;
+      }
+      for (const [k, v] of Object.entries(match.formatting ?? {})) {
+        if (!userSetKeys.has(k)) merged[k] = v;
+      }
+      return {
+        ...p,
+        formatting: merged,
+        runs: p.runs.map((r, rIdx) =>
+          pIdx === 0 && rIdx === 0 && match.promptText !== undefined
+            ? { ...r, text: match.promptText }
+            : r,
+        ),
+      };
+    });
   }
 
   return updated;
@@ -144,6 +159,7 @@ export const createPlaceholderPseudoElement = (placeholder, masterFormatting = {
       {
         id: createId("paragraph"),
         formatting: { ...masterFormatting, ...(placeholder.formatting ?? {}) },
+        userSetKeys: [],
         bullets: "none",
         runs: [{
           formatting: {},
@@ -243,7 +259,17 @@ export const deleteLayoutElement = (presentation, layoutId, elementType, element
 };
 
 export const updateLayoutElementsFont = (presentation, layoutId, font) => {
-  const layouts = getLayouts(presentation).map((l) => {
+  const layout = getLayouts(presentation).find((l) => l["layout-id"] === layoutId);
+  if (!layout) return presentation;
+
+  const updatedPlaceholders = (layout.placeholders ?? []).map((p) => ({
+    ...p,
+    formatting: { ...(p.formatting ?? {}), font },
+  }));
+
+  const withPropagated = propagateLayoutChanges(presentation, layoutId, updatedPlaceholders);
+
+  const layouts = getLayouts(withPropagated).map((l) => {
     if (l["layout-id"] !== layoutId) return l;
     return {
       ...l,
@@ -259,7 +285,8 @@ export const updateLayoutElementsFont = (presentation, layoutId, font) => {
       },
     };
   });
-  return setLayouts(presentation, layouts);
+
+  return setLayouts(withPropagated, layouts);
 };
 
 export const removeLayoutPlaceholder = (presentation, layoutId, placeholderId) => {
@@ -322,7 +349,29 @@ export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
     const pid = el["placeholder-id"];
     const match = pid ? placeholderMap.get(pid) : null;
     if (match) {
-      return { updated: { ...el, position: { ...match.position }, width: match.width, height: match.height, rotation: match.rotation ?? el.rotation ?? 0, background: match.background ?? el.background } };
+      const updated = {
+        ...el,
+        position: { ...match.position },
+        width: match.width,
+        height: match.height,
+        rotation: match.rotation ?? el.rotation ?? 0,
+        background: match.background ?? el.background,
+      };
+      if (el.paragraphs) {
+        updated.paragraphs = el.paragraphs.map((p) => {
+          const userSetKeys = new Set(p.userSetKeys ?? []);
+          const current = p.formatting ?? {};
+          const merged = {};
+          for (const [k, v] of Object.entries(current)) {
+            if (userSetKeys.has(k)) merged[k] = v;
+          }
+          for (const [k, v] of Object.entries(match.formatting ?? {})) {
+            if (!userSetKeys.has(k)) merged[k] = v;
+          }
+          return { ...p, formatting: merged };
+        });
+      }
+      return { updated };
     }
     if (!pid || isModified(el)) return { kept: el };
     return { remove: true };
@@ -370,6 +419,32 @@ export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
   return setSlides(presentation, slides);
 };
 
+// Unified update for layout items — routes to placeholder or element based on itemId.
+// Supports: position, width, height, rotation, formatting, promptText (placeholder text).
+export const updateLayoutItem = (presentation, layoutId, itemId, updates) => {
+  const layout = getLayouts(presentation).find((l) => l["layout-id"] === layoutId);
+  if (!layout) return presentation;
+
+  const isPlaceholder = (layout.placeholders ?? []).some((p) => p["placeholder-id"] === itemId);
+
+  if (isPlaceholder) {
+    const { promptText, ...rest } = updates;
+    let result = presentation;
+    if (Object.keys(rest).length) result = updateLayoutPlaceholder(result, layoutId, itemId, rest);
+    if (promptText !== undefined) result = updateLayoutPlaceholder(result, layoutId, itemId, { promptText });
+    return result;
+  }
+
+  const { formatting, promptText, ...rest } = updates;
+  const isTextEl = (layout.elements?.text ?? []).some((el) => el.id === itemId);
+  const elementType = isTextEl ? "text" : "media";
+  let result = presentation;
+  if (Object.keys(rest).length) result = updateLayoutElement(result, layoutId, elementType, itemId, rest);
+  if (formatting) result = updateLayoutElement(result, layoutId, elementType, itemId, { formatting });
+  if (promptText !== undefined) result = updateLayoutElementTextContent(result, layoutId, itemId, promptText);
+  return result;
+};
+
 export const propagateLayoutChanges = (
   presentation,
   layoutId,
@@ -378,9 +453,7 @@ export const propagateLayoutChanges = (
   const slides = getSlides(presentation).map((slide) => {
     if (slide["layout-id"] !== layoutId) return slide;
 
-    const masterFormatting = presentation.slideset?.master?.formatting ?? {}; // ← keep here only
-
-   const updatedText = (slide.contents?.text ?? []).map((el) =>
+    const updatedText = (slide.contents?.text ?? []).map((el) =>
       updateElementFromPlaceholder(el, updatedPlaceholders, isTextModified),
     );
     const updatedMedia = (slide.contents?.media ?? []).map((el) =>
@@ -429,7 +502,6 @@ export const resetSlideToLayout = (presentation, slideIndex) => {
   const slide = slides[slideIndex];
   if (!slide) return presentation;
 
-  const masterFormatting = presentation.slideset?.master?.formatting ?? {};
   const layout = getLayouts(presentation).find(
     (l) => l["layout-id"] === slide["layout-id"],
   );
@@ -445,6 +517,14 @@ export const resetSlideToLayout = (presentation, slideIndex) => {
       const match = pid ? placeholderMap.get(pid) : null;
 
       if (!match) return el;
+
+      const resetParagraphs = (el.paragraphs ?? []).map((p) => ({
+        ...p,
+        formatting: {},
+        userSetKeys: [],
+        runs: (p.runs ?? []).map((r) => ({ ...r, formatting: {} })),
+      }));
+
       return {
         ...el,
         position: { ...match.position },
@@ -452,6 +532,8 @@ export const resetSlideToLayout = (presentation, slideIndex) => {
         height: match.height,
         background: match.background ?? el.background,
         rotation: 0,
+        userModified: false,
+        paragraphs: resetParagraphs,
       };
     });
 

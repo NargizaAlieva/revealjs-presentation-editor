@@ -68,6 +68,7 @@ export const updateTextElement = (
         return {
           id: existing?.id ?? createParagraphId(),
           formatting: existing?.formatting ?? { ...templateFormatting },
+          userSetKeys: existing?.userSetKeys ?? [],
           bullets: existing?.bullets ?? "none",
           runs: [
             {
@@ -188,6 +189,7 @@ export const updateTextFormatting = (
               ...new Set([
                 ...(paragraph.userSetKeys ?? []),
                 ...Object.keys(paragraphUpdate),
+                ...(fontSizeDelta ? ["size"] : []),
               ]),
             ],
             runs: (paragraph.runs ?? []).map((run) => {
@@ -315,10 +317,25 @@ export const updateTextRangeFormatting = (
           ? { ...(para.formatting ?? {}), ...paraFormatting }
           : para.formatting;
 
+      // Track which keys the user explicitly set so master/layout propagation won't overwrite them.
+      const newUserSetKeys =
+        isSelectedParagraph
+          ? [
+              ...new Set([
+                ...(para.userSetKeys ?? []),
+                ...Object.keys(paraFormatting),
+                ...(Object.keys(runFormatting).length > 0 || fontSizeDelta
+                  ? Object.keys(runFormatting).filter((k) => SHARED_KEYS.has(k))
+                  : []),
+                ...(fontSizeDelta ? ["size"] : []),
+              ]),
+            ]
+          : (para.userSetKeys ?? []);
+
       if (pRangeStart >= pRangeEnd) {
-        return newParaFormatting === para.formatting
+        return newParaFormatting === para.formatting && newUserSetKeys === para.userSetKeys
           ? para
-          : { ...para, formatting: newParaFormatting };
+          : { ...para, formatting: newParaFormatting, userSetKeys: newUserSetKeys };
       }
 
       const newRuns = [];
@@ -375,6 +392,7 @@ export const updateTextRangeFormatting = (
       return {
         ...para,
         formatting: newParaFormatting,
+        userSetKeys: newUserSetKeys,
         runs: newRuns.length > 0 ? newRuns : para.runs,
       };
     });

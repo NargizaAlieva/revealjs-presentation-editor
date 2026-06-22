@@ -115,11 +115,8 @@ export function migrateParagraphFormatting(paragraphs, placeholderFormatting, ma
     const f = { ...(p.formatting ?? {}) };
     for (const key of Object.keys(f)) {
       if (userSetKeys.has(key)) continue;
-      if (key in placeholderFormatting) {
-        if (f[key] === placeholderFormatting[key]) delete f[key];
-      } else if (key in masterFormatting) {
-        if (f[key] === masterFormatting[key]) delete f[key];
-      }
+      if (key in placeholderFormatting) delete f[key];
+      else if (key in masterFormatting) delete f[key];
     }
 
     const runs = (p.runs ?? []).map((run) => {

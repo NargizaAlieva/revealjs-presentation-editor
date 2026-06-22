@@ -1,5 +1,6 @@
 import { createPlaceholderPseudoElement } from "./layoutOperations";
 import { TITLE_PLACEHOLDER, FOOTER_PLACEHOLDERS, createMasterTextElement } from "../model/masterDefaults";
+import { migrateParagraphFormatting } from "../render/slidesetRenderUtils";
 
 export const buildMasterPseudoSlide = (masterElements) => ({
   contents: {
@@ -202,6 +203,35 @@ export const updateMasterDimensions = (
 
 export const updateMasterFormatting = (presentation, formatting) => {
   const oldMaster = presentation.slideset?.master?.formatting ?? {};
+  const newMasterFormatting = { ...oldMaster, ...formatting };
+
+  const layouts = presentation.slideset?.layouts ?? [];
+  const placeholderMap = new Map();
+  for (const layout of layouts) {
+    for (const ph of layout.placeholders ?? []) {
+      placeholderMap.set(ph["placeholder-id"], ph.formatting ?? {});
+    }
+  }
+
+  const updatedSlides = (presentation.slideset?.slides ?? []).map((slide) => ({
+    ...slide,
+    contents: {
+      ...slide.contents,
+      text: (slide.contents?.text ?? []).map((el) => {
+        const phFormatting = placeholderMap.get(el["placeholder-id"]) ?? {};
+        return {
+          ...el,
+          paragraphs: migrateParagraphFormatting(el.paragraphs, phFormatting, newMasterFormatting),
+        };
+      }),
+    },
+  }));
+
+  const masterElements = presentation.slideset?.master?.elements ?? {};
+  const updatedMasterText = (masterElements.text ?? []).map((el) => ({
+    ...el,
+    paragraphs: migrateParagraphFormatting(el.paragraphs, {}, newMasterFormatting),
+  }));
 
   return {
     ...presentation,
@@ -209,8 +239,13 @@ export const updateMasterFormatting = (presentation, formatting) => {
       ...presentation.slideset,
       master: {
         ...presentation.slideset.master,
-        formatting: { ...oldMaster, ...formatting },
+        formatting: newMasterFormatting,
+        elements: {
+          ...masterElements,
+          text: updatedMasterText,
+        },
       },
+      slides: updatedSlides,
     },
   };
 };
@@ -318,6 +353,7 @@ export const updateMasterTextContent = (presentation, elementId, newText) => {
       return {
         id: existing?.id ?? createParagraphId(),
         formatting: existing?.formatting ?? { ...templateFormatting },
+        userSetKeys: existing?.userSetKeys ?? [],
         bullets: existing?.bullets ?? "none",
         runs: [{
           formatting: existing?.runs?.[0]?.formatting ?? { ...templateRunFormatting },
@@ -342,6 +378,22 @@ export const updateMasterTextContent = (presentation, elementId, newText) => {
       },
     },
   };
+};
+
+export const hasTitle = (presentation, layoutId = null) => {
+  if (layoutId) {
+    const layout = (presentation?.slideset?.layouts ?? []).find((l) => l["layout-id"] === layoutId);
+    return (layout?.placeholders ?? []).some((p) => p.role === "title");
+  }
+  return (presentation?.slideset?.master?.elements?.text ?? []).some((el) => el.id === "master-title");
+};
+
+export const hasFooters = (presentation, layoutId = null) => {
+  if (layoutId) {
+    const layout = (presentation?.slideset?.layouts ?? []).find((l) => l["layout-id"] === layoutId);
+    return (layout?.placeholders ?? []).some((p) => p["placeholder-id"]?.startsWith("footer-"));
+  }
+  return (presentation?.slideset?.master?.elements?.text ?? []).some((el) => el.id?.startsWith("master-footer-"));
 };
 
 // Update the bg-light entry in the master color-theme with a new hex color.

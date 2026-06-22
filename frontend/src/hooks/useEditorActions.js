@@ -605,6 +605,18 @@ export function useEditorActions(
     [eventBus],
   );
 
+  const updateLayoutItem = useCallback(
+    (layoutId, itemId, updates) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.UPDATE_ITEM, {
+          layoutId,
+          itemId,
+          updates,
+        }),
+      ),
+    [eventBus],
+  );
+
   const applyLayout = useCallback(
     (layoutId) =>
       eventBus.dispatch(
@@ -784,6 +796,7 @@ export function useEditorActions(
     addLayoutPlaceholder,
     removeLayoutPlaceholder,
     updateLayoutPlaceholder,
+    updateLayoutItem,
     applyLayout,
     resetLayout,
     savePresentation,

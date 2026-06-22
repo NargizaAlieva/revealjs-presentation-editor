@@ -152,6 +152,7 @@ export default function EditorPage() {
             onDeleteMasterElement={ctrl.deleteMasterElement}
             onUpdateMasterTextContent={ctrl.updateMasterTextContent}
             onUpdateMasterTextFormatting={ctrl.updateMasterTextFormatting}
+            onUpdateLayoutItem={ctrl.updateLayoutItem}
             onUpdateLayoutPlaceholder={ctrl.updateLayoutPlaceholder}
             onUpdateLayoutElement={ctrl.updateLayoutElement}
             onUpdateLayoutElementTextContent={

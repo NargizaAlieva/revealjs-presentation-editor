@@ -42,6 +42,7 @@ import {
   removeLayoutPlaceholder,
   updateLayoutPlaceholder,
   updateLayoutElementsFont,
+  updateLayoutItem,
 } from "../operations/layoutOperations";
 import {
   addMedia,
@@ -968,6 +969,19 @@ export const editorReducer = (state, event) => {
           state.presentation,
           event.payload.layoutId,
           event.payload.placeholderId,
+          event.payload.updates,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+
+    case EditorEventType.LAYOUT.UPDATE_ITEM:
+      return withHistory(state, {
+        ...state,
+        presentation: updateLayoutItem(
+          state.presentation,
+          event.payload.layoutId,
+          event.payload.itemId,
           event.payload.updates,
         ),
         lastEvent: event,

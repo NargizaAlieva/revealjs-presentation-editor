@@ -42,6 +42,7 @@ export {
 export {
   applyLayoutToSlide,
   propagateLayoutChanges,
+  updateLayoutItem,
 } from "./operations/layoutOperations";
 
 export {
@@ -66,4 +67,6 @@ export {
   updateMasterTheme,
   updateMasterDimensions,
   updateMasterFormatting,
+  hasTitle,
+  hasFooters,
 } from "./operations/masterOperations";

@@ -176,15 +176,26 @@ export const runsToHTML = (runs) =>
     })
     .join("");
 
-export const paragraphsToHTML = (paragraphs) =>
+export const paragraphsToHTML = (paragraphs, masterFormatting = {}, placeholderFormatting = {}) =>
   (paragraphs ?? [])
     .map((paragraph, index) => {
       const formatting = paragraph.formatting ?? {};
+      const r = (elemVal, phVal, masterVal) => elemVal ?? phVal ?? masterVal;
       const styles = [
-        buildRunStyles(formatting),
-        formatting.align ? `text-align:${formatting.align}` : "",
-        formatting["line-spacing"]
-          ? `line-height:${formatting["line-spacing"]}`
+        buildRunStyles({
+          weight: r(formatting.weight, placeholderFormatting.weight, masterFormatting.weight),
+          italics: r(formatting.italics, placeholderFormatting.italics, masterFormatting.italics),
+          color: r(formatting.color, placeholderFormatting.color, masterFormatting.color),
+          size: r(formatting.size, placeholderFormatting.size, masterFormatting.size),
+          font: r(formatting.font, placeholderFormatting.font, masterFormatting.font),
+          "text-decoration": r(formatting["text-decoration"], placeholderFormatting["text-decoration"], masterFormatting["text-decoration"]),
+          highlight: r(formatting.highlight, placeholderFormatting.highlight, masterFormatting.highlight),
+        }),
+        formatting.align || placeholderFormatting.align || masterFormatting.align
+          ? `text-align:${r(formatting.align, placeholderFormatting.align, masterFormatting.align)}`
+          : "",
+        formatting["line-spacing"] || placeholderFormatting["line-spacing"] || masterFormatting["line-spacing"]
+          ? `line-height:${r(formatting["line-spacing"], placeholderFormatting["line-spacing"], masterFormatting["line-spacing"])}`
           : "",
       ]
         .filter(Boolean)

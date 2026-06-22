@@ -12,6 +12,8 @@ import { DEFAULT_FONTS } from "../core/model/fontConfig";
 import { renderShapes } from "../core/render/shapeRenderer";
 import { toHex6 } from "../core/utils/colorUtils";
 import { TITLE_PLACEHOLDER, FOOTER_PLACEHOLDERS, createMasterTextElement } from "../core/model/masterDefaults";
+import { hasTitle, hasFooters } from "../core/operations/masterOperations";
+import { updateLayoutItem } from "../core/operations/layoutOperations";
 
 
 function ThemeThumbnailMini({ theme, isActive, onClick }) {
@@ -332,13 +334,8 @@ export function SlideMasterRibbon({
   const masterElements = presentation?.slideset?.master?.elements ?? {};
   const layoutPlaceholders = selectedLayout?.placeholders ?? [];
 
-  const hasTitle = selectedMasterLayoutId
-    ? layoutPlaceholders.some((p) => p.role === "title")
-    : (masterElements.text ?? []).some((el) => el.id === "master-title");
-
-  const hasFooters = selectedMasterLayoutId
-    ? layoutPlaceholders.some((p) => p["placeholder-id"]?.startsWith("footer-"))
-    : (masterElements.text ?? []).some((el) => el.id?.startsWith("master-footer-"));
+  const titleVisible = hasTitle(presentation, selectedMasterLayoutId ?? null);
+  const footersVisible = hasFooters(presentation, selectedMasterLayoutId ?? null);
 
   const handleToggleTitle = () => onToggleTitle?.(selectedMasterLayoutId ?? null);
   const handleToggleFooters = () => onToggleFooters?.(selectedMasterLayoutId ?? null);
@@ -474,7 +471,7 @@ export function SlideMasterRibbon({
               <label className="master-check-row" style={!selectedMasterLayoutId ? { opacity: 0.4, cursor: "not-allowed" } : {}}>
                 <input
                   type="checkbox"
-                  checked={hasTitle}
+                  checked={titleVisible}
                   onChange={handleToggleTitle}
                   disabled={!selectedMasterLayoutId}
                 />
@@ -483,7 +480,7 @@ export function SlideMasterRibbon({
               <label className="master-check-row" style={!selectedMasterLayoutId ? { opacity: 0.4, cursor: "not-allowed" } : {}}>
                 <input
                   type="checkbox"
-                  checked={hasFooters}
+                  checked={footersVisible}
                   onChange={handleToggleFooters}
                   disabled={!selectedMasterLayoutId}
                 />
@@ -621,8 +618,7 @@ export default function SlideMasterView({
   onUpdateMasterElementSize,
   onUpdateMasterElement,
   onDeleteMasterElement,
-  onUpdateLayoutPlaceholder,
-  onUpdateLayoutElement,
+  onUpdateLayoutItem,
   onUpdateLayoutElementTextContent,
   onDeleteLayoutElement,
   onBeginHistory,
@@ -681,37 +677,23 @@ export default function SlideMasterView({
     onSelectedLayoutChange?.(layoutId);
   };
 
-  const isLayoutPlaceholder = useCallback(
-    (id) => (selectedLayout?.placeholders ?? []).some((p) => p["placeholder-id"] === id),
-    [selectedLayout],
-  );
+  const isLayoutPlaceholder = (id) =>
+    (selectedLayout?.placeholders ?? []).some((p) => p["placeholder-id"] === id);
 
   const handlePlaceholderUpdate = useCallback(
     (id, updates) => {
       if (!selectedLayout) return;
-      if (isLayoutPlaceholder(id)) {
-        onUpdateLayoutPlaceholder?.(selectedLayout["layout-id"], id, updates);
-      } else {
-        const { formatting, ...rest } = updates;
-        if (Object.keys(rest).length)
-          onUpdateLayoutElement?.(selectedLayout["layout-id"], "text", id, rest);
-        if (formatting)
-          onUpdateLayoutElement?.(selectedLayout["layout-id"], "text", id, { formatting });
-      }
+      onUpdateLayoutItem?.(selectedLayout["layout-id"], id, updates);
     },
-    [selectedLayout, isLayoutPlaceholder, onUpdateLayoutPlaceholder, onUpdateLayoutElement],
+    [selectedLayout, onUpdateLayoutItem],
   );
 
   const handleMediaUpdate = useCallback(
     (id, updates) => {
       if (!selectedLayout) return;
-      if (isLayoutPlaceholder(id)) {
-        onUpdateLayoutPlaceholder?.(selectedLayout["layout-id"], id, updates);
-      } else {
-        onUpdateLayoutElement?.(selectedLayout["layout-id"], "media", id, updates);
-      }
+      onUpdateLayoutItem?.(selectedLayout["layout-id"], id, updates);
     },
-    [selectedLayout, isLayoutPlaceholder, onUpdateLayoutPlaceholder, onUpdateLayoutElement],
+    [selectedLayout, onUpdateLayoutItem],
   );
 
   const handleLayoutDelete = useCallback(
@@ -760,38 +742,59 @@ export default function SlideMasterView({
           onChangeTextElement={
             selectedLayout
               ? (id, text) => {
-                  if (isLayoutPlaceholder(id)) {
-                    onUpdateLayoutPlaceholder?.(selectedLayout["layout-id"], id, { promptText: text });
+                  const isMasterEl = (masterElements.text ?? []).some((el) => el.id === id);
+                  if (isMasterEl) {
+                    onUpdateMasterTextContent?.(id, text);
                   } else {
-                    onUpdateLayoutElementTextContent?.(selectedLayout["layout-id"], id, text);
+                    onUpdateLayoutItem?.(selectedLayout["layout-id"], id, { promptText: text });
                   }
                 }
               : (id, text) => onUpdateMasterTextContent?.(id, text)
           }
           onFormatTextElement={
             selectedLayout
-              ? (id, fmt) => handlePlaceholderUpdate(id, { formatting: fmt })
+              ? (id, fmt) => {
+                  const isMasterEl = (masterElements.text ?? []).some((el) => el.id === id);
+                  if (isMasterEl) onUpdateMasterTextFormatting?.(id, fmt);
+                  else handlePlaceholderUpdate(id, { formatting: fmt });
+                }
               : (id, fmt) => onUpdateMasterTextFormatting?.(id, fmt)
           }
           onSaveSelection={onSaveSelection}
           onMoveTextElement={
             selectedLayout
-              ? (id, x, y) => handlePlaceholderUpdate(id, { position: { x, y } })
+              ? (id, x, y) => {
+                  const isMasterEl = (masterElements.text ?? []).some((el) => el.id === id);
+                  if (isMasterEl) onUpdateMasterElementPosition?.(id, x, y);
+                  else handlePlaceholderUpdate(id, { position: { x, y } });
+                }
               : (id, x, y) => onUpdateMasterElementPosition?.(id, x, y)
           }
           onResizeTextElement={
             selectedLayout
-              ? (id, w, h) => handlePlaceholderUpdate(id, { width: w, height: h })
+              ? (id, w, h) => {
+                  const isMasterEl = (masterElements.text ?? []).some((el) => el.id === id);
+                  if (isMasterEl) onUpdateMasterElementSize?.(id, w, h);
+                  else handlePlaceholderUpdate(id, { width: w, height: h });
+                }
               : (id, w, h) => onUpdateMasterElementSize?.(id, w, h)
           }
           onMoveMediaElement={
             selectedLayout
-              ? (id, x, y) => handleMediaUpdate(id, { position: { x, y } })
+              ? (id, x, y) => {
+                  const isMasterEl = (masterElements.media ?? []).some((el) => el.id === id);
+                  if (isMasterEl) onUpdateMasterElementPosition?.(id, x, y);
+                  else handleMediaUpdate(id, { position: { x, y } });
+                }
               : (id, x, y) => onUpdateMasterElementPosition?.(id, x, y)
           }
           onResizeMediaElement={
             selectedLayout
-              ? (id, w, h) => handleMediaUpdate(id, { width: w, height: h })
+              ? (id, w, h) => {
+                  const isMasterEl = (masterElements.media ?? []).some((el) => el.id === id);
+                  if (isMasterEl) onUpdateMasterElementSize?.(id, w, h);
+                  else handleMediaUpdate(id, { width: w, height: h });
+                }
               : (id, w, h) => onUpdateMasterElementSize?.(id, w, h)
           }
           onDeleteMedia={
