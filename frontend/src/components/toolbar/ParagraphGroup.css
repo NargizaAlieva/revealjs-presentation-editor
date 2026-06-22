@@ -1,7 +1,10 @@
 .paragraph-group {
   width: 190px;
+  flex: 0 0 190px;
   padding-left: 10px;
   padding-right: 10px;
+  overflow: visible;
+  display: block;
 }
 
 .paragraph-row {

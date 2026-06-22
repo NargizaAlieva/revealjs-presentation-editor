@@ -17,6 +17,7 @@ export default function HomeTab({
   isSlideHidden,
   currentFormatting = {},
   onFormatChange,
+  onChangeCase,
   isTextSelected = false,
   presentation,
   onCut,
@@ -68,6 +69,7 @@ export default function HomeTab({
         isTextSelected={isTextSelected}
         fonts={fonts}
         onFormatChange={onFormatChange}
+        onChangeCase={onChangeCase}
       />
 
       <ParagraphGroup

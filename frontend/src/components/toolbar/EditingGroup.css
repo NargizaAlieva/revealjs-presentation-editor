@@ -1,5 +1,6 @@
 .editing-group {
   width: 142px;
+  flex: 0 0 142px;
   flex-direction: column;
   gap: 0;
   padding-top: 1px;

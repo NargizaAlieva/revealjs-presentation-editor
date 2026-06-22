@@ -64,6 +64,7 @@ export default function Toolbar({
   onAddTextElement,
   currentFormatting,
   onFormatChange,
+  onChangeCase,
   isTextSelected,
   presentation,
   onNewPresentation,
@@ -222,6 +223,7 @@ useEffect(() => {
             isSlideHidden={isSlideHidden}
             currentFormatting={currentFormatting}
             onFormatChange={onFormatChange}
+            onChangeCase={onChangeCase}
             isTextSelected={isTextSelected}
             presentation={presentation}
             onCut={onCut}

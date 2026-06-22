@@ -1,20 +1,3 @@
-.font-group,
-.paragraph-group {
-  width: 190px;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.paragraph-group {
-  width: 160px;
-}
-
-.font-row {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-
 .small-format {
   width: 28px;
   height: 26px;

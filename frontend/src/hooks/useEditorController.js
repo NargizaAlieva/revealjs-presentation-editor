@@ -683,6 +683,108 @@ useEffect(() => {
     ],
   );
 
+  const handleChangeCase = useCallback(
+    (mode) => {
+      if (!selectedTextEl) return;
+
+      const transform = (text) => {
+        if (mode === "lower") return text.toLocaleLowerCase();
+        if (mode === "upper") return text.toLocaleUpperCase();
+        if (mode === "toggle") {
+          return [...text]
+            .map((character) =>
+              character === character.toLocaleUpperCase()
+                ? character.toLocaleLowerCase()
+                : character.toLocaleUpperCase(),
+            )
+            .join("");
+        }
+        if (mode === "title") {
+          return text.replace(
+            /(^|[\s([{'"“‘-])(\p{L})/gu,
+            (_, prefix, letter) => prefix + letter.toLocaleUpperCase(),
+          );
+        }
+        if (mode === "sentence") {
+          return text
+            .toLocaleLowerCase()
+            .replace(
+              /(^|[.!?]\s+)(\p{L})/gu,
+              (_, prefix, letter) => prefix + letter.toLocaleUpperCase(),
+            );
+        }
+        return text;
+      };
+
+      const selection = activeSelectionRef.current;
+      const hasSelection =
+        selection?.elementId === selectedTextEl.id &&
+        !(
+          selection.paragraphIdx ===
+            (selection.endParagraphIdx ?? selection.paragraphIdx) &&
+          selection.rangeStart === selection.rangeEnd
+        );
+      const paragraphs = structuredClone(selectedTextEl.paragraphs ?? []);
+
+      paragraphs.forEach((paragraph, paragraphIndex) => {
+        if (
+          hasSelection &&
+          (paragraphIndex < selection.paragraphIdx ||
+            paragraphIndex >
+              (selection.endParagraphIdx ?? selection.paragraphIdx))
+        ) {
+          return;
+        }
+
+        const paragraphLength = (paragraph.runs ?? []).reduce(
+          (total, run) => total + (run.text?.length ?? 0),
+          0,
+        );
+        const start =
+          hasSelection && paragraphIndex === selection.paragraphIdx
+            ? selection.rangeStart
+            : 0;
+        const end =
+          hasSelection &&
+          paragraphIndex ===
+            (selection.endParagraphIdx ?? selection.paragraphIdx)
+            ? selection.rangeEnd
+            : paragraphLength;
+
+        let offset = 0;
+        paragraph.runs = (paragraph.runs ?? []).map((run) => {
+          const runText = run.text ?? "";
+          const runStart = offset;
+          const runEnd = runStart + runText.length;
+          offset = runEnd;
+          const overlapStart = Math.max(start, runStart);
+          const overlapEnd = Math.min(end, runEnd);
+          if (overlapStart >= overlapEnd) return run;
+          const localStart = overlapStart - runStart;
+          const localEnd = overlapEnd - runStart;
+          return {
+            ...run,
+            text:
+              runText.slice(0, localStart) +
+              transform(runText.slice(localStart, localEnd)) +
+              runText.slice(localEnd),
+          };
+        });
+      });
+
+      updateTextElementParagraphs(
+        selectedSlideIndex,
+        selectedTextEl.id,
+        paragraphs,
+      );
+    },
+    [
+      selectedTextEl,
+      selectedSlideIndex,
+      updateTextElementParagraphs,
+    ],
+  );
+
   const handleStartEditing = useCallback((id) => {
     if (editingTextElementIdRef.current !== id) {
       setPendingFormatting({});
@@ -889,6 +991,7 @@ useEffect(() => {
     handleLoadFile,
     handleDeleteAndGoHome,
     handleFormatChange,
+    handleChangeCase,
     handleStartEditing,
     handleStopEditing,
     handleSaveSelection,

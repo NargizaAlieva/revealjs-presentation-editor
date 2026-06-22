@@ -82,6 +82,7 @@ export default function EditorPage() {
           onResetLayout={ctrl.resetLayout}
           currentFormatting={ctrl.currentFormatting}
           onFormatChange={ctrl.handleFormatChange}
+          onChangeCase={ctrl.handleChangeCase}
           isTextSelected={
             !!(ctrl.isSlideMasterOpen
               ? ctrl.masterSelectedTextEl
