@@ -122,12 +122,9 @@ export function useEditorActions(
   );
 
   const updateSlideNotes = useCallback(
-    (notes, slideIndex) =>
+    (notes) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.SLIDE.UPDATE_NOTES, {
-          notes,
-          slideIndex,
-        }),
+        createEditorEvent(EditorEventType.SLIDE.UPDATE_NOTES, { notes }),
       ),
     [eventBus],
   );
@@ -506,14 +503,6 @@ export function useEditorActions(
     [eventBus],
   );
 
-  const addLayout = useCallback(
-    () =>
-      eventBus.dispatch(
-        createEditorEvent(EditorEventType.LAYOUT.ADD, {}),
-      ),
-    [eventBus],
-  );
-
   const renameLayout = useCallback(
     (layoutId, name) =>
       eventBus.dispatch(
@@ -745,7 +734,6 @@ export function useEditorActions(
     toggleFooters,
     formatPainterCopy,
     formatPainterPaste,
-    addLayout,
     updateLayout,
     deleteLayout,
     renameLayout,

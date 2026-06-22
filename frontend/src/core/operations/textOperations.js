@@ -6,11 +6,25 @@ const createParagraphId = () =>
     : `paragraph-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 const RUN_ONLY_KEYS = new Set(["super-sub-script"]);
-const PARAGRAPH_ONLY_KEYS = new Set([
-  "align", "vertical-align", "line-spacing", "list-type",
-  "list-style", "indent-level", "margin",
+const SHARED_KEYS = new Set([
+  "weight",
+  "italics",
+  "text-decoration",
+  "color",
+  "size",
+  "font",
+  "highlight",
 ]);
-const SHARED_KEYS = new Set(["weight", "italics", "text-decoration", "color", "size", "font", "highlight"]);
+const FONT_SIZE_DELTA_KEY = "font-size-delta";
+
+const adjustFontSize = (size, delta, fallback = 24) => {
+  const current = parseFloat(size);
+  const next = Math.max(
+    6,
+    Math.min(120, (Number.isFinite(current) ? current : fallback) + delta),
+  );
+  return `${next}px`;
+};
 
 export const addTextElement = (presentation, slideIndex, textElement) => {
   const slides = [...getSlides(presentation)];
@@ -85,6 +99,42 @@ export const updateTextElement = (
   return setSlides(presentation, slides);
 };
 
+export const updateSingleParagraphFormatting = (
+  presentation,
+  slideIndex,
+  elementId,
+  paragraphIdx,
+  formattingUpdate,
+) => {
+  const slides = [...getSlides(presentation)];
+  const slide = slides[slideIndex];
+  if (!slide) return presentation;
+
+  const updatedText = (slide.contents?.text ?? []).map((el) => {
+    if (el.id !== elementId) return el;
+    const updatedParagraphs = (el.paragraphs ?? []).map((para, pIdx) => {
+      if (pIdx !== paragraphIdx) return para;
+      return {
+        ...para,
+        formatting: { ...(para.formatting ?? {}), ...formattingUpdate },
+        userSetKeys: [
+          ...new Set([
+            ...(para.userSetKeys ?? []),
+            ...Object.keys(formattingUpdate),
+          ]),
+        ],
+      };
+    });
+    return { ...el, paragraphs: updatedParagraphs };
+  });
+
+  slides[slideIndex] = {
+    ...slide,
+    contents: { ...slide.contents, text: updatedText },
+  };
+  return setSlides(presentation, slides);
+};
+
 export const updateTextFormatting = (
   presentation,
   slideIndex,
@@ -94,9 +144,15 @@ export const updateTextFormatting = (
   const slides = [...getSlides(presentation)];
   const slide = slides[slideIndex];
   if (!slide) return presentation;
+  const fontSizeDelta = Number(formattingUpdate[FONT_SIZE_DELTA_KEY] ?? 0);
+  const directFormatting = Object.fromEntries(
+    Object.entries(formattingUpdate).filter(
+      ([key]) => key !== FONT_SIZE_DELTA_KEY,
+    ),
+  );
 
   const paragraphUpdate = Object.fromEntries(
-    Object.entries(formattingUpdate).filter(([k]) => !RUN_ONLY_KEYS.has(k)),
+    Object.entries(directFormatting).filter(([k]) => !RUN_ONLY_KEYS.has(k)),
   );
 
   const updatedTextElements = (slide.contents?.text ?? []).map(
@@ -105,24 +161,52 @@ export const updateTextFormatting = (
 
       // Only run-specific keys (super-sub-script) go to runs
       const runUpdate = Object.fromEntries(
-        Object.entries(formattingUpdate).filter(([k]) => RUN_ONLY_KEYS.has(k)),
+        Object.entries(directFormatting).filter(([k]) => RUN_ONLY_KEYS.has(k)),
       );
 
-      const sharedKeysBeingSet = Object.keys(paragraphUpdate).filter((k) => SHARED_KEYS.has(k));
+      const sharedKeysBeingSet = Object.keys(paragraphUpdate).filter((k) =>
+        SHARED_KEYS.has(k),
+      );
 
       const updatedParagraphs = (textElement.paragraphs ?? []).map(
-        (paragraph) => ({
-          ...paragraph,
-          formatting: { ...(paragraph.formatting ?? {}), ...paragraphUpdate },
-          userSetKeys: [...new Set([...(paragraph.userSetKeys ?? []), ...Object.keys(paragraphUpdate)])],
-          runs: (paragraph.runs ?? []).map((run) => {
-            const runFmt = { ...(run.formatting ?? {}) };
-            // Strip shared keys so paragraph-level formatting takes precedence
-            for (const k of sharedKeysBeingSet) delete runFmt[k];
-            if (Object.keys(runUpdate).length) Object.assign(runFmt, runUpdate);
-            return { ...run, formatting: runFmt };
-          }),
-        }),
+        (paragraph) => {
+          const paragraphFormatting = {
+            ...(paragraph.formatting ?? {}),
+            ...paragraphUpdate,
+          };
+          if (fontSizeDelta && paragraphFormatting.size != null) {
+            paragraphFormatting.size = adjustFontSize(
+              paragraphFormatting.size,
+              fontSizeDelta,
+            );
+          }
+
+          return {
+            ...paragraph,
+            formatting: paragraphFormatting,
+            userSetKeys: [
+              ...new Set([
+                ...(paragraph.userSetKeys ?? []),
+                ...Object.keys(paragraphUpdate),
+              ]),
+            ],
+            runs: (paragraph.runs ?? []).map((run) => {
+              const runFmt = { ...(run.formatting ?? {}) };
+              // Strip shared keys so paragraph-level formatting takes precedence
+              for (const k of sharedKeysBeingSet) delete runFmt[k];
+              if (Object.keys(runUpdate).length)
+                Object.assign(runFmt, runUpdate);
+              if (fontSizeDelta) {
+                runFmt.size = adjustFontSize(
+                  runFmt.size,
+                  fontSizeDelta,
+                  parseFloat(paragraph.formatting?.size) || 24,
+                );
+              }
+              return { ...run, formatting: runFmt };
+            }),
+          };
+        },
       );
 
       return { ...textElement, paragraphs: updatedParagraphs };
@@ -190,10 +274,24 @@ export const updateTextRangeFormatting = (
   const slide = slides[slideIndex];
   if (!slide) return presentation;
 
-  const cleanFormatting = Object.fromEntries(
+  const clean = Object.fromEntries(
     Object.entries(formatting).filter(([, v]) => v !== "mixed"),
   );
-  if (Object.keys(cleanFormatting).length === 0) return presentation;
+  if (Object.keys(clean).length === 0) return presentation;
+  const fontSizeDelta = Number(clean[FONT_SIZE_DELTA_KEY] ?? 0);
+  delete clean[FONT_SIZE_DELTA_KEY];
+
+  // Split into run-level keys (go into runs) and paragraph-level keys (go into para.formatting)
+  const runFormatting = Object.fromEntries(
+    Object.entries(clean).filter(
+      ([k]) => SHARED_KEYS.has(k) || RUN_ONLY_KEYS.has(k),
+    ),
+  );
+  const paraFormatting = Object.fromEntries(
+    Object.entries(clean).filter(
+      ([k]) => !SHARED_KEYS.has(k) && !RUN_ONLY_KEYS.has(k),
+    ),
+  );
 
   const updatedText = (slide.contents?.text ?? []).map((el) => {
     if (el.id !== elementId) return el;
@@ -204,8 +302,24 @@ export const updateTextRangeFormatting = (
       const paraLen = para.runs.reduce((a, r) => a + r.text.length, 0);
       const pRangeStart = pIdx === startParagraphIdx ? rangeStart : 0;
       const pRangeEnd = pIdx === endParagraphIdx ? rangeEnd : paraLen;
+      const isTrailingBoundary =
+        pIdx === endParagraphIdx &&
+        endParagraphIdx > startParagraphIdx &&
+        rangeEnd === 0;
+      const isSelectedParagraph = !isTrailingBoundary;
 
-      if (pRangeStart >= pRangeEnd) return para;
+      // Paragraph formatting applies to every paragraph touched by the selection.
+      // A range ending at offset 0 of the next paragraph does not touch that paragraph.
+      const newParaFormatting =
+        isSelectedParagraph && Object.keys(paraFormatting).length > 0
+          ? { ...(para.formatting ?? {}), ...paraFormatting }
+          : para.formatting;
+
+      if (pRangeStart >= pRangeEnd) {
+        return newParaFormatting === para.formatting
+          ? para
+          : { ...para, formatting: newParaFormatting };
+      }
 
       const newRuns = [];
       let charOffset = 0;
@@ -218,27 +332,51 @@ export const updateTextRangeFormatting = (
           newRuns.push(run);
         } else {
           if (runStart < pRangeStart) {
-            newRuns.push({ ...run, text: run.text.slice(0, pRangeStart - runStart) });
+            newRuns.push({
+              ...run,
+              text: run.text.slice(0, pRangeStart - runStart),
+            });
           }
           const selectedStart = Math.max(0, pRangeStart - runStart);
           const selectedEnd = Math.min(run.text.length, pRangeEnd - runStart);
           const selectedText = run.text.slice(selectedStart, selectedEnd);
           if (selectedText.length > 0) {
+            const selectedFormatting = {
+              ...(run.formatting ?? {}),
+              ...runFormatting,
+            };
+            if (fontSizeDelta) {
+              selectedFormatting.size = adjustFontSize(
+                run.formatting?.size,
+                fontSizeDelta,
+                parseFloat(para.formatting?.size) || 24,
+              );
+            }
             newRuns.push({
               ...run,
               text: selectedText,
-              formatting: { ...run.formatting, ...cleanFormatting },
+              formatting:
+                Object.keys(runFormatting).length > 0 || fontSizeDelta
+                  ? selectedFormatting
+                  : run.formatting,
             });
           }
           if (runEnd > pRangeEnd) {
-            newRuns.push({ ...run, text: run.text.slice(pRangeEnd - runStart) });
+            newRuns.push({
+              ...run,
+              text: run.text.slice(pRangeEnd - runStart),
+            });
           }
         }
 
         charOffset = runEnd;
       }
 
-      return { ...para, runs: newRuns.length > 0 ? newRuns : para.runs };
+      return {
+        ...para,
+        formatting: newParaFormatting,
+        runs: newRuns.length > 0 ? newRuns : para.runs,
+      };
     });
 
     return { ...el, paragraphs: updatedParagraphs };
@@ -282,7 +420,10 @@ export const updateRunLink = (
           newRuns.push(run);
         } else {
           if (runStart < rangeStart) {
-            newRuns.push({ ...run, text: run.text.slice(0, rangeStart - runStart) });
+            newRuns.push({
+              ...run,
+              text: run.text.slice(0, rangeStart - runStart),
+            });
           }
           const selectedStart = Math.max(0, rangeStart - runStart);
           const selectedEnd = Math.min(run.text.length, rangeEnd - runStart);
