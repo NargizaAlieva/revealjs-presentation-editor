@@ -532,12 +532,7 @@ export function SlideMasterRibbon({
               <select
                 value={currentFont}
                 onChange={(e) => {
-                  const font = e.target.value;
-                  if (selectedMasterLayoutId) {
-                    onApplyLayoutFont?.(selectedMasterLayoutId, font);
-                  } else {
-                    onApplyFont?.({ font });
-                  }
+                  onApplyFont?.({ font: e.target.value });
                 }}
                 style={{ fontSize: 12, padding: "2px 4px", border: "1px solid #ccc", borderRadius: 3, width: 120 }}
               >

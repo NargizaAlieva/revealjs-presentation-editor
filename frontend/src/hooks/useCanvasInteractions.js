@@ -79,14 +79,8 @@ export function useCanvasInteractions({
         if (!el) return;
         onMoveTextElement(
           draggingElementId,
-          Math.max(
-            0,
-            Math.min(width - (el.width ?? 300), mouse.x - dragOffset.x),
-          ),
-          Math.max(
-            0,
-            Math.min(height - (el.height ?? 80), mouse.y - dragOffset.y),
-          ),
+          mouse.x - dragOffset.x,
+          mouse.y - dragOffset.y,
         );
       }
 
@@ -95,14 +89,8 @@ export function useCanvasInteractions({
         if (!media) return;
         onMoveMediaElement(
           draggingMediaId,
-          Math.max(
-            0,
-            Math.min(width - (media.width ?? 300), mouse.x - dragOffset.x),
-          ),
-          Math.max(
-            0,
-            Math.min(height - (media.height ?? 200), mouse.y - dragOffset.y),
-          ),
+          mouse.x - dragOffset.x,
+          mouse.y - dragOffset.y,
         );
       }
 

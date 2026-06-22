@@ -575,19 +575,25 @@ useEffect(() => {
             window.getSelection()?.removeAllRanges();
             return;
           }
-          const isDeleteKey = e.key === "Backspace" || e.key === "Delete";
-          const isTypingKey = e.key.length === 1 || e.key === "Enter";
-          if (isDeleteKey || isTypingKey) {
+          if (
+            e.key.length === 1 ||
+            e.key === "Backspace" ||
+            e.key === "Delete" ||
+            e.key === "Enter"
+          ) {
             setIsToolbarOpen(false);
           }
+          const isDeleteKey = e.key === "Backspace" || e.key === "Delete";
           if (isDeleteKey) {
             if (!isDeletingRef.current) {
               isDeletingRef.current = true;
               onBeginHistory?.();
             }
-          } else if (isTypingKey && isDeletingRef.current) {
-            isDeletingRef.current = false;
-            onCommitHistory?.();
+          } else if (e.key.length === 1 || e.key === "Enter") {
+            if (isDeletingRef.current) {
+              isDeletingRef.current = false;
+              onCommitHistory?.();
+            }
           }
           if (e.key !== "Tab") return;
           const el = editableRef.current;
