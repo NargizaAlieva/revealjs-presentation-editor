@@ -1,11 +1,43 @@
+.paragraph-group {
+  width: 190px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.paragraph-row {
+  width: 100%;
+  min-height: 26px;
+  gap: 4px;
+  box-sizing: border-box;
+}
+
+.paragraph-row--lists {
+  justify-content: flex-start;
+}
+
+.paragraph-row--alignment {
+  justify-content: flex-start;
+}
+
 .list-split-btn {
   position: relative;
   display: flex;
   align-items: center;
+  width: 44px;
+  height: 26px;
+  flex: 0 0 44px;
+  border-radius: 3px;
+}
+
+.list-split-btn > .small-format {
+  width: 30px;
+  flex: 0 0 30px;
+  border-radius: 3px 0 0 3px;
 }
 
 .list-split-arrow {
   width: 14px;
+  flex: 0 0 14px;
   height: 26px;
   border: none;
   background: transparent;
@@ -15,6 +47,10 @@
   color: #555;
   border-radius: 0 3px 3px 0;
   line-height: 1;
+}
+
+.paragraph-row > .small-format {
+  flex: 0 0 28px;
 }
 
 .list-split-arrow:hover:not(:disabled) {

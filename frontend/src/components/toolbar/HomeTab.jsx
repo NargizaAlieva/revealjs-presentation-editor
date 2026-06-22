@@ -12,11 +12,12 @@ export default function HomeTab({
   onResetLayout,
   onDeleteSlide,
   onDuplicateSlide,
-  onMoveSlideUp,
-  onMoveSlideDown,
+  onBringToFront,
+  onSendToBack,
+  onBringForward,
+  onSendBackward,
+  onRotateRight,
   canDelete,
-  canMoveUp,
-  canMoveDown,
   onToggleSlideHidden,
   isSlideHidden,
   currentFormatting = {},
@@ -48,6 +49,8 @@ export default function HomeTab({
         onDeleteSlide={onDeleteSlide}
         onDuplicateSlide={onDuplicateSlide}
         canDelete={canDelete}
+        onToggleSlideHidden={onToggleSlideHidden}
+        isSlideHidden={isSlideHidden}
         presentation={presentation}
       />
 
@@ -65,12 +68,12 @@ export default function HomeTab({
       />
 
       <ArrangeGroup
-        onToggleSlideHidden={onToggleSlideHidden}
-        isSlideHidden={isSlideHidden}
-        onMoveSlideUp={onMoveSlideUp}
-        onMoveSlideDown={onMoveSlideDown}
-        canMoveUp={canMoveUp}
-        canMoveDown={canMoveDown}
+        hasSelection={hasSelection}
+        onBringToFront={onBringToFront}
+        onSendToBack={onSendToBack}
+        onBringForward={onBringForward}
+        onSendBackward={onSendBackward}
+        onRotateRight={onRotateRight}
       />
     </>
   );

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef,useEffect } from "react";
 import "./Toolbar.css";
 import FileTab from "./toolbar/FileTab";
 import HomeTab from "./toolbar/HomeTab";
@@ -33,6 +33,11 @@ export default function Toolbar({
   canDelete,
   canMoveUp,
   canMoveDown,
+  onBringToFront,
+  onSendToBack,
+  onBringForward,
+  onSendBackward,
+  onRotateRight,
   onExportPresentation,
   onResetPresentation,
   onImageUpload,
@@ -104,12 +109,16 @@ export default function Toolbar({
   const [masterActiveTab, setMasterActiveTab] = useState("Slide Master");
   const prevMasterOpen = useRef(false);
 
+useEffect(() => {
   if (isSlideMasterOpen && !prevMasterOpen.current) {
     setMasterActiveTab("Slide Master");
   }
   prevMasterOpen.current = isSlideMasterOpen;
+}, [isSlideMasterOpen]);
 
-  const currentTab = isSlideMasterOpen ? masterActiveTab : (activeTab ?? localActiveTab);
+  const currentTab = isSlideMasterOpen
+    ? masterActiveTab
+    : (activeTab ?? localActiveTab);
 
   const setCurrentTab = (tab) => {
     if (isSlideMasterOpen) {
@@ -121,7 +130,15 @@ export default function Toolbar({
   };
 
   const TABS = isSlideMasterOpen
-    ? ["File", "Slide Master", "Home", "Insert", "Transitions", "Animations", "View"]
+    ? [
+        "File",
+        "Slide Master",
+        "Home",
+        "Insert",
+        "Transitions",
+        "Animations",
+        "View",
+      ]
     : BASE_TABS;
 
   return (
@@ -138,10 +155,14 @@ export default function Toolbar({
         ))}
       </nav>
 
-      <div className="toolbar-ribbon" onMouseDownCapture={(e) => {
-        const tag = e.target.tagName;
-        if (tag !== "SELECT" && tag !== "INPUT" && tag !== "TEXTAREA") e.preventDefault();
-      }}>
+      <div
+        className="toolbar-ribbon"
+        onMouseDownCapture={(e) => {
+          const tag = e.target.tagName;
+          if (tag !== "SELECT" && tag !== "INPUT" && tag !== "TEXTAREA")
+            e.preventDefault();
+        }}
+      >
         {currentTab === "File" && (
           <FileTab
             onOpenPresentation={onOpenPresentation}
@@ -190,6 +211,11 @@ export default function Toolbar({
             canDelete={canDelete}
             canMoveUp={canMoveUp}
             canMoveDown={canMoveDown}
+            onBringToFront={onBringToFront}
+            onSendToBack={onSendToBack}
+            onBringForward={onBringForward}
+            onSendBackward={onSendBackward}
+            onRotateRight={onRotateRight}
             onToggleSlideHidden={onToggleSlideHidden}
             isSlideHidden={isSlideHidden}
             currentFormatting={currentFormatting}

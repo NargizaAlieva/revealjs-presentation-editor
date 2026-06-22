@@ -1,5 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { MdAdd, MdDelete, MdContentCopy } from "react-icons/md";
+import {
+  MdAdd,
+  MdDelete,
+  MdContentCopy,
+  MdVisibility,
+  MdVisibilityOff,
+} from "react-icons/md";
 import { LAYOUTS } from "./homeTabConstants";
 import { getLayoutDisplayList } from "../../core/operations/layoutOperations";
 import "./SlidesGroup.css";
@@ -12,6 +18,8 @@ export default function SlidesGroup({
   presentation,
   onDuplicateSlide,
   canDelete,
+  onToggleSlideHidden,
+  isSlideHidden,
 }) {
   const [showLayouts, setShowLayouts] = useState(false);
   const [showLayoutPanel, setShowLayoutPanel] = useState(false);
@@ -169,6 +177,11 @@ export default function SlidesGroup({
       <button className="toolbar-item" onClick={onDuplicateSlide}>
         <MdContentCopy />
         <span>Duplicate</span>
+      </button>
+
+      <button className="toolbar-item" onClick={onToggleSlideHidden}>
+        {isSlideHidden ? <MdVisibility /> : <MdVisibilityOff />}
+        <span>{isSlideHidden ? "Show" : "Hide"}</span>
       </button>
 
       <div className="ribbon-group-title">Slides</div>

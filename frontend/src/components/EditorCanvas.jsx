@@ -150,10 +150,13 @@ export default function EditorCanvas({
           }
         });
 
-        timerId = setTimeout(() => {
-          setPlayingElementId(null);
-          setPlayingEffect(null);
-        }, getAnimationDurationMs(previewEffect.speed) + 100);
+        timerId = setTimeout(
+          () => {
+            setPlayingElementId(null);
+            setPlayingEffect(null);
+          },
+          getAnimationDurationMs(previewEffect.speed) + 100,
+        );
       }
 
       if (previewEffect.type === "transition") {
@@ -182,7 +185,8 @@ export default function EditorCanvas({
     const handleKeyDown = (event) => {
       const target = event.target;
       const inCanvas = containerRef.current?.contains(target);
-      const onBody = target === document.body || target === document.documentElement;
+      const onBody =
+        target === document.body || target === document.documentElement;
       if (!inCanvas && !onBody) return;
 
       const editable = isEditableTarget(target);
@@ -200,7 +204,11 @@ export default function EditorCanvas({
       }
 
       if (isCopyShortcut(event) && !editable && selectedElementId) {
-        const found = findElementInSlide(textElements, mediaElements, selectedElementId);
+        const found = findElementInSlide(
+          textElements,
+          mediaElements,
+          selectedElementId,
+        );
         if (found) onCopy?.(found.element);
         return;
       }
@@ -211,7 +219,11 @@ export default function EditorCanvas({
       }
 
       if (isCutShortcut(event) && !editable && selectedElementId) {
-        const found = findElementInSlide(textElements, mediaElements, selectedElementId);
+        const found = findElementInSlide(
+          textElements,
+          mediaElements,
+          selectedElementId,
+        );
         if (found) onCut?.(found.element);
         return;
       }
@@ -220,7 +232,11 @@ export default function EditorCanvas({
       if (editable) return;
       if (!selectedElementId) return;
 
-      const found = findElementInSlide(textElements, mediaElements, selectedElementId);
+      const found = findElementInSlide(
+        textElements,
+        mediaElements,
+        selectedElementId,
+      );
       if (!found) return;
 
       if (found.type === "text") {
@@ -320,7 +336,8 @@ export default function EditorCanvas({
                   width: `${width}px`,
                   height: `${height}px`,
                   background:
-                    !slide?.contents?.background || slide.contents.background === TRANSPARENT_SLIDE_BG
+                    !slide?.contents?.background ||
+                    slide.contents.background === TRANSPARENT_SLIDE_BG
                       ? "var(--bg-light, white)"
                       : slide.contents.background,
                   color: "var(--text-dark, black)",
@@ -363,6 +380,8 @@ export default function EditorCanvas({
                       onStartDrag={startDraggingText}
                       onStartResize={startResizingText}
                       onStartRotate={startRotatingText}
+                      onAutoFit={updateElement}
+                      slideHeight={height}
                       onBeginHistory={onBeginHistory}
                       onCommitHistory={onCommitHistory}
                       onCancelHistory={onCancelHistory}
@@ -474,38 +493,38 @@ export default function EditorCanvas({
                           snapInfo.angle === 135 ||
                           snapInfo.angle === 225 ||
                           snapInfo.angle === 315) && (
-                            <svg
-                              style={{
-                                position: "absolute",
-                                top: 0,
-                                left: 0,
-                                width: "100%",
-                                height: "100%",
-                                pointerEvents: "none",
-                                overflow: "visible",
-                              }}
-                            >
-                              <line
-                                x1={centerX - 2000}
-                                y1={
-                                  centerY +
-                                  (snapInfo.angle === 45 || snapInfo.angle === 225
-                                    ? 2000
-                                    : -2000)
-                                }
-                                x2={centerX + 2000}
-                                y2={
-                                  centerY +
-                                  (snapInfo.angle === 45 || snapInfo.angle === 225
-                                    ? -2000
-                                    : 2000)
-                                }
-                                stroke="#4f46e5"
-                                strokeWidth="1"
-                                opacity="0.7"
-                              />
-                            </svg>
-                          )}
+                          <svg
+                            style={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              width: "100%",
+                              height: "100%",
+                              pointerEvents: "none",
+                              overflow: "visible",
+                            }}
+                          >
+                            <line
+                              x1={centerX - 2000}
+                              y1={
+                                centerY +
+                                (snapInfo.angle === 45 || snapInfo.angle === 225
+                                  ? 2000
+                                  : -2000)
+                              }
+                              x2={centerX + 2000}
+                              y2={
+                                centerY +
+                                (snapInfo.angle === 45 || snapInfo.angle === 225
+                                  ? -2000
+                                  : 2000)
+                              }
+                              stroke="#4f46e5"
+                              strokeWidth="1"
+                              opacity="0.7"
+                            />
+                          </svg>
+                        )}
 
                         <div
                           style={{

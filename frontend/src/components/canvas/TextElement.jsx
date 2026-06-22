@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import FormatToolbar from "./FormatToolbar";
 import "./TextElement.css";
@@ -33,8 +33,7 @@ const RESIZE_HANDLES = [
   { dir: "w", cursor: "ew-resize" },
 ];
 
-const TOOLBAR_WIDTH = 600;
-
+const TOOLBAR_WIDTH = 590;
 
 // --- Component ---
 
@@ -49,9 +48,10 @@ export default function TextElement({
   onStartDrag,
   onStartResize,
   onStartRotate,
+  onAutoFit,
+  slideHeight,
   onBeginHistory,
   onCommitHistory,
-  onCancelHistory,
   onNewComment,
   previewClassName,
   animationOrder,
@@ -67,51 +67,116 @@ export default function TextElement({
   clearSelectionSignal = 0,
 }) {
   const [toolbarPos, setToolbarPos] = useState({ top: 0, left: 0 });
-  // savedSelState mirrors savedSelectionRef but as React state so toolbar re-renders on cursor move.
+  const [isToolbarOpen, setIsToolbarOpen] = useState(false);
+  const [paragraphTops, setParagraphTops] = useState([]);
   const [savedSelState, setSavedSelState] = useState(null);
   const editableRef = useRef(null);
   const elementRef = useRef(null);
   const lastTypedHTMLRef = useRef(null);
   const savedSelectionRef = useRef(null);
   const lastSyncedParagraphsRef = useRef(null);
+  const selectionFrameRef = useRef(null);
+  const lastAutoFitHeightRef = useRef(null);
 
-  // When EditorPage signals that the user clicked outside all toolbars and
-  // text elements, clear the saved selection so the next toolbar action
-  // applies to the whole element rather than a stale range.
-  useEffect(() => {
-    if (clearSelectionSignal === 0) return;
-    savedSelectionRef.current = null;
+useEffect(() => {
+  if (clearSelectionSignal === 0) return;
+  savedSelectionRef.current = null;
+  setTimeout(() => {
     setSavedSelState(null);
-  }, [clearSelectionSignal]);
+    setIsToolbarOpen(false);
+  }, 0);
+}, [clearSelectionSignal]);
 
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
   const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
-  const placeholderFormatting = getPlaceholderFormatting(presentation, slide, textElement);
+  const placeholderFormatting = getPlaceholderFormatting(
+    presentation,
+    slide,
+    textElement,
+  );
 
-  const effectiveParaFormatting = resolveEffectiveFormatting(masterFormatting, placeholderFormatting, formatting);
+  const effectiveParaFormatting = resolveEffectiveFormatting(
+    masterFormatting,
+    placeholderFormatting,
+    formatting,
+  );
   // Popup toolbar formatting — 3 states matching computeCurrentFormatting:
   //   real selection → mixed/run formatting; collapsed cursor → run at cursor + pending; no sel → effective + pending
   // Use savedSelState (React state) so toolbar re-renders when cursor moves without typing.
   const savedSel = savedSelState;
-  const isRealSelection = savedSel &&
-    !(savedSel.paragraphIdx === (savedSel.endParagraphIdx ?? savedSel.paragraphIdx) && savedSel.rangeStart === savedSel.rangeEnd);
+  const isRealSelection =
+    savedSel &&
+    !(
+      savedSel.paragraphIdx ===
+        (savedSel.endParagraphIdx ?? savedSel.paragraphIdx) &&
+      savedSel.rangeStart === savedSel.rangeEnd
+    );
   const toolbarFormatting = savedSel
     ? isRealSelection
-      ? { ...effectiveParaFormatting, ...(getSelectionFormatting(textElement, savedSel) ?? {}) }
-      : { ...effectiveParaFormatting, ...getFormattingAtCursor(textElement, savedSel), ...pendingFormatting }
+      ? {
+          ...effectiveParaFormatting,
+          ...(getSelectionFormatting(textElement, savedSel) ?? {}),
+        }
+      : {
+          ...effectiveParaFormatting,
+          ...getFormattingAtCursor(textElement, savedSel),
+          ...pendingFormatting,
+        }
     : { ...effectiveParaFormatting, ...pendingFormatting };
 
-  const listType =
-    formatting["list-type"] && formatting["list-type"] !== "none"
-      ? formatting["list-type"]
-      : null;
-  const listLevel = formatting["indent-level"] ?? 0;
-  const listMarker = formatting["list-marker"] ?? "•";
-  const listNumberedStyle = formatting["list-numbered-style"] ?? "decimal";
-  const listIndent = getListIndent(listLevel, listType);
+  // Per-paragraph list info so markers are scoped to each paragraph individually.
+  const paragraphListInfos = (textElement.paragraphs ?? []).map((p) => {
+    const pFmt = p.formatting ?? {};
+    const firstRunFmt =
+      (p.runs ?? []).find((run) => (run.text ?? "").length > 0)?.formatting ??
+      p.runs?.[0]?.formatting ??
+      {};
+    const pListType =
+      pFmt["list-type"] && pFmt["list-type"] !== "none"
+        ? pFmt["list-type"]
+        : null;
+    return {
+      listType: pListType,
+      listLevel: pFmt["indent-level"] ?? 0,
+      listMarker: pFmt["list-marker"] ?? "•",
+      listNumberedStyle: pFmt["list-numbered-style"] ?? "decimal",
+      markerStyle: {
+        fontSize: resolveTextStyle(
+          firstRunFmt.size,
+          pFmt.size ?? placeholderFormatting.size,
+          masterFormatting.size,
+          "24px",
+        ),
+        lineHeight: resolveTextStyle(
+          pFmt["line-spacing"],
+          placeholderFormatting["line-spacing"],
+          masterFormatting["line-spacing"],
+          1.2,
+        ),
+        fontFamily: resolveTextStyle(
+          firstRunFmt.font,
+          pFmt.font ?? placeholderFormatting.font,
+          masterFormatting.font,
+          "inherit",
+        ),
+        fontWeight: resolveWeight(
+          firstRunFmt.weight ?? pFmt.weight,
+          placeholderFormatting.weight,
+          masterFormatting.weight,
+        ),
+        color: resolveTextStyle(
+          firstRunFmt.color,
+          pFmt.color ?? placeholderFormatting.color,
+          masterFormatting.color,
+          "var(--text-dark, black)",
+        ),
+      },
+    };
+  });
+  const anyListPara = paragraphListInfos.find((p) => p.listType) ?? null;
+  const listType = anyListPara?.listType ?? null;
 
-  // Save current selection offsets (called from onMouseUp / onKeyUp inside contentEditable).
-  // Using these events (not selectionchange) avoids false triggers from toolbar clicks.
+  // Save current selection offsets for formatting and selection restoration.
   const saveCurrentSelection = () => {
     const el = editableRef.current;
     if (!el) return;
@@ -160,15 +225,109 @@ export default function TextElement({
     }
   }, [innerHTML]);
 
-  const updateToolbarPosition = () => {
+  useLayoutEffect(() => {
+    const editable = editableRef.current;
+    if (!editable) return undefined;
+
+    const measureParagraphs = () => {
+      const paragraphElements = Array.from(editable.children).filter(
+        (child) => child.tagName === "DIV" || child.tagName === "P",
+      );
+      paragraphElements.forEach((paragraph, index) => {
+        const info = paragraphListInfos[index];
+        paragraph.style.paddingLeft = info?.listType
+          ? `calc(${getListIndent(info.listLevel, info.listType)} + 1.2em)`
+          : getListIndent(
+              Math.max(0, (info?.listLevel ?? 0) - 1),
+              info?.listLevel > 0 ? "indent" : null,
+            );
+      });
+      const nextTops = paragraphElements.map(
+        (paragraph) => paragraph.offsetTop,
+      );
+      setParagraphTops((current) =>
+        current.length === nextTops.length &&
+        current.every((top, index) => top === nextTops[index])
+          ? current
+          : nextTops,
+      );
+    };
+
+    measureParagraphs();
+    const observer = new ResizeObserver(measureParagraphs);
+    observer.observe(editable);
+    Array.from(editable.children).forEach((child) => observer.observe(child));
+
+    return () => observer.disconnect();
+  }, [
+    innerHTML,
+    textElement.width,
+    textElement.paragraphs,
+    paragraphListInfos,
+  ]);
+
+  useLayoutEffect(() => {
+    const editable = editableRef.current;
+    if (!editable || !onAutoFit) return undefined;
+
+    const fitToContent = () => {
+      const currentHeight = textElement.height ?? 80;
+      const contentHeight = Math.ceil(editable.scrollHeight + 2);
+      if (contentHeight <= currentHeight + 1) {
+        lastAutoFitHeightRef.current = null;
+        return;
+      }
+      if (lastAutoFitHeightRef.current === contentHeight) return;
+
+      lastAutoFitHeightRef.current = contentHeight;
+      const currentY = textElement.position?.y ?? 0;
+      const nextY =
+        Number.isFinite(slideHeight) && currentY + contentHeight > slideHeight
+          ? Math.max(0, slideHeight - contentHeight)
+          : currentY;
+
+      onAutoFit(textElement.id, {
+        height: contentHeight,
+        position: {
+          ...(textElement.position ?? { x: 0, y: 0 }),
+          y: nextY,
+        },
+      });
+    };
+
+    fitToContent();
+    const observer = new ResizeObserver(fitToContent);
+    observer.observe(editable);
+    Array.from(editable.children).forEach((child) => observer.observe(child));
+
+    return () => observer.disconnect();
+  }, [
+    innerHTML,
+    onAutoFit,
+    slideHeight,
+    textElement.height,
+    textElement.id,
+    textElement.paragraphs,
+    textElement.position,
+    textElement.width,
+  ]);
+
+  const updateToolbarPosition = (anchorPoint = null) => {
     setTimeout(() => {
       const editableEl = editableRef.current;
       const wrapperEl = elementRef.current;
       const selection = window.getSelection();
       let rect = null;
+      if (anchorPoint) {
+        rect = {
+          top: anchorPoint.y,
+          bottom: anchorPoint.y,
+          left: anchorPoint.x,
+        };
+      }
       if (editableEl && selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
-        if (editableEl.contains(range.startContainer)) {
+        if (!rect && editableEl.contains(range.startContainer)) {
           const r = range.getBoundingClientRect();
           if (r && !(r.top === 0 && r.left === 0)) rect = r;
         }
@@ -179,17 +338,20 @@ export default function TextElement({
       const topAbove = rect.top - toolbarHeight - 8;
       const topBelow = rect.bottom + 8;
       const top = topAbove > 0 ? topAbove : topBelow;
-      const left = Math.max(8, Math.min(rect.left, window.innerWidth - TOOLBAR_WIDTH - 8));
+      const left = Math.max(
+        8,
+        Math.min(rect.left, window.innerWidth - TOOLBAR_WIDTH - 8),
+      );
       setToolbarPos({ top, left });
     }, 0);
   };
-
 
   // Sync live selection to parent before delegating — parent's applyFormatting reads
   // activeSelectionRef.current (a ref, updated synchronously) to decide run vs range formatting.
   const handleFormat = (id, updates) => {
     const el = editableRef.current;
-    const liveOffsets = (el && document.activeElement === el) ? getSelectionOffsets(el) : null;
+    const liveOffsets =
+      el && document.activeElement === el ? getSelectionOffsets(el) : null;
     const offsets = liveOffsets ?? savedSelectionRef.current;
     if (offsets) {
       savedSelectionRef.current = offsets;
@@ -198,12 +360,58 @@ export default function TextElement({
     onFormatTextElement(id, updates);
   };
 
-  useEffect(() => {
-    if (isSelected) updateToolbarPosition();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSelected]);
+  const openToolbar = (anchorPoint = null) => {
+    onSelect(textElement.id);
+    setIsToolbarOpen(true);
+    updateToolbarPosition(anchorPoint);
+  };
 
-  const text = (textElement.paragraphs ?? []).map((p) => p.runs?.[0]?.text ?? "").join("\n");
+  const syncSelectionToolbar = () => {
+    const el = editableRef.current;
+    if (!el) return;
+    const selection = window.getSelection();
+    const hasTextSelection =
+      selection &&
+      !selection.isCollapsed &&
+      selection.rangeCount > 0 &&
+      el.contains(selection.getRangeAt(0).startContainer) &&
+      el.contains(selection.getRangeAt(0).endContainer);
+
+    if (!hasTextSelection) {
+      setIsToolbarOpen(false);
+      return;
+    }
+
+    const offsets = getSelectionOffsets(el);
+    if (!offsets) return;
+    savedSelectionRef.current = offsets;
+    setSavedSelState(offsets);
+    onSaveSelection?.(textElement.id, offsets);
+    openToolbar();
+  };
+
+  useEffect(() => {
+    if (isSelected && isToolbarOpen) updateToolbarPosition();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSelected, isToolbarOpen]);
+
+  useEffect(() => {
+    const handleSelectionChange = () => {
+      if (selectionFrameRef.current)
+        cancelAnimationFrame(selectionFrameRef.current);
+      selectionFrameRef.current = requestAnimationFrame(() => {
+        selectionFrameRef.current = null;
+        syncSelectionToolbar();
+      });
+    };
+
+    document.addEventListener("selectionchange", handleSelectionChange);
+    return () => {
+      document.removeEventListener("selectionchange", handleSelectionChange);
+      if (selectionFrameRef.current)
+        cancelAnimationFrame(selectionFrameRef.current);
+    };
+  });
 
   return (
     <div
@@ -222,7 +430,10 @@ export default function TextElement({
         transform: `rotate(${textElement.rotation ?? 0}deg)`,
         transformOrigin: "center center",
       }}
-      onMouseDown={() => onSelect(textElement.id)}
+      onMouseDown={(event) => {
+        if (!isSelected && event.button === 0) event.preventDefault();
+        onSelect(textElement.id);
+      }}
     >
       {animationOrder != null && (
         <span className="animation-order-badge">{animationOrder}</span>
@@ -238,6 +449,7 @@ export default function TextElement({
         ))}
 
       {isSelected &&
+        isToolbarOpen &&
         createPortal(
           <FormatToolbar
             elementId={textElement.id}
@@ -245,7 +457,7 @@ export default function TextElement({
             onFormatTextElement={handleFormat}
             onNewComment={onNewComment}
             presentation={presentation}
-            hasSelection={savedSelectionRef.current !== null}
+            hasSelection={savedSelState !== null}
             formatPainterClipboard={formatPainterClipboard}
             onFormatPainterCopy={onFormatPainterCopy}
             onFormatPainterPaste={onFormatPainterPaste}
@@ -259,30 +471,75 @@ export default function TextElement({
           document.body,
         )}
 
-      {listType && (
+      {anyListPara && (
         <div
           className="list-markers-overlay"
           style={{
             left: 0,
-            width: `calc(${listIndent} + 1.2em)`,
-            fontSize: resolveTextStyle(formatting.size, placeholderFormatting.size, masterFormatting.size, "24px"),
-            lineHeight: resolveTextStyle(formatting["line-spacing"], placeholderFormatting["line-spacing"], masterFormatting["line-spacing"], 1.2),
-            color: resolveTextStyle(formatting.color, placeholderFormatting.color, masterFormatting.color, "var(--text-dark, black)"),
-            fontFamily: resolveTextStyle(formatting.font, placeholderFormatting.font, masterFormatting.font, "inherit"),
-            fontWeight: resolveWeight(formatting.weight, placeholderFormatting.weight, masterFormatting.weight),
+            width: "100%",
+            fontSize: resolveTextStyle(
+              formatting.size,
+              placeholderFormatting.size,
+              masterFormatting.size,
+              "24px",
+            ),
+            lineHeight: resolveTextStyle(
+              formatting["line-spacing"],
+              placeholderFormatting["line-spacing"],
+              masterFormatting["line-spacing"],
+              1.2,
+            ),
+            color: resolveTextStyle(
+              formatting.color,
+              placeholderFormatting.color,
+              masterFormatting.color,
+              "var(--text-dark, black)",
+            ),
+            fontFamily: resolveTextStyle(
+              formatting.font,
+              placeholderFormatting.font,
+              masterFormatting.font,
+              "inherit",
+            ),
+            fontWeight: resolveWeight(
+              formatting.weight,
+              placeholderFormatting.weight,
+              masterFormatting.weight,
+            ),
           }}
         >
-          {text.split("\n").map((_, i) => (
-            <span key={i} className="list-marker-line">
-              {getListMarker(i, listType, listMarker, listNumberedStyle)}
-            </span>
-          ))}
+          {(() => {
+            let numberedCounter = 0;
+            return paragraphListInfos.map((info, i) => {
+              if (info.listType === "numbered") numberedCounter++;
+              return (
+                <span
+                  key={i}
+                  className="list-marker-line"
+                  style={{
+                    top: `${paragraphTops[i] ?? 0}px`,
+                    width: `calc(${getListIndent(info.listLevel, info.listType)} + 1.2em)`,
+                    ...info.markerStyle,
+                  }}
+                >
+                  {info.listType
+                    ? getListMarker(
+                        info.listType === "numbered" ? numberedCounter - 1 : i,
+                        info.listType,
+                        info.listMarker,
+                        info.listNumberedStyle,
+                      )
+                    : null}
+                </span>
+              );
+            });
+          })()}
         </div>
       )}
 
       <div
         ref={editableRef}
-        contentEditable
+        contentEditable={isSelected}
         suppressContentEditableWarning
         className="text-editable"
         data-placeholder="Click to edit text"
@@ -292,8 +549,54 @@ export default function TextElement({
           savedSelectionRef.current = null;
           setSavedSelState(null);
         }}
-        onMouseUp={saveCurrentSelection}
-        onKeyUp={saveCurrentSelection}
+        onMouseUp={() => {
+          saveCurrentSelection();
+          syncSelectionToolbar();
+        }}
+        onTouchEnd={() => {
+          window.setTimeout(syncSelectionToolbar, 0);
+        }}
+        onContextMenu={(event) => {
+          saveCurrentSelection();
+          openToolbar({ x: event.clientX, y: event.clientY });
+        }}
+        onKeyUp={() => {
+          saveCurrentSelection();
+          syncSelectionToolbar();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            setIsToolbarOpen(false);
+            window.getSelection()?.removeAllRanges();
+            return;
+          }
+          if (
+            e.key.length === 1 ||
+            e.key === "Backspace" ||
+            e.key === "Delete" ||
+            e.key === "Enter"
+          ) {
+            setIsToolbarOpen(false);
+          }
+          if (e.key !== "Tab") return;
+          const el = editableRef.current;
+          if (!el) return;
+          const offset = getCollapsedCursorOffset(el);
+          if (!offset) return;
+          const para = textElement.paragraphs?.[offset.paragraphIdx];
+          const paraFmt = para?.formatting ?? {};
+          if (!paraFmt["list-type"] || paraFmt["list-type"] === "none") return;
+          e.preventDefault();
+          const currentLevel = paraFmt["indent-level"] ?? 0;
+          const MAX_LIST_INDENT_LEVEL = 4;
+          const newLevel = e.shiftKey
+            ? Math.max(0, currentLevel - 1)
+            : Math.min(MAX_LIST_INDENT_LEVEL, currentLevel + 1);
+          if (newLevel === currentLevel) return;
+          // Sync cursor to ref before formatting so applyFormatting targets the right paragraph.
+          onSaveSelection?.(textElement.id, offset);
+          onFormatTextElement?.(textElement.id, { "indent-level": newLevel });
+        }}
         onBeforeInput={(e) => {
           if (!e.data || Object.keys(pendingFormatting).length === 0) return;
           e.preventDefault();
@@ -308,11 +611,13 @@ export default function TextElement({
           const el = editableRef.current;
           let insertRange = range.cloneRange();
           const container = range.startContainer;
-          const parentSpan = container.nodeType === Node.TEXT_NODE
-            ? container.parentElement?.closest?.("span")
-            : null;
+          const parentSpan =
+            container.nodeType === Node.TEXT_NODE
+              ? container.parentElement?.closest?.("span")
+              : null;
           if (parentSpan && el?.contains(parentSpan) && parentSpan !== el) {
-            const atEnd = range.startOffset === (container.textContent?.length ?? 0);
+            const atEnd =
+              range.startOffset === (container.textContent?.length ?? 0);
             const atStart = range.startOffset === 0;
             if (atEnd) {
               insertRange = document.createRange();
@@ -354,6 +659,7 @@ export default function TextElement({
           onClearPendingFormatting?.();
         }}
         onInput={(event) => {
+          setIsToolbarOpen(false);
           const el = event.currentTarget;
           if (el.innerHTML === "<br>" || el.innerHTML === "<br/>") {
             el.innerHTML = "";
@@ -376,7 +682,8 @@ export default function TextElement({
               relatedTarget.closest?.(".toolbar-ribbon") ||
               relatedTarget.closest?.(".bg-palette-popup"));
           const domSel = window.getSelection();
-          const hasRealSelection = domSel && !domSel.isCollapsed && domSel.rangeCount > 0;
+          const hasRealSelection =
+            domSel && !domSel.isCollapsed && domSel.rangeCount > 0;
           if (goingToToolbar) {
             if (!hasRealSelection) {
               const el = editableRef.current;
@@ -387,7 +694,8 @@ export default function TextElement({
               // SELECT and INPUT need to keep focus so the user can interact with them.
               // After they finish (onChange), they lose focus naturally and we refocus then.
               const tag = relatedTarget?.tagName;
-              const isFormInput = tag === "SELECT" || tag === "INPUT" || tag === "TEXTAREA";
+              const isFormInput =
+                tag === "SELECT" || tag === "INPUT" || tag === "TEXTAREA";
               if (collapsed && !isFormInput) {
                 const savedParas = textElement.paragraphs;
                 setTimeout(() => {
@@ -401,28 +709,85 @@ export default function TextElement({
           } else {
             savedSelectionRef.current = null;
             setSavedSelState(null);
+            setIsToolbarOpen(false);
             onSaveSelection?.(textElement.id, null);
             onCommitHistory?.();
             onStopEditing?.(textElement.id);
           }
         }}
         style={{
-          fontSize: resolveTextStyle(formatting.size, placeholderFormatting.size, masterFormatting.size, "24px"),
-          fontWeight: resolveTextStyle(formatting.weight, placeholderFormatting.weight, masterFormatting.weight, "normal"),
-          fontStyle: resolveTextStyle(formatting.italics, placeholderFormatting.italics, masterFormatting.italics, false) ? "italic" : "normal",
-          textDecoration: resolveTextStyle(formatting["text-decoration"], placeholderFormatting["text-decoration"], masterFormatting["text-decoration"], "none"),
-          textAlign: resolveTextStyle(formatting.align, placeholderFormatting.align, masterFormatting.align, "left"),
-          textAlignLast: resolveTextStyle(formatting.align, placeholderFormatting.align, masterFormatting.align, "left") === "justify" ? "left" : undefined,
-          lineHeight: resolveTextStyle(formatting["line-spacing"], placeholderFormatting["line-spacing"], masterFormatting["line-spacing"], 1.2),
-          color: resolveTextStyle(formatting.color, placeholderFormatting.color, masterFormatting.color, "var(--text-dark, black)"),
-          fontFamily: resolveTextStyle(formatting.font, placeholderFormatting.font, masterFormatting.font, "inherit"),
-          paddingLeft: listType ? `calc(${listIndent} + 1.2em)` : undefined,
+          fontSize: resolveTextStyle(
+            formatting.size,
+            placeholderFormatting.size,
+            masterFormatting.size,
+            "24px",
+          ),
+          fontWeight: resolveTextStyle(
+            formatting.weight,
+            placeholderFormatting.weight,
+            masterFormatting.weight,
+            "normal",
+          ),
+          fontStyle: resolveTextStyle(
+            formatting.italics,
+            placeholderFormatting.italics,
+            masterFormatting.italics,
+            false,
+          )
+            ? "italic"
+            : "normal",
+          textDecoration: resolveTextStyle(
+            formatting["text-decoration"],
+            placeholderFormatting["text-decoration"],
+            masterFormatting["text-decoration"],
+            "none",
+          ),
+          textAlign: resolveTextStyle(
+            formatting.align,
+            placeholderFormatting.align,
+            masterFormatting.align,
+            "left",
+          ),
+          textAlignLast:
+            resolveTextStyle(
+              formatting.align,
+              placeholderFormatting.align,
+              masterFormatting.align,
+              "left",
+            ) === "justify"
+              ? "left"
+              : undefined,
+          lineHeight: resolveTextStyle(
+            formatting["line-spacing"],
+            placeholderFormatting["line-spacing"],
+            masterFormatting["line-spacing"],
+            1.2,
+          ),
+          color: resolveTextStyle(
+            formatting.color,
+            placeholderFormatting.color,
+            masterFormatting.color,
+            "var(--text-dark, black)",
+          ),
+          fontFamily: resolveTextStyle(
+            formatting.font,
+            placeholderFormatting.font,
+            masterFormatting.font,
+            "inherit",
+          ),
           position: "relative",
         }}
         data-list-type={listType ?? undefined}
-        data-indent-level={listType ? listLevel : undefined}
-        data-list-marker={listType === "bullets" ? listMarker : undefined}
-        data-list-numbered-style={listType === "numbered" ? listNumberedStyle : undefined}
+        data-list-marker={
+          anyListPara?.listType === "bullets"
+            ? anyListPara.listMarker
+            : undefined
+        }
+        data-list-numbered-style={
+          anyListPara?.listType === "numbered"
+            ? anyListPara.listNumberedStyle
+            : undefined
+        }
       />
 
       {isSelected &&

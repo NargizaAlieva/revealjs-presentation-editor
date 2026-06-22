@@ -1,12 +1,13 @@
 export const parseSpanStyle = (style) => {
   const f = {};
-  
+
   if (style.fontWeight)
-    f.weight = (style.fontWeight === "400") ? "normal" : style.fontWeight;
+    f.weight = style.fontWeight === "400" ? "normal" : style.fontWeight;
   if (style.fontStyle === "italic") f.italics = true;
   if (style.color) f.color = style.color;
   if (style.fontSize) f.size = style.fontSize;
-  if (style.fontFamily) f.font = style.fontFamily.replace(/^["']|["']$/g, "").trim();
+  if (style.fontFamily)
+    f.font = style.fontFamily.replace(/^["']|["']$/g, "").trim();
   if (style.textDecoration && style.textDecoration !== "none")
     f["text-decoration"] = style.textDecoration;
   if (style.backgroundColor && style.backgroundColor !== "transparent")
@@ -24,7 +25,12 @@ export const domToParagraphs = (el, existingParagraphs) => {
     if (last && JSON.stringify(last.formatting) === JSON.stringify(fmt)) {
       last.text += text;
     } else {
-      lastPara.push({ text, formatting: fmt, "super-sub-script": "normal", link: null });
+      lastPara.push({
+        text,
+        formatting: fmt,
+        "super-sub-script": "normal",
+        link: null,
+      });
     }
   };
 
@@ -47,15 +53,45 @@ export const domToParagraphs = (el, existingParagraphs) => {
   el.childNodes.forEach((n) => walk(n));
 
   return paragraphs.map((runs, pIdx) => {
-    const existing = (existingParagraphs ?? [])[pIdx] ?? {};
+    const existing = (existingParagraphs ?? [])[pIdx];
+    const isNewParagraph = !existing;
+    const prevFormatting =
+      pIdx > 0 ? ((existingParagraphs ?? [])[pIdx - 1]?.formatting ?? {}) : {};
+
+    // New paragraph (Enter pressed): inherit list-type from the previous paragraph.
+    let formatting = existing?.formatting ?? {};
+    if (
+      isNewParagraph &&
+      prevFormatting["list-type"] &&
+      prevFormatting["list-type"] !== "none"
+    ) {
+      formatting = {
+        "list-type": prevFormatting["list-type"],
+        "indent-level": prevFormatting["indent-level"] ?? 0,
+        ...(prevFormatting["list-marker"]
+          ? { "list-marker": prevFormatting["list-marker"] }
+          : {}),
+        ...(prevFormatting["list-numbered-style"]
+          ? { "list-numbered-style": prevFormatting["list-numbered-style"] }
+          : {}),
+      };
+    }
+
     return {
-      id: existing.id ?? `p-${Date.now()}-${pIdx}`,
-      formatting: existing.formatting ?? {},
-      userSetKeys: existing.userSetKeys ?? [],
-      bullets: existing.bullets ?? "none",
+      id: existing?.id ?? `p-${Date.now()}-${pIdx}`,
+      formatting,
+      userSetKeys: existing?.userSetKeys ?? [],
+      bullets: existing?.bullets ?? "none",
       runs: runs.length
         ? runs
-        : [{ text: "", formatting: {}, "super-sub-script": "normal", link: null }],
+        : [
+            {
+              text: "",
+              formatting: {},
+              "super-sub-script": "normal",
+              link: null,
+            },
+          ],
     };
   });
 };
@@ -78,7 +114,8 @@ export const getNodeAtOffset = (el, targetOffset) => {
   while ((node = walker.nextNode())) {
     last = node;
     const len = node.textContent.length;
-    if (chars + len >= targetOffset) return { node, offset: targetOffset - chars };
+    if (chars + len >= targetOffset)
+      return { node, offset: targetOffset - chars };
     chars += len;
   }
   return last ? { node: last, offset: last.textContent.length } : null;
@@ -98,7 +135,10 @@ export const setCaretOffset = (el, offset) => {
 export const paragraphToGlobal = (paragraphs, pIdx, charOffset) => {
   let global = charOffset;
   for (let i = 0; i < pIdx; i++) {
-    global += (paragraphs[i]?.runs ?? []).reduce((a, r) => a + r.text.length, 0);
+    global += (paragraphs[i]?.runs ?? []).reduce(
+      (a, r) => a + r.text.length,
+      0,
+    );
   }
   return global;
 };
@@ -140,7 +180,11 @@ export const getCollapsedCursorOffset = (el) => {
       rangeStart = 0;
       currentParaHasContent = false;
     } else if (node.nodeName === "DIV" || node.nodeName === "P") {
-      if (currentParaHasContent) { paragraphIdx++; rangeStart = 0; currentParaHasContent = false; }
+      if (currentParaHasContent) {
+        paragraphIdx++;
+        rangeStart = 0;
+        currentParaHasContent = false;
+      }
       node.childNodes.forEach(countContent);
     } else {
       node.childNodes.forEach(countContent);
@@ -161,7 +205,8 @@ export const getCollapsedCursorOffset = (el) => {
       if (node.nodeType === Node.TEXT_NODE) {
         rangeStart += range.startOffset;
       } else {
-        for (let i = 0; i < range.startOffset; i++) countContent(node.childNodes[i]);
+        for (let i = 0; i < range.startOffset; i++)
+          countContent(node.childNodes[i]);
       }
       found = true;
       return;
@@ -193,51 +238,92 @@ export const getSelectionOffsets = (el) => {
   const sel = window.getSelection();
   if (!sel?.rangeCount || sel.isCollapsed) return null;
   const range = sel.getRangeAt(0);
-  if (!el.contains(range.startContainer)) return null;
+  if (!el.contains(range.startContainer) || !el.contains(range.endContainer))
+    return null;
 
-  let paragraphIdx = 0;
-  let rangeStart = 0;
-  let startFound = false;
+  const locatePoint = (targetNode, targetOffset) => {
+    let paragraphIdx = 0;
+    let charOffset = 0;
+    let paragraphHasContent = false;
+    let result = null;
 
-  const walkForStart = (node) => {
-    if (startFound) return;
-    if (node === range.startContainer) {
-      rangeStart += range.startOffset;
-      startFound = true;
-      return;
+    const startBlock = () => {
+      if (paragraphHasContent) {
+        paragraphIdx++;
+        charOffset = 0;
+        paragraphHasContent = false;
+      }
+    };
+
+    const consumeNode = (node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        charOffset += node.textContent?.length ?? 0;
+        if (node.textContent?.length) paragraphHasContent = true;
+        return;
+      }
+      if (node.nodeName === "BR") {
+        paragraphIdx++;
+        charOffset = 0;
+        paragraphHasContent = false;
+        return;
+      }
+      if (node.nodeName === "DIV" || node.nodeName === "P") startBlock();
+      node.childNodes.forEach(consumeNode);
+    };
+
+    const walk = (node) => {
+      if (result) return;
+
+      if (node === targetNode) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          result = {
+            paragraphIdx,
+            offset:
+              charOffset +
+              Math.min(targetOffset, node.textContent?.length ?? 0),
+          };
+        } else {
+          for (let i = 0; i < targetOffset; i++) {
+            const child = node.childNodes[i];
+            if (child) consumeNode(child);
+          }
+          result = { paragraphIdx, offset: charOffset };
+        }
+        return;
+      }
+
+      if (node.nodeType === Node.TEXT_NODE) {
+        consumeNode(node);
+        return;
+      }
+      if (node.nodeName === "BR") {
+        consumeNode(node);
+        return;
+      }
+      if (node.nodeName === "DIV" || node.nodeName === "P") startBlock();
+      node.childNodes.forEach(walk);
+    };
+
+    if (el === targetNode) {
+      for (let i = 0; i < targetOffset; i++) {
+        const child = el.childNodes[i];
+        if (child) consumeNode(child);
+      }
+      return { paragraphIdx, offset: charOffset };
     }
-    if (node.nodeType === Node.TEXT_NODE) {
-      rangeStart += node.textContent.length;
-    } else if (node.nodeName === "BR") {
-      paragraphIdx++;
-      rangeStart = 0;
-    } else {
-      node.childNodes.forEach(walkForStart);
-    }
+
+    el.childNodes.forEach(walk);
+    return result;
   };
-  el.childNodes.forEach(walkForStart);
 
-  let endParagraphIdx = 0;
-  let rangeEnd = 0;
-  let endFound = false;
+  const start = locatePoint(range.startContainer, range.startOffset);
+  const end = locatePoint(range.endContainer, range.endOffset);
+  if (!start || !end) return null;
 
-  const walkForEnd = (node) => {
-    if (endFound) return;
-    if (node === range.endContainer) {
-      rangeEnd += range.endOffset;
-      endFound = true;
-      return;
-    }
-    if (node.nodeType === Node.TEXT_NODE) {
-      rangeEnd += node.textContent.length;
-    } else if (node.nodeName === "BR") {
-      endParagraphIdx++;
-      rangeEnd = 0;
-    } else {
-      node.childNodes.forEach(walkForEnd);
-    }
+  return {
+    paragraphIdx: start.paragraphIdx,
+    rangeStart: start.offset,
+    endParagraphIdx: end.paragraphIdx,
+    rangeEnd: end.offset,
   };
-  el.childNodes.forEach(walkForEnd);
-
-  return { paragraphIdx, rangeStart, endParagraphIdx, rangeEnd };
 };

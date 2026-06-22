@@ -6,11 +6,14 @@ import {
   MdFormatAlignJustify,
   MdFormatListBulleted,
   MdFormatListNumbered,
-  MdArrowUpward,
-  MdArrowDownward,
+  MdFormatIndentDecrease,
+  MdFormatIndentIncrease,
 } from "react-icons/md";
 import { BULLET_STYLES, NUMBERED_STYLES } from "./homeTabConstants";
-import { getListMarker, MAX_LIST_INDENT_LEVEL } from "../../core/utils/listUtils";
+import {
+  getListMarker,
+  MAX_LIST_INDENT_LEVEL,
+} from "../../core/utils/listUtils";
 import "./ParagraphGroup.css";
 
 export default function ParagraphGroup({
@@ -52,7 +55,7 @@ export default function ParagraphGroup({
 
   return (
     <div className="ribbon-group paragraph-group">
-      <div className="font-row">
+      <div className="font-row paragraph-row paragraph-row--lists">
         {/* Bullets split-button */}
         <div className="list-split-btn" ref={bulletPickerRef}>
           <button
@@ -218,26 +221,33 @@ export default function ParagraphGroup({
         <button
           className="small-format"
           disabled={!isTextSelected || currentListLevel <= 0}
-          title="Decrease list level"
+          title="Decrease indent"
           onClick={() =>
             fmt({ "indent-level": Math.max(0, currentListLevel - 1) })
           }
         >
-          <MdArrowUpward />
+          <MdFormatIndentDecrease />
         </button>
         <button
           className="small-format"
-          disabled={!isTextSelected || !currentListType}
-          title="Increase list level"
+          disabled={
+            !isTextSelected || currentListLevel >= MAX_LIST_INDENT_LEVEL
+          }
+          title="Increase indent"
           onClick={() =>
-            fmt({ "indent-level": Math.min(MAX_LIST_INDENT_LEVEL, currentListLevel + 1) })
+            fmt({
+              "indent-level": Math.min(
+                MAX_LIST_INDENT_LEVEL,
+                currentListLevel + 1,
+              ),
+            })
           }
         >
-          <MdArrowDownward />
+          <MdFormatIndentIncrease />
         </button>
       </div>
 
-      <div className="font-row">
+      <div className="font-row paragraph-row paragraph-row--alignment">
         {["left", "center", "right", "justify"].map((align) => (
           <button
             key={align}

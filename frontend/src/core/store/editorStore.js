@@ -12,6 +12,7 @@ import {
   addTextElement,
   updateTextElement,
   updateTextFormatting,
+  updateSingleParagraphFormatting,
   updateTextElementParagraphs,
   updateTextRangeFormatting,
   updateRunLink,
@@ -232,15 +233,15 @@ export const editorReducer = (state, event) => {
           ...slide.contents,
           ...(isMedia
             ? {
-              media: (slide.contents?.media ?? []).filter(
-                (el) => el.id !== element.id,
-              ),
-            }
+                media: (slide.contents?.media ?? []).filter(
+                  (el) => el.id !== element.id,
+                ),
+              }
             : {
-              text: (slide.contents?.text ?? []).filter(
-                (el) => el.id !== element.id,
-              ),
-            }),
+                text: (slide.contents?.text ?? []).filter(
+                  (el) => el.id !== element.id,
+                ),
+              }),
         },
       };
 
@@ -260,7 +261,10 @@ export const editorReducer = (state, event) => {
     case EditorEventType.FORMAT_PAINTER.COPY:
       return {
         ...state,
-        formatPainterClipboard: { formatting: event.payload.formatting, sourceElementId: event.payload.elementId },
+        formatPainterClipboard: {
+          formatting: event.payload.formatting,
+          sourceElementId: event.payload.elementId,
+        },
         lastEvent: event,
       };
 
@@ -517,6 +521,20 @@ export const editorReducer = (state, event) => {
         lastUpdated: Date.now(),
       });
 
+    case EditorEventType.TEXT.UPDATE_PARAGRAPH_FORMATTING:
+      return withHistory(state, {
+        ...state,
+        presentation: updateSingleParagraphFormatting(
+          state.presentation,
+          state.selectedSlideIndex,
+          event.payload.elementId,
+          event.payload.paragraphIdx,
+          event.payload.formatting,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
+
     case EditorEventType.TEXT.UPDATE_PARAGRAPHS:
       return {
         ...state,
@@ -747,7 +765,11 @@ export const editorReducer = (state, event) => {
     case EditorEventType.LAYOUT.RENAME:
       return withHistory(state, {
         ...state,
-        presentation: renameLayout(state.presentation, event.payload.layoutId, event.payload.name),
+        presentation: renameLayout(
+          state.presentation,
+          event.payload.layoutId,
+          event.payload.name,
+        ),
         lastEvent: event,
         lastUpdated: Date.now(),
       });
@@ -856,7 +878,11 @@ export const editorReducer = (state, event) => {
     case EditorEventType.MASTER.UPDATE_THEME:
       return withHistory(state, {
         ...state,
-        presentation: updateMasterTheme(state.presentation, event.payload.colorTheme, event.payload.decorations),
+        presentation: updateMasterTheme(
+          state.presentation,
+          event.payload.colorTheme,
+          event.payload.decorations,
+        ),
         lastEvent: event,
         lastUpdated: Date.now(),
       });
@@ -949,7 +975,10 @@ export const editorReducer = (state, event) => {
     case EditorEventType.MASTER.TOGGLE_TITLE:
       return withHistory(state, {
         ...state,
-        presentation: toggleMasterTitle(state.presentation, event.payload.layoutId ?? null),
+        presentation: toggleMasterTitle(
+          state.presentation,
+          event.payload.layoutId ?? null,
+        ),
         lastEvent: event,
         lastUpdated: Date.now(),
       });
@@ -957,7 +986,10 @@ export const editorReducer = (state, event) => {
     case EditorEventType.MASTER.TOGGLE_FOOTERS:
       return withHistory(state, {
         ...state,
-        presentation: toggleMasterFooters(state.presentation, event.payload.layoutId ?? null),
+        presentation: toggleMasterFooters(
+          state.presentation,
+          event.payload.layoutId ?? null,
+        ),
         lastEvent: event,
         lastUpdated: Date.now(),
       });

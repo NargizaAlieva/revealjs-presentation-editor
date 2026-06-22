@@ -1,6 +1,13 @@
 export const RUN_LEVEL_KEYS = new Set([
-  "weight", "italics", "text-decoration", "color", "size", "font",
-  "super-sub-script", "highlight",
+  "weight",
+  "italics",
+  "text-decoration",
+  "color",
+  "size",
+  "font",
+  "super-sub-script",
+  "highlight",
+  "font-size-delta",
 ]);
 
 export const splitFormattingUpdates = (updates) => {
@@ -27,7 +34,10 @@ export const getFormattingAtCursor = (textElement, selection) => {
       const prevRuns = prevPara.runs ?? [];
       const prevParaFmt = prevPara.formatting ?? {};
       if (prevRuns.length) {
-        return { ...prevParaFmt, ...(prevRuns[prevRuns.length - 1].formatting ?? {}) };
+        return {
+          ...prevParaFmt,
+          ...(prevRuns[prevRuns.length - 1].formatting ?? {}),
+        };
       }
       return prevParaFmt;
     }
@@ -59,8 +69,12 @@ export const computeCurrentFormatting = ({
 
   const sel = activeSelection;
   const hasRealSelection =
-    sel && sel.elementId === selectedElementId &&
-    !(sel.paragraphIdx === (sel.endParagraphIdx ?? sel.paragraphIdx) && sel.rangeStart === sel.rangeEnd);
+    sel &&
+    sel.elementId === selectedElementId &&
+    !(
+      sel.paragraphIdx === (sel.endParagraphIdx ?? sel.paragraphIdx) &&
+      sel.rangeStart === sel.rangeEnd
+    );
 
   if (hasRealSelection) {
     const paragraphs = selectedTextEl?.paragraphs ?? [];
@@ -76,12 +90,16 @@ export const computeCurrentFormatting = ({
       for (const run of para.runs ?? []) {
         const start = offset;
         const end = offset + run.text.length;
-        if (end > pStart && start < pEnd) overlapping.push(run.formatting ?? {});
+        if (end > pStart && start < pEnd)
+          overlapping.push(run.formatting ?? {});
         offset = end;
       }
     }
     if (!overlapping.length) return paraFmt;
-    const allKeys = new Set([...Object.keys(paraFmt), ...overlapping.flatMap((f) => Object.keys(f))]);
+    const allKeys = new Set([
+      ...Object.keys(paraFmt),
+      ...overlapping.flatMap((f) => Object.keys(f)),
+    ]);
     const result = { ...paraFmt };
     for (const key of allKeys) {
       const vals = overlapping.map((f) => f[key] ?? paraFmt[key]);
@@ -99,7 +117,10 @@ export const computeCurrentFormatting = ({
 };
 
 export const escapeHTML = (str) =>
-  (str ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  (str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 
 export const resolveWeight = (elemValue, phValue, masterValue) => {
   const v = elemValue ?? phValue ?? masterValue;
@@ -108,7 +129,11 @@ export const resolveWeight = (elemValue, phValue, masterValue) => {
   return v ?? "normal";
 };
 
-export const resolveEffectiveFormatting = (masterFormatting = {}, placeholderFormatting = {}, paragraphFormatting = {}) => ({
+export const resolveEffectiveFormatting = (
+  masterFormatting = {},
+  placeholderFormatting = {},
+  paragraphFormatting = {},
+) => ({
   ...masterFormatting,
   ...placeholderFormatting,
   ...paragraphFormatting,
@@ -117,15 +142,25 @@ export const resolveEffectiveFormatting = (masterFormatting = {}, placeholderFor
 export const buildRunStyles = (runFormatting = {}) => {
   const styles = [];
   if (runFormatting.weight != null) {
-    const w = runFormatting.weight === true ? "bold" : runFormatting.weight === false ? "normal" : runFormatting.weight;
+    const w =
+      runFormatting.weight === true
+        ? "bold"
+        : runFormatting.weight === false
+          ? "normal"
+          : runFormatting.weight;
     styles.push(`font-weight:${w}`);
   }
   if (runFormatting.italics != null)
-    styles.push(`font-style:${runFormatting.italics === true || runFormatting.italics === "italic" ? "italic" : "normal"}`);
+    styles.push(
+      `font-style:${runFormatting.italics === true || runFormatting.italics === "italic" ? "italic" : "normal"}`,
+    );
   if (runFormatting.color) styles.push(`color:${runFormatting.color}`);
   if (runFormatting.size) styles.push(`font-size:${runFormatting.size}`);
   if (runFormatting.font) styles.push(`font-family:${runFormatting.font}`);
-  if (runFormatting["text-decoration"] && runFormatting["text-decoration"] !== "none")
+  if (
+    runFormatting["text-decoration"] &&
+    runFormatting["text-decoration"] !== "none"
+  )
     styles.push(`text-decoration:${runFormatting["text-decoration"]}`);
   if (runFormatting.highlight && runFormatting.highlight !== "transparent")
     styles.push(`background-color:${runFormatting.highlight}`);
@@ -133,19 +168,39 @@ export const buildRunStyles = (runFormatting = {}) => {
 };
 
 export const runsToHTML = (runs) =>
-  (runs ?? []).map((run) => {
-    const styles = buildRunStyles(run.formatting ?? {});
-    const text = escapeHTML(run.text ?? "");
-    return styles ? `<span style="${styles}">${text}</span>` : text;
-  }).join("");
+  (runs ?? [])
+    .map((run) => {
+      const styles = buildRunStyles(run.formatting ?? {});
+      const text = escapeHTML(run.text ?? "");
+      return styles ? `<span style="${styles}">${text}</span>` : text;
+    })
+    .join("");
 
 export const paragraphsToHTML = (paragraphs) =>
-  (paragraphs ?? []).map((p) => runsToHTML(p.runs)).join("<br>");
+  (paragraphs ?? [])
+    .map((paragraph, index) => {
+      const formatting = paragraph.formatting ?? {};
+      const styles = [
+        buildRunStyles(formatting),
+        formatting.align ? `text-align:${formatting.align}` : "",
+        formatting["line-spacing"]
+          ? `line-height:${formatting["line-spacing"]}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join(";");
+      return `<div data-paragraph-index="${index}"${
+        styles ? ` style="${styles}"` : ""
+      }>${runsToHTML(paragraph.runs)}</div>`;
+    })
+    .join("");
 
 export const buildPendingFormattingStyles = (pendingFormatting = {}) => {
   const styleMap = {
-    weight: (v) => `font-weight:${v === true || v === "bold" ? "bold" : "normal"}`,
-    italics: (v) => `font-style:${v === true || v === "italic" ? "italic" : "normal"}`,
+    weight: (v) =>
+      `font-weight:${v === true || v === "bold" ? "bold" : "normal"}`,
+    italics: (v) =>
+      `font-style:${v === true || v === "italic" ? "italic" : "normal"}`,
     "text-decoration": (v) => `text-decoration:${v}`,
     color: (v) => `color:${v}`,
     size: (v) => `font-size:${v}`,
@@ -158,10 +213,17 @@ export const buildPendingFormattingStyles = (pendingFormatting = {}) => {
     .join(";");
 };
 
-export const resolveTextStyle = (elemValue, placeholderValue, masterValue, fallback) =>
-  elemValue ?? placeholderValue ?? masterValue ?? fallback;
+export const resolveTextStyle = (
+  elemValue,
+  placeholderValue,
+  masterValue,
+  fallback,
+) => elemValue ?? placeholderValue ?? masterValue ?? fallback;
 
-export const extractPlainTextFromParagraphs = (paragraphs = [], separator = "\n") =>
+export const extractPlainTextFromParagraphs = (
+  paragraphs = [],
+  separator = "\n",
+) =>
   paragraphs
     .map((p) => (p.runs ?? []).map((r) => r.text ?? "").join(""))
     .join(separator);
@@ -184,7 +246,11 @@ export const getSelectionFormatting = (textElement, selection) => {
     for (const run of para.runs ?? []) {
       const start = offset;
       const end = offset + run.text.length;
-      if (end > pStart && start < pEnd) overlapping.push({ runFmt: run.formatting ?? {}, paraFmt: thisParaFmt });
+      if (end > pStart && start < pEnd)
+        overlapping.push({
+          runFmt: run.formatting ?? {},
+          paraFmt: thisParaFmt,
+        });
       offset = end;
     }
   }
@@ -192,21 +258,32 @@ export const getSelectionFormatting = (textElement, selection) => {
 
   const allKeys = new Set([
     ...Object.keys(paraFmt),
-    ...overlapping.flatMap(({ runFmt, paraFmt: pf }) => [...Object.keys(runFmt), ...Object.keys(pf)]),
+    ...overlapping.flatMap(({ runFmt, paraFmt: pf }) => [
+      ...Object.keys(runFmt),
+      ...Object.keys(pf),
+    ]),
   ]);
   const result = { ...paraFmt };
   for (const key of allKeys) {
-    const vals = overlapping.map(({ runFmt, paraFmt: pf }) => runFmt[key] ?? pf[key]);
+    const vals = overlapping.map(
+      ({ runFmt, paraFmt: pf }) => runFmt[key] ?? pf[key],
+    );
     result[key] = vals.every((v) => v === vals[0]) ? vals[0] : "mixed";
   }
   return result;
 };
 
-export const parseFormattingForDisplay = (formatting = {}, fallbackFont = "Arial") => ({
-  currentSize:        formatting.size === "mixed" ? "" : parseInt(formatting.size ?? "24", 10),
-  currentFont:        formatting.font === "mixed" ? "" : (formatting.font ?? fallbackFont),
-  currentAlign:       formatting.align === "mixed" ? null : (formatting.align ?? "left"),
-  currentColor:       formatting.color ?? "#111111",
-  currentHighlight:   formatting.highlight ?? "transparent",
+export const parseFormattingForDisplay = (
+  formatting = {},
+  fallbackFont = "Arial",
+) => ({
+  currentSize:
+    formatting.size === "mixed" ? "" : parseInt(formatting.size ?? "24", 10),
+  currentFont:
+    formatting.font === "mixed" ? "" : (formatting.font ?? fallbackFont),
+  currentAlign:
+    formatting.align === "mixed" ? null : (formatting.align ?? "left"),
+  currentColor: formatting.color ?? "#111111",
+  currentHighlight: formatting.highlight ?? "transparent",
   currentLineSpacing: parseFloat(formatting["line-spacing"] ?? "1.15"),
 });
