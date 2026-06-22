@@ -140,7 +140,7 @@ export const runsToHTML = (runs) =>
   }).join("");
 
 export const paragraphsToHTML = (paragraphs) =>
-  (paragraphs ?? []).map((p) => runsToHTML(p.runs)).join("<br>");
+  (paragraphs ?? []).map((p, i) => `<span data-para="${i}">${runsToHTML(p.runs)}</span>`).join("<br>");
 
 export const buildPendingFormattingStyles = (pendingFormatting = {}) => {
   const styleMap = {

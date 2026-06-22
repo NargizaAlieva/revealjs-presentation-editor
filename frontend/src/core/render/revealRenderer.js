@@ -187,6 +187,39 @@ export function buildAnimationMap(slide) {
   return map;
 }
 
+export function buildAdjustedAnimationMap(slide) {
+  const animations = slide?.contents?.animations ?? [];
+  const textElements = getTextElements(slide);
+  if (!animations.length) return new Map();
+
+  const sorted = [...animations].sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0));
+
+  const adjustedStartMap = new Map(); 
+  let next = 1;
+  for (const anim of sorted) {
+    adjustedStartMap.set(anim.id, next);
+    const byParagraph = (anim["effect-options"]?.sequence ?? "as-one-object") !== "as-one-object";
+    if (byParagraph) {
+      const textEl = textElements.find((el) => el.id === anim.id);
+      const lines = getTextLines(textEl ?? { paragraphs: [] });
+      next += lines.length || 1;
+    } else {
+      next += 1;
+    }
+  }
+
+  const map = new Map();
+  animations.forEach((animation) => {
+    if (!animation?.id) return;
+    const adjustedSeq = adjustedStartMap.get(animation.id);
+    map.set(animation.id, adjustedSeq !== undefined
+      ? { ...animation, sequence: adjustedSeq }
+      : animation,
+    );
+  });
+  return map;
+}
+
 function fragmentClassNameFor(effect) {
   const classes = ["fragment"];
   if (

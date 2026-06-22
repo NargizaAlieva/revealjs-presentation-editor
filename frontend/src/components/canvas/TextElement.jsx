@@ -35,9 +35,6 @@ const RESIZE_HANDLES = [
 
 const TOOLBAR_WIDTH = 600;
 
-
-// --- Component ---
-
 export default function TextElement({
   textElement,
   isSelected,
@@ -54,6 +51,8 @@ export default function TextElement({
   onCancelHistory,
   onNewComment,
   previewClassName,
+  activeParagraphIndex,
+  activeEffect,
   animationOrder,
   presentation,
   slide,
@@ -67,7 +66,6 @@ export default function TextElement({
   clearSelectionSignal = 0,
 }) {
   const [toolbarPos, setToolbarPos] = useState({ top: 0, left: 0 });
-  // savedSelState mirrors savedSelectionRef but as React state so toolbar re-renders on cursor move.
   const [savedSelState, setSavedSelState] = useState(null);
   const editableRef = useRef(null);
   const elementRef = useRef(null);
@@ -75,9 +73,6 @@ export default function TextElement({
   const savedSelectionRef = useRef(null);
   const lastSyncedParagraphsRef = useRef(null);
 
-  // When EditorPage signals that the user clicked outside all toolbars and
-  // text elements, clear the saved selection so the next toolbar action
-  // applies to the whole element rather than a stale range.
   useEffect(() => {
     if (clearSelectionSignal === 0) return;
     savedSelectionRef.current = null;
@@ -89,9 +84,6 @@ export default function TextElement({
   const placeholderFormatting = getPlaceholderFormatting(presentation, slide, textElement);
 
   const effectiveParaFormatting = resolveEffectiveFormatting(masterFormatting, placeholderFormatting, formatting);
-  // Popup toolbar formatting — 3 states matching computeCurrentFormatting:
-  //   real selection → mixed/run formatting; collapsed cursor → run at cursor + pending; no sel → effective + pending
-  // Use savedSelState (React state) so toolbar re-renders when cursor moves without typing.
   const savedSel = savedSelState;
   const isRealSelection = savedSel &&
     !(savedSel.paragraphIdx === (savedSel.endParagraphIdx ?? savedSel.paragraphIdx) && savedSel.rangeStart === savedSel.rangeEnd);
@@ -110,8 +102,6 @@ export default function TextElement({
   const listNumberedStyle = formatting["list-numbered-style"] ?? "decimal";
   const listIndent = getListIndent(listLevel, listType);
 
-  // Save current selection offsets (called from onMouseUp / onKeyUp inside contentEditable).
-  // Using these events (not selectionchange) avoids false triggers from toolbar clicks.
   const saveCurrentSelection = () => {
     const el = editableRef.current;
     if (!el) return;
@@ -122,7 +112,6 @@ export default function TextElement({
       onSaveSelection?.(textElement.id, null);
       return;
     }
-    // Real selection (range) → use full offsets; collapsed cursor → use cursor position only.
     const offsets = sel.isCollapsed
       ? getCollapsedCursorOffset(el)
       : getSelectionOffsets(el);
@@ -133,14 +122,11 @@ export default function TextElement({
 
   const innerHTML = paragraphsToHTML(textElement.paragraphs);
 
-  // Sync state → DOM. Skip only when the new HTML matches what the user just typed
-  // (to avoid disrupting the cursor mid-typing). For external changes (formatting,
-  // undo, master change) the new innerHTML differs, so we always update.
   useEffect(() => {
     const el = editableRef.current;
     if (!el) return;
-    if (innerHTML === lastTypedHTMLRef.current) return; // change came from typing
-    if (textElement.paragraphs === lastSyncedParagraphsRef.current) return; // paragraphs unchanged — don't disturb selection
+    if (innerHTML === lastTypedHTMLRef.current) return; 
+    if (textElement.paragraphs === lastSyncedParagraphsRef.current) return;
 
     const wasFocused = document.activeElement === el;
     const savedCaret = wasFocused ? getCaretOffset(el) : 0;
@@ -152,13 +138,39 @@ export default function TextElement({
 
     if (wasFocused) {
       if (savedSel) {
-        // Restore the visual selection so it stays visible after formatting (like PowerPoint)
         restoreSelectionToDOM(el, textElement.paragraphs, savedSel);
       } else {
         setCaretOffset(el, savedCaret);
       }
     }
   }, [innerHTML]);
+
+  useEffect(() => {
+    const el = editableRef.current;
+    if (!el) return;
+
+    if (activeParagraphIndex == null) {
+      el.querySelectorAll("[data-para]").forEach((s) => {
+        [...s.classList].filter((c) => c.startsWith("play-")).forEach((c) => s.classList.remove(c));
+        s.style.opacity = "";
+      });
+      return;
+    }
+
+    if (activeParagraphIndex === 0) {
+      el.querySelectorAll("[data-para]").forEach((s) => {
+        s.style.opacity = "0";
+      });
+    }
+
+    const target = el.querySelector(`[data-para="${activeParagraphIndex}"]`);
+    if (target) {
+      target.style.opacity = "";
+      target.classList.remove("play-effect", `play-${activeEffect}`);
+      void target.offsetWidth; 
+      target.classList.add("play-effect", `play-${activeEffect}`);
+    }
+  }, [activeParagraphIndex, activeEffect]);
 
   const updateToolbarPosition = () => {
     setTimeout(() => {
@@ -184,9 +196,6 @@ export default function TextElement({
     }, 0);
   };
 
-
-  // Sync live selection to parent before delegating — parent's applyFormatting reads
-  // activeSelectionRef.current (a ref, updated synchronously) to decide run vs range formatting.
   const handleFormat = (id, updates) => {
     const el = editableRef.current;
     const liveOffsets = (el && document.activeElement === el) ? getSelectionOffsets(el) : null;
@@ -200,7 +209,6 @@ export default function TextElement({
 
   useEffect(() => {
     if (isSelected) updateToolbarPosition();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSelected]);
 
   const text = (textElement.paragraphs ?? []).map((p) => p.runs?.[0]?.text ?? "").join("\n");
@@ -302,9 +310,6 @@ export default function TextElement({
           const range = sel.getRangeAt(0);
           range.deleteContents();
 
-          // If cursor is inside a formatting span, move the insertion point OUTSIDE it
-          // so the new span is a sibling (not nested). Nested spans break domToParagraphs
-          // override logic (e.g. normal span inside bold span → inherits bold).
           const el = editableRef.current;
           let insertRange = range.cloneRange();
           const container = range.startContainer;
@@ -323,7 +328,6 @@ export default function TextElement({
               insertRange.setStartBefore(parentSpan);
               insertRange.collapse(true);
             }
-            // Mid-span: let browser split naturally; insertNode handles it
           }
 
           const span = document.createElement("span");
@@ -332,24 +336,17 @@ export default function TextElement({
           span.textContent = e.data;
           insertRange.insertNode(span);
           const newRange = document.createRange();
-          // Place cursor INSIDE the new span so the browser extends it on next keystroke.
           newRange.setStart(span.firstChild ?? span, span.textContent.length);
           newRange.collapse(true);
           sel.removeAllRanges();
           sel.addRange(newRange);
           if (onChangeParagraphs) {
             const newParagraphs = domToParagraphs(el, textElement.paragraphs);
-            // Use paragraphsToHTML so lastTypedHTMLRef matches what React will compute —
-            // prevents the innerHTML useEffect from firing and resetting cursor position.
             lastTypedHTMLRef.current = paragraphsToHTML(newParagraphs);
             onChangeParagraphs(textElement.id, newParagraphs);
           } else {
             onChangeTextElement(textElement.id, el.innerText);
           }
-          // Save cursor position HERE (same event, same React batch) so the toolbar
-          // re-renders with the correct position alongside pendingFormatting={}.
-          // Without this, onKeyUp fires in a later batch with stale textElement.paragraphs
-          // causing a flash of default formatting after typing with a pending format.
           saveCurrentSelection();
           onClearPendingFormatting?.();
         }}
@@ -383,9 +380,6 @@ export default function TextElement({
               const collapsed = el ? getCollapsedCursorOffset(el) : null;
               savedSelectionRef.current = collapsed;
               onSaveSelection?.(textElement.id, null);
-              // Only auto-refocus for buttons/non-form elements.
-              // SELECT and INPUT need to keep focus so the user can interact with them.
-              // After they finish (onChange), they lose focus naturally and we refocus then.
               const tag = relatedTarget?.tagName;
               const isFormInput = tag === "SELECT" || tag === "INPUT" || tag === "TEXTAREA";
               if (collapsed && !isFormInput) {

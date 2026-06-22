@@ -87,6 +87,24 @@ function buildAnimationMap(slide) {
   return map;
 }
 
+function buildAdjustedSequenceMap(animations, textElements) {
+  if (!animations?.length) return new Map();
+  const sorted = [...animations].sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0));
+  const result = new Map(); // elementId -> adjusted start index
+  let next = 1;
+  for (const anim of sorted) {
+    result.set(anim.id, next);
+    const byParagraph = (anim["effect-options"]?.sequence ?? "as-one-object") !== "as-one-object";
+    if (byParagraph) {
+      const textEl = textElements.find((el) => el.id === anim.id);
+      next += textEl?.paragraphs?.length ?? 1;
+    } else {
+      next += 1;
+    }
+  }
+  return result;
+}
+
 function fragmentClassesFor(effect) {
   const classes = ["fragment"];
   if (effect !== "fade-in" && effect !== "none" && FRAGMENT_EFFECT_CLASSES.has(effect)) {
@@ -172,37 +190,22 @@ function buildTextElementContent(textElement, animation) {
   const perLine = animation && sequenceMode !== "as-one-object";
 
   return textElement.paragraphs
-    .map((paragraph) => {
+    .map((paragraph, pIdx) => {
       const paragraphFormatting = paragraph.formatting ?? {};
       const pStyle = buildPStyle(paragraphFormatting);
       const runsHtml = (paragraph.runs ?? []).map(buildRunHtml).join("");
 
       if (!perLine) return `<p style="${pStyle}">${runsHtml}</p>`;
 
-      const lines = runsHtml.split("\n");
-      if (lines.length === 1) {
-        const classes = fragmentClassesFor(animation.effect ?? "fade-in");
-        const dataAttrs = fragmentDataAttrs(
-          animation.sequence,
-          animation["effect-options"]?.speed ?? animation.speed,
-        );
-        return `<p class="${classes}" ${dataAttrs} style="${pStyle}">${runsHtml}</p>`;
-      }
-
-      return lines
-        .map((line, lineIndex) => {
-          const fragIndex =
-            sequenceMode === "all-at-once"
-              ? animation.sequence
-              : animation.sequence + lineIndex;
-          const classes = fragmentClassesFor(animation.effect ?? "fade-in");
-          const dataAttrs = fragmentDataAttrs(
-            fragIndex,
-            animation["effect-options"]?.speed ?? animation.speed,
-          );
-          return `<p class="${classes}" ${dataAttrs} style="${pStyle}">${line}</p>`;
-        })
-        .join("");
+      const fragIndex = sequenceMode === "all-at-once"
+        ? animation.sequence
+        : animation.sequence + pIdx;
+      const classes = fragmentClassesFor(animation.effect ?? "fade-in");
+      const dataAttrs = fragmentDataAttrs(
+        fragIndex,
+        animation["effect-options"]?.speed ?? animation.speed,
+      );
+      return `<p class="${classes}" ${dataAttrs} style="${pStyle}">${runsHtml}</p>`;
     })
     .join("");
 }
@@ -266,6 +269,10 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
   const transitionSpeed = TRANSITION_SPEED_MAP[transitionDuration] ?? "default";
   const background = slide.contents?.background ?? "var(--bg-light, white)";
   const animationMap = buildAnimationMap(slide);
+  const adjustedSeqMap = buildAdjustedSequenceMap(
+    slide.contents?.animations ?? [],
+    textElements,
+  );
 
   const textElementsHtml = textElements
     .map((textElement, index) => {
@@ -273,9 +280,12 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
       const sequenceMode = animation?.["effect-options"]?.sequence ?? "as-one-object";
       const placeholderFormatting = getPlaceholderFormatting(presentation, slide, textElement);
       const style = buildTextElementStyle(textElement, index, masterFormatting, placeholderFormatting);
-      const content = buildTextElementContent(textElement, animation);
+      const adjustedAnim = animation && adjustedSeqMap.has(animation.id)
+        ? { ...animation, sequence: adjustedSeqMap.get(animation.id) }
+        : animation;
+      const content = buildTextElementContent(textElement, adjustedAnim);
       if (!animation || sequenceMode === "as-one-object") {
-        return applyFragment(content, style, animation);
+        return applyFragment(content, style, adjustedAnim);
       }
       return `<div style="${style}">${content}</div>`;
     })
@@ -309,7 +319,10 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
         ? `<video src="${escapeHtml(src)}" style="${imgStyle}" controls preload="metadata"></video>`
         : `<img src="${escapeHtml(src)}" alt="" style="${imgStyle}" />`;
 
-      return applyFragment(mediaHtml, wrapperStyle, animation);
+      const adjustedMediaAnim = animation && adjustedSeqMap.has(animation.id)
+        ? { ...animation, sequence: adjustedSeqMap.get(animation.id) }
+        : animation;
+      return applyFragment(mediaHtml, wrapperStyle, adjustedMediaAnim);
     })
     .join("");
 

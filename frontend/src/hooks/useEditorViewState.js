@@ -31,8 +31,8 @@ export function useEditorViewState() {
     closePreview: () => setIsPreviewOpen(false),
     previewEffect,
     setPreviewEffect,
-    triggerAnimationPreview: (elementId, effect, speed) =>
-      setPreviewEffect({ type: "animation", elementId, effect, speed, key: Date.now() }),
+    triggerAnimationPreview: (elementId, effect, speed, { byParagraph = false, paragraphCount = 1 } = {}) =>
+      setPreviewEffect({ type: "animation", elementId, effect, speed, byParagraph, paragraphCount, key: Date.now() }),
     triggerTransitionPreview: (effect) =>
       setPreviewEffect({ type: "transition", effect, key: Date.now() }),
   };

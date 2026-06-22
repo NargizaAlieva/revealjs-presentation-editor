@@ -304,7 +304,7 @@ function MasterThumb({ label, isSelected, onClick, presentation, layout, isMaste
 
 export function SlideMasterRibbon({
   onClose, presentation, onApplyTheme, onApplyBackground, onApplyFont, onUpdateDimensions,
-  masterName, onRenameMaster, selectedMasterLayoutId, onRenameLayout,
+  masterName, onRenameMaster, selectedMasterLayoutId, onInsertLayout, onRenameLayout,
   onDeleteLayout, onAddLayoutPlaceholder, onRemoveLayoutPlaceholder,
   onAddTextElement, onImageUpload, onVideoUpload,
   onAddMasterElement, onDeleteMasterElement, onApplyMasterTransition, onApplyLayoutFont,
@@ -389,7 +389,7 @@ export function SlideMasterRibbon({
 
         <div className="ribbon-group master-ribbon-group">
           <div className="master-ribbon-row">
-            <button className="master-ribbon-btn master-ribbon-btn--large" disabled>
+            <button className="master-ribbon-btn master-ribbon-btn--large" onClick={onInsertLayout}>
               <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
                 <rect x="2" y="4" width="28" height="22" rx="2" stroke="#4472c4" strokeWidth="1.2" fill="#f0f4fc" />
                 <rect x="5" y="7" width="22" height="6" rx="1" fill="#dce6f4" stroke="#4472c4" strokeWidth="0.7" />
@@ -611,6 +611,7 @@ export default function SlideMasterView({
   onApplyTheme,
   onApplyFont,
   onUpdateDimensions,
+  onInsertLayout,
   onUpdateLayout,
   masterName,
   onAddMasterElement,
