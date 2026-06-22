@@ -229,9 +229,20 @@ export function useEditorActions(
   );
 
   const selectElement = useCallback(
-    (elementId) =>
+    (elementId, options = {}) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.ELEMENT.SELECT, { elementId }),
+        createEditorEvent(EditorEventType.ELEMENT.SELECT, {
+          elementId,
+          ...options,
+        }),
+      ),
+    [eventBus],
+  );
+
+  const selectElements = useCallback(
+    (elementIds) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.ELEMENT.SELECT, { elementIds }),
       ),
     [eventBus],
   );
@@ -653,9 +664,21 @@ export function useEditorActions(
   );
 
   const copyElement = useCallback(
-    (element) =>
+    (elementOrElements) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.ELEMENT.COPY, { element }),
+        createEditorEvent(EditorEventType.ELEMENT.COPY, {
+          elements: Array.isArray(elementOrElements)
+            ? elementOrElements
+            : [elementOrElements],
+        }),
+      ),
+    [eventBus],
+  );
+
+  const updateElements = useCallback(
+    (updates) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.ELEMENT.UPDATE_MANY, { updates }),
       ),
     [eventBus],
   );
@@ -666,9 +689,23 @@ export function useEditorActions(
   );
 
   const cutElement = useCallback(
-    (element) =>
+    (elementOrElements) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.ELEMENT.CUT, { element }),
+        createEditorEvent(EditorEventType.ELEMENT.CUT, {
+          elements: Array.isArray(elementOrElements)
+            ? elementOrElements
+            : [elementOrElements],
+        }),
+      ),
+    [eventBus],
+  );
+
+  const deleteSelectedElements = useCallback(
+    (elementIds) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.ELEMENT.DELETE_SELECTION, {
+          elementIds,
+        }),
       ),
     [eventBus],
   );
@@ -704,6 +741,7 @@ export function useEditorActions(
     applyTransitionToAll,
     updateSlideNotes,
     selectElement,
+    selectElements,
     addTextElement,
     updateTextElementContent,
     updateTextElementFormatting,
@@ -714,6 +752,7 @@ export function useEditorActions(
     updateElementPosition,
     updateElementSize,
     updateElement,
+    updateElements,
     deleteElement,
     addMedia,
     updateMedia,
@@ -758,6 +797,7 @@ export function useEditorActions(
     copyElement,
     pasteElement,
     cutElement,
+    deleteSelectedElements,
     addComment,
     deleteComment,
     updateMasterTextContent,

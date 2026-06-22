@@ -7,6 +7,7 @@ import { useEditorViewState } from "./useEditorViewState";
 import { useImageUpload } from "./useImageUpload";
 import { useVideoUpload } from "./useVideoUpload";
 import { usePresentationFonts } from "./usePresentationFonts";
+import { useFindReplace } from "./useFindReplace";
 import {
   findMasterTextElement,
   computeFormattingState,
@@ -52,6 +53,9 @@ export function useEditorController() {
   const activeSelectionRef = useRef(null);
   const [activeSelection, setActiveSelection] = useState(null);
   const [clearSelectionSignal, setClearSelectionSignal] = useState(0);
+  const [findReplaceMode, setFindReplaceMode] = useState("find");
+  const [showSelectionPane, setShowSelectionPane] = useState(false);
+  const [objectSelectionMode, setObjectSelectionMode] = useState(false);
 
   // ── Core hooks ─────────────────────────────────────────────────────────────
   const viewState = useEditorViewState();
@@ -83,6 +87,7 @@ export function useEditorController() {
     selectedSlide,
     selectedSlideIndex,
     selectedElementId,
+    selectedElementIds,
   } = useSlides(state);
 
   const actions = useEditorActions(
@@ -94,6 +99,7 @@ export function useEditorController() {
   const {
     setSelectedSlideId,
     selectElement,
+    selectElements,
     addSlide,
     deleteSlide,
     duplicateSlide,
@@ -112,6 +118,7 @@ export function useEditorController() {
     updateElementPosition,
     updateElementSize,
     updateElement,
+    updateElements,
     addMedia,
     updateMedia,
     deleteElement,
@@ -159,9 +166,67 @@ export function useEditorController() {
     copyElement,
     pasteElement,
     cutElement,
+    deleteSelectedElements,
     addComment,
     deleteComment,
   } = actions;
+
+  const handleFindNavigate = useCallback(
+    (slideIndex, elementId) => {
+      setSelectedSlideId(slideIndex);
+      selectElement(elementId);
+    },
+    [setSelectedSlideId, selectElement],
+  );
+
+  const handleReplaceText = useCallback(
+    (slideIndex, elementId, paragraphIdx, runIdx, newText) => {
+      const element = (slides[slideIndex]?.contents?.text ?? []).find(
+        (item) => item.id === elementId,
+      );
+      if (!element) return;
+      const paragraphs = structuredClone(element.paragraphs ?? []);
+      const run = paragraphs[paragraphIdx]?.runs?.[runIdx];
+      if (!run) return;
+      run.text = newText;
+      updateTextElementParagraphs(slideIndex, elementId, paragraphs);
+    },
+    [slides, updateTextElementParagraphs],
+  );
+
+  const handleReplaceAllText = useCallback(
+    (operations) => {
+      const grouped = new Map();
+      operations.forEach((operation) => {
+        const key = `${operation.slideIndex}:${operation.elementId}`;
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key).push(operation);
+      });
+
+      grouped.forEach((elementOperations) => {
+        const { slideIndex, elementId } = elementOperations[0];
+        const element = (slides[slideIndex]?.contents?.text ?? []).find(
+          (item) => item.id === elementId,
+        );
+        if (!element) return;
+        const paragraphs = structuredClone(element.paragraphs ?? []);
+        elementOperations.forEach(({ paragraphIdx, runIdx, newText }) => {
+          const run = paragraphs[paragraphIdx]?.runs?.[runIdx];
+          if (run) run.text = newText;
+        });
+        updateTextElementParagraphs(slideIndex, elementId, paragraphs);
+      });
+    },
+    [slides, updateTextElementParagraphs],
+  );
+
+  const findReplace = useFindReplace(
+    slides,
+    handleFindNavigate,
+    handleReplaceText,
+    handleReplaceAllText,
+  );
+  const openFindReplace = findReplace.open;
 
   usePresentationFonts(presentation);
 
@@ -276,6 +341,13 @@ useEffect(() => {
   });
 
   const selectedElementRaw = getSlideElement(selectedSlide, selectedElementId);
+  const selectedElementsRaw = useMemo(
+    () =>
+      selectedElementIds
+        .map((id) => getSlideElement(selectedSlide, id))
+        .filter(Boolean),
+    [selectedSlide, selectedElementIds],
+  );
   const selectedElement = useMemo(
     () =>
       selectedElementRaw
@@ -289,7 +361,7 @@ useEffect(() => {
 
   const arrangeSelectedElement = useCallback(
     (mode) => {
-      if (!selectedElementRaw || !selectedSlide) return;
+      if (selectedElementsRaw.length === 0 || !selectedSlide) return;
       const elements = [
         ...(selectedSlide.contents?.text ?? []),
         ...(selectedSlide.contents?.media ?? []),
@@ -297,17 +369,17 @@ useEffect(() => {
       const zIndexes = elements.map((element) =>
         Number(element["z-index"] ?? 1),
       );
-      const currentZ = Number(selectedElementRaw["z-index"] ?? 1);
-      let nextZ = currentZ;
-
-      if (mode === "front") nextZ = Math.max(...zIndexes, currentZ) + 1;
-      if (mode === "back") nextZ = Math.min(...zIndexes, currentZ) - 1;
-      if (mode === "forward") nextZ = currentZ + 1;
-      if (mode === "backward") nextZ = currentZ - 1;
-
-      updateElement(selectedElementRaw.id, { "z-index": nextZ });
+      selectedElementsRaw.forEach((element, index) => {
+        const currentZ = Number(element["z-index"] ?? 1);
+        let nextZ = currentZ;
+        if (mode === "front") nextZ = Math.max(...zIndexes, currentZ) + 1 + index;
+        if (mode === "back") nextZ = Math.min(...zIndexes, currentZ) - selectedElementsRaw.length + index;
+        if (mode === "forward") nextZ = currentZ + 1;
+        if (mode === "backward") nextZ = currentZ - 1;
+        updateElement(element.id, { "z-index": nextZ });
+      });
     },
-    [selectedElementRaw, selectedSlide, updateElement],
+    [selectedElementsRaw, selectedSlide, updateElement],
   );
 
   const handleBringToFront = useCallback(
@@ -327,11 +399,95 @@ useEffect(() => {
     [arrangeSelectedElement],
   );
   const handleRotateRight = useCallback(() => {
-    if (!selectedElementRaw) return;
-    updateElement(selectedElementRaw.id, {
-      rotation: (Number(selectedElementRaw.rotation ?? 0) + 90) % 360,
+    selectedElementsRaw.forEach((element) => {
+      updateElement(element.id, {
+        rotation: (Number(element.rotation ?? 0) + 90) % 360,
+      });
     });
-  }, [selectedElementRaw, updateElement]);
+  }, [selectedElementsRaw, updateElement]);
+
+  const handleElementSelect = useCallback(
+    (elementId, options = {}) => {
+      const event = options?.nativeEvent ?? options;
+      const toggle = Boolean(
+        options?.toggle || event?.ctrlKey || event?.metaKey || event?.shiftKey,
+      );
+      selectElement(elementId, {
+        toggle,
+        preserveIfSelected: options?.preserveIfSelected,
+      });
+    },
+    [selectElement],
+  );
+
+  const handleMoveElement = useCallback(
+    (elementId, x, y) => {
+      const element = getSlideElement(selectedSlide, elementId);
+      if (!element) return;
+      const isGroupMove =
+        selectedElementIds.length > 1 && selectedElementIds.includes(elementId);
+      if (!isGroupMove) {
+        updateElementPosition(elementId, x, y);
+        return;
+      }
+      const deltaX = x - (element.position?.x ?? 0);
+      const deltaY = y - (element.position?.y ?? 0);
+      selectedElementsRaw.forEach((selected) => {
+        updateElementPosition(
+          selected.id,
+          (selected.position?.x ?? 0) + deltaX,
+          (selected.position?.y ?? 0) + deltaY,
+        );
+      });
+    },
+    [
+      selectedSlide,
+      selectedElementIds,
+      selectedElementsRaw,
+      updateElementPosition,
+    ],
+  );
+
+  const handleSetElementsVisibility = useCallback(
+    (elementIds, hidden) => {
+      updateElements(
+        elementIds.map((elementId) => ({
+          elementId,
+          updates: { hidden },
+        })),
+      );
+    },
+    [updateElements],
+  );
+
+  const handleMoveSelectionLayer = useCallback(
+    (direction) => {
+      if (selectedElementIds.length === 0) return;
+      const allElements = [
+        ...(selectedSlide?.contents?.text ?? []),
+        ...(selectedSlide?.contents?.media ?? []),
+      ].sort(
+        (a, b) => Number(b["z-index"] ?? 1) - Number(a["z-index"] ?? 1),
+      );
+      const selectedSet = new Set(selectedElementIds);
+      const index = allElements.findIndex((element) => selectedSet.has(element.id));
+      const swapIndex = index + direction;
+      if (index < 0 || swapIndex < 0 || swapIndex >= allElements.length) return;
+      const current = allElements[index];
+      const target = allElements[swapIndex];
+      updateElements([
+        {
+          elementId: current.id,
+          updates: { "z-index": Number(target["z-index"] ?? 1) },
+        },
+        {
+          elementId: target.id,
+          updates: { "z-index": Number(current["z-index"] ?? 1) },
+        },
+      ]);
+    },
+    [selectedElementIds, selectedSlide, updateElements],
+  );
 
   const activePendingFormatting =
     editingTextElementId === selectedElementId ? pendingFormatting : {};
@@ -426,27 +582,42 @@ useEffect(() => {
 
   const handleCopy = useCallback(
     (elementOrEvent) => {
+      if (selectedElementsRaw.length > 1 && !elementOrEvent?.id) {
+        copyElement(selectedElementsRaw);
+        return;
+      }
       const element = elementOrEvent?.id
         ? elementOrEvent
         : getSlideElement(selectedSlide, selectedElementId);
-      if (!element) return;
-      copyElement(element);
+      if (element) copyElement(element);
     },
-    [selectedSlide, selectedElementId, copyElement],
+    [
+      selectedSlide,
+      selectedElementId,
+      selectedElementsRaw,
+      copyElement,
+    ],
   );
 
   const handleCut = useCallback(
     (elementOrEvent) => {
+      if (selectedElementsRaw.length > 1 && !elementOrEvent?.id) {
+        cutElement(selectedElementsRaw);
+        return;
+      }
       const element = elementOrEvent?.id
         ? elementOrEvent
         : getSlideElement(selectedSlide, selectedElementId);
-      if (!element) return;
-      cutElement(element);
+      if (element) cutElement(element);
     },
-    [selectedSlide, selectedElementId, cutElement],
+    [selectedSlide, selectedElementId, selectedElementsRaw, cutElement],
   );
 
   const handlePaste = useCallback(() => pasteElement(), [pasteElement]);
+
+  const handleDeleteSelection = useCallback(() => {
+    deleteSelectedElements(selectedElementIds);
+  }, [deleteSelectedElements, selectedElementIds]);
 
   const handleNewComment = useCallback(() => {
     setShowComments(true);
@@ -549,6 +720,48 @@ useEffect(() => {
     openPreview();
   }, [openPreview]);
 
+  const openFind = useCallback(() => {
+    setFindReplaceMode("find");
+    openFindReplace();
+  }, [openFindReplace]);
+
+  const openReplace = useCallback(() => {
+    setFindReplaceMode("replace");
+    openFindReplace();
+  }, [openFindReplace]);
+
+  const handleSelectAll = useCallback(() => {
+    if (selectedTextEl && editingTextElementId === selectedTextEl.id) {
+      const editable = document.querySelector(
+        `[data-element-id="${selectedTextEl.id}"] [contenteditable="true"]`,
+      );
+      if (editable) {
+        const range = document.createRange();
+        range.selectNodeContents(editable);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+        editable.focus();
+        return;
+      }
+    }
+
+    const elementIds = [
+      ...(selectedSlide?.contents?.text ?? []),
+      ...(selectedSlide?.contents?.media ?? []),
+    ].map((element) => element.id);
+    selectElements(elementIds);
+  }, [
+    selectedTextEl,
+    editingTextElementId,
+    selectedSlide,
+    selectElements,
+  ]);
+
+  const handleSelectObjects = useCallback(() => {
+    setObjectSelectionMode((active) => !active);
+  }, []);
+
   const handleOpenPreviewFromCurrent = useCallback(() => {
     setPreviewStartSlide(selectedSlideIndex);
     openPreview();
@@ -602,6 +815,8 @@ useEffect(() => {
     selectedSlide,
     selectedSlideIndex,
     selectedElementId,
+    selectedElementIds,
+    selectedElementsRaw,
     layouts,
     slideWidth,
     slideHeight,
@@ -649,6 +864,11 @@ useEffect(() => {
     setSelectedMasterLayoutId,
     clearSelectionSignal,
     editingTextElementId,
+    findReplaceMode,
+    findReplace,
+    showSelectionPane,
+    setShowSelectionPane,
+    objectSelectionMode,
 
     // Handlers
     handleApplyBackground,
@@ -662,6 +882,7 @@ useEffect(() => {
     handleCopy,
     handleCut,
     handlePaste,
+    handleDeleteSelection,
     handleNewComment,
     handleSaveAs,
     handleNew,
@@ -674,6 +895,14 @@ useEffect(() => {
     handleMasterSaveSelection,
     handleOpenPreviewFromBeginning,
     handleOpenPreviewFromCurrent,
+    openFind,
+    openReplace,
+    handleSelectAll,
+    handleSelectObjects,
+    handleElementSelect,
+    handleMoveElement,
+    handleSetElementsVisibility,
+    handleMoveSelectionLayer,
     handleToggleSlideHidden,
     handleApplyTransitionToAll,
     handleChangeParagraphs,
@@ -690,6 +919,7 @@ useEffect(() => {
     // Actions (passed through)
     setSelectedSlideId,
     selectElement,
+    selectElements,
     addSlide,
     deleteSlide,
     duplicateSlide,
@@ -705,6 +935,7 @@ useEffect(() => {
     updateElementPosition,
     updateElementSize,
     updateElement,
+    updateElements,
     addMedia,
     updateMedia,
     deleteElement,

@@ -1,0 +1,153 @@
+.editing-group {
+  width: 142px;
+  flex-direction: column;
+  gap: 0;
+  padding-top: 1px;
+}
+
+.editing-command {
+  width: 116px;
+  height: 23px;
+  display: grid;
+  grid-template-columns: 22px 1fr 14px;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  padding: 0 5px;
+  color: #222;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.editing-command:hover,
+.editing-command.active {
+  border-color: #b8b8b8;
+  background: #f2f2f2;
+}
+
+.editing-command svg {
+  font-size: 19px;
+}
+
+.editing-find-icon,
+.editing-select-icon {
+  color: #222;
+  stroke-width: 1.5;
+}
+
+.editing-command span {
+  font-size: 12px;
+}
+
+.editing-replace-glyph {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  display: block;
+  color: #2867d8;
+}
+
+.editing-replace-glyph::before,
+.editing-replace-glyph::after {
+  content: "";
+  position: absolute;
+  width: 7px;
+  height: 5px;
+  border: solid #1674dc;
+  border-width: 1.5px 0 0 1.5px;
+  border-radius: 5px 0 0;
+}
+
+.editing-replace-glyph::before {
+  top: 1px;
+  left: 7px;
+  transform: rotate(35deg);
+}
+
+.editing-replace-glyph::after {
+  right: 2px;
+  bottom: 1px;
+  transform: rotate(215deg);
+}
+
+.editing-replace-glyph > span {
+  position: absolute;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.editing-replace-glyph > span:first-child {
+  left: 1px;
+  bottom: 1px;
+  color: #8a45dc;
+}
+
+.editing-replace-glyph > span:last-child {
+  right: 1px;
+  top: 2px;
+  color: #e04c8a;
+}
+
+.editing-chevron {
+  text-align: right;
+  font-size: 15px !important;
+}
+
+.editing-dropdown {
+  position: relative;
+}
+
+.editing-menu {
+  position: absolute;
+  top: 23px;
+  left: 0;
+  z-index: 10000;
+  width: 178px;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid #9b9b9b;
+  border-radius: 4px;
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.22);
+}
+
+.editing-menu button {
+  width: 100%;
+  height: 34px;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  align-items: center;
+  border: none;
+  background: transparent;
+  padding: 0 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.editing-menu button:hover:not(:disabled) {
+  background: #e9f2ff;
+}
+
+.editing-menu button.selected-command {
+  background: #dcecff;
+}
+
+.editing-menu button:disabled {
+  color: #999;
+  cursor: not-allowed;
+}
+
+.editing-menu svg {
+  font-size: 21px;
+  color: #276acb;
+}
+
+.editing-menu span {
+  font-size: 13px;
+}
+
+.editing-font-icon {
+  color: #276acb;
+  font-size: 13px !important;
+}

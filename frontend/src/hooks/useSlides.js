@@ -7,6 +7,9 @@ export function useSlides(state) {
   const selectedSlideIndex = state.selectedSlideIndex ?? 0;
   const selectedSlide = slides[selectedSlideIndex] ?? null;
   const selectedElementId = state.selectedElementId ?? null;
+  const selectedElementIds = state.selectedElementIds ?? (
+    selectedElementId ? [selectedElementId] : []
+  );
 
   const selectedElement = useMemo(() => {
     if (!selectedElementId) return null;
@@ -25,6 +28,7 @@ export function useSlides(state) {
     selectedSlide,
     selectedSlideIndex,
     selectedElementId,
+    selectedElementIds,
     selectedElement,
   };
 }

@@ -33,11 +33,6 @@ export default function Toolbar({
   canDelete,
   canMoveUp,
   canMoveDown,
-  onBringToFront,
-  onSendToBack,
-  onBringForward,
-  onSendBackward,
-  onRotateRight,
   onExportPresentation,
   onResetPresentation,
   onImageUpload,
@@ -76,7 +71,17 @@ export default function Toolbar({
   onCut,
   onCopy,
   onPaste,
+  onUndo,
+  onRedo,
   canPaste,
+  canUndo,
+  canRedo,
+  onFind,
+  onReplace,
+  onSelectAll,
+  onSelectObjects,
+  onOpenSelectionPane,
+  objectSelectionMode,
   onApplyTheme,
   onApplyFont,
   onApplyLayoutFont,
@@ -213,11 +218,6 @@ useEffect(() => {
             canDelete={canDelete}
             canMoveUp={canMoveUp}
             canMoveDown={canMoveDown}
-            onBringToFront={onBringToFront}
-            onSendToBack={onSendToBack}
-            onBringForward={onBringForward}
-            onSendBackward={onSendBackward}
-            onRotateRight={onRotateRight}
             onToggleSlideHidden={onToggleSlideHidden}
             isSlideHidden={isSlideHidden}
             currentFormatting={currentFormatting}
@@ -227,8 +227,18 @@ useEffect(() => {
             onCut={onCut}
             onCopy={onCopy}
             onPaste={onPaste}
+            onUndo={onUndo}
+            onRedo={onRedo}
             hasSelection={!!selectedElement}
             canPaste={canPaste}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            onFind={onFind}
+            onReplace={onReplace}
+            onSelectAll={onSelectAll}
+            onSelectObjects={onSelectObjects}
+            onOpenSelectionPane={onOpenSelectionPane}
+            objectSelectionMode={objectSelectionMode}
           />
         )}
 

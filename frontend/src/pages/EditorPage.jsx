@@ -10,6 +10,9 @@ import OutlineView from "../components/OutlineView";
 import FileMenu from "../components/FileMenu";
 import NotesPageView from "../components/NotesPageView";
 import SlideMasterView from "../components/SlideMasterView";
+import StatusBar from "../components/StatusBar";
+import FindReplaceDialog from "../components/FindReplaceDialog";
+import SelectionPane from "../components/SelectionPane";
 import { useEditorController } from "../hooks/useEditorController";
 
 export default function EditorPage() {
@@ -55,11 +58,6 @@ export default function EditorPage() {
           canDelete={ctrl.slides.length > 1}
           canMoveUp={ctrl.selectedSlideIndex > 0}
           canMoveDown={ctrl.selectedSlideIndex < ctrl.slides.length - 1}
-          onBringToFront={ctrl.handleBringToFront}
-          onSendToBack={ctrl.handleSendToBack}
-          onBringForward={ctrl.handleBringForward}
-          onSendBackward={ctrl.handleSendBackward}
-          onRotateRight={ctrl.handleRotateRight}
           onResetPresentation={ctrl.resetPresentation}
           onImageUpload={ctrl.activeImageUpload}
           onVideoUpload={ctrl.activeVideoUpload}
@@ -93,7 +91,17 @@ export default function EditorPage() {
           onCut={ctrl.handleCut}
           onCopy={ctrl.handleCopy}
           onPaste={ctrl.handlePaste}
+          onUndo={ctrl.undo}
+          onRedo={ctrl.redo}
           canPaste={!!ctrl.state.clipboard}
+          canUndo={ctrl.state.past.length > 0}
+          canRedo={ctrl.state.future.length > 0}
+          onFind={ctrl.openFind}
+          onReplace={ctrl.openReplace}
+          onSelectAll={ctrl.handleSelectAll}
+          onSelectObjects={ctrl.handleSelectObjects}
+          onOpenSelectionPane={() => ctrl.setShowSelectionPane(true)}
+          objectSelectionMode={ctrl.objectSelectionMode}
           onApplyTheme={ctrl.updateMasterTheme}
           onApplyFont={ctrl.updateMasterFormatting}
           onApplyLayoutFont={ctrl.applyLayoutFont}
@@ -203,13 +211,13 @@ export default function EditorPage() {
                   presentation={ctrl.presentation}
                   onChangeTextElement={ctrl.updateTextElementContent}
                   onChangeParagraphs={ctrl.handleChangeParagraphs}
-                  onMoveTextElement={ctrl.updateElementPosition}
+                  onMoveTextElement={ctrl.handleMoveElement}
                   onResizeTextElement={ctrl.updateElementSize}
                   onFormatTextElement={ctrl.applyFormatting}
                   onFormatTextRangeElement={ctrl.updateTextRangeFormatting}
                   clearSelectionSignal={ctrl.clearSelectionSignal}
                   onSaveSelection={ctrl.handleSaveSelection}
-                  onMoveMediaElement={ctrl.updateElementPosition}
+                  onMoveMediaElement={ctrl.handleMoveElement}
                   onResizeMediaElement={ctrl.updateElementSize}
                   onDeleteTextElement={ctrl.deleteElement}
                   onDeleteMedia={ctrl.deleteMedia}
@@ -219,7 +227,11 @@ export default function EditorPage() {
                   showNotes={ctrl.showNotes}
                   onCanvasZoom={ctrl.handleCanvasZoom}
                   selectedElementId={ctrl.selectedElementId}
-                  onSelectElement={ctrl.selectElement}
+                  selectedElementIds={ctrl.selectedElementIds}
+                  onSelectElement={ctrl.handleElementSelect}
+                  onDeleteSelection={ctrl.handleDeleteSelection}
+                  onSelectAll={ctrl.handleSelectAll}
+                  objectSelectionMode={ctrl.objectSelectionMode}
                   onBeginHistory={ctrl.beginHistory}
                   onCommitHistory={ctrl.commitHistory}
                   onCancelHistory={ctrl.cancelHistory}
@@ -256,8 +268,42 @@ export default function EditorPage() {
                 autoCompose={ctrl.composeSession > 0}
               />
             )}
+
+            {ctrl.showSelectionPane && (
+              <SelectionPane
+                slide={ctrl.selectedSlide}
+                selectedElementId={ctrl.selectedElementId}
+                selectedElementIds={ctrl.selectedElementIds}
+                onSelectElement={ctrl.handleElementSelect}
+                onSetVisibility={ctrl.handleSetElementsVisibility}
+                onMoveLayer={ctrl.handleMoveSelectionLayer}
+                onClose={() => ctrl.setShowSelectionPane(false)}
+              />
+            )}
           </>
         )}
+      </div>
+
+      <FindReplaceDialog
+        mode={ctrl.findReplaceMode}
+        controller={ctrl.findReplace}
+        onClose={ctrl.findReplace.close}
+      />
+
+      <div className="statusbar-overlay">
+        <StatusBar
+          selectedSlideIndex={ctrl.selectedSlideIndex}
+          totalSlides={ctrl.slides.length}
+          zoom={ctrl.zoom}
+          onZoomChange={ctrl.setZoom}
+          onZoomIn={ctrl.zoomIn}
+          onZoomOut={ctrl.zoomOut}
+          showNotes={ctrl.showNotes}
+          onToggleNotes={ctrl.toggleNotes}
+          showComments={ctrl.showComments}
+          onToggleComments={() => ctrl.setShowComments((visible) => !visible)}
+          commentCount={ctrl.selectedSlide?.contents?.comments?.length ?? 0}
+        />
       </div>
 
       {ctrl.isPreviewOpen && (

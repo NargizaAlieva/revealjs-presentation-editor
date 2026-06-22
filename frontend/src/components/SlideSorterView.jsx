@@ -50,7 +50,7 @@ function SlideMiniature({
                     overflow: "hidden",
                 }}>
                     <SlideDecorations presentation={presentation} width={width} height={height} />
-                    {textElements.map((el, i) => {
+                    {textElements.filter((element) => !element.hidden).map((el, i) => {
                         const text = extractPlainTextFromParagraphs(el.paragraphs, " ");
                         const fmt = el.paragraphs?.[0]?.formatting ?? {};
                         return (

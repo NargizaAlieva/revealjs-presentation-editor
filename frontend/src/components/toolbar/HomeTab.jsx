@@ -4,7 +4,7 @@ import ClipboardGroup from "./ClipboardGroup";
 import SlidesGroup from "./SlidesGroup";
 import FontGroup from "./FontGroup";
 import ParagraphGroup from "./ParagraphGroup";
-import ArrangeGroup from "./ArrangeGroup";
+import EditingGroup from "./EditingGroup";
 
 export default function HomeTab({
   onAddSlide,
@@ -12,11 +12,6 @@ export default function HomeTab({
   onResetLayout,
   onDeleteSlide,
   onDuplicateSlide,
-  onBringToFront,
-  onSendToBack,
-  onBringForward,
-  onSendBackward,
-  onRotateRight,
   canDelete,
   onToggleSlideHidden,
   isSlideHidden,
@@ -27,8 +22,18 @@ export default function HomeTab({
   onCut,
   onCopy,
   onPaste,
+  onUndo,
+  onRedo,
   hasSelection = false,
   canPaste = false,
+  canUndo = false,
+  canRedo = false,
+  onFind,
+  onReplace,
+  onSelectAll,
+  onSelectObjects,
+  onOpenSelectionPane,
+  objectSelectionMode,
 }) {
   const fonts = getAvailableFonts(presentation);
 
@@ -38,8 +43,12 @@ export default function HomeTab({
         onCut={onCut}
         onCopy={onCopy}
         onPaste={onPaste}
+        onUndo={onUndo}
+        onRedo={onRedo}
         hasSelection={hasSelection}
         canPaste={canPaste}
+        canUndo={canUndo}
+        canRedo={canRedo}
       />
 
       <SlidesGroup
@@ -67,13 +76,13 @@ export default function HomeTab({
         onFormatChange={onFormatChange}
       />
 
-      <ArrangeGroup
-        hasSelection={hasSelection}
-        onBringToFront={onBringToFront}
-        onSendToBack={onSendToBack}
-        onBringForward={onBringForward}
-        onSendBackward={onSendBackward}
-        onRotateRight={onRotateRight}
+      <EditingGroup
+        onFind={onFind}
+        onReplace={onReplace}
+        onSelectAll={onSelectAll}
+        onSelectObjects={onSelectObjects}
+        onOpenSelectionPane={onOpenSelectionPane}
+        objectSelectionMode={objectSelectionMode}
       />
     </>
   );

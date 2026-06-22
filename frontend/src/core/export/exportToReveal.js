@@ -215,13 +215,13 @@ function buildMasterElementsHtml(presentation, masterFormatting, getSrc) {
   const textElements = masterElements.text ?? [];
   const mediaElements = masterElements.media ?? [];
 
-  const textsHtml = textElements.map((el, index) => {
+  const textsHtml = textElements.filter((element) => !element.hidden).map((el, index) => {
     const style = buildTextElementStyle(el, index, masterFormatting, {});
     const content = buildTextElementContent(el, null);
     return `<div style="${style}">${content}</div>`;
   }).join("");
 
-  const mediaHtml = mediaElements.map((media) => {
+  const mediaHtml = mediaElements.filter((element) => !element.hidden).map((media) => {
     const src = getSrc(media["file-link"] ?? "");
     const isVideo = media["media-type"] === "video";
     const wrapperStyle = [
@@ -275,6 +275,7 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
   );
 
   const textElementsHtml = textElements
+    .filter((element) => !element.hidden)
     .map((textElement, index) => {
       const animation = animationMap.get(textElement.id);
       const sequenceMode = animation?.["effect-options"]?.sequence ?? "as-one-object";
@@ -292,6 +293,7 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
     .join("");
 
   const mediaElementsHtml = mediaElements
+    .filter((element) => !element.hidden)
     .map((media, index) => {
       const animation = animationMap.get(media.id);
       const rotation = media.rotation ?? 0;

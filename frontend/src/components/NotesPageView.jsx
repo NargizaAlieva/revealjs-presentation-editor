@@ -54,7 +54,7 @@ function NotesPage({
                             width={width}
                             height={height}
                         />
-                        {textElements.map((el, i) => {
+                        {textElements.filter((element) => !element.hidden).map((el, i) => {
                             const text = (el.paragraphs ?? [])
                                 .map((p) => p.runs?.map((r) => r.text).join("") ?? "")
                                 .join("\n");

@@ -10,6 +10,16 @@
   overflow: hidden;
 }
 
+.object-selection-mode .draggable,
+.object-selection-mode .canvas-media-wrapper {
+  cursor: default;
+}
+
+.object-selection-mode [contenteditable] {
+  cursor: default;
+  user-select: none;
+}
+
 .slide-workspace {
   flex: 1;
   min-height: 0;

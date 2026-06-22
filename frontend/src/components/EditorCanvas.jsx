@@ -11,6 +11,7 @@ import {
   isPasteShortcut,
   isCutShortcut,
   isDeleteShortcut,
+  isSelectAllShortcut,
 } from "../core/events/keyboardShortcuts";
 import { useCanvasInteractions } from "../hooks/useCanvasInteractions";
 import { findElementInSlide } from "../core/operations/elementOperations";
@@ -43,7 +44,11 @@ export default function EditorCanvas({
   showNotes = true,
   onCanvasZoom,
   selectedElementId,
+  selectedElementIds = [],
   onSelectElement,
+  onDeleteSelection,
+  onSelectAll,
+  objectSelectionMode = false,
   onBeginHistory,
   onCommitHistory,
   onCancelHistory,
@@ -81,12 +86,12 @@ export default function EditorCanvas({
   const scaledHeight = height * zoomScale;
 
   const textElements = useMemo(
-    () => slide?.contents?.text ?? [],
+    () => (slide?.contents?.text ?? []).filter((element) => !element.hidden),
     [slide?.contents?.text],
   );
 
   const mediaElements = useMemo(
-    () => slide?.contents?.media ?? [],
+    () => (slide?.contents?.media ?? []).filter((element) => !element.hidden),
     [slide?.contents?.media],
   );
 
@@ -236,6 +241,12 @@ export default function EditorCanvas({
 
       const editable = isEditableTarget(target);
 
+      if (isSelectAllShortcut(event) && !editable) {
+        event.preventDefault();
+        onSelectAll?.();
+        return;
+      }
+
       if (isUndoShortcut(event) && !editable) {
         event.preventDefault();
         onUndo?.();
@@ -249,12 +260,7 @@ export default function EditorCanvas({
       }
 
       if (isCopyShortcut(event) && !editable && selectedElementId) {
-        const found = findElementInSlide(
-          textElements,
-          mediaElements,
-          selectedElementId,
-        );
-        if (found) onCopy?.(found.element);
+        onCopy?.();
         return;
       }
 
@@ -264,18 +270,18 @@ export default function EditorCanvas({
       }
 
       if (isCutShortcut(event) && !editable && selectedElementId) {
-        const found = findElementInSlide(
-          textElements,
-          mediaElements,
-          selectedElementId,
-        );
-        if (found) onCut?.(found.element);
+        onCut?.();
         return;
       }
 
       if (!isDeleteShortcut(event)) return;
       if (editable) return;
       if (!selectedElementId) return;
+
+      if (selectedElementIds.length > 1) {
+        onDeleteSelection?.();
+        return;
+      }
 
       const found = findElementInSlide(
         textElements,
@@ -300,6 +306,7 @@ export default function EditorCanvas({
     };
   }, [
     selectedElementId,
+    selectedElementIds,
     textElements,
     mediaElements,
     onDeleteTextElement,
@@ -310,6 +317,8 @@ export default function EditorCanvas({
     onCopy,
     onPaste,
     onCut,
+    onDeleteSelection,
+    onSelectAll,
   ]);
 
   useEffect(() => {
@@ -330,7 +339,9 @@ export default function EditorCanvas({
   if (!slide) {
     return (
       <main
-        className="canvas-wrapper"
+        className={`canvas-wrapper ${
+          objectSelectionMode ? "object-selection-mode" : ""
+        }`}
         style={colorThemeStyle}
         ref={containerRef}
         tabIndex={-1}
@@ -348,7 +359,9 @@ export default function EditorCanvas({
 
   return (
     <main
-      className="canvas-wrapper"
+      className={`canvas-wrapper ${
+        objectSelectionMode ? "object-selection-mode" : ""
+      }`}
       style={colorThemeStyle}
       ref={containerRef}
       tabIndex={-1}
@@ -416,8 +429,10 @@ export default function EditorCanvas({
                     <TextElement
                       key={textElement.id}
                       textElement={textElement}
-                      isSelected={selectedElementId === textElement.id}
+                      isSelected={selectedElementIds.includes(textElement.id)}
+                      isPrimarySelected={selectedElementId === textElement.id}
                       onSelect={onSelectElement}
+                      objectSelectionMode={objectSelectionMode}
                       onChangeTextElement={onChangeTextElement}
                       onFormatTextElement={onFormatTextElement}
                       onDeleteTextElement={(id) => {
@@ -470,7 +485,8 @@ export default function EditorCanvas({
                     <MediaElement
                       key={media.id}
                       media={media}
-                      isSelected={selectedElementId === media.id}
+                      isSelected={selectedElementIds.includes(media.id)}
+                      isPrimarySelected={selectedElementId === media.id}
                       onSelect={onSelectElement}
                       onStartDrag={startDraggingMedia}
                       onStartResize={startResizingMedia}

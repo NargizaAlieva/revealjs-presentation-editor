@@ -38,7 +38,9 @@ const TOOLBAR_WIDTH = 590;
 export default function TextElement({
   textElement,
   isSelected,
+  isPrimarySelected = isSelected,
   onSelect,
+  objectSelectionMode = false,
   onChangeTextElement,
   onChangeParagraphs,
   onSaveSelection,
@@ -384,9 +386,9 @@ useEffect(() => {
   };
 
   useEffect(() => {
-    if (isSelected && isToolbarOpen) updateToolbarPosition();
+    if (isPrimarySelected && isToolbarOpen) updateToolbarPosition();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSelected, isToolbarOpen]);
+  }, [isPrimarySelected, isToolbarOpen]);
 
   useEffect(() => {
     const handleSelectionChange = () => {
@@ -424,15 +426,24 @@ useEffect(() => {
         transformOrigin: "center center",
       }}
       onMouseDown={(event) => {
-        if (!isSelected && event.button === 0) event.preventDefault();
-        onSelect(textElement.id);
+        if (
+          event.button === 0 &&
+          (!isSelected ||
+            objectSelectionMode ||
+            event.ctrlKey ||
+            event.metaKey ||
+            event.shiftKey)
+        ) {
+          event.preventDefault();
+        }
+        onSelect(textElement.id, event);
       }}
     >
       {animationOrder != null && (
         <span className="animation-order-badge">{animationOrder}</span>
       )}
 
-      {isSelected &&
+      {isPrimarySelected &&
         ["top", "right", "bottom", "left"].map((side) => (
           <div
             key={side}
@@ -441,7 +452,7 @@ useEffect(() => {
           />
         ))}
 
-      {isSelected &&
+      {isPrimarySelected &&
         isToolbarOpen &&
         createPortal(
           <FormatToolbar
@@ -532,7 +543,7 @@ useEffect(() => {
 
       <div
         ref={editableRef}
-        contentEditable={isSelected}
+        contentEditable={isPrimarySelected && !objectSelectionMode}
         suppressContentEditableWarning
         className="text-editable"
         data-placeholder="Click to edit text"
@@ -769,7 +780,7 @@ useEffect(() => {
         }
       />
 
-      {isSelected &&
+      {isPrimarySelected &&
         RESIZE_HANDLES.map(({ dir, cursor }) => (
           <div
             key={dir}
@@ -782,7 +793,7 @@ useEffect(() => {
           />
         ))}
 
-      {isSelected && (
+      {isPrimarySelected && (
         <button
           type="button"
           className="text-rotate-handle"
