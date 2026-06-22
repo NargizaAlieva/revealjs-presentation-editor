@@ -116,9 +116,12 @@ export function useEditorActions(
   );
 
   const updateSlideNotes = useCallback(
-    (notes) =>
+    (notes, slideIndex) =>
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.SLIDE.UPDATE_NOTES, { notes }),
+        createEditorEvent(EditorEventType.SLIDE.UPDATE_NOTES, {
+          notes,
+          slideIndex,
+        }),
       ),
     [eventBus],
   );

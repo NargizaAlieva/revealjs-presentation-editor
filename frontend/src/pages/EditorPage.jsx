@@ -556,9 +556,10 @@ export default function EditorPage() {
           />
         ) : currentView === "notes-page" ? (
           <NotesPageView
-            slide={selectedSlide}
+            slides={slides}
+            selectedSlideIndex={selectedSlideIndex}
             presentation={presentation}
-            slideNotes={selectedSlide?.contents?.notes ?? ""}
+            onSelectSlide={setSelectedSlideId}
             onUpdateSlideNotes={updateSlideNotes}
             onBeginHistory={beginHistory}
             onCommitHistory={commitHistory}

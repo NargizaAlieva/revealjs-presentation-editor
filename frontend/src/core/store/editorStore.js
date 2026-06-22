@@ -470,7 +470,7 @@ export const editorReducer = (state, event) => {
         ...state,
         presentation: updateSlideNotes(
           state.presentation,
-          state.selectedSlideIndex,
+          event.payload.slideIndex ?? state.selectedSlideIndex,
           event.payload.notes,
         ),
         lastEvent: event,
