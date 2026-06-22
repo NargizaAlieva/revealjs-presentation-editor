@@ -52,7 +52,6 @@ export default function EditorPage() {
   const [isSlideMasterOpen, setIsSlideMasterOpen] = useState(false);
   const [masterName, setMasterName] = useState("Office Theme");
   const [selectedMasterElementId, setSelectedMasterElementId] = useState(null);
-  // null = Master selected, string = layout-id selected
   const [selectedMasterLayoutId, setSelectedMasterLayoutId] = useState(null);
 
   const [masterActiveSelection, setMasterActiveSelection] = useState(null);
@@ -552,6 +551,7 @@ export default function EditorPage() {
             slides={slides}
             selectedSlideIndex={selectedSlideIndex}
             onSelectSlide={setSelectedSlideId}
+            onReorderSlide={reorderSlide}
             presentation={presentation}
           />
         ) : currentView === "notes-page" ? (
@@ -603,8 +603,6 @@ export default function EditorPage() {
                     const sel = offsets ? { elementId, ...offsets } : null;
                     activeSelectionRef.current = sel;
                     setActiveSelection(sel);
-                    // Clear pending only on real (non-collapsed) selection — collapsed cursor
-                    // should keep pending so the next typed character uses the chosen format.
                     const isRealSel = offsets &&
                       !(offsets.paragraphIdx === (offsets.endParagraphIdx ?? offsets.paragraphIdx) &&
                         offsets.rangeStart === offsets.rangeEnd);

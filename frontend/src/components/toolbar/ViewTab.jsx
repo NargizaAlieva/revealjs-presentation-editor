@@ -82,34 +82,6 @@ const MASTER_VIEWS = [
       </svg>
     ),
   },
-  {
-    id: "handout-master",
-    label: "Handout\nMaster",
-    icon: (
-      <svg width="30" height="25" viewBox="0 0 36 30" fill="none">
-        <rect x="1" y="1" width="34" height="28" rx="2" stroke="#4472c4" strokeWidth="0.7" fill="none"/>
-        <rect x="3"  y="3"  width="14" height="9" rx="0.5" fill="#dce6f4" stroke="#4472c4" strokeWidth="0.5"/>
-        <rect x="19" y="3"  width="14" height="9" rx="0.5" fill="#dce6f4" stroke="#4472c4" strokeWidth="0.5"/>
-        <rect x="3"  y="14" width="14" height="9" rx="0.5" fill="#dce6f4" stroke="#4472c4" strokeWidth="0.5"/>
-        <rect x="19" y="14" width="14" height="9" rx="0.5" fill="#dce6f4" stroke="#4472c4" strokeWidth="0.5"/>
-        <line x1="3" y1="26" x2="20" y2="26" stroke="#ccc" strokeWidth="0.6"/>
-      </svg>
-    ),
-  },
-  {
-    id: "notes-master",
-    label: "Notes\nMaster",
-    icon: (
-      <svg width="30" height="25" viewBox="0 0 36 30" fill="none">
-        <rect x="3" y="1"  width="30" height="11" rx="0.5" fill="#dce6f4" stroke="#4472c4" strokeWidth="0.5"/>
-        <rect x="3" y="14" width="30" height="15" rx="0.5" fill="none" stroke="#ccc" strokeWidth="0.5"/>
-        <line x1="6" y1="17" x2="30" y2="17" stroke="#ccc" strokeWidth="0.6" strokeLinecap="round"/>
-        <line x1="6" y1="20" x2="27" y2="20" stroke="#ccc" strokeWidth="0.6" strokeLinecap="round"/>
-        <line x1="6" y1="23" x2="28" y2="23" stroke="#ccc" strokeWidth="0.6" strokeLinecap="round"/>
-        <line x1="6" y1="26" x2="25" y2="26" stroke="#ccc" strokeWidth="0.6" strokeLinecap="round"/>
-      </svg>
-    ),
-  },
 ];
 
 export default function ViewTab({
@@ -148,13 +120,9 @@ export default function ViewTab({
           {MASTER_VIEWS.map((view) => (
             <button
               key={view.id}
-              className={`view-btn${isSlideMasterOpen && view.id === "slide-master" ? " active" : ""}`}
-              onClick={view.id === "slide-master" ? onOpenSlideMaster : undefined}
+              className={`view-btn${isSlideMasterOpen ? " active" : ""}`}
+              onClick={onOpenSlideMaster}
               title={view.label.replace("\n", " ")}
-              style={{
-                opacity: view.id !== "slide-master" ? 0.45 : 1,
-                cursor: view.id !== "slide-master" ? "default" : "pointer",
-              }}
             >
               <span className="view-btn-icon">{view.icon}</span>
               <span className="view-btn-label">{view.label}</span>
