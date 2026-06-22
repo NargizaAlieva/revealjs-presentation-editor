@@ -419,8 +419,6 @@ export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
   return setSlides(presentation, slides);
 };
 
-// Unified update for layout items — routes to placeholder or element based on itemId.
-// Supports: position, width, height, rotation, formatting, promptText (placeholder text).
 export const updateLayoutItem = (presentation, layoutId, itemId, updates) => {
   const layout = getLayouts(presentation).find((l) => l["layout-id"] === layoutId);
   if (!layout) return presentation;

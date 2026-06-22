@@ -396,7 +396,6 @@ export const hasFooters = (presentation, layoutId = null) => {
   return (presentation?.slideset?.master?.elements?.text ?? []).some((el) => el.id?.startsWith("master-footer-"));
 };
 
-// Update the bg-light entry in the master color-theme with a new hex color.
 export const applyBackgroundColor = (presentation, hex) => {
   const newColor = (hex.length === 7 ? hex : hex.slice(0, 7)) + "FF";
   const colorTheme = presentation?.slideset?.master?.["color-theme"] ?? [];

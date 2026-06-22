@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import "./SlideMasterView.css";
 import { buildColorThemeStyle } from "../core/render/revealRenderer";
 import SlideDecorations from "./canvas/SlideDecorations";
@@ -6,14 +6,11 @@ import EditorCanvas from "./EditorCanvas";
 import { ColorPalettePopup } from "./toolbar/DesignTab";
 import { DESIGN_THEMES, findActiveTheme } from "../core/model/designThemes";
 import { SLIDE_SIZES } from "../core/model/slideSizes";
-import { buildMasterPseudoSlide, buildLayoutPseudoSlide } from "../core/operations/masterOperations";
 import { createPlaceholderPseudoElement } from "../core/operations/layoutOperations";
 import { DEFAULT_FONTS } from "../core/model/fontConfig";
 import { renderShapes } from "../core/render/shapeRenderer";
 import { toHex6 } from "../core/utils/colorUtils";
-import { TITLE_PLACEHOLDER, FOOTER_PLACEHOLDERS, createMasterTextElement } from "../core/model/masterDefaults";
 import { hasTitle, hasFooters } from "../core/operations/masterOperations";
-import { updateLayoutItem } from "../core/operations/layoutOperations";
 
 
 function ThemeThumbnailMini({ theme, isActive, onClick }) {
@@ -604,40 +601,35 @@ export function SlideMasterRibbon({
 
 export default function SlideMasterView({
   presentation,
-  onClose,
-  onApplyTheme,
-  onApplyFont,
-  onUpdateDimensions,
-  onInsertLayout,
-  onUpdateLayout,
-  masterName,
-  onAddMasterElement,
-  onUpdateMasterTextContent,
-  onUpdateMasterTextFormatting,
-  onUpdateMasterElementPosition,
-  onUpdateMasterElementSize,
-  onUpdateMasterElement,
-  onDeleteMasterElement,
-  onUpdateLayoutItem,
-  onUpdateLayoutElementTextContent,
-  onDeleteLayoutElement,
-  onBeginHistory,
-  onCommitHistory,
-  onCancelHistory,
+  activeMasterSlide,
+  selectedMasterLayoutId,
+  onSelectedLayoutChange,
   selectedMasterElementId,
   onSelectMasterElement,
   onSaveSelection,
-  onSelectedLayoutChange,
-  onToggleTitle,
-  onToggleFooters,
+  onMasterViewChangeText,
+  onMasterViewChangeParagraphs,
+  onMasterViewFormatText,
+  onMasterViewMoveText,
+  onMasterViewResizeText,
+  onMasterViewMoveMedia,
+  onMasterViewResizeMedia,
+  onMasterViewAutoFitText,
+  onMasterViewAutoFitMedia,
+  onMasterViewDeleteText,
+  onMasterViewDeleteMedia,
+  onBeginHistory,
+  onCommitHistory,
+  onCancelHistory,
+  onUndo,
+  onRedo,
 }) {
-  const [selectedLayoutId, setSelectedLayoutId] = useState(null);
   const [canvasZoom, setCanvasZoom] = useState(75);
   const canvasAreaRef = useRef(null);
 
   const layouts = presentation?.slideset?.layouts ?? [];
-  const selectedLayout = selectedLayoutId
-    ? layouts.find((l) => l["layout-id"] === selectedLayoutId) ?? null
+  const selectedLayout = selectedMasterLayoutId
+    ? layouts.find((l) => l["layout-id"] === selectedMasterLayoutId) ?? null
     : null;
 
   const dims = presentation?.slideset?.master?.["slide-dimensions"];
@@ -661,57 +653,17 @@ export default function SlideMasterView({
     return () => ro.disconnect();
   }, [slideW, slideH]);
 
-  const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
-  const masterElements = presentation?.slideset?.master?.elements ?? {};
-
-  const masterPseudoSlide = buildMasterPseudoSlide(masterElements);
-  const layoutPseudoSlide = selectedLayout
-    ? buildLayoutPseudoSlide(selectedLayout, masterFormatting)
-    : null;
-
-  const activeSlide = selectedLayout ? layoutPseudoSlide : masterPseudoSlide;
-
   const handleSelectLayout = (layoutId) => {
-    setSelectedLayoutId(layoutId);
     onSelectMasterElement?.(null);
     onSelectedLayoutChange?.(layoutId);
   };
-
-  const isLayoutPlaceholder = (id) =>
-    (selectedLayout?.placeholders ?? []).some((p) => p["placeholder-id"] === id);
-
-  const handlePlaceholderUpdate = useCallback(
-    (id, updates) => {
-      if (!selectedLayout) return;
-      onUpdateLayoutItem?.(selectedLayout["layout-id"], id, updates);
-    },
-    [selectedLayout, onUpdateLayoutItem],
-  );
-
-  const handleMediaUpdate = useCallback(
-    (id, updates) => {
-      if (!selectedLayout) return;
-      onUpdateLayoutItem?.(selectedLayout["layout-id"], id, updates);
-    },
-    [selectedLayout, onUpdateLayoutItem],
-  );
-
-  const handleLayoutDelete = useCallback(
-    (elementType, id) => {
-      if (!selectedLayout) return;
-      if (!isLayoutPlaceholder(id)) {
-        onDeleteLayoutElement?.(selectedLayout["layout-id"], elementType, id);
-      }
-    },
-    [selectedLayout, isLayoutPlaceholder, onDeleteLayoutElement],
-  );
 
   return (
     <div className="slide-master-body slide-master-body--full">
       <div className="master-panel">
         <MasterThumb
-          label={masterName ?? "Office Theme"}
-          isSelected={selectedLayoutId === null}
+          label="Office Theme"
+          isSelected={selectedMasterLayoutId === null}
           isMaster={true}
           presentation={presentation}
           layout={null}
@@ -721,7 +673,7 @@ export default function SlideMasterView({
           <MasterThumb
             key={layout["layout-id"]}
             label={layout["layout-id"]}
-            isSelected={selectedLayoutId === layout["layout-id"]}
+            isSelected={selectedMasterLayoutId === layout["layout-id"]}
             isMaster={false}
             presentation={presentation}
             layout={layout}
@@ -732,97 +684,34 @@ export default function SlideMasterView({
 
       <div className="master-canvas-area" ref={canvasAreaRef}>
         <EditorCanvas
-          slide={activeSlide}
+          slide={activeMasterSlide}
           presentation={presentation}
           zoom={canvasZoom}
           showNotes={false}
           hideMasterElements={!selectedLayout}
           selectedElementId={selectedMasterElementId}
+          selectedElementIds={selectedMasterElementId ? [selectedMasterElementId] : []}
           onSelectElement={onSelectMasterElement}
-          onChangeTextElement={
-            selectedLayout
-              ? (id, text) => {
-                  const isMasterEl = (masterElements.text ?? []).some((el) => el.id === id);
-                  if (isMasterEl) {
-                    onUpdateMasterTextContent?.(id, text);
-                  } else {
-                    onUpdateLayoutItem?.(selectedLayout["layout-id"], id, { promptText: text });
-                  }
-                }
-              : (id, text) => onUpdateMasterTextContent?.(id, text)
-          }
-          onFormatTextElement={
-            selectedLayout
-              ? (id, fmt) => {
-                  const isMasterEl = (masterElements.text ?? []).some((el) => el.id === id);
-                  if (isMasterEl) onUpdateMasterTextFormatting?.(id, fmt);
-                  else handlePlaceholderUpdate(id, { formatting: fmt });
-                }
-              : (id, fmt) => onUpdateMasterTextFormatting?.(id, fmt)
-          }
+          onChangeTextElement={onMasterViewChangeText}
+          onChangeParagraphs={onMasterViewChangeParagraphs}
+          onFormatTextElement={onMasterViewFormatText}
           onSaveSelection={onSaveSelection}
-          onMoveTextElement={
-            selectedLayout
-              ? (id, x, y) => {
-                  const isMasterEl = (masterElements.text ?? []).some((el) => el.id === id);
-                  if (isMasterEl) onUpdateMasterElementPosition?.(id, x, y);
-                  else handlePlaceholderUpdate(id, { position: { x, y } });
-                }
-              : (id, x, y) => onUpdateMasterElementPosition?.(id, x, y)
-          }
-          onResizeTextElement={
-            selectedLayout
-              ? (id, w, h) => {
-                  const isMasterEl = (masterElements.text ?? []).some((el) => el.id === id);
-                  if (isMasterEl) onUpdateMasterElementSize?.(id, w, h);
-                  else handlePlaceholderUpdate(id, { width: w, height: h });
-                }
-              : (id, w, h) => onUpdateMasterElementSize?.(id, w, h)
-          }
-          onMoveMediaElement={
-            selectedLayout
-              ? (id, x, y) => {
-                  const isMasterEl = (masterElements.media ?? []).some((el) => el.id === id);
-                  if (isMasterEl) onUpdateMasterElementPosition?.(id, x, y);
-                  else handleMediaUpdate(id, { position: { x, y } });
-                }
-              : (id, x, y) => onUpdateMasterElementPosition?.(id, x, y)
-          }
-          onResizeMediaElement={
-            selectedLayout
-              ? (id, w, h) => {
-                  const isMasterEl = (masterElements.media ?? []).some((el) => el.id === id);
-                  if (isMasterEl) onUpdateMasterElementSize?.(id, w, h);
-                  else handleMediaUpdate(id, { width: w, height: h });
-                }
-              : (id, w, h) => onUpdateMasterElementSize?.(id, w, h)
-          }
-          onDeleteMedia={
-            selectedLayout
-              ? (id) => handleLayoutDelete("media", id)
-              : (id) => onDeleteMasterElement?.("media", id)
-          }
-          onDeleteTextElement={
-            selectedLayout
-              ? (id) => handleLayoutDelete("text", id)
-              : (id) => onDeleteMasterElement?.("text", id)
-          }
-          updateElement={
-            selectedLayout
-              ? (id, updates) => handlePlaceholderUpdate(id, updates)
-              : (id, updates) => onUpdateMasterElement?.("text", id, updates)
-          }
-          updateMedia={
-            selectedLayout
-              ? (id, updates) => handleMediaUpdate(id, updates)
-              : (id, updates) => onUpdateMasterElement?.("media", id, updates)
-          }
+          onMoveTextElement={onMasterViewMoveText}
+          onResizeTextElement={onMasterViewResizeText}
+          onMoveMediaElement={onMasterViewMoveMedia}
+          onResizeMediaElement={onMasterViewResizeMedia}
+          onDeleteMedia={onMasterViewDeleteMedia}
+          onDeleteTextElement={onMasterViewDeleteText}
+          updateElement={onMasterViewAutoFitText}
+          updateMedia={onMasterViewAutoFitMedia}
           onBeginHistory={onBeginHistory}
           onCommitHistory={onCommitHistory}
           onCancelHistory={onCancelHistory}
+          onUndo={onUndo}
+          onRedo={onRedo}
         />
         <div className="master-canvas-label">
-          {selectedLayoutId === null
+          {selectedMasterLayoutId === null
             ? "Slide Master — changes apply to all slides"
             : `Layout: ${selectedLayout?.["layout-id"] ?? ""} — changes apply to slides using this layout`}
         </div>

@@ -138,12 +138,13 @@ export function useEditorActions(
   );
 
   const updateTextElementContent = useCallback(
-    (textElementId, newText) =>
+    (textElementId, newText, grouped = false) =>
       eventBus.dispatch(
         createEditorEvent(EditorEventType.TEXT.UPDATE, {
           textElementId,
           text: newText,
           userModified: true,
+          grouped,
         }),
       ),
     [eventBus],
@@ -173,12 +174,13 @@ export function useEditorActions(
   );
 
   const updateTextElementParagraphs = useCallback(
-    (slideIndex, elementId, paragraphs) =>
+    (slideIndex, elementId, paragraphs, grouped = false) =>
       eventBus.dispatch(
         createEditorEvent(EditorEventType.TEXT.UPDATE_PARAGRAPHS, {
           slideIndex,
           elementId,
           paragraphs,
+          grouped,
         }),
       ),
     [eventBus],

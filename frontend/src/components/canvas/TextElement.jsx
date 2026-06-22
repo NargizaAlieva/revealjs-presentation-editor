@@ -77,6 +77,7 @@ export default function TextElement({
   const lastSyncedParagraphsRef = useRef(null);
   const selectionFrameRef = useRef(null);
   const lastAutoFitHeightRef = useRef(null);
+  const isDeletingRef = useRef(false);
 
 useEffect(() => {
   if (clearSelectionSignal === 0) return;
@@ -548,7 +549,7 @@ useEffect(() => {
         className="text-editable"
         data-placeholder="Click to edit text"
         onFocus={() => {
-          onBeginHistory?.();
+          isDeletingRef.current = false;
           onStartEditing?.(textElement.id);
           savedSelectionRef.current = null;
           setSavedSelState(null);
@@ -574,13 +575,19 @@ useEffect(() => {
             window.getSelection()?.removeAllRanges();
             return;
           }
-          if (
-            e.key.length === 1 ||
-            e.key === "Backspace" ||
-            e.key === "Delete" ||
-            e.key === "Enter"
-          ) {
+          const isDeleteKey = e.key === "Backspace" || e.key === "Delete";
+          const isTypingKey = e.key.length === 1 || e.key === "Enter";
+          if (isDeleteKey || isTypingKey) {
             setIsToolbarOpen(false);
+          }
+          if (isDeleteKey) {
+            if (!isDeletingRef.current) {
+              isDeletingRef.current = true;
+              onBeginHistory?.();
+            }
+          } else if (isTypingKey && isDeletingRef.current) {
+            isDeletingRef.current = false;
+            onCommitHistory?.();
           }
           if (e.key !== "Tab") return;
           const el = editableRef.current;
@@ -657,12 +664,13 @@ useEffect(() => {
           if (el.innerHTML === "<br>" || el.innerHTML === "<br/>") {
             el.innerHTML = "";
           }
+          const grouped = isDeletingRef.current;
           if (onChangeParagraphs) {
             const paragraphs = domToParagraphs(el, textElement.paragraphs);
             lastTypedHTMLRef.current = paragraphsToHTML(paragraphs, masterFormatting, placeholderFormatting);
-            onChangeParagraphs(textElement.id, paragraphs);
+            onChangeParagraphs(textElement.id, paragraphs, grouped);
           } else {
-            onChangeTextElement(textElement.id, el.innerText);
+            onChangeTextElement(textElement.id, el.innerText, grouped);
           }
           updateToolbarPosition();
         }}
@@ -701,6 +709,7 @@ useEffect(() => {
             setSavedSelState(null);
             setIsToolbarOpen(false);
             onSaveSelection?.(textElement.id, null);
+            isDeletingRef.current = false;
             onCommitHistory?.();
             onStopEditing?.(textElement.id);
           }

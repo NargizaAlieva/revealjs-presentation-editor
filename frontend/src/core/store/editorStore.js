@@ -106,7 +106,6 @@ export const editorReducer = (state, event) => {
   switch (event.type) {
     case EditorEventType.HISTORY.BEGIN:
       if (state.pendingSnapshot) return state;
-
       return {
         ...state,
         pendingSnapshot: createHistorySnapshot(state),
@@ -116,7 +115,9 @@ export const editorReducer = (state, event) => {
 
     case EditorEventType.HISTORY.COMMIT:
       if (!state.pendingSnapshot) return state;
-
+      if (state.presentation === state.pendingSnapshot.presentation) {
+        return { ...state, pendingSnapshot: null, lastEvent: event, lastUpdated: Date.now() };
+      }
       return {
         ...state,
         past: [...state.past, state.pendingSnapshot].slice(-HISTORY_LIMIT),
@@ -128,7 +129,6 @@ export const editorReducer = (state, event) => {
 
     case EditorEventType.HISTORY.CANCEL:
       if (!state.pendingSnapshot) return state;
-
       return {
         ...state,
         presentation: state.pendingSnapshot.presentation,
@@ -539,19 +539,18 @@ export const editorReducer = (state, event) => {
         lastUpdated: Date.now(),
       });
 
-    case EditorEventType.TEXT.UPDATE:
-      return {
-        ...state,
-        presentation: updateTextElement(
-          state.presentation,
-          state.selectedSlideIndex,
-          event.payload.textElementId,
-          event.payload.text,
-          event.payload.userModified,
-        ),
-        lastEvent: event,
-        lastUpdated: Date.now(),
-      };
+    case EditorEventType.TEXT.UPDATE: {
+      const nextPresentation = updateTextElement(
+        state.presentation,
+        state.selectedSlideIndex,
+        event.payload.textElementId,
+        event.payload.text,
+        event.payload.userModified,
+      );
+      const nextBase = { ...state, presentation: nextPresentation, lastEvent: event, lastUpdated: Date.now() };
+      if (event.payload.grouped && state.pendingSnapshot) return nextBase;
+      return withHistory(state, nextBase);
+    }
 
     case EditorEventType.TEXT.UPDATE_FORMATTING:
       return withHistory(state, {
@@ -582,18 +581,17 @@ export const editorReducer = (state, event) => {
         lastUpdated: Date.now(),
       });
 
-    case EditorEventType.TEXT.UPDATE_PARAGRAPHS:
-      return {
-        ...state,
-        presentation: updateTextElementParagraphs(
-          state.presentation,
-          event.payload.slideIndex,
-          event.payload.elementId,
-          event.payload.paragraphs,
-        ),
-        lastEvent: event,
-        lastUpdated: Date.now(),
-      };
+    case EditorEventType.TEXT.UPDATE_PARAGRAPHS: {
+      const nextPresentation = updateTextElementParagraphs(
+        state.presentation,
+        event.payload.slideIndex,
+        event.payload.elementId,
+        event.payload.paragraphs,
+      );
+      const nextBase = { ...state, presentation: nextPresentation, lastEvent: event, lastUpdated: Date.now() };
+      if (event.payload.grouped && state.pendingSnapshot) return nextBase;
+      return withHistory(state, nextBase);
+    }
 
     case EditorEventType.TEXT.UPDATE_RANGE_FORMATTING:
       return withHistory(state, {
@@ -975,18 +973,31 @@ export const editorReducer = (state, event) => {
         lastUpdated: Date.now(),
       });
 
-    case EditorEventType.LAYOUT.UPDATE_ITEM:
+    case EditorEventType.LAYOUT.UPDATE_ITEM: {
+      const updatedPresentation = updateLayoutItem(
+        state.presentation,
+        event.payload.layoutId,
+        event.payload.itemId,
+        event.payload.updates,
+      );
+      const updates = event.payload.updates ?? {};
+      const isDragUpdate = "position" in updates || "width" in updates || "height" in updates;
+      // During drag (pendingSnapshot active + position/size update), skip withHistory
+      if (state.pendingSnapshot && isDragUpdate) {
+        return {
+          ...state,
+          presentation: updatedPresentation,
+          lastEvent: event,
+          lastUpdated: Date.now(),
+        };
+      }
       return withHistory(state, {
         ...state,
-        presentation: updateLayoutItem(
-          state.presentation,
-          event.payload.layoutId,
-          event.payload.itemId,
-          event.payload.updates,
-        ),
+        presentation: updatedPresentation,
         lastEvent: event,
         lastUpdated: Date.now(),
       });
+    }
 
     case EditorEventType.LAYOUT.RESET:
       return withHistory(state, {

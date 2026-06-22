@@ -138,37 +138,28 @@ export default function EditorPage() {
         {ctrl.isSlideMasterOpen ? (
           <SlideMasterView
             presentation={ctrl.presentation}
-            onClose={ctrl.handleCloseSlideMasterView}
+            activeMasterSlide={ctrl.activeMasterSlide}
+            selectedMasterLayoutId={ctrl.selectedMasterLayoutId}
             onSelectedLayoutChange={ctrl.setSelectedMasterLayoutId}
-            onApplyTheme={ctrl.updateMasterTheme}
-            onApplyFont={ctrl.updateMasterFormatting}
-            onUpdateDimensions={ctrl.handleUpdateDimensions}
-            onUpdateLayout={ctrl.updateLayout}
-            masterName={ctrl.masterName}
             selectedMasterElementId={ctrl.selectedMasterElementId}
             onSelectMasterElement={ctrl.setSelectedMasterElementId}
             onSaveSelection={ctrl.handleMasterSaveSelection}
-            onAddMasterElement={ctrl.addMasterElement}
-            onDeleteMasterElement={ctrl.deleteMasterElement}
-            onUpdateMasterTextContent={ctrl.updateMasterTextContent}
-            onUpdateMasterTextFormatting={ctrl.updateMasterTextFormatting}
-            onUpdateLayoutItem={ctrl.updateLayoutItem}
-            onUpdateLayoutPlaceholder={ctrl.updateLayoutPlaceholder}
-            onUpdateLayoutElement={ctrl.updateLayoutElement}
-            onUpdateLayoutElementTextContent={
-              ctrl.updateLayoutElementTextContent
-            }
-            onDeleteLayoutElement={ctrl.deleteLayoutElement}
-            onUpdateMasterElementPosition={
-              ctrl.handleUpdateMasterElementPosition
-            }
-            onUpdateMasterElementSize={ctrl.handleUpdateMasterElementSize}
-            onUpdateMasterElement={ctrl.updateMasterElement}
-            onToggleTitle={ctrl.toggleTitle}
-            onToggleFooters={ctrl.toggleFooters}
+            onMasterViewChangeText={ctrl.masterViewChangeText}
+            onMasterViewChangeParagraphs={ctrl.masterViewChangeParagraphs}
+            onMasterViewFormatText={ctrl.masterViewFormatText}
+            onMasterViewMoveText={ctrl.masterViewMoveText}
+            onMasterViewResizeText={ctrl.masterViewResizeText}
+            onMasterViewMoveMedia={ctrl.masterViewMoveMedia}
+            onMasterViewResizeMedia={ctrl.masterViewResizeMedia}
+            onMasterViewAutoFitText={ctrl.masterViewAutoFitText}
+            onMasterViewAutoFitMedia={ctrl.masterViewAutoFitMedia}
+            onMasterViewDeleteText={ctrl.masterViewDeleteText}
+            onMasterViewDeleteMedia={ctrl.masterViewDeleteMedia}
             onBeginHistory={ctrl.beginHistory}
             onCommitHistory={ctrl.commitHistory}
             onCancelHistory={ctrl.cancelHistory}
+            onUndo={ctrl.undo}
+            onRedo={ctrl.redo}
           />
         ) : ctrl.currentView === "slide-sorter" ? (
           <SlideSorterView

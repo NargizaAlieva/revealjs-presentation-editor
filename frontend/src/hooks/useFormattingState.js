@@ -22,11 +22,27 @@ export const findMasterTextElement = (
     const layout = (presentation?.slideset?.layouts ?? []).find(
       (l) => l["layout-id"] === selectedMasterLayoutId,
     );
-    return (
-      (layout?.elements?.text ?? []).find(
-        (t) => t.id === selectedMasterElementId,
-      ) ?? null
+    const layoutEl = (layout?.elements?.text ?? []).find(
+      (t) => t.id === selectedMasterElementId,
     );
+    if (layoutEl) return layoutEl;
+    const placeholder = (layout?.placeholders ?? []).find(
+      (p) => p["placeholder-id"] === selectedMasterElementId && p.type === "text",
+    );
+    if (placeholder) {
+      const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
+      const placeholderFormatting = placeholder.formatting ?? {};
+      return {
+        id: placeholder["placeholder-id"],
+        paragraphs: [{
+          id: `ph-para-${placeholder["placeholder-id"]}`,
+          formatting: { ...masterFormatting, ...placeholderFormatting },
+          userSetKeys: Object.keys(placeholderFormatting),
+          bullets: "none",
+          runs: [{ text: "", formatting: {}, "super-sub-script": "normal", link: null }],
+        }],
+      };
+    }
   }
   return null;
 };

@@ -177,6 +177,7 @@ export function useCanvasInteractions({
       onMoveMediaElement,
       onResizeMediaElement,
       onRotateMediaElement,
+      onBeginHistory,
     ],
   );
 
@@ -311,12 +312,7 @@ export function useCanvasInteractions({
       onSelectElement?.(textElementId, { preserveIfSelected: true });
       setRotatingElement({ type: "text", id: textElementId, angleOffset });
     },
-    [
-      textElements,
-      onBeginHistory,
-      onSelectElement,
-      zoomScale,
-    ],
+    [textElements, onBeginHistory, onSelectElement, zoomScale],
   );
 
   const startRotatingMedia = useCallback(
@@ -339,12 +335,7 @@ export function useCanvasInteractions({
       onSelectElement?.(mediaId, { preserveIfSelected: true });
       setRotatingElement({ type: "media", id: mediaId, angleOffset });
     },
-    [
-      mediaElements,
-      onBeginHistory,
-      onSelectElement,
-      zoomScale,
-    ],
+    [mediaElements, onBeginHistory, onSelectElement, zoomScale],
   );
 
   return {

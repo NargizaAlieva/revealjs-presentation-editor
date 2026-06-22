@@ -160,7 +160,6 @@ export const updateTextFormatting = (
     (textElement) => {
       if (textElement.id !== textElementId) return textElement;
 
-      // Only run-specific keys (super-sub-script) go to runs
       const runUpdate = Object.fromEntries(
         Object.entries(directFormatting).filter(([k]) => RUN_ONLY_KEYS.has(k)),
       );
@@ -194,7 +193,6 @@ export const updateTextFormatting = (
             ],
             runs: (paragraph.runs ?? []).map((run) => {
               const runFmt = { ...(run.formatting ?? {}) };
-              // Strip shared keys so paragraph-level formatting takes precedence
               for (const k of sharedKeysBeingSet) delete runFmt[k];
               if (Object.keys(runUpdate).length)
                 Object.assign(runFmt, runUpdate);
@@ -283,7 +281,6 @@ export const updateTextRangeFormatting = (
   const fontSizeDelta = Number(clean[FONT_SIZE_DELTA_KEY] ?? 0);
   delete clean[FONT_SIZE_DELTA_KEY];
 
-  // Split into run-level keys (go into runs) and paragraph-level keys (go into para.formatting)
   const runFormatting = Object.fromEntries(
     Object.entries(clean).filter(
       ([k]) => SHARED_KEYS.has(k) || RUN_ONLY_KEYS.has(k),
@@ -310,14 +307,11 @@ export const updateTextRangeFormatting = (
         rangeEnd === 0;
       const isSelectedParagraph = !isTrailingBoundary;
 
-      // Paragraph formatting applies to every paragraph touched by the selection.
-      // A range ending at offset 0 of the next paragraph does not touch that paragraph.
       const newParaFormatting =
         isSelectedParagraph && Object.keys(paraFormatting).length > 0
           ? { ...(para.formatting ?? {}), ...paraFormatting }
           : para.formatting;
-
-      // Track which keys the user explicitly set so master/layout propagation won't overwrite them.
+          
       const newUserSetKeys =
         isSelectedParagraph
           ? [

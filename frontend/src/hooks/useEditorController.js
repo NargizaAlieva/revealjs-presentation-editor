@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { isUndoShortcut, isRedoShortcut } from "../core/events/keyboardShortcuts";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEditorState } from "./useEditorState";
 import { useSlides } from "./useSlides";
@@ -24,6 +25,7 @@ import { updateThemeBackground } from "../core/model/designThemes";
 import { clampSlideDimension } from "../core/model/slideSizes";
 import { toHex9 } from "../core/utils/colorUtils";
 import { getLayoutDisplayList } from "../core/operations/layoutOperations";
+import { buildMasterPseudoSlide, buildLayoutPseudoSlide } from "../core/operations/masterOperations";
 import {
   exportToReveal,
   exportToRevealZip,
@@ -38,7 +40,6 @@ export function useEditorController() {
   const { presentationId } = useParams();
   const navigate = useNavigate();
 
-  // ── UI-only state ──────────────────────────────────────────────────────────
   const [previewStartSlide, setPreviewStartSlide] = useState(0);
   const [showComments, setShowComments] = useState(false);
   const [composeSession, setComposeSession] = useState(0);
@@ -57,7 +58,6 @@ export function useEditorController() {
   const [showSelectionPane, setShowSelectionPane] = useState(false);
   const [objectSelectionMode, setObjectSelectionMode] = useState(false);
 
-  // ── Core hooks ─────────────────────────────────────────────────────────────
   const viewState = useEditorViewState();
   const {
     zoom,
@@ -204,6 +204,7 @@ export function useEditorController() {
         grouped.get(key).push(operation);
       });
 
+      beginHistory();
       grouped.forEach((elementOperations) => {
         const { slideIndex, elementId } = elementOperations[0];
         const element = (slides[slideIndex]?.contents?.text ?? []).find(
@@ -215,10 +216,11 @@ export function useEditorController() {
           const run = paragraphs[paragraphIdx]?.runs?.[runIdx];
           if (run) run.text = newText;
         });
-        updateTextElementParagraphs(slideIndex, elementId, paragraphs);
+        updateTextElementParagraphs(slideIndex, elementId, paragraphs, true);
       });
+      commitHistory();
     },
-    [slides, updateTextElementParagraphs],
+    [slides, updateTextElementParagraphs, beginHistory, commitHistory],
   );
 
   const findReplace = useFindReplace(
@@ -231,7 +233,6 @@ export function useEditorController() {
 
   usePresentationFonts(presentation);
 
-  // ── Selection side-effects ─────────────────────────────────────────────────
   useEffect(() => {
     if (
       activeSelectionRef.current &&
@@ -275,7 +276,6 @@ useEffect(() => {
   }
 }, [currentView]);
 
-  // ── Derived values ─────────────────────────────────────────────────────────
   const layouts = getLayoutDisplayList(presentation);
 
   const { width: slideWidth, height: slideHeight } = useMemo(
@@ -493,7 +493,6 @@ useEffect(() => {
   const activePendingFormatting =
     editingTextElementId === selectedElementId ? pendingFormatting : {};
 
-  // ── Event handlers ─────────────────────────────────────────────────────────
   const handleApplyBackground = useCallback(
     (hex) => {
       const colorTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
@@ -561,7 +560,6 @@ useEffect(() => {
     }
   }, [selectedMasterLayoutId, addLayoutElement, addMasterElement]);
 
-  // Context-aware upload/add handlers routed by isSlideMasterOpen
   const activeImageUpload = isSlideMasterOpen
     ? handleMasterImageUpload
     : handleImageUpload;
@@ -657,17 +655,184 @@ useEffect(() => {
     navigate("/");
   }, [presentationId, navigate]);
 
+  // --- Master view derived state ---
+  const masterTextIds = useMemo(
+    () => new Set((presentation?.slideset?.master?.elements?.text ?? []).map((el) => el.id)),
+    [presentation?.slideset?.master?.elements?.text],
+  );
+  const masterMediaIds = useMemo(
+    () => new Set((presentation?.slideset?.master?.elements?.media ?? []).map((el) => el.id)),
+    [presentation?.slideset?.master?.elements?.media],
+  );
+  const selectedMasterLayout = useMemo(
+    () =>
+      selectedMasterLayoutId
+        ? (presentation?.slideset?.layouts ?? []).find(
+            (l) => l["layout-id"] === selectedMasterLayoutId,
+          ) ?? null
+        : null,
+    [presentation?.slideset?.layouts, selectedMasterLayoutId],
+  );
+  const activeMasterSlide = useMemo(() => {
+    const masterElements = presentation?.slideset?.master?.elements ?? {};
+    const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
+    return selectedMasterLayout
+      ? buildLayoutPseudoSlide(selectedMasterLayout, masterFormatting)
+      : buildMasterPseudoSlide(masterElements);
+  }, [selectedMasterLayout, presentation?.slideset?.master?.elements, presentation?.slideset?.master?.formatting]);
+
+  // --- Master view unified event handlers (routing master vs layout elements) ---
+  const masterViewChangeText = useCallback(
+    (id, text) => {
+      if (selectedMasterLayoutId && !masterTextIds.has(id)) {
+        updateLayoutItem(selectedMasterLayoutId, id, { promptText: text });
+      } else {
+        updateMasterTextContent(id, text);
+      }
+    },
+    [selectedMasterLayoutId, masterTextIds, updateLayoutItem, updateMasterTextContent],
+  );
+
+  // Used instead of onChangeTextElement for master text elements so that
+  // lastTypedHTMLRef in TextElement is updated and the DOM is not reset on every keystroke.
+  const masterViewChangeParagraphs = useCallback(
+    (id, paragraphs) => {
+      if (selectedMasterLayoutId && !masterTextIds.has(id)) {
+        const text = paragraphs.map((p) => p.runs.map((r) => r.text).join("")).join("\n");
+        updateLayoutItem(selectedMasterLayoutId, id, { promptText: text });
+      } else {
+        const paragraphsWithKeys = paragraphs.map((p) => ({
+          ...p,
+          userSetKeys: p.userSetKeys?.length
+            ? p.userSetKeys
+            : Object.keys(p.formatting ?? {}),
+        }));
+        updateMasterElement("text", id, { paragraphs: paragraphsWithKeys, userModified: true });
+      }
+    },
+    [selectedMasterLayoutId, masterTextIds, updateLayoutItem, updateMasterElement],
+  );
+
+  const masterViewFormatText = useCallback(
+    (id, fmt) => {
+      if (selectedMasterLayoutId && !masterTextIds.has(id)) {
+        updateLayoutItem(selectedMasterLayoutId, id, { formatting: fmt });
+      } else {
+        updateMasterTextFormatting(id, fmt);
+      }
+    },
+    [selectedMasterLayoutId, masterTextIds, updateLayoutItem, updateMasterTextFormatting],
+  );
+
+  const masterViewMoveText = useCallback(
+    (id, x, y) => {
+      if (selectedMasterLayoutId && !masterTextIds.has(id)) {
+        updateLayoutItem(selectedMasterLayoutId, id, { position: { x, y } });
+      } else {
+        updateMasterElement("text", id, { position: { x, y } });
+      }
+    },
+    [selectedMasterLayoutId, masterTextIds, updateLayoutItem, updateMasterElement],
+  );
+
+  const masterViewResizeText = useCallback(
+    (id, w, h) => {
+      if (selectedMasterLayoutId && !masterTextIds.has(id)) {
+        updateLayoutItem(selectedMasterLayoutId, id, { width: w, height: h });
+      } else {
+        updateMasterElement("text", id, { width: w, height: h });
+      }
+    },
+    [selectedMasterLayoutId, masterTextIds, updateLayoutItem, updateMasterElement],
+  );
+
+  const masterViewMoveMedia = useCallback(
+    (id, x, y) => {
+      if (selectedMasterLayoutId && !masterMediaIds.has(id)) {
+        updateLayoutItem(selectedMasterLayoutId, id, { position: { x, y } });
+      } else {
+        updateMasterElement("media", id, { position: { x, y } });
+      }
+    },
+    [selectedMasterLayoutId, masterMediaIds, updateLayoutItem, updateMasterElement],
+  );
+
+  const masterViewResizeMedia = useCallback(
+    (id, w, h) => {
+      if (selectedMasterLayoutId && !masterMediaIds.has(id)) {
+        updateLayoutItem(selectedMasterLayoutId, id, { width: w, height: h });
+      } else {
+        updateMasterElement("media", id, { width: w, height: h });
+      }
+    },
+    [selectedMasterLayoutId, masterMediaIds, updateLayoutItem, updateMasterElement],
+  );
+
+  const masterViewAutoFitText = useCallback(
+    (id, updates) => {
+      if (selectedMasterLayoutId && !masterTextIds.has(id)) {
+        updateLayoutItem(selectedMasterLayoutId, id, updates);
+      } else {
+        updateMasterElement("text", id, updates);
+      }
+    },
+    [selectedMasterLayoutId, masterTextIds, updateLayoutItem, updateMasterElement],
+  );
+
+  const masterViewAutoFitMedia = useCallback(
+    (id, updates) => {
+      if (selectedMasterLayoutId && !masterMediaIds.has(id)) {
+        updateLayoutItem(selectedMasterLayoutId, id, updates);
+      } else {
+        updateMasterElement("media", id, updates);
+      }
+    },
+    [selectedMasterLayoutId, masterMediaIds, updateLayoutItem, updateMasterElement],
+  );
+
+  const masterViewDeleteText = useCallback(
+    (id) => {
+      if (masterTextIds.has(id)) {
+        deleteMasterElement("text", id);
+      } else if (selectedMasterLayoutId) {
+        const isPlaceholder = (selectedMasterLayout?.placeholders ?? []).some(
+          (p) => p["placeholder-id"] === id,
+        );
+        if (isPlaceholder) {
+          removeLayoutPlaceholder(selectedMasterLayoutId, id);
+        } else {
+          deleteLayoutElement(selectedMasterLayoutId, "text", id);
+        }
+      }
+    },
+    [selectedMasterLayoutId, selectedMasterLayout, masterTextIds, removeLayoutPlaceholder, deleteLayoutElement, deleteMasterElement],
+  );
+
+  const masterViewDeleteMedia = useCallback(
+    (id) => {
+      if (selectedMasterLayoutId && !masterMediaIds.has(id)) {
+        deleteLayoutElement(selectedMasterLayoutId, "media", id);
+      } else {
+        deleteMasterElement("media", id);
+      }
+    },
+    [selectedMasterLayoutId, masterMediaIds, deleteLayoutElement, deleteMasterElement],
+  );
+
   const handleFormatChange = useCallback(
     (updates) => {
       if (!activeElementId || !activeTextEl) return;
       if (isSlideMasterOpen) {
-        if (selectedMasterLayoutId) {
-          updateLayoutElement(selectedMasterLayoutId, "text", activeElementId, {
-            formatting: updates,
-          });
-        } else {
-          updateMasterTextFormatting(activeElementId, updates);
-        }
+        const delta = Number(updates["font-size-delta"] ?? 0);
+        const resolved = delta
+          ? {
+              ...updates,
+              "font-size-delta": undefined,
+              size: `${Math.max(6, Math.min(120, (parseFloat(currentFormatting.size) || 24) + delta))}px`,
+            }
+          : updates;
+        if (resolved["font-size-delta"] === undefined) delete resolved["font-size-delta"];
+        masterViewFormatText(activeElementId, resolved);
         return;
       }
       applyFormatting(selectedElementId, updates);
@@ -676,9 +841,8 @@ useEffect(() => {
       activeElementId,
       activeTextEl,
       isSlideMasterOpen,
-      selectedMasterLayoutId,
-      updateLayoutElement,
-      updateMasterTextFormatting,
+      currentFormatting,
+      masterViewFormatText,
       applyFormatting,
       selectedElementId,
     ],
@@ -881,8 +1045,8 @@ useEffect(() => {
   );
 
   const handleChangeParagraphs = useCallback(
-    (elementId, paragraphs) =>
-      updateTextElementParagraphs(selectedSlideIndex, elementId, paragraphs),
+    (elementId, paragraphs, grouped = false) =>
+      updateTextElementParagraphs(selectedSlideIndex, elementId, paragraphs, grouped),
     [updateTextElementParagraphs, selectedSlideIndex],
   );
 
@@ -907,11 +1071,30 @@ useEffect(() => {
     [updateMasterElement],
   );
 
+  // Global undo/redo shortcut — intercepts Ctrl+Z/Y everywhere including contentEditable,
+  // preventing the browser's built-in undo from interfering with our history stack.
+  // Native <input> and <textarea> elements are excluded so they keep browser-native undo.
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      const target = event.target;
+      const isNativeInput =
+        target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
+      if (isNativeInput) return;
+      if (isUndoShortcut(event)) {
+        event.preventDefault();
+        undo();
+      } else if (isRedoShortcut(event)) {
+        event.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [undo, redo]);
+
   return {
-    // Loading
     isLoading,
 
-    // Presentation data
     state,
     presentation,
     slides,
@@ -933,7 +1116,6 @@ useEffect(() => {
     hasRealSelection,
     activePendingFormatting,
 
-    // View state
     zoom,
     setZoom,
     zoomIn,
@@ -953,7 +1135,6 @@ useEffect(() => {
     triggerTransitionPreview,
     previewStartSlide,
 
-    // UI state
     showComments,
     setShowComments,
     composeSession,
@@ -973,7 +1154,6 @@ useEffect(() => {
     setShowSelectionPane,
     objectSelectionMode,
 
-    // Handlers
     handleApplyBackground,
     handleUpdateDimensions,
     activeImageUpload,
@@ -1013,6 +1193,18 @@ useEffect(() => {
     handleCloseSlideMasterView,
     handleUpdateMasterElementPosition,
     handleUpdateMasterElementSize,
+    activeMasterSlide,
+    masterViewChangeText,
+    masterViewChangeParagraphs,
+    masterViewFormatText,
+    masterViewMoveText,
+    masterViewResizeText,
+    masterViewMoveMedia,
+    masterViewResizeMedia,
+    masterViewAutoFitText,
+    masterViewAutoFitMedia,
+    masterViewDeleteText,
+    masterViewDeleteMedia,
     handleBringToFront,
     handleSendToBack,
     handleBringForward,
@@ -1020,7 +1212,6 @@ useEffect(() => {
     handleRotateRight,
     applyFormatting,
 
-    // Actions (passed through)
     setSelectedSlideId,
     selectElement,
     selectElements,
