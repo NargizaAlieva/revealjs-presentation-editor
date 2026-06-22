@@ -156,6 +156,18 @@ export const createPlaceholderPseudoElement = (placeholder, masterFormatting = {
   };
 };
 
+export const addLayout = (presentation) => {
+  const layouts = getLayouts(presentation);
+  const id = `custom-layout-${Date.now()}`;
+  const newLayout = {
+    "layout-id": id,
+    name: "Custom Layout",
+    placeholders: [],
+    elements: { text: [], media: [] },
+  };
+  return setLayouts(presentation, [...layouts, newLayout]);
+};
+
 export const deleteLayout = (presentation, layoutId) => {
   const layouts = getLayouts(presentation).filter((l) => l["layout-id"] !== layoutId);
   const slides = getSlides(presentation).map((slide) =>

@@ -66,6 +66,8 @@ export default function EditorCanvas({
 }) {
   const [playingElementId, setPlayingElementId] = useState(null);
   const [playingEffect, setPlayingEffect] = useState(null);
+  const [playingParagraphIndex, setPlayingParagraphIndex] = useState(null);
+  const [playingByParagraph, setPlayingByParagraph] = useState(false);
   const [playingTransition, setPlayingTransition] = useState(null);
 
   const workspaceRef = useRef(null);
@@ -140,23 +142,62 @@ export default function EditorCanvas({
       if (cancelled) return;
 
       if (previewEffect.type === "animation") {
-        setPlayingElementId(null);
-        setPlayingEffect(null);
+        const duration = getAnimationDurationMs(previewEffect.speed);
 
-        rafId = requestAnimationFrame(() => {
-          if (!cancelled) {
-            setPlayingElementId(previewEffect.elementId);
-            setPlayingEffect(previewEffect.effect);
+        if (previewEffect.byParagraph && previewEffect.paragraphCount > 1) {
+          setPlayingByParagraph(true);
+          setPlayingElementId(previewEffect.elementId);
+          setPlayingEffect(previewEffect.effect);
+          setPlayingParagraphIndex(null);
+
+          const N = previewEffect.paragraphCount;
+          const timers = [];
+          for (let i = 0; i < N; i++) {
+            timers.push(
+              setTimeout(
+                () => {
+                  if (!cancelled) setPlayingParagraphIndex(i);
+                },
+                30 + i * (duration + 50),
+              ),
+            );
           }
-        });
+          timers.push(
+            setTimeout(
+              () => {
+                if (!cancelled) {
+                  setPlayingByParagraph(false);
+                  setPlayingElementId(null);
+                  setPlayingEffect(null);
+                  setPlayingParagraphIndex(null);
+                }
+              },
+              30 + N * (duration + 50) + 100,
+            ),
+          );
 
-        timerId = setTimeout(
-          () => {
-            setPlayingElementId(null);
-            setPlayingEffect(null);
-          },
-          getAnimationDurationMs(previewEffect.speed) + 100,
-        );
+          timerId = { cancel: () => timers.forEach(clearTimeout) };
+        } else {
+          setPlayingByParagraph(false);
+          setPlayingElementId(null);
+          setPlayingEffect(null);
+          setPlayingParagraphIndex(null);
+
+          rafId = requestAnimationFrame(() => {
+            if (!cancelled) {
+              setPlayingElementId(previewEffect.elementId);
+              setPlayingEffect(previewEffect.effect);
+            }
+          });
+
+          timerId = setTimeout(
+            () => {
+              setPlayingElementId(null);
+              setPlayingEffect(null);
+            },
+            getAnimationDurationMs(previewEffect.speed) + 100,
+          );
+        }
       }
 
       if (previewEffect.type === "transition") {
@@ -177,7 +218,11 @@ export default function EditorCanvas({
     return () => {
       cancelled = true;
       if (rafId) cancelAnimationFrame(rafId);
-      if (timerId) clearTimeout(timerId);
+      if (timerId?.cancel) {
+        timerId.cancel();
+        setPlayingByParagraph(false);
+        setPlayingParagraphIndex(null);
+      } else if (timerId) clearTimeout(timerId);
     };
   }, [previewEffect]);
 
@@ -360,8 +405,10 @@ export default function EditorCanvas({
                 />
 
                 {textElements.map((textElement) => {
+                  const isPlaying = playingElementId === textElement.id;
+                  const isByParagraph = isPlaying && playingByParagraph;
                   const playClass =
-                    playingElementId === textElement.id
+                    isPlaying && !isByParagraph
                       ? `play-effect play-${playingEffect}`
                       : "";
 
@@ -387,6 +434,10 @@ export default function EditorCanvas({
                       onCancelHistory={onCancelHistory}
                       onNewComment={onNewComment}
                       previewClassName={playClass}
+                      activeParagraphIndex={
+                        isByParagraph ? playingParagraphIndex : null
+                      }
+                      activeEffect={isByParagraph ? playingEffect : null}
                       presentation={presentation}
                       slide={slide}
                       onChangeParagraphs={onChangeParagraphs}

@@ -96,6 +96,7 @@ export default function Toolbar({
   masterName,
   onRenameMaster,
   selectedMasterLayoutId,
+  onInsertLayout,
   onRenameLayout,
   onDeleteLayout,
   onAddLayoutPlaceholder,
@@ -185,6 +186,7 @@ useEffect(() => {
             masterName={masterName}
             onRenameMaster={onRenameMaster}
             selectedMasterLayoutId={selectedMasterLayoutId}
+            onInsertLayout={onInsertLayout}
             onRenameLayout={onRenameLayout}
             onDeleteLayout={onDeleteLayout}
             onAddLayoutPlaceholder={onAddLayoutPlaceholder}

@@ -17,7 +17,7 @@ import {
   getSlideMediaElements,
   getSlideDimensions,
   getSlideTransition,
-  buildAnimationMap,
+  buildAdjustedAnimationMap,
   getFragmentProps,
   getPerLineFragments,
 } from "../core/render/revealRenderer";
@@ -118,7 +118,7 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
             {visibleSlides.map((slide, slideIndex) => {
               const textElements = getSlideTextElements(slide);
               const mediaElements = getSlideMediaElements(slide);
-              const animationMap = buildAnimationMap(slide);
+              const animationMap = buildAdjustedAnimationMap(slide);
 
               return (
                 <section

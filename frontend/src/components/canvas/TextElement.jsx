@@ -35,8 +35,6 @@ const RESIZE_HANDLES = [
 
 const TOOLBAR_WIDTH = 590;
 
-// --- Component ---
-
 export default function TextElement({
   textElement,
   isSelected,
@@ -187,7 +185,6 @@ useEffect(() => {
       onSaveSelection?.(textElement.id, null);
       return;
     }
-    // Real selection (range) → use full offsets; collapsed cursor → use cursor position only.
     const offsets = sel.isCollapsed
       ? getCollapsedCursorOffset(el)
       : getSelectionOffsets(el);
@@ -198,14 +195,11 @@ useEffect(() => {
 
   const innerHTML = paragraphsToHTML(textElement.paragraphs);
 
-  // Sync state → DOM. Skip only when the new HTML matches what the user just typed
-  // (to avoid disrupting the cursor mid-typing). For external changes (formatting,
-  // undo, master change) the new innerHTML differs, so we always update.
   useEffect(() => {
     const el = editableRef.current;
     if (!el) return;
-    if (innerHTML === lastTypedHTMLRef.current) return; // change came from typing
-    if (textElement.paragraphs === lastSyncedParagraphsRef.current) return; // paragraphs unchanged — don't disturb selection
+    if (innerHTML === lastTypedHTMLRef.current) return; 
+    if (textElement.paragraphs === lastSyncedParagraphsRef.current) return;
 
     const wasFocused = document.activeElement === el;
     const savedCaret = wasFocused ? getCaretOffset(el) : 0;
@@ -217,7 +211,6 @@ useEffect(() => {
 
     if (wasFocused) {
       if (savedSel) {
-        // Restore the visual selection so it stays visible after formatting (like PowerPoint)
         restoreSelectionToDOM(el, textElement.paragraphs, savedSel);
       } else {
         setCaretOffset(el, savedCaret);
@@ -605,9 +598,6 @@ useEffect(() => {
           const range = sel.getRangeAt(0);
           range.deleteContents();
 
-          // If cursor is inside a formatting span, move the insertion point OUTSIDE it
-          // so the new span is a sibling (not nested). Nested spans break domToParagraphs
-          // override logic (e.g. normal span inside bold span → inherits bold).
           const el = editableRef.current;
           let insertRange = range.cloneRange();
           const container = range.startContainer;
@@ -628,7 +618,6 @@ useEffect(() => {
               insertRange.setStartBefore(parentSpan);
               insertRange.collapse(true);
             }
-            // Mid-span: let browser split naturally; insertNode handles it
           }
 
           const span = document.createElement("span");
@@ -637,24 +626,17 @@ useEffect(() => {
           span.textContent = e.data;
           insertRange.insertNode(span);
           const newRange = document.createRange();
-          // Place cursor INSIDE the new span so the browser extends it on next keystroke.
           newRange.setStart(span.firstChild ?? span, span.textContent.length);
           newRange.collapse(true);
           sel.removeAllRanges();
           sel.addRange(newRange);
           if (onChangeParagraphs) {
             const newParagraphs = domToParagraphs(el, textElement.paragraphs);
-            // Use paragraphsToHTML so lastTypedHTMLRef matches what React will compute —
-            // prevents the innerHTML useEffect from firing and resetting cursor position.
             lastTypedHTMLRef.current = paragraphsToHTML(newParagraphs);
             onChangeParagraphs(textElement.id, newParagraphs);
           } else {
             onChangeTextElement(textElement.id, el.innerText);
           }
-          // Save cursor position HERE (same event, same React batch) so the toolbar
-          // re-renders with the correct position alongside pendingFormatting={}.
-          // Without this, onKeyUp fires in a later batch with stale textElement.paragraphs
-          // causing a flash of default formatting after typing with a pending format.
           saveCurrentSelection();
           onClearPendingFormatting?.();
         }}
@@ -690,9 +672,6 @@ useEffect(() => {
               const collapsed = el ? getCollapsedCursorOffset(el) : null;
               savedSelectionRef.current = collapsed;
               onSaveSelection?.(textElement.id, null);
-              // Only auto-refocus for buttons/non-form elements.
-              // SELECT and INPUT need to keep focus so the user can interact with them.
-              // After they finish (onChange), they lose focus naturally and we refocus then.
               const tag = relatedTarget?.tagName;
               const isFormInput =
                 tag === "SELECT" || tag === "INPUT" || tag === "TEXTAREA";

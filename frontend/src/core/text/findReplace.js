@@ -26,8 +26,8 @@ export const findMatches = (slides, query) => {
 export const applyReplacement = (originalText, match, replacement) =>
   originalText.slice(0, match.start) + replacement + originalText.slice(match.end);
 
-export const applyAllReplacements = (elementMatches, originalText, replacement) => {
-  const sorted = [...elementMatches].sort((a, b) => b.start - a.start);
+export const applyAllReplacements = (runMatches, originalText, replacement) => {
+  const sorted = [...runMatches].sort((a, b) => b.start - a.start);
   let text = originalText;
   sorted.forEach((m) => {
     text = text.slice(0, m.start) + replacement + text.slice(m.end);
@@ -36,22 +36,26 @@ export const applyAllReplacements = (elementMatches, originalText, replacement) 
 };
 
 export const batchReplaceAll = (matches, slides, replacement) => {
-  const byElement = new Map();
+  const byRun = new Map();
   matches.forEach((m) => {
-    if (!byElement.has(m.elementId)) byElement.set(m.elementId, []);
-    byElement.get(m.elementId).push(m);
+    const key = `${m.elementId}::${m.paragraphIdx}::${m.runIdx}`;
+    if (!byRun.has(key)) byRun.set(key, []);
+    byRun.get(key).push(m);
   });
 
   const operations = [];
-  byElement.forEach((elementMatches, elementId) => {
-    const slide = slides[elementMatches[0].slideIndex];
+  byRun.forEach((runMatches) => {
+    const { slideIndex, elementId, paragraphIdx, runIdx } = runMatches[0];
+    const slide = slides[slideIndex];
     const el = (slide?.contents?.text ?? []).find((e) => e.id === elementId);
     if (!el) return;
-    const originalText = el.paragraphs?.[elementMatches[0].paragraphIdx]?.runs?.[elementMatches[0].runIdx]?.text ?? "";
+    const originalText = el.paragraphs?.[paragraphIdx]?.runs?.[runIdx]?.text ?? "";
     operations.push({
-      slideIndex: elementMatches[0].slideIndex,
+      slideIndex,
       elementId,
-      newText: applyAllReplacements(elementMatches, originalText, replacement),
+      paragraphIdx,
+      runIdx,
+      newText: applyAllReplacements(runMatches, originalText, replacement),
     });
   });
 

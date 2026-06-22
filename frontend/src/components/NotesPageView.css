@@ -6,7 +6,40 @@
     overflow-y: auto;
     background: #e8e8e8;
     padding: 32px 24px;
-    gap: 24px;
+    gap: 28px;
+}
+
+.notes-page {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    padding: 22px 26px 26px;
+    background: #fff;
+    border: 1px solid #d4d4d4;
+    border-radius: 6px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: box-shadow 0.12s, border-color 0.12s;
+}
+
+.notes-page:hover {
+    border-color: #b3c4e6;
+}
+
+.notes-page.selected {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25), 0 4px 14px rgba(0, 0, 0, 0.14);
+}
+
+.notes-page-number {
+    position: absolute;
+    top: 14px;
+    left: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #888;
 }
 
 .notes-page-slide-wrap {
@@ -24,7 +57,6 @@
     flex-shrink: 0;
 }
 
-/* ── Notes area ── */
 .notes-page-notes-wrap {
     width: 600px;
     display: flex;
