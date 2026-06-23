@@ -227,6 +227,7 @@ export default function EditorPage() {
                   onMoveTextElement={ctrl.handleMoveElement}
                   onResizeTextElement={ctrl.updateElementSize}
                   onFormatTextElement={ctrl.applyFormatting}
+                  currentFormatting={ctrl.currentFormatting}
                   onFormatTextRangeElement={ctrl.updateTextRangeFormatting}
                   clearSelectionSignal={ctrl.clearSelectionSignal}
                   onSaveSelection={ctrl.handleSaveSelection}
@@ -257,7 +258,19 @@ export default function EditorPage() {
                   onRedo={ctrl.redo}
                   onCopy={ctrl.handleCopy}
                   onPaste={ctrl.handlePaste}
+                  onPasteText={ctrl.handlePasteText}
+                  onPastePicture={ctrl.handlePastePicture}
                   onCut={ctrl.handleCut}
+                  onHyperlink={ctrl.handleHyperlink}
+                  canHyperlink={ctrl.hasRealSelection}
+                  canPaste={!!ctrl.state.clipboard}
+                  canUndo={ctrl.state.past.length > 0}
+                  canRedo={ctrl.state.future.length > 0}
+                  onBringToFront={ctrl.handleBringToFront}
+                  onBringForward={ctrl.handleBringForward}
+                  onSendBackward={ctrl.handleSendBackward}
+                  onSendToBack={ctrl.handleSendToBack}
+                  onRotateRight={ctrl.handleRotateRight}
                   onNewComment={ctrl.handleNewComment}
                   onOpenPictureFormat={() => ctrl.setActiveTab("Picture Format")}
                   onUpdateBackgroundImagePosition={ctrl.handleUpdateBackgroundImagePosition}

@@ -1,0 +1,180 @@
+.canvas-context-menu {
+  position: fixed;
+  z-index: 12000;
+  width: 238px;
+  padding: 5px 0;
+  background: #ffffff;
+  border: 1px solid #b8b8b8;
+  border-radius: 3px;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.2);
+  color: #202020;
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 14px;
+}
+
+.canvas-context-menu-item {
+  width: 100%;
+  min-height: 32px;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px 4px 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: default;
+}
+
+.canvas-context-menu-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 1px 6px 5px;
+  padding: 0 7px;
+  border: 1px solid #8f8f8f;
+}
+
+.canvas-context-menu-search input {
+  width: 100%;
+  height: 29px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  font: inherit;
+}
+
+.canvas-context-menu-heading {
+  padding: 7px 12px 3px 42px;
+  font-weight: 600;
+}
+
+.canvas-context-paste-options {
+  display: flex;
+  gap: 7px;
+  padding: 6px 12px 8px 43px;
+}
+
+.canvas-context-paste-option {
+  position: relative;
+  width: 28px;
+  height: 31px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: #333;
+}
+
+.canvas-context-paste-option:hover:not(:disabled),
+.canvas-context-paste-option:focus-visible:not(:disabled) {
+  border-color: #b8cde2;
+  background: #e9f2fb;
+  outline: none;
+}
+
+.canvas-context-paste-option:disabled {
+  opacity: 0.45;
+}
+
+.canvas-context-paste-option-icon {
+  color: #d97706;
+  font-size: 23px;
+}
+
+.canvas-context-paste-option-badge {
+  position: absolute;
+  right: 1px;
+  bottom: -1px;
+  min-width: 13px;
+  height: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  background: #ffffff;
+  color: #5a5a5a;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.canvas-context-menu-item:hover:not(:disabled),
+.canvas-context-menu-item:focus-visible:not(:disabled) {
+  background: #e9f2fb;
+  outline: none;
+}
+
+.canvas-context-menu-item:disabled {
+  color: #9a9a9a;
+}
+
+.canvas-context-menu-icon {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  color: #3c596f;
+  font-size: 19px;
+}
+
+.canvas-context-menu-item:disabled .canvas-context-menu-icon {
+  color: #aaaaaa;
+}
+
+.canvas-context-menu-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.canvas-context-menu-shortcut {
+  margin-left: 14px;
+  color: #6b6b6b;
+  font-size: 12px;
+}
+
+.canvas-context-menu-chevron {
+  justify-self: end;
+  font-size: 19px;
+}
+
+.canvas-context-submenu-owner {
+  position: relative;
+}
+
+.canvas-context-submenu {
+  position: absolute;
+  top: -5px;
+  left: calc(100% - 2px);
+  z-index: 1;
+  min-width: 170px;
+  padding: 5px 0;
+  border: 1px solid #b8b8b8;
+  border-radius: 3px;
+  background: white;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.2);
+}
+
+.canvas-context-submenu button {
+  width: 100%;
+  min-height: 31px;
+  padding: 4px 12px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+}
+
+.canvas-context-submenu button:hover,
+.canvas-context-submenu button.active {
+  background: #e9f2fb;
+}
+
+.canvas-context-menu-separator {
+  height: 1px;
+  margin: 5px 7px;
+  background: #dddddd;
+}

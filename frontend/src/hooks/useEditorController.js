@@ -18,6 +18,7 @@ import { EditorEventType, createEditorEvent } from "../core/events/editorEvents"
 import { getSlideSize } from "../core/render/slidesetRenderUtils";
 import { getSlideElement } from "../core/operations/slideOperations";
 import { getElementLabel } from "../core/operations/elementOperations";
+import { createImageMediaElement } from "../core/operations/mediaOperations";
 import { getPresentationTitle } from "../core/utils/presentationUtils";
 import { getSlideTransition } from "../core/model/transitionDefaults";
 import { importPresentationFromJson } from "../core/persistence/importPresentation";
@@ -37,6 +38,214 @@ import {
   downloadPresentationAsJson,
   storeMediaFile,
 } from "../core/persistence/persistenceFacade";
+
+const PASTE_RUN_KEYS = new Set([
+  "weight",
+  "italics",
+  "text-decoration",
+  "color",
+  "size",
+  "font",
+  "super-sub-script",
+  "highlight",
+]);
+
+const paragraphTextLength = (paragraph) =>
+  (paragraph?.runs ?? []).reduce((sum, run) => sum + (run.text?.length ?? 0), 0);
+
+const sliceRuns = (runs = [], start, end) => {
+  const result = [];
+  let offset = 0;
+  for (const run of runs) {
+    const text = run.text ?? "";
+    const runStart = offset;
+    const runEnd = offset + text.length;
+    const from = Math.max(start, runStart);
+    const to = Math.min(end, runEnd);
+    if (to > from) {
+      result.push({
+        ...run,
+        text: text.slice(from - runStart, to - runStart),
+      });
+    }
+    offset = runEnd;
+  }
+  return result;
+};
+
+const mergeRuns = (runs) => {
+  const merged = [];
+  for (const run of runs.filter(Boolean)) {
+    if (run.text === "" && runs.length > 1) continue;
+    const previous = merged.at(-1);
+    if (
+      previous &&
+      JSON.stringify(previous.formatting ?? {}) ===
+        JSON.stringify(run.formatting ?? {}) &&
+      JSON.stringify(previous.link ?? null) === JSON.stringify(run.link ?? null) &&
+      previous["super-sub-script"] === run["super-sub-script"]
+    ) {
+      previous.text += run.text ?? "";
+    } else {
+      merged.push(run);
+    }
+  }
+  return merged.length
+    ? merged
+    : [{ text: "", formatting: {}, "super-sub-script": "normal", link: null }];
+};
+
+const buildPasteRun = (text, formatting = {}) => {
+  const runFormatting = Object.fromEntries(
+    Object.entries(formatting).filter(
+      ([key, value]) => PASTE_RUN_KEYS.has(key) && value !== "mixed",
+    ),
+  );
+  const superSubScript = runFormatting["super-sub-script"] ?? "normal";
+  delete runFormatting["super-sub-script"];
+  return {
+    text,
+    formatting: runFormatting,
+    "super-sub-script": superSubScript,
+    link: null,
+  };
+};
+
+const readImageDimensionsFromFile = (file) =>
+  new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      resolve({ width: image.naturalWidth, height: image.naturalHeight });
+      URL.revokeObjectURL(url);
+    };
+    image.onerror = () => {
+      resolve({ width: 300, height: 200 });
+      URL.revokeObjectURL(url);
+    };
+    image.src = url;
+  });
+
+const fitImageToSlide = (width, height, slideWidth, slideHeight) => {
+  const maxW = slideWidth * 0.35;
+  const maxH = slideHeight * 0.35;
+  if (width <= maxW && height <= maxH) return { width, height };
+  const scale = Math.min(maxW / width, maxH / height);
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+  };
+};
+
+const insertPlainTextIntoParagraphs = (
+  paragraphs,
+  selection,
+  text,
+  formatting,
+) => {
+  const sourceParagraphs = structuredClone(paragraphs ?? []);
+  if (!sourceParagraphs.length || !selection || !text) return null;
+
+  const startParagraphIdx = Math.min(
+    selection.paragraphIdx,
+    selection.endParagraphIdx ?? selection.paragraphIdx,
+  );
+  const endParagraphIdx = Math.max(
+    selection.paragraphIdx,
+    selection.endParagraphIdx ?? selection.paragraphIdx,
+  );
+  const startOffset =
+    startParagraphIdx === selection.paragraphIdx
+      ? selection.rangeStart
+      : selection.rangeEnd;
+  const endOffset =
+    endParagraphIdx === (selection.endParagraphIdx ?? selection.paragraphIdx)
+      ? selection.rangeEnd
+      : selection.rangeStart;
+
+  const startParagraph = sourceParagraphs[startParagraphIdx];
+  const endParagraph = sourceParagraphs[endParagraphIdx];
+  if (!startParagraph || !endParagraph) return null;
+
+  const safeStartOffset = Math.max(
+    0,
+    Math.min(startOffset, paragraphTextLength(startParagraph)),
+  );
+  const safeEndOffset = Math.max(
+    0,
+    Math.min(endOffset, paragraphTextLength(endParagraph)),
+  );
+  const lines = text.replace(/\r\n?/g, "\n").split("\n");
+  const beforeRuns = sliceRuns(
+    startParagraph.runs,
+    0,
+    Math.min(safeStartOffset, paragraphTextLength(startParagraph)),
+  );
+  const afterRuns = sliceRuns(
+    endParagraph.runs,
+    Math.max(safeEndOffset, 0),
+    paragraphTextLength(endParagraph),
+  );
+
+  const makeInsertedRuns = (line) =>
+    line ? [buildPasteRun(line, formatting)] : [];
+
+  const replacementParagraphs =
+    lines.length === 1
+      ? [
+          {
+            ...startParagraph,
+            runs: mergeRuns([
+              ...beforeRuns,
+              ...makeInsertedRuns(lines[0]),
+              ...afterRuns,
+            ]),
+          },
+        ]
+      : lines.map((line, index) => {
+          if (index === 0) {
+            return {
+              ...startParagraph,
+              runs: mergeRuns([...beforeRuns, ...makeInsertedRuns(line)]),
+            };
+          }
+          if (index === lines.length - 1) {
+            return {
+              ...endParagraph,
+              id: crypto.randomUUID?.() ?? `p-${Date.now()}-${index}`,
+              formatting: { ...(startParagraph.formatting ?? {}) },
+              userSetKeys: [...(startParagraph.userSetKeys ?? [])],
+              runs: mergeRuns([...makeInsertedRuns(line), ...afterRuns]),
+            };
+          }
+          return {
+            ...startParagraph,
+            id: crypto.randomUUID?.() ?? `p-${Date.now()}-${index}`,
+            runs: mergeRuns(makeInsertedRuns(line)),
+          };
+        });
+
+  const nextParagraphs = [
+    ...sourceParagraphs.slice(0, startParagraphIdx),
+    ...replacementParagraphs,
+    ...sourceParagraphs.slice(endParagraphIdx + 1),
+  ];
+  const cursorParagraphIdx = startParagraphIdx + lines.length - 1;
+  const cursorOffset =
+    lines.length === 1
+      ? safeStartOffset + lines[0].length
+      : lines.at(-1).length;
+
+  return {
+    paragraphs: nextParagraphs,
+    selection: {
+      paragraphIdx: cursorParagraphIdx,
+      rangeStart: cursorOffset,
+      endParagraphIdx: cursorParagraphIdx,
+      rangeEnd: cursorOffset,
+    },
+  };
+};
 
 export function useEditorController() {
   const { presentationId } = useParams();
@@ -701,6 +910,95 @@ useEffect(() => {
 
   const handlePaste = useCallback(() => pasteElement(), [pasteElement]);
 
+  const handlePasteText = useCallback(
+    async (elementId, mode = "destination") => {
+      const targetId = elementId ?? selectedElementId;
+      const textElement =
+        targetId === selectedTextEl?.id
+          ? selectedTextEl
+          : (selectedSlide?.contents?.text ?? []).find((el) => el.id === targetId);
+      const selection = activeSelectionRef.current;
+      if (!targetId || !textElement || selection?.elementId !== targetId) {
+        pasteElement();
+        return false;
+      }
+
+      let clipboardText = "";
+      try {
+        clipboardText = await navigator.clipboard?.readText?.();
+      } catch (error) {
+        console.warn("[EditorPage] Clipboard text paste failed:", error);
+      }
+
+      if (!clipboardText) {
+        pasteElement();
+        return false;
+      }
+
+      const result = insertPlainTextIntoParagraphs(
+        textElement.paragraphs,
+        selection,
+        clipboardText,
+        mode === "text" ? {} : currentFormatting,
+      );
+      if (!result) return false;
+
+      updateTextElementParagraphs(
+        selectedSlideIndex,
+        targetId,
+        result.paragraphs,
+        true,
+      );
+      const nextSelection = { elementId: targetId, ...result.selection };
+      activeSelectionRef.current = nextSelection;
+      setActiveSelection(nextSelection);
+      setPendingFormatting({});
+      return true;
+    },
+    [
+      selectedElementId,
+      selectedTextEl,
+      selectedSlide,
+      currentFormatting,
+      updateTextElementParagraphs,
+      selectedSlideIndex,
+      pasteElement,
+    ],
+  );
+
+  const handlePastePicture = useCallback(async () => {
+    try {
+      const clipboardItems = await navigator.clipboard?.read?.();
+      const imageItem = clipboardItems?.find((item) =>
+        item.types.some((type) => type.startsWith("image/")),
+      );
+      const imageType = imageItem?.types.find((type) =>
+        type.startsWith("image/"),
+      );
+      if (!imageItem || !imageType) return false;
+
+      const blob = await imageItem.getType(imageType);
+      const file = new File([blob], `clipboard-image.${imageType.split("/")[1] ?? "png"}`, {
+        type: imageType,
+      });
+      const [{ mediaId, key }, naturalSize] = await Promise.all([
+        storeMediaFile(file),
+        readImageDimensionsFromFile(file),
+      ]);
+      const displaySize = fitImageToSlide(
+        naturalSize.width,
+        naturalSize.height,
+        slideWidth,
+        slideHeight,
+      );
+      addMedia(createImageMediaElement(mediaId, key, displaySize));
+      return true;
+    } catch (error) {
+      console.warn("[EditorPage] Clipboard picture paste failed:", error);
+      return false;
+    }
+  }, [addMedia, slideWidth, slideHeight]);
+
   const handleDeleteSelection = useCallback(() => {
     deleteSelectedElements(selectedElementIds);
   }, [deleteSelectedElements, selectedElementIds]);
@@ -709,6 +1007,34 @@ useEffect(() => {
     setShowComments(true);
     setComposeSession((s) => s + 1);
   }, []);
+
+  const handleHyperlink = useCallback(
+    (elementId, href) => {
+      const selection = activeSelectionRef.current;
+      const targetId = elementId ?? selectedElementId;
+      const normalizedHref = href.trim();
+      if (
+        !targetId ||
+        !normalizedHref ||
+        selection?.elementId !== targetId ||
+        selection.paragraphIdx !==
+          (selection.endParagraphIdx ?? selection.paragraphIdx) ||
+        selection.rangeStart === selection.rangeEnd
+      ) {
+        return false;
+      }
+
+      updateRunLink(
+        targetId,
+        selection.paragraphIdx,
+        Math.min(selection.rangeStart, selection.rangeEnd),
+        Math.max(selection.rangeStart, selection.rangeEnd),
+        { href: normalizedHref, target: "_blank" },
+      );
+      return true;
+    },
+    [selectedElementId, updateRunLink],
+  );
 
   const handleSaveAs = useCallback(
     () => downloadPresentationAsJson(presentation),
@@ -760,14 +1086,18 @@ useEffect(() => {
         : null,
     [presentation?.slideset?.layouts, selectedMasterLayoutId],
   );
+  const masterElements = presentation?.slideset?.master?.elements;
+  const masterFormatting = presentation?.slideset?.master?.formatting;
+  const masterColorTheme = presentation?.slideset?.master?.["color-theme"];
   const activeMasterSlide = useMemo(() => {
-    const masterElements = presentation?.slideset?.master?.elements ?? {};
-    const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
-    const masterColorTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
     return selectedMasterLayout
-      ? buildLayoutPseudoSlide(selectedMasterLayout, masterFormatting, masterColorTheme)
-      : buildMasterPseudoSlide(masterElements);
-  }, [selectedMasterLayout, presentation?.slideset?.master?.elements, presentation?.slideset?.master?.formatting, presentation?.slideset?.master?.["color-theme"]]);
+      ? buildLayoutPseudoSlide(
+          selectedMasterLayout,
+          masterFormatting ?? {},
+          masterColorTheme ?? [],
+        )
+      : buildMasterPseudoSlide(masterElements ?? {});
+  }, [selectedMasterLayout, masterElements, masterFormatting, masterColorTheme]);
 
   // --- Master view unified event handlers (routing master vs layout elements) ---
   const masterViewChangeText = useCallback(
@@ -1262,8 +1592,11 @@ useEffect(() => {
     handleCopy,
     handleCut,
     handlePaste,
+    handlePasteText,
+    handlePastePicture,
     handleDeleteSelection,
     handleNewComment,
+    handleHyperlink,
     handleSaveAs,
     handleNew,
     handleLoadFile,

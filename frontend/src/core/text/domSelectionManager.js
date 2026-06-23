@@ -18,35 +18,42 @@ export const parseSpanStyle = (style) => {
 export const domToParagraphs = (el, existingParagraphs) => {
   const paragraphs = [[]];
 
-  const addText = (text, fmt) => {
+  const addText = (text, fmt, link = null) => {
     if (!text) return;
     const lastPara = paragraphs[paragraphs.length - 1];
     const last = lastPara[lastPara.length - 1];
-    if (last && JSON.stringify(last.formatting) === JSON.stringify(fmt)) {
+    if (
+      last &&
+      JSON.stringify(last.formatting) === JSON.stringify(fmt) &&
+      JSON.stringify(last.link ?? null) === JSON.stringify(link ?? null)
+    ) {
       last.text += text;
     } else {
       lastPara.push({
         text,
         formatting: fmt,
         "super-sub-script": "normal",
-        link: null,
+        link,
       });
     }
   };
 
-  const walk = (node, fmt = {}) => {
+  const walk = (node, fmt = {}, link = null) => {
     if (node.nodeType === Node.TEXT_NODE) {
-      addText(node.textContent, fmt);
+      addText(node.textContent, fmt, link);
     } else if (node.nodeName === "BR") {
       paragraphs.push([]);
     } else if (node.nodeName === "SPAN") {
       const merged = { ...fmt, ...parseSpanStyle(node.style) };
-      node.childNodes.forEach((c) => walk(c, merged));
+      const spanLink = node.dataset?.link
+        ? { href: node.dataset.link, target: "_blank" }
+        : link;
+      node.childNodes.forEach((c) => walk(c, merged, spanLink));
     } else if (node.nodeName === "DIV" || node.nodeName === "P") {
       if (paragraphs[paragraphs.length - 1].length > 0) paragraphs.push([]);
-      node.childNodes.forEach((c) => walk(c, fmt));
+      node.childNodes.forEach((c) => walk(c, fmt, link));
     } else {
-      node.childNodes.forEach((c) => walk(c, fmt));
+      node.childNodes.forEach((c) => walk(c, fmt, link));
     }
   };
 

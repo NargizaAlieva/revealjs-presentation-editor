@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useLayoutEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import FormatToolbar from "./FormatToolbar";
 import "./TextElement.css";
@@ -63,6 +63,7 @@ export default function TextElement({
   formatPainterClipboard = null,
   onFormatPainterCopy,
   onFormatPainterPaste,
+  onContextMenu,
   clearSelectionSignal = 0,
 }) {
   const [toolbarPos, setToolbarPos] = useState({ top: 0, left: 0 });
@@ -135,7 +136,7 @@ useEffect(() => {
     : { ...effectiveParaFormatting, ...pendingFormatting };
 
   // Per-paragraph list info so markers are scoped to each paragraph individually.
-  const paragraphListInfos = useMemo(() => (textElement.paragraphs ?? []).map((p) => {
+  const paragraphListInfos = (textElement.paragraphs ?? []).map((p) => {
     const pFmt = p.formatting ?? {};
     const firstRunFmt =
       (p.runs ?? []).find((run) => (run.text ?? "").length > 0)?.formatting ??
@@ -182,7 +183,7 @@ useEffect(() => {
         ),
       },
     };
-  }), [textElement.paragraphs, placeholderFormatting, masterFormatting]);
+  });
   const anyListPara = paragraphListInfos.find((p) => p.listType) ?? null;
   const listType = anyListPara?.listType ?? null;
 
@@ -228,7 +229,7 @@ useEffect(() => {
         setCaretOffset(el, savedCaret);
       }
     }
-  }, [innerHTML]);
+  }, [innerHTML, textElement.paragraphs]);
 
   useLayoutEffect(() => {
     const editable = editableRef.current;
@@ -271,6 +272,89 @@ useEffect(() => {
     textElement.paragraphs,
     paragraphListInfos,
   ]);
+
+  const overflowMode = textElement.overflow ?? "auto-fit";
+
+  useLayoutEffect(() => {
+    const editable = editableRef.current;
+    if (!editable || !onAutoFit || overflowMode !== "auto-fit") return undefined;
+
+    const fitToContent = () => {
+      const currentHeight = textElement.height ?? 80;
+      const contentHeight = Math.ceil(editable.scrollHeight + 2);
+      if (contentHeight <= currentHeight + 1) {
+        lastAutoFitHeightRef.current = null;
+        return;
+      }
+      if (lastAutoFitHeightRef.current === contentHeight) return;
+
+      lastAutoFitHeightRef.current = contentHeight;
+      const currentY = textElement.position?.y ?? 0;
+      const nextY =
+        Number.isFinite(slideHeight) && currentY + contentHeight > slideHeight
+          ? Math.max(0, slideHeight - contentHeight)
+          : currentY;
+
+      onAutoFit(textElement.id, {
+        height: contentHeight,
+        position: {
+          ...(textElement.position ?? { x: 0, y: 0 }),
+          y: nextY,
+        },
+      });
+    };
+
+    fitToContent();
+    const observer = new ResizeObserver(fitToContent);
+    observer.observe(editable);
+    Array.from(editable.children).forEach((child) => observer.observe(child));
+
+    return () => observer.disconnect();
+  }, [
+    innerHTML,
+    onAutoFit,
+    overflowMode,
+    slideHeight,
+    textElement.height,
+    textElement.id,
+    textElement.paragraphs,
+    textElement.position,
+    textElement.overflow,
+    textElement.width,
+  ]);
+
+  useLayoutEffect(() => {
+    const editable = editableRef.current;
+    if (!editable || overflowMode !== "shrink-on-overflow") return;
+    const maxH = textElement.height ?? 80;
+    const containerW = textElement.width ?? 300;
+
+    editable.style.transform = "";
+    editable.style.transformOrigin = "";
+    editable.style.width = "";
+
+    if (editable.scrollHeight <= maxH + 1) return;
+
+    let lo = 0.3, hi = 1.0;
+    for (let i = 0; i < 14; i++) {
+      const mid = (lo + hi) / 2;
+      editable.style.transform = `scale(${mid})`;
+      editable.style.transformOrigin = "top left";
+      editable.style.width = `${containerW / mid}px`;
+      if (editable.scrollHeight * mid <= maxH + 1) lo = mid; else hi = mid;
+    }
+    editable.style.transform = `scale(${lo})`;
+    editable.style.transformOrigin = "top left";
+    editable.style.width = `${containerW / lo}px`;
+
+    return () => {
+      if (editable) {
+        editable.style.transform = "";
+        editable.style.transformOrigin = "";
+        editable.style.width = "";
+      }
+    };
+  }, [innerHTML, overflowMode, textElement.height, textElement.width]);
 
   const updateToolbarPosition = (anchorPoint = null) => {
     setTimeout(() => {
@@ -355,7 +439,6 @@ useEffect(() => {
 
   useEffect(() => {
     if (isPrimarySelected && isToolbarOpen) updateToolbarPosition();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPrimarySelected, isToolbarOpen]);
 
   useEffect(() => {
@@ -537,7 +620,14 @@ useEffect(() => {
         }}
         onContextMenu={(event) => {
           saveCurrentSelection();
-          openToolbar({ x: event.clientX, y: event.clientY });
+          if (onContextMenu) {
+            event.preventDefault();
+            event.stopPropagation();
+            setIsToolbarOpen(false);
+            onContextMenu(event, textElement.id, "text");
+          } else {
+            openToolbar({ x: event.clientX, y: event.clientY });
+          }
         }}
         onKeyUp={() => {
           saveCurrentSelection();
