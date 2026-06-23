@@ -16,10 +16,14 @@ import {
 } from "../render/slidesetRenderUtils";
 import { getStyleById } from "../model/imageStyles";
 
-export function buildTextElementStyle(textElement, index, masterFormatting = {}, placeholderFormatting = {}) {
+export function buildTextElementStyle(textElement, index, masterFormatting = {}, placeholderFormatting = {}, placeholderPadding = null) {
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
   const rotation = textElement.rotation ?? 0;
   const r = (elemVal, phVal, masterVal, fallback) => elemVal ?? phVal ?? masterVal ?? fallback;
+
+  const textDecoration = r(formatting["text-decoration"], placeholderFormatting["text-decoration"], masterFormatting["text-decoration"], null);
+  const verticalAlign = r(formatting["vertical-align"], placeholderFormatting["vertical-align"], masterFormatting["vertical-align"], "top");
+  const justifyContent = verticalAlign === "middle" ? "center" : verticalAlign === "bottom" ? "flex-end" : "flex-start";
 
   return {
     position: "absolute",
@@ -28,9 +32,11 @@ export function buildTextElementStyle(textElement, index, masterFormatting = {},
     width: `${textElement.width ?? 300}px`,
     height: `${textElement.height ?? 80}px`,
     background: textElement.background ?? "transparent",
-    overflow: "hidden",
     zIndex: textElement["z-index"] ?? index + 1,
     ...(rotation ? { transform: `rotate(${rotation}deg)` } : {}),
+    display: "flex",
+    flexDirection: "column",
+    justifyContent,
     fontSize: r(formatting.size, placeholderFormatting.size, masterFormatting.size, index === 0 ? "44px" : "28px"),
     fontWeight: r(formatting.weight, placeholderFormatting.weight, masterFormatting.weight, index === 0 ? "bold" : "normal"),
     fontStyle: r(formatting.italics, placeholderFormatting.italics, masterFormatting.italics, false) ? "italic" : "normal",
@@ -39,6 +45,8 @@ export function buildTextElementStyle(textElement, index, masterFormatting = {},
     textAlign: r(formatting.align, placeholderFormatting.align, masterFormatting.align, "left"),
     textAlignLast: r(formatting.align, placeholderFormatting.align, masterFormatting.align, "left") === "justify" ? "left" : undefined,
     lineHeight: r(formatting["line-spacing"], placeholderFormatting["line-spacing"], masterFormatting["line-spacing"], "1.4"),
+    ...(textDecoration ? { textDecoration } : {}),
+    ...(placeholderPadding ? { padding: placeholderPadding } : {}),
     boxSizing: "border-box",
     wordBreak: "break-all",
     overflowWrap: "anywhere",
@@ -126,8 +134,8 @@ export function buildMediaFilterStyle(media) {
   const contrast   = effects.contrast   ?? 0;
 
   const sharpen  = getEffectFilter(effects.sharpenId);
-  const tint     = getEffectFilter(effects.tintId);
-  const artistic = getEffectFilter(effects.artisticId);
+  const tint     = getEffectFilter(effects.tintId) ?? effects.tintFilter ?? null;
+  const artistic = getEffectFilter(effects.artisticId) ?? effects.artisticFilter ?? null;
 
   if (sharpen)      parts.push(sharpen);
   if (brightness !== 0) parts.push(`brightness(${(1 + brightness).toFixed(3)})`);
@@ -230,7 +238,7 @@ export function initRevealDeck(
   const deck = new Reveal(containerElement, {
     controls: true,
     progress: true,
-    center: false,
+    center: true,
     hash: false,
     embedded: true,
     width,

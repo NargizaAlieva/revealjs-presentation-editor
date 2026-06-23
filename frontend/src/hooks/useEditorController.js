@@ -347,7 +347,18 @@ useEffect(() => {
     setPendingFormatting,
   });
 
-  const selectedElementRaw = getSlideElement(selectedSlide, selectedElementId);
+  const selectedElementRaw = isSlideMasterOpen
+    ? (() => {
+        const master = presentation?.slideset?.master;
+        const mediaEl = (master?.elements?.media ?? []).find((m) => m.id === selectedMasterElementId);
+        if (mediaEl) return mediaEl;
+        if (selectedMasterLayoutId) {
+          const layout = (presentation?.slideset?.layouts ?? []).find((l) => l["layout-id"] === selectedMasterLayoutId);
+          return (layout?.elements?.media ?? []).find((m) => m.id === selectedMasterElementId) ?? null;
+        }
+        return null;
+      })()
+    : getSlideElement(selectedSlide, selectedElementId);
 
   // Close "Picture Format" tab when the selected element is no longer a media element.
   useEffect(() => {
@@ -925,14 +936,6 @@ useEffect(() => {
     ],
   );
 
-  const handleTextOverflowChange = useCallback(
-    (mode) => {
-      if (!selectedElementId) return;
-      updateElement(selectedElementId, { overflow: mode });
-    },
-    [selectedElementId, updateElement],
-  );
-
   const handleChangeCase = useCallback(
     (mode) => {
       if (!selectedTextEl) return;
@@ -1266,7 +1269,6 @@ useEffect(() => {
     handleLoadFile,
     handleDeleteAndGoHome,
     handleFormatChange,
-    handleTextOverflowChange,
     handleChangeCase,
     handleStartEditing,
     handleStopEditing,

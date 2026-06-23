@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import "./EditorCanvas.css";
 import { getSlideSize } from "../core/render/slidesetRenderUtils";
 import { getAnimationDurationMs } from "../core/operations/animationOperations";
-import { buildColorThemeStyle } from "../core/render/revealRenderer";
+import { buildColorThemeStyle, buildAdjustedAnimationMap } from "../core/render/revealRenderer";
 import {
   isEditableTarget,
   isUndoShortcut,
@@ -140,11 +140,11 @@ export default function EditorCanvas({
   );
 
   const animationSequenceMap = useMemo(
-    () =>
-      new Map(
-        animations.map((animation) => [animation.id, animation.sequence]),
-      ),
-    [animations],
+    () => {
+      const adjusted = buildAdjustedAnimationMap(slide);
+      return new Map([...adjusted.entries()].map(([id, anim]) => [id, anim.sequence]));
+    },
+    [slide],
   );
 
   const {
@@ -428,7 +428,7 @@ export default function EditorCanvas({
                 transformOrigin: "center center",
                 width: `${width}px`,
                 height: `${height}px`,
-                overflow: "hidden",
+                overflow: "visible",
               }}
             >
               <div
@@ -438,17 +438,15 @@ export default function EditorCanvas({
                 style={{
                   width: `${width}px`,
                   height: `${height}px`,
-                  background:
+                  backgroundColor:
                     !slide?.contents?.background ||
                     slide.contents.background === TRANSPARENT_SLIDE_BG
                       ? "var(--bg-light, white)"
                       : slide.contents.background,
-                  ...(bgImageSrc ? {
-                    backgroundImage: `url(${bgImageSrc})`,
-                    backgroundSize: bgImageScale === 100 ? "cover" : `${bgImageScale}%`,
-                    backgroundPosition: bgImagePosition,
-                    backgroundRepeat: "no-repeat",
-                  } : {}),
+                  backgroundImage: bgImageSrc ? `url(${bgImageSrc})` : undefined,
+                  backgroundSize: bgImageSrc ? (bgImageScale === 100 ? "cover" : `${bgImageScale}%`) : undefined,
+                  backgroundPosition: bgImageSrc ? bgImagePosition : undefined,
+                  backgroundRepeat: bgImageSrc ? "no-repeat" : undefined,
                   color: "var(--text-dark, black)",
                   cursor: bgRepoMode ? "grab" : undefined,
                 }}
@@ -567,7 +565,6 @@ export default function EditorCanvas({
                       onStartDrag={startDraggingText}
                       onStartResize={startResizingText}
                       onStartRotate={startRotatingText}
-                      onAutoFit={updateElement}
                       slideHeight={height}
                       onBeginHistory={onBeginHistory}
                       onCommitHistory={onCommitHistory}

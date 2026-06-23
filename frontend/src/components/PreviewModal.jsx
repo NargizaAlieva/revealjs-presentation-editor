@@ -23,6 +23,7 @@ import {
   getPerLineFragments,
 } from "../core/render/revealRenderer";
 import { getPlaceholderFormatting } from "../core/render/slidesetRenderUtils";
+import { paragraphsToHTML } from "../core/text/textFormatting";
 import { REFLECTION_PRESETS } from "../core/model/imageEffects";
 
 function PreviewMediaElement({ media, index, fragmentProps }) {
@@ -149,7 +150,7 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
                       !slide?.contents?.background || slide.contents.background === "#FFFFFFFF"
                         ? "var(--bg-light, white)"
                         : slide.contents.background,
-                  }}                >
+                  }}>
                   <div style={buildSlideContainerStyle(width, height)}>
                     <SlideDecorations
                       presentation={presentation}
@@ -181,25 +182,8 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
                           key={textElement.id || index}
                           style={baseStyle}
                           {...fragmentProps}
-                        >
-                          {textElement.paragraphs?.map((para, pIdx) => (
-                            <p key={pIdx} style={{ margin: "0 0 4px 0" }}>
-                              {(para.runs ?? []).map((run, rIdx) => {
-                                const style = {
-                                  fontWeight: run.formatting?.weight,
-                                  fontStyle: run.formatting?.italics ? "italic" : undefined,
-                                  color: run.formatting?.color,
-                                  fontSize: run.formatting?.size,
-                                  textDecoration: run.formatting?.["text-decoration"],
-                                };
-                                if (run.link?.href) {
-                                  return <a key={rIdx} href={run.link.href} target={run.link.target ?? "_blank"} style={style}>{run.text}</a>;
-                                }
-                                return <span key={rIdx} style={style}>{run.text}</span>;
-                              })}
-                            </p>
-                          ))}
-                        </div>
+                          dangerouslySetInnerHTML={{ __html: paragraphsToHTML(textElement.paragraphs, masterFormatting, placeholderFormatting) }}
+                        />
                       );
                     })}
 

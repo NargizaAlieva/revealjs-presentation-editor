@@ -109,7 +109,7 @@ export default function SlideDecorations({ presentation, width, height, hideMast
         </svg>
       )}
 
-      {(masterElements?.text ?? []).map((el) => {
+      {(masterElements?.text ?? []).filter((el) => !el.hidden).map((el) => {
         const fmt = el.paragraphs?.[0]?.formatting ?? {};
         const mf = master?.formatting ?? {};
         const text = extractPlainTextFromParagraphs(el.paragraphs, "\n");
@@ -143,11 +143,11 @@ export default function SlideDecorations({ presentation, width, height, hideMast
         );
       })}
 
-      {(masterElements?.media ?? []).map((el) => (
+      {(masterElements?.media ?? []).filter((el) => !el.hidden).map((el) => (
         <MasterMediaImage key={el.id} el={el} />
       ))}
 
-      {(layoutElements?.text ?? []).map((el) => {
+      {(layoutElements?.text ?? []).filter((el) => !el.hidden).map((el) => {
         const fmt = el.paragraphs?.[0]?.formatting ?? {};
         const mf = master?.formatting ?? {};
         const text = extractPlainTextFromParagraphs(el.paragraphs, "\n");
@@ -181,7 +181,7 @@ export default function SlideDecorations({ presentation, width, height, hideMast
         );
       })}
 
-      {(layoutElements?.media ?? []).map((el) => (
+      {(layoutElements?.media ?? []).filter((el) => !el.hidden).map((el) => (
         <LayoutMediaImage key={el.id} el={el} />
       ))}
     </>

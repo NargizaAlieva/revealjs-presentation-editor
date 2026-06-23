@@ -1,6 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import "./SlideMasterView.css";
-import { buildColorThemeStyle } from "../core/render/revealRenderer";
+import {
+  buildColorThemeStyle,
+  buildMediaContainerStyle,
+  buildMediaInnerStyle,
+  buildMediaFilterStyle,
+  buildBevelOverlayStyle,
+} from "../core/render/revealRenderer";
+import { useMediaSrc } from "../hooks/useMediaSrc";
+import { REFLECTION_PRESETS } from "../core/model/imageEffects";
 import SlideDecorations from "./canvas/SlideDecorations";
 import EditorCanvas from "./EditorCanvas";
 import { ColorPalettePopup } from "./toolbar/DesignTab";
@@ -231,6 +239,43 @@ function SlideSizeDropdown({ presentation, onUpdateDimensions }) {
   );
 }
 
+function ThumbMedia({ media, index }) {
+  const src = useMediaSrc(media["file-link"]);
+  const containerStyle = buildMediaContainerStyle(media, index);
+  const innerStyle = buildMediaInnerStyle(media);
+  const cssFilter = buildMediaFilterStyle(media);
+  const bevelStyle = buildBevelOverlayStyle(media);
+
+  const refId = media.effects?.reflectionId;
+  const rp = refId && refId !== "none" ? REFLECTION_PRESETS.find((p) => p.id === refId) : null;
+  const reflection = rp && rp.size > 0 ? {
+    position: "absolute",
+    left: `${media.position?.x ?? 0}px`,
+    top: `${(media.position?.y ?? 0) + (media.height ?? 200) + (rp.offset ?? 0)}px`,
+    width: `${media.width ?? 200}px`,
+    height: `${Math.round((rp.size / 100) * (media.height ?? 200))}px`,
+    objectFit: "cover",
+    objectPosition: "top",
+    transform: "scaleY(-1)",
+    opacity: rp.opacity,
+    ...(rp.blur > 0 ? { filter: `blur(${rp.blur}px)` } : {}),
+    WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
+    maskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
+    pointerEvents: "none",
+    zIndex: (media["z-index"] ?? index + 1),
+  } : null;
+
+  return (
+    <>
+      <div style={{ ...containerStyle, pointerEvents: "none" }}>
+        <img src={src} alt="" style={{ ...innerStyle, ...(cssFilter ? { filter: cssFilter } : {}) }} />
+        {bevelStyle && <div style={bevelStyle} />}
+      </div>
+      {reflection && <img src={src} alt="" style={reflection} />}
+    </>
+  );
+}
+
 function MasterThumb({ label, isSelected, onClick, presentation, layout, isMaster }) {
   const containerRef = useRef(null);
   const [thumbW, setThumbW] = useState(isMaster ? 160 : 140);
@@ -264,6 +309,12 @@ function MasterThumb({ label, isSelected, onClick, presentation, layout, isMaste
           background: bgColor, overflow: "hidden",
         }}>
           <SlideDecorations presentation={presentation} width={width} height={height} layoutId={layout?.["layout-id"]} />
+          {(presentation?.slideset?.master?.elements?.media ?? []).map((media, i) => (
+            <ThumbMedia key={media.id ?? i} media={media} index={i} />
+          ))}
+          {(layout?.elements?.media ?? []).map((media, i) => (
+            <ThumbMedia key={media.id ?? i} media={media} index={i} />
+          ))}
           {(layout?.placeholders ?? []).map((ph, i) => {
             const pseudo = createPlaceholderPseudoElement(ph, presentation?.slideset?.master?.formatting ?? {});
             if (ph.type === "text") {

@@ -36,7 +36,7 @@ export const createMasterTextElement = (id, position, width, height, text, forma
   width,
   height,
   rotation: 0,
-  overflow: "shrink-on-overflow",
+  overflow: "auto-fit",
   "z-index": 5,
   background: "#FFFFFF00",
   userModified: true,

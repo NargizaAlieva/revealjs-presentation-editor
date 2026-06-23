@@ -325,6 +325,10 @@ export default function MediaElement({
     activeStyleCss.transform ?? null,
   ].filter(Boolean).join(" ");
 
+  // Extract soft-edges mask so it applies to inner content only, not handles
+  const { maskImage, WebkitMaskImage, ...baseContainerWithoutMask } = baseContainerStyle;
+  const softEdgeMaskStyle = maskImage ? { maskImage, WebkitMaskImage } : {};
+
   // Crop mode: container covers the full source image, overflow hidden — the
   // crop overlay (border, handles, buttons) is rendered via portal to body
   // so it never needs overflow:visible here.
@@ -345,7 +349,7 @@ export default function MediaElement({
         willChange: "transform",
       }
     : {
-        ...baseContainerStyle,
+        ...baseContainerWithoutMask,
         ...activeStyleCss,
         ...(combinedTransform ? { transform: combinedTransform } : {}),
         overflow: "visible",
@@ -575,7 +579,7 @@ export default function MediaElement({
           <div className="crop-shade" style={{ top: tPx, bottom: bPx, right: 0, width: rPx, cursor: "move" }} onMouseDown={startCropElementDrag} />
         </div>
       ) : (
-        <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: "inherit" }}>
+        <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: "inherit", ...softEdgeMaskStyle }}>
           {isVideo ? (
             <>
               <video

@@ -726,7 +726,7 @@ export const editorReducer = (state, event) => {
       };
 
     case EditorEventType.ELEMENT.UPDATE:
-      return {
+      return withHistory(state, {
         ...state,
         presentation: updateElement(
           state.presentation,
@@ -736,7 +736,7 @@ export const editorReducer = (state, event) => {
         ),
         lastEvent: event,
         lastUpdated: Date.now(),
-      };
+      });
 
     case EditorEventType.ELEMENT.UPDATE_MANY: {
       const updatesById = new Map(
@@ -801,7 +801,21 @@ export const editorReducer = (state, event) => {
       });
 
     case EditorEventType.MEDIA.UPDATE:
-      return {
+      if (state.pendingSnapshot) {
+        // Slider drag in progress — update state without creating a history entry
+        return {
+          ...state,
+          presentation: updateMedia(
+            state.presentation,
+            state.selectedSlideIndex,
+            event.payload.mediaId,
+            event.payload.updates,
+          ),
+          lastEvent: event,
+          lastUpdated: Date.now(),
+        };
+      }
+      return withHistory(state, {
         ...state,
         presentation: updateMedia(
           state.presentation,
@@ -811,7 +825,7 @@ export const editorReducer = (state, event) => {
         ),
         lastEvent: event,
         lastUpdated: Date.now(),
-      };
+      });
 
     case EditorEventType.ANIMATION.ADD:
       return withHistory(state, {

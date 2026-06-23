@@ -13,7 +13,7 @@ const createTextElementFromPlaceholder = (placeholder, defaultText = "") => ({
   width: placeholder.width,
   height: placeholder.height,
   rotation: 0,
-  overflow: "shrink-on-overflow",
+  overflow: "auto-fit",
   "z-index": 1,
   background: placeholder.background ?? "#FFFFFF00",
   paragraphs: [

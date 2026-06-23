@@ -1,27 +1,62 @@
 import { useRef, useState, useEffect } from "react";
 import { useMediaSrc } from "../../hooks/useMediaSrc";
-import { buildColorThemeStyle, buildTextElementStyle } from "../../core/render/revealRenderer";
-import { extractPlainTextFromParagraphs } from "../../core/text/textFormatting";
-import { getPlaceholderFormatting } from "../../core/render/slidesetRenderUtils";
+import {
+  buildColorThemeStyle,
+  buildTextElementStyle,
+  buildMediaContainerStyle,
+  buildMediaInnerStyle,
+  buildMediaFilterStyle,
+  buildBevelOverlayStyle,
+} from "../../core/render/revealRenderer";
+import { paragraphsToHTML } from "../../core/text/textFormatting";
+import { getPlaceholderFormatting, getPlaceholderPadding } from "../../core/render/slidesetRenderUtils";
+import { REFLECTION_PRESETS } from "../../core/model/imageEffects";
 import SlideDecorations from "../canvas/SlideDecorations";
 import "./SlideThumbnail.css";
 
-function ThumbnailMedia({ media }) {
+function ThumbnailMedia({ media, index }) {
   const src = useMediaSrc(media["file-link"]);
+  const containerStyle = buildMediaContainerStyle(media, index);
+  const innerStyle = buildMediaInnerStyle(media);
+  const cssFilter = buildMediaFilterStyle(media);
+  const bevelStyle = buildBevelOverlayStyle(media);
+
+  const refId = media.effects?.reflectionId;
+  const rp = refId && refId !== "none" ? REFLECTION_PRESETS.find((p) => p.id === refId) : null;
+  const reflection = rp && rp.size > 0 ? (() => {
+    const elH = media.height ?? 200;
+    const elW = media.width ?? 200;
+    const refH = Math.round((rp.size / 100) * elH);
+    return {
+      position: "absolute",
+      left: `${media.position?.x ?? 0}px`,
+      top: `${(media.position?.y ?? 0) + elH + (rp.offset ?? 0)}px`,
+      width: `${elW}px`,
+      height: `${refH}px`,
+      objectFit: "cover",
+      objectPosition: "top",
+      transform: "scaleY(-1)",
+      opacity: rp.opacity,
+      ...(rp.blur > 0 ? { filter: `blur(${rp.blur}px)` } : {}),
+      WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
+      maskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
+      pointerEvents: "none",
+      zIndex: (media["z-index"] ?? index + 1),
+    };
+  })() : null;
+
   return (
-    <img
-      src={src}
-      alt=""
-      style={{
-        position: "absolute",
-        left: media.position?.x ?? 0,
-        top: media.position?.y ?? 0,
-        width: media.width ?? 300,
-        height: media.height ?? 200,
-        objectFit: "contain",
-        pointerEvents: "none",
-      }}
-    />
+    <>
+      <div style={{ ...containerStyle, pointerEvents: "none" }}>
+        <img
+          src={src}
+          alt=""
+          style={{ ...innerStyle, ...(cssFilter ? { filter: cssFilter } : {}) }}
+        />
+        {bevelStyle && <div style={bevelStyle} />}
+      </div>
+      {reflection && <img src={src} alt="" style={reflection} />}
+    </>
   );
 }
 
@@ -99,15 +134,19 @@ export default function SlideThumbnail({
         />
         {textElements.filter((element) => !element.hidden).map((textElement, index) => {
           const placeholderFormatting = getPlaceholderFormatting(presentation, slide, textElement);
-          const style = buildTextElementStyle(textElement, index, masterFormatting, placeholderFormatting);
+          const placeholderPadding = getPlaceholderPadding(presentation, slide, textElement);
+          const style = buildTextElementStyle(textElement, index, masterFormatting, placeholderFormatting, placeholderPadding);
+          const html = paragraphsToHTML(textElement.paragraphs, masterFormatting, placeholderFormatting);
           return (
-            <div key={textElement.id} style={{ ...style, overflow: "hidden", zIndex: 1 }}>
-              {extractPlainTextFromParagraphs(textElement.paragraphs, "\n")}
-            </div>
+            <div
+              key={textElement.id}
+              style={style}
+              dangerouslySetInnerHTML={{ __html: html }}
+            />
           );
         })}
-        {mediaElements.filter((element) => !element.hidden).map((media) => (
-          <ThumbnailMedia key={media.id} media={media} />
+        {mediaElements.filter((element) => !element.hidden).map((media, index) => (
+          <ThumbnailMedia key={media.id} media={media} index={index} />
         ))}
       </div>
     </div>

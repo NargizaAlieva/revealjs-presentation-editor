@@ -48,7 +48,6 @@ export default function TextElement({
   onStartDrag,
   onStartResize,
   onStartRotate,
-  onAutoFit,
   slideHeight,
   onBeginHistory,
   onCommitHistory,
@@ -69,6 +68,7 @@ export default function TextElement({
   const [toolbarPos, setToolbarPos] = useState({ top: 0, left: 0 });
   const [isToolbarOpen, setIsToolbarOpen] = useState(false);
   const [paragraphTops, setParagraphTops] = useState([]);
+  const [editableOffsetTop, setEditableOffsetTop] = useState(0);
   const [savedSelState, setSavedSelState] = useState(null);
   const editableRef = useRef(null);
   const elementRef = useRef(null);
@@ -76,7 +76,6 @@ export default function TextElement({
   const savedSelectionRef = useRef(null);
   const lastSyncedParagraphsRef = useRef(null);
   const selectionFrameRef = useRef(null);
-  const lastAutoFitHeightRef = useRef(null);
   const isDeletingRef = useRef(false);
   const toolbarFormInputActiveRef = useRef(false);
 
@@ -257,6 +256,7 @@ useEffect(() => {
           ? current
           : nextTops,
       );
+      setEditableOffsetTop(editable.offsetTop);
     };
 
     measureParagraphs();
@@ -271,88 +271,6 @@ useEffect(() => {
     textElement.paragraphs,
     paragraphListInfos,
   ]);
-
-  const overflowMode = textElement.overflow ?? "auto-fit";
-
-  useLayoutEffect(() => {
-    const editable = editableRef.current;
-    if (!editable || !onAutoFit || overflowMode !== "auto-fit") return undefined;
-
-    const fitToContent = () => {
-      const currentHeight = textElement.height ?? 80;
-      const contentHeight = Math.ceil(editable.scrollHeight + 2);
-      if (contentHeight <= currentHeight + 1) {
-        lastAutoFitHeightRef.current = null;
-        return;
-      }
-      if (lastAutoFitHeightRef.current === contentHeight) return;
-
-      lastAutoFitHeightRef.current = contentHeight;
-      const currentY = textElement.position?.y ?? 0;
-      const nextY =
-        Number.isFinite(slideHeight) && currentY + contentHeight > slideHeight
-          ? Math.max(0, slideHeight - contentHeight)
-          : currentY;
-
-      onAutoFit(textElement.id, {
-        height: contentHeight,
-        position: {
-          ...(textElement.position ?? { x: 0, y: 0 }),
-          y: nextY,
-        },
-      });
-    };
-
-    fitToContent();
-    const observer = new ResizeObserver(fitToContent);
-    observer.observe(editable);
-    Array.from(editable.children).forEach((child) => observer.observe(child));
-
-    return () => observer.disconnect();
-  }, [
-    innerHTML,
-    onAutoFit,
-    overflowMode,
-    slideHeight,
-    textElement.height,
-    textElement.id,
-    textElement.paragraphs,
-    textElement.position,
-    textElement.width,
-  ]);
-
-  useLayoutEffect(() => {
-    const editable = editableRef.current;
-    if (!editable || overflowMode !== "shrink-on-overflow") return;
-    const maxH = textElement.height ?? 80;
-    const containerW = textElement.width ?? 300;
-
-    editable.style.transform = "";
-    editable.style.transformOrigin = "";
-    editable.style.width = "";
-
-    if (editable.scrollHeight <= maxH + 1) return;
-
-    let lo = 0.3, hi = 1.0;
-    for (let i = 0; i < 14; i++) {
-      const mid = (lo + hi) / 2;
-      editable.style.transform = `scale(${mid})`;
-      editable.style.transformOrigin = "top left";
-      editable.style.width = `${containerW / mid}px`;
-      if (editable.scrollHeight * mid <= maxH + 1) lo = mid; else hi = mid;
-    }
-    editable.style.transform = `scale(${lo})`;
-    editable.style.transformOrigin = "top left";
-    editable.style.width = `${containerW / lo}px`;
-
-    return () => {
-      if (editable) {
-        editable.style.transform = "";
-        editable.style.transformOrigin = "";
-        editable.style.width = "";
-      }
-    };
-  }, [innerHTML, overflowMode, textElement.height, textElement.width]);
 
   const updateToolbarPosition = (anchorPoint = null) => {
     setTimeout(() => {
@@ -469,9 +387,7 @@ useEffect(() => {
         left: `${textElement.position?.x ?? 0}px`,
         top: `${textElement.position?.y ?? 0}px`,
         width: `${textElement.width ?? 300}px`,
-        ...(overflowMode === "auto-fit"
-          ? { minHeight: `${textElement.height ?? 80}px` }
-          : { height: `${textElement.height ?? 80}px`, overflow: "hidden" }),
+        minHeight: `${textElement.height ?? 80}px`,
         background: textElement.background ?? "transparent",
         zIndex: textElement["z-index"] ?? 1,
         transform: `rotate(${textElement.rotation ?? 0}deg)`,
@@ -537,7 +453,7 @@ useEffect(() => {
           className="list-markers-overlay"
           style={{
             left: 0,
-            top: placeholderPadding ? placeholderPadding.trim().split(/\s+/)[0] : 0,
+            top: editableOffsetTop,
             width: "100%",
             fontSize: resolveTextStyle(
               formatting.size,

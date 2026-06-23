@@ -46,7 +46,7 @@ function Btn({ icon, label, active, disabled, title, onClick }) {
   );
 }
 
-function BrightnessPopover({ brightness = 0, contrast = 0, onChange, onClose }) {
+function BrightnessPopover({ brightness = 0, contrast = 0, onChange, onClose, onBeginHistory, onCommitHistory }) {
   const ref = useRef(null);
   useEffect(() => {
     const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
@@ -60,12 +60,16 @@ function BrightnessPopover({ brightness = 0, contrast = 0, onChange, onClose }) 
       <label className="ifp-slider-label">
         Яркость
         <input type="range" min="-100" max="100" value={Math.round(brightness * 100)}
+          onMouseDown={onBeginHistory}
+          onMouseUp={onCommitHistory}
           onChange={(e) => onChange({ brightness: e.target.value / 100, contrast })} />
         <span className="ifp-slider-val">{Math.round(brightness * 100)}</span>
       </label>
       <label className="ifp-slider-label">
         Контраст
         <input type="range" min="-100" max="100" value={Math.round(contrast * 100)}
+          onMouseDown={onBeginHistory}
+          onMouseUp={onCommitHistory}
           onChange={(e) => onChange({ brightness, contrast: e.target.value / 100 })} />
         <span className="ifp-slider-val">{Math.round(contrast * 100)}</span>
       </label>
@@ -73,7 +77,7 @@ function BrightnessPopover({ brightness = 0, contrast = 0, onChange, onClose }) 
   );
 }
 
-function OpacityPopover({ opacity = 1, onChange, onClose }) {
+function OpacityPopover({ opacity = 1, onChange, onClose, onBeginHistory, onCommitHistory }) {
   const ref = useRef(null);
   useEffect(() => {
     const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
@@ -87,6 +91,8 @@ function OpacityPopover({ opacity = 1, onChange, onClose }) {
       <label className="ifp-slider-label">
         Непрозрачность
         <input type="range" min="0" max="100" value={Math.round(opacity * 100)}
+          onMouseDown={onBeginHistory}
+          onMouseUp={onCommitHistory}
           onChange={(e) => onChange(e.target.value / 100)} />
         <span className="ifp-slider-val">{Math.round(opacity * 100)}%</span>
       </label>
@@ -172,7 +178,7 @@ function ArtisticPopover({ currentEffect, onChange, onClose }) {
   );
 }
 
-export default function ImageFormatPanel({ media, position, onUpdate, onCrop, onBringForward, onSendBackward }) {
+export default function ImageFormatPanel({ media, position, onUpdate, onCrop, onBringForward, onSendBackward, onBeginHistory, onCommitHistory }) {
   const [openPopover, setOpenPopover] = useState(null); // "brightness" | "opacity" | "color" | "style" | "artistic"
   const [stylePickerPos, setStylePickerPos] = useState(null);
   const [lockedRatio, setLockedRatio] = useState(true);
@@ -256,6 +262,8 @@ export default function ImageFormatPanel({ media, position, onUpdate, onCrop, on
                 onChange={({ brightness: b, contrast: c }) =>
                   onUpdate({ effects: { ...effects, brightness: b, contrast: c } })}
                 onClose={() => setOpenPopover(null)}
+                onBeginHistory={onBeginHistory}
+                onCommitHistory={onCommitHistory}
               />
             </div>
           )}
@@ -269,7 +277,11 @@ export default function ImageFormatPanel({ media, position, onUpdate, onCrop, on
             <div className="ifp-popover-anchor">
               <ColorTintPopover
                 currentTint={currentTint}
-                onChange={(id, filter) => onUpdate({ effects: { ...effects, tintId: id, tintFilter: filter } })}
+                onChange={(id, filter) => {
+                  onBeginHistory?.();
+                  onUpdate({ effects: { ...effects, tintId: id, tintFilter: filter } });
+                  onCommitHistory?.();
+                }}
                 onClose={() => setOpenPopover(null)}
               />
             </div>
@@ -284,7 +296,11 @@ export default function ImageFormatPanel({ media, position, onUpdate, onCrop, on
             <div className="ifp-popover-anchor">
               <ArtisticPopover
                 currentEffect={currentArtistic}
-                onChange={(id, filter) => onUpdate({ effects: { ...effects, artisticId: id, artisticFilter: filter } })}
+                onChange={(id, filter) => {
+                  onBeginHistory?.();
+                  onUpdate({ effects: { ...effects, artisticId: id, artisticFilter: filter } });
+                  onCommitHistory?.();
+                }}
                 onClose={() => setOpenPopover(null)}
               />
             </div>
@@ -301,6 +317,8 @@ export default function ImageFormatPanel({ media, position, onUpdate, onCrop, on
                 opacity={opacity}
                 onChange={(val) => onUpdate({ opacity: val })}
                 onClose={() => setOpenPopover(null)}
+                onBeginHistory={onBeginHistory}
+                onCommitHistory={onCommitHistory}
               />
             </div>
           )}

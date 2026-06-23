@@ -46,6 +46,8 @@ export default function EditorPage() {
         <Toolbar
           activeTab={ctrl.activeTab}
           onTabChange={ctrl.setActiveTab}
+          onBeginHistory={ctrl.beginHistory}
+          onCommitHistory={ctrl.commitHistory}
           onAddSlide={ctrl.addSlide}
           onDeleteSlide={ctrl.deleteSlide}
           onDuplicateSlide={ctrl.duplicateSlide}
@@ -83,8 +85,6 @@ export default function EditorPage() {
           currentFormatting={ctrl.currentFormatting}
           onFormatChange={ctrl.handleFormatChange}
           onChangeCase={ctrl.handleChangeCase}
-          onTextOverflowChange={ctrl.handleTextOverflowChange}
-          selectedTextOverflow={ctrl.selectedTextEl?.overflow ?? ctrl.masterSelectedTextEl?.overflow ?? "auto-fit"}
           isTextSelected={
             !!(ctrl.isSlideMasterOpen
               ? ctrl.masterSelectedTextEl
@@ -141,7 +141,9 @@ export default function EditorPage() {
           onToggleFooters={ctrl.toggleFooters}
           selectedMediaElement={ctrl.selectedMediaElement}
           onUpdateSelectedMedia={(updates) =>
-            ctrl.selectedMediaElement && ctrl.updateMedia(ctrl.selectedMediaElement.id, updates)
+            ctrl.selectedMediaElement && (ctrl.isSlideMasterOpen
+              ? ctrl.masterViewAutoFitMedia(ctrl.selectedMediaElement.id, updates)
+              : ctrl.updateMedia(ctrl.selectedMediaElement.id, updates))
           }
           onCropSelectedMedia={ctrl.triggerCrop}
           onBringForward={ctrl.handleBringForward}
