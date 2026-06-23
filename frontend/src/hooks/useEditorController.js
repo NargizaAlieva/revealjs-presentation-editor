@@ -357,6 +357,7 @@ export function useEditorController() {
     removeLayoutPlaceholder,
     updateLayoutPlaceholder,
     updateLayoutItem,
+    updateLayoutTextFormattingAction,
     updateMasterTheme,
     updateMasterFormatting,
     updateMasterDimensions,
@@ -569,7 +570,6 @@ useEffect(() => {
       })()
     : getSlideElement(selectedSlide, selectedElementId);
 
-  // Close "Picture Format" tab when the selected element is no longer a media element.
   useEffect(() => {
     if (activeTab !== "Picture Format") return;
     const isMedia = selectedElementRaw && !selectedElementRaw.paragraphs;
@@ -1068,7 +1068,6 @@ useEffect(() => {
     navigate("/");
   }, [presentationId, navigate]);
 
-  // --- Master view derived state ---
   const masterTextIds = useMemo(
     () => new Set((presentation?.slideset?.master?.elements?.text ?? []).map((el) => el.id)),
     [presentation?.slideset?.master?.elements?.text],
@@ -1099,7 +1098,6 @@ useEffect(() => {
       : buildMasterPseudoSlide(masterElements ?? {});
   }, [selectedMasterLayout, masterElements, masterFormatting, masterColorTheme]);
 
-  // --- Master view unified event handlers (routing master vs layout elements) ---
   const masterViewChangeText = useCallback(
     (id, text) => {
       if (selectedMasterLayoutId && !masterTextIds.has(id)) {
@@ -1111,13 +1109,27 @@ useEffect(() => {
     [selectedMasterLayoutId, masterTextIds, updateLayoutItem, updateMasterTextContent],
   );
 
-  // Used instead of onChangeTextElement for master text elements so that
-  // lastTypedHTMLRef in TextElement is updated and the DOM is not reset on every keystroke.
   const masterViewChangeParagraphs = useCallback(
     (id, paragraphs) => {
       if (selectedMasterLayoutId && !masterTextIds.has(id)) {
-        const text = paragraphs.map((p) => p.runs.map((r) => r.text).join("")).join("\n");
-        updateLayoutItem(selectedMasterLayoutId, id, { promptText: text });
+        const layout = (presentation?.slideset?.layouts ?? []).find(
+          (l) => l["layout-id"] === selectedMasterLayoutId,
+        );
+        const isPlaceholder = (layout?.placeholders ?? []).some(
+          (p) => p["placeholder-id"] === id,
+        );
+        if (isPlaceholder) {
+          const text = paragraphs.map((p) => p.runs.map((r) => r.text).join("")).join("\n");
+          updateLayoutItem(selectedMasterLayoutId, id, { promptText: text });
+        } else {
+          const paragraphsWithKeys = paragraphs.map((p) => ({
+            ...p,
+            userSetKeys: p.userSetKeys?.length
+              ? p.userSetKeys
+              : Object.keys(p.formatting ?? {}),
+          }));
+          updateLayoutItem(selectedMasterLayoutId, id, { paragraphs: paragraphsWithKeys, userModified: true });
+        }
       } else {
         const paragraphsWithKeys = paragraphs.map((p) => ({
           ...p,
@@ -1128,18 +1140,37 @@ useEffect(() => {
         updateMasterElement("text", id, { paragraphs: paragraphsWithKeys, userModified: true });
       }
     },
-    [selectedMasterLayoutId, masterTextIds, updateLayoutItem, updateMasterElement],
+    [selectedMasterLayoutId, masterTextIds, presentation, updateLayoutItem, updateMasterElement],
   );
 
   const masterViewFormatText = useCallback(
-    (id, fmt) => {
+    (id, rawFmt) => {
+      const delta = Number(rawFmt["font-size-delta"] ?? 0);
+      let fmt = rawFmt;
+      if (delta) {
+        const el = findMasterTextElement(presentation, selectedMasterLayoutId, id);
+        const currentSize = parseFloat(el?.paragraphs?.[0]?.formatting?.size ?? masterFormatting?.size ?? "24") || 24;
+        const newSize = Math.max(6, Math.min(120, currentSize + delta));
+        fmt = { ...rawFmt, "font-size-delta": undefined, size: `${newSize}px` };
+        delete fmt["font-size-delta"];
+      }
       if (selectedMasterLayoutId && !masterTextIds.has(id)) {
-        updateLayoutItem(selectedMasterLayoutId, id, { formatting: fmt });
+        const layout = (presentation?.slideset?.layouts ?? []).find(
+          (l) => l["layout-id"] === selectedMasterLayoutId,
+        );
+        const isPlaceholder = (layout?.placeholders ?? []).some(
+          (p) => p["placeholder-id"] === id,
+        );
+        if (isPlaceholder) {
+          updateLayoutItem(selectedMasterLayoutId, id, { formatting: fmt });
+        } else {
+          updateLayoutTextFormattingAction(selectedMasterLayoutId, id, fmt);
+        }
       } else {
         updateMasterTextFormatting(id, fmt);
       }
     },
-    [selectedMasterLayoutId, masterTextIds, updateLayoutItem, updateMasterTextFormatting],
+    [selectedMasterLayoutId, masterTextIds, presentation, masterFormatting, updateLayoutItem, updateLayoutTextFormattingAction, updateMasterTextFormatting],
   );
 
   const masterViewMoveText = useCallback(
@@ -1683,6 +1714,7 @@ useEffect(() => {
     removeLayoutPlaceholder,
     updateLayoutPlaceholder,
     updateLayoutItem,
+    updateLayoutTextFormattingAction,
     updateMasterTheme,
     updateMasterFormatting,
     updateMasterDimensions,

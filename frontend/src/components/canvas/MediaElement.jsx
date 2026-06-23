@@ -577,7 +577,7 @@ export default function MediaElement({
         <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
           {isVideo ? (
             <>
-              <video src={resolvedSrc} className="canvas-media" style={innerStyle} {...videoAttrs} />
+              <video src={resolvedSrc} className="canvas-media" style={innerStyle} preload="metadata" onLoadedMetadata={(e) => { e.target.currentTime = 0; }} />
               <div style={{ position: "absolute", inset: 0, cursor: "default" }} />
             </>
           ) : (
@@ -599,12 +599,19 @@ export default function MediaElement({
             <>
               <video
                 src={resolvedSrc} className="canvas-media" style={innerStyle}
-                controls={isPrimarySelected}
-                {...videoAttrs}
+                preload="metadata"
+                onLoadedMetadata={(e) => { e.target.currentTime = 0; }}
               />
-              {!isPrimarySelected && (
-                <div style={{ position: "absolute", inset: 0, cursor: "move" }} />
-              )}
+              <div style={{ position: "absolute", inset: 0, cursor: "move", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: "50%",
+                  background: "rgba(0,0,0,0.45)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  pointerEvents: "none",
+                }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+                </div>
+              </div>
             </>
           ) : (
             <img src={resolvedSrc} alt={media.decorative ? "" : (media.alt ?? "")} className="canvas-media" style={filteredInnerStyle} />

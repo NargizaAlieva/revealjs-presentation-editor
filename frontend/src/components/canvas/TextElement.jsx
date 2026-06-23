@@ -65,6 +65,7 @@ export default function TextElement({
   onFormatPainterPaste,
   onContextMenu,
   clearSelectionSignal = 0,
+  onAutoFit,
 }) {
   const [toolbarPos, setToolbarPos] = useState({ top: 0, left: 0 });
   const [isToolbarOpen, setIsToolbarOpen] = useState(false);
@@ -79,6 +80,7 @@ export default function TextElement({
   const selectionFrameRef = useRef(null);
   const isDeletingRef = useRef(false);
   const toolbarFormInputActiveRef = useRef(false);
+  const lastAutoFitHeightRef = useRef(null);
 
 useEffect(() => {
   if (clearSelectionSignal === 0) return;

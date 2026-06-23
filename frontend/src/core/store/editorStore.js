@@ -44,6 +44,7 @@ import {
   updateLayoutPlaceholder,
   updateLayoutElementsFont,
   updateLayoutItem,
+  updateLayoutTextFormatting,
 } from "../operations/layoutOperations";
 import {
   addMedia,
@@ -802,7 +803,6 @@ export const editorReducer = (state, event) => {
 
     case EditorEventType.MEDIA.UPDATE:
       if (state.pendingSnapshot) {
-        // Slider drag in progress — update state without creating a history entry
         return {
           ...state,
           presentation: updateMedia(
@@ -1027,7 +1027,6 @@ export const editorReducer = (state, event) => {
       );
       const updates = event.payload.updates ?? {};
       const isDragUpdate = "position" in updates || "width" in updates || "height" in updates;
-      // During drag (pendingSnapshot active + position/size update), skip withHistory
       if (state.pendingSnapshot && isDragUpdate) {
         return {
           ...state,
@@ -1043,6 +1042,19 @@ export const editorReducer = (state, event) => {
         lastUpdated: Date.now(),
       });
     }
+
+    case EditorEventType.LAYOUT.UPDATE_TEXT_FORMATTING:
+      return withHistory(state, {
+        ...state,
+        presentation: updateLayoutTextFormatting(
+          state.presentation,
+          event.payload.layoutId,
+          event.payload.elementId,
+          event.payload.formattingUpdate,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
 
     case EditorEventType.LAYOUT.RESET:
       return withHistory(state, {

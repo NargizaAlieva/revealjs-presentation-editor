@@ -106,6 +106,7 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
 
   const handleClick = useCallback((e) => {
     if (e.target.closest(".preview-close")) return;
+    if (e.target.closest("video")) return;
     const deck = deckInstanceRef.current;
     if (!deck) return;
     const rect = e.currentTarget.getBoundingClientRect();
@@ -156,6 +157,8 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
                       presentation={presentation}
                       width={width}
                       height={height}
+                      layoutId={slide?.["layout-id"]}
+                      interactive
                     />
                     {textElements.filter((element) => !element.hidden).map((textElement, index) => {
                       const animation = animationMap.get(textElement.id);
