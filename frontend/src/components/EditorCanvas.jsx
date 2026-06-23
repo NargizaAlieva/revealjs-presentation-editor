@@ -63,6 +63,10 @@ export default function EditorCanvas({
   onPaste,
   onCut,
   onNewComment,
+  onOpenPictureFormat,
+  cropSignal,
+  previewMediaEffects,
+  previewMediaStyleId,
   hideMasterElements = false,
   formatPainterClipboard = null,
   onFormatPainterCopy,
@@ -384,6 +388,7 @@ export default function EditorCanvas({
                 transformOrigin: "center center",
                 width: `${width}px`,
                 height: `${height}px`,
+                overflow: "hidden",
               }}
             >
               <div
@@ -497,6 +502,10 @@ export default function EditorCanvas({
                       }}
                       onUpdateMedia={updateMedia ? (id, updates) => updateMedia(id, updates) : undefined}
                       onNewComment={onNewComment}
+                      onOpenPictureFormat={onOpenPictureFormat}
+                      cropSignal={media.id === selectedElementId ? cropSignal : undefined}
+                      previewEffects={media.id === selectedElementId ? previewMediaEffects : undefined}
+                      externalPreviewStyleId={media.id === selectedElementId ? previewMediaStyleId : undefined}
                       previewClassName={playClass}
                       animationOrder={
                         showAnimationBadges

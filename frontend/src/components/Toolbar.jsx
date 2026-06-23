@@ -9,6 +9,7 @@ import SlideShowTab from "./toolbar/SlideShowTab";
 import DesignTab from "./toolbar/DesignTab";
 import ViewTab from "./toolbar/ViewTab";
 import { SlideMasterRibbon } from "./SlideMasterView";
+import PictureFormatTab from "./toolbar/PictureFormatTab";
 
 const BASE_TABS = [
   "File",
@@ -97,6 +98,15 @@ export default function Toolbar({
   onZoomOut,
   onZoomChange,
 
+  selectedMediaElement,
+  onUpdateSelectedMedia,
+  onCropSelectedMedia,
+  onBringForward,
+  onSendBackward,
+  onChangePicture,
+  onPreviewMediaEffects,
+  onPreviewMediaStyle,
+
   isSlideMasterOpen,
   onCloseSlideMaster,
   masterName,
@@ -136,6 +146,7 @@ useEffect(() => {
     else setLocalActiveTab(tab);
   };
 
+  const hasPictureFormat = !isSlideMasterOpen && !!selectedMediaElement;
   const TABS = isSlideMasterOpen
     ? [
         "File",
@@ -146,7 +157,9 @@ useEffect(() => {
         "Animations",
         "View",
       ]
-    : BASE_TABS;
+    : hasPictureFormat
+      ? [...BASE_TABS, "Picture Format"]
+      : BASE_TABS;
 
   return (
     <header className="toolbar">
@@ -154,7 +167,11 @@ useEffect(() => {
         {TABS.map((tab) => (
           <button
             key={tab}
-            className={`toolbar-tab ${currentTab === tab ? "active" : ""}`}
+            className={[
+              "toolbar-tab",
+              currentTab === tab ? "active" : "",
+              tab === "Picture Format" ? "toolbar-tab--contextual" : "",
+            ].filter(Boolean).join(" ")}
             onClick={() => setCurrentTab(tab)}
           >
             {tab}
@@ -290,6 +307,19 @@ useEffect(() => {
           <SlideShowTab
             onOpenPreviewFromBeginning={onOpenPreviewFromBeginning}
             onOpenPreviewFromCurrent={onOpenPreviewFromCurrent}
+          />
+        )}
+
+        {currentTab === "Picture Format" && (
+          <PictureFormatTab
+            media={selectedMediaElement}
+            onUpdate={onUpdateSelectedMedia}
+            onCrop={onCropSelectedMedia}
+            onBringForward={onBringForward}
+            onSendBackward={onSendBackward}
+            onChangePicture={onChangePicture}
+            onPreviewEffects={onPreviewMediaEffects}
+            onPreviewStyle={onPreviewMediaStyle}
           />
         )}
 

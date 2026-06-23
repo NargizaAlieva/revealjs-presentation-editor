@@ -203,7 +203,7 @@ function buildMasterElementsHtml(presentation, masterFormatting, getSrc) {
     const { autoPlay, loop, muted } = buildVideoAttributes(media);
     const inner = isVideo
       ? `<video src="${escapeHtml(src)}" style="${innerStyle}" preload="metadata"${autoPlay ? " autoplay" : ""}${loop ? " loop" : ""}${muted ? " muted" : ""}></video>`
-      : `<img src="${escapeHtml(src)}" alt="" style="${innerStyle}" />`;
+      : `<img src="${escapeHtml(src)}" alt="${escapeHtml(media.decorative ? "" : (media.alt ?? ""))}" style="${innerStyle}" />`;
     return `<div style="${wrapperStyle}">${inner}</div>`;
   }).join("");
 
@@ -273,7 +273,7 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
 
       const mediaHtml = isVideo
         ? `<video src="${escapeHtml(src)}" style="${innerStyle}" preload="metadata"${autoPlay ? " autoplay" : ""}${loop ? " loop" : ""}${muted ? " muted" : ""}></video>`
-        : `<img src="${escapeHtml(src)}" alt="" style="${innerStyle}" />`;
+        : `<img src="${escapeHtml(src)}" alt="${escapeHtml(media.decorative ? "" : (media.alt ?? ""))}" style="${innerStyle}" />`;
 
       const adjustedMediaAnim = animation && adjustedSeqMap.has(animation.id)
         ? { ...animation, sequence: adjustedSeqMap.get(animation.id) }

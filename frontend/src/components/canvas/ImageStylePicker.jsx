@@ -33,8 +33,10 @@ export default function ImageStylePicker({ position, currentStyleId, onPreview, 
               onMouseEnter={() => onPreview?.(style.id)}
               onMouseDown={(e) => { e.stopPropagation(); onSelect(style.id); onClose(); }}
             >
-              <div className="image-style-picker__preview" style={style.css}>
-                <img src={PLACEHOLDER} alt="" className="image-style-picker__img" />
+              <div className="image-style-picker__preview-outer" style={style.css}>
+                <div className="image-style-picker__preview-inner">
+                  <img src={PLACEHOLDER} alt="" className="image-style-picker__img" />
+                </div>
               </div>
             </button>
           );

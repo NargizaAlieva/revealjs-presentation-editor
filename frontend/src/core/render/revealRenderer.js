@@ -1,5 +1,15 @@
 import Reveal from "reveal.js";
 import {
+  getEffectFilter,
+  SHADOW_PRESETS,
+  GLOW_PRESETS,
+  SOFT_EDGES_PRESETS,
+  BEVEL_PRESETS,
+  ROTATION3D_PRESETS,
+} from "../model/imageEffects";
+
+function findById(list, id) { return id ? list.find((p) => p.id === id) : null; }
+import {
   getSlideSize,
   getTextElements,
   getMediaElements,
@@ -48,6 +58,27 @@ export function buildMediaContainerStyle(media, index) {
   const rotation = media.rotation ?? 0;
   const styleId = media.effects?.["style-id"];
   const styleCss = styleId ? getStyleById(styleId).css : {};
+  const brd = media.effects?.border;
+  const borderCss = brd?.color
+    ? { border: `${brd.width ?? 2}px ${brd.dash ?? "solid"} ${brd.color}` }
+    : {};
+
+  const fx = media.effects ?? {};
+  const shadowPreset  = findById(SHADOW_PRESETS,  fx.shadowId);
+  const glowPreset    = findById(GLOW_PRESETS, fx.glowId);
+  const glowShadow    = fx._glowShadow ?? glowPreset?.shadow ?? null;
+  const bevelPreset   = findById(BEVEL_PRESETS,   fx.bevelId);
+  const softPreset    = findById(SOFT_EDGES_PRESETS, fx.softEdgesId);
+  const rot3d         = findById(ROTATION3D_PRESETS, fx.rotation3dId);
+
+  const isInnerShadow = shadowPreset?.section === "inner";
+  const outerShadow = isInnerShadow ? null : shadowPreset?.shadow;
+  const shadows = [outerShadow, glowShadow].filter(Boolean);
+  const boxShadowCss = shadows.length ? { boxShadow: shadows.join(", ") } : {};
+  const maskCss = softPreset?.stop != null
+    ? { WebkitMaskImage: `radial-gradient(ellipse at center, black ${softPreset.stop}%, transparent 100%)`,
+        maskImage:        `radial-gradient(ellipse at center, black ${softPreset.stop}%, transparent 100%)` }
+    : {};
   const transforms = [
     rotation ? `rotate(${rotation}deg)` : null,
     styleCss.transform ?? null,
@@ -60,9 +91,48 @@ export function buildMediaContainerStyle(media, index) {
     height: `${media.height ?? 120}px`,
     zIndex: media["z-index"] ?? index + 1,
     overflow: "hidden",
+    ...(media.opacity != null && media.opacity < 1 ? { opacity: media.opacity } : {}),
     ...styleCss,
-    ...(transforms ? { transform: transforms, transformOrigin: "center center" } : {}),
+    ...borderCss,
+    ...boxShadowCss,
+    ...maskCss,
+    ...(transforms || rot3d?.transform
+      ? {
+          transform: [transforms, rot3d?.transform?.replace("perspective(none) ", "")].filter(Boolean).join(" "),
+          transformOrigin: "center center",
+          ...(rot3d?.transform && !rot3d.transform.includes("perspective(none)") ? { perspective: undefined } : {}),
+        }
+      : {}),
   };
+}
+
+export function buildBevelOverlayStyle(media) {
+  const fx = media.effects ?? {};
+  const bevelPreset  = findById(BEVEL_PRESETS,  fx.bevelId);
+  const shadowPreset = findById(SHADOW_PRESETS, fx.shadowId);
+  const insetShadow  = shadowPreset?.section === "inner" ? shadowPreset.shadow : null;
+  const insets = [bevelPreset?.bevel, insetShadow].filter(Boolean);
+  if (!insets.length) return null;
+  return { position: "absolute", inset: 0, boxShadow: insets.join(", "), pointerEvents: "none", borderRadius: "inherit" };
+}
+
+export function buildMediaFilterStyle(media) {
+  const effects = media.effects ?? {};
+  const parts = [];
+  const brightness = effects.brightness ?? 0;
+  const contrast   = effects.contrast   ?? 0;
+
+  const sharpen  = getEffectFilter(effects.sharpenId);
+  const tint     = getEffectFilter(effects.tintId);
+  const artistic = getEffectFilter(effects.artisticId);
+
+  if (sharpen)      parts.push(sharpen);
+  if (brightness !== 0) parts.push(`brightness(${(1 + brightness).toFixed(3)})`);
+  if (contrast !== 0)   parts.push(`contrast(${(1 + contrast).toFixed(3)})`);
+  if (tint)         parts.push(tint);
+  if (artistic)     parts.push(artistic);
+
+  return parts.length > 0 ? parts.join(" ") : undefined;
 }
 
 export function buildMediaInnerStyle(media) {

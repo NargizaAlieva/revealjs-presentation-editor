@@ -16,12 +16,13 @@
 }
 
 .image-style-picker__cell {
-  padding: 4px;
+  padding: 6px;
   border: 2px solid transparent;
   border-radius: 6px;
   background: transparent;
   cursor: pointer;
   transition: border-color 0.1s;
+  overflow: visible;
 }
 
 .image-style-picker__cell:hover {
@@ -34,14 +35,21 @@
   background: #ede9fe;
 }
 
-.image-style-picker__preview {
+/* Outer: receives style.css (border, shadow, borderRadius, transform) */
+.image-style-picker__preview-outer {
   width: 36px;
   height: 27px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   box-sizing: border-box;
+  position: relative;
+  overflow: visible;
+}
+
+/* Inner: clips the image to the shape (oval, rounded, etc.) */
+.image-style-picker__preview-inner {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
 }
 
 .image-style-picker__img {

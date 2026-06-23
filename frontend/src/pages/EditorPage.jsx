@@ -132,6 +132,16 @@ export default function EditorPage() {
           onDeleteMasterElement={ctrl.deleteMasterElement}
           onToggleTitle={ctrl.toggleTitle}
           onToggleFooters={ctrl.toggleFooters}
+          selectedMediaElement={ctrl.selectedMediaElement}
+          onUpdateSelectedMedia={(updates) =>
+            ctrl.selectedMediaElement && ctrl.updateMedia(ctrl.selectedMediaElement.id, updates)
+          }
+          onCropSelectedMedia={ctrl.triggerCrop}
+          onBringForward={ctrl.handleBringForward}
+          onSendBackward={ctrl.handleSendBackward}
+          onChangePicture={ctrl.handleChangePicture}
+          onPreviewMediaEffects={ctrl.setPreviewMediaEffects}
+          onPreviewMediaStyle={ctrl.setPreviewMediaStyleId}
         />
       </div>
 
@@ -240,6 +250,10 @@ export default function EditorPage() {
                   onPaste={ctrl.handlePaste}
                   onCut={ctrl.handleCut}
                   onNewComment={ctrl.handleNewComment}
+                  onOpenPictureFormat={() => ctrl.setActiveTab("Picture Format")}
+                  cropSignal={ctrl.cropSignal}
+                  previewMediaEffects={ctrl.previewMediaEffects}
+                  previewMediaStyleId={ctrl.previewMediaStyleId}
                   onStartEditing={ctrl.handleStartEditing}
                   onStopEditing={ctrl.handleStopEditing}
                   pendingFormatting={ctrl.activePendingFormatting}

@@ -89,25 +89,47 @@ const updateElementFromPlaceholder = (element, placeholders, isModified) => {
   };
 
   if (element.paragraphs) {
+    const placeholderFormatting = match.formatting ?? {};
     updated.paragraphs = element.paragraphs.map((p, pIdx) => {
       const userSetKeys = new Set(p.userSetKeys ?? []);
       const current = p.formatting ?? {};
+
+      // Build new paragraph formatting: keep user-set keys, apply placeholder for the rest.
       const merged = {};
       for (const [k, v] of Object.entries(current)) {
         if (userSetKeys.has(k)) merged[k] = v;
       }
-      for (const [k, v] of Object.entries(match.formatting ?? {})) {
+      for (const [k, v] of Object.entries(placeholderFormatting)) {
         if (!userSetKeys.has(k)) merged[k] = v;
       }
-      return {
-        ...p,
-        formatting: merged,
-        runs: p.runs.map((r, rIdx) =>
-          pIdx === 0 && rIdx === 0 && match.promptText !== undefined
-            ? { ...r, text: match.promptText }
-            : r,
-        ),
-      };
+
+      // Clean up run formatting: strip keys that are now controlled by the placeholder
+      // AND whose value in the run equals what the paragraph previously had (i.e. the run
+      // was carrying a redundant copy of the inherited value, not an explicit user override).
+      // Keys where the run differs from the old paragraph value are intentional overrides
+      // and must be preserved.
+      const runs = p.runs.map((r, rIdx) => {
+        // Prompt-text replacement takes priority
+        if (pIdx === 0 && rIdx === 0 && match.promptText !== undefined) {
+          return { ...r, text: match.promptText };
+        }
+
+        const cleanedFormatting = Object.fromEntries(
+          Object.entries(r.formatting ?? {}).filter(([k, v]) => {
+            // Keep keys the placeholder doesn't control, or that the user explicitly set
+            // at paragraph level (userSetKeys).
+            const placeholderOwns = (k in placeholderFormatting) && !userSetKeys.has(k);
+            if (!placeholderOwns) return true;
+            // Strip only if the run value matches the OLD paragraph value —
+            // meaning the run was a redundant copy of what it inherited, not a true override.
+            return v !== current[k];
+          }),
+        );
+
+        return { ...r, formatting: cleanedFormatting };
+      });
+
+      return { ...p, formatting: merged, runs };
     });
   }
 

@@ -34,6 +34,7 @@ import {
   deletePresentation,
   createPresentation,
   downloadPresentationAsJson,
+  storeMediaFile,
 } from "../core/persistence/persistenceFacade";
 
 export function useEditorController() {
@@ -42,6 +43,9 @@ export function useEditorController() {
 
   const [previewStartSlide, setPreviewStartSlide] = useState(0);
   const [showComments, setShowComments] = useState(false);
+  const [ctrl_cropSignal, setCtrlCropSignal] = useState(0);
+  const [previewMediaEffects, setPreviewMediaEffects] = useState(null);
+  const [previewMediaStyleId, setPreviewMediaStyleId] = useState(null);
   const [composeSession, setComposeSession] = useState(0);
   const [isSlideMasterOpen, setIsSlideMasterOpen] = useState(false);
   const [masterName, setMasterName] = useState("Office Theme");
@@ -343,6 +347,14 @@ useEffect(() => {
   });
 
   const selectedElementRaw = getSlideElement(selectedSlide, selectedElementId);
+
+  // Close "Picture Format" tab when the selected element is no longer a media element.
+  useEffect(() => {
+    if (activeTab !== "Picture Format") return;
+    const isMedia = selectedElementRaw && !selectedElementRaw.paragraphs;
+    if (!isMedia) setActiveTab("Home");
+  }, [selectedElementRaw, activeTab, setActiveTab]);
+
   const selectedElementsRaw = useMemo(
     () =>
       selectedElementIds
@@ -377,7 +389,7 @@ useEffect(() => {
         if (mode === "front") nextZ = Math.max(...zIndexes, currentZ) + 1 + index;
         if (mode === "back") nextZ = Math.min(...zIndexes, currentZ) - selectedElementsRaw.length + index;
         if (mode === "forward") nextZ = currentZ + 1;
-        if (mode === "backward") nextZ = currentZ - 1;
+        if (mode === "backward") nextZ = Math.max(1, currentZ - 1);
         updateElement(element.id, { "z-index": nextZ });
       });
     },
@@ -399,6 +411,39 @@ useEffect(() => {
   const handleSendBackward = useCallback(
     () => arrangeSelectedElement("backward"),
     [arrangeSelectedElement],
+  );
+
+  const handleChangePicture = useCallback(
+    async (file) => {
+      if (!file || !file.type.startsWith("image/")) return;
+      const el = selectedElementRaw;
+      if (!el?.id) return;
+
+      const objectUrl = URL.createObjectURL(file);
+      const naturalDims = await new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => { resolve({ w: img.naturalWidth, h: img.naturalHeight }); URL.revokeObjectURL(objectUrl); };
+        img.onerror = () => { resolve({ w: 300, h: 200 }); URL.revokeObjectURL(objectUrl); };
+        img.src = objectUrl;
+      });
+
+      const maxW = slideWidth * 0.3;
+      const maxH = slideHeight * 0.3;
+      const scale = Math.min(1, maxW / naturalDims.w, maxH / naturalDims.h);
+      const displayW = Math.round(naturalDims.w * scale);
+      const displayH = Math.round(naturalDims.h * scale);
+
+      const { key } = await storeMediaFile(file);
+      updateMedia(el.id, {
+        "file-link": `indexeddb://${key}`,
+        width: displayW,
+        height: displayH,
+        "source-width": naturalDims.w,
+        "source-height": naturalDims.h,
+        crop: null,
+      });
+    },
+    [selectedElementRaw, updateMedia, slideWidth, slideHeight],
   );
   const handleRotateRight = useCallback(() => {
     selectedElementsRaw.forEach((element) => {
@@ -1114,6 +1159,14 @@ useEffect(() => {
     selectedTextEl,
     masterSelectedTextEl,
     selectedElement,
+    selectedMediaElement: selectedElementRaw?.paragraphs ? null : selectedElementRaw ?? null,
+    handleChangePicture,
+    cropSignal: ctrl_cropSignal,
+    triggerCrop: () => setCtrlCropSignal((n) => n + 1),
+    previewMediaEffects,
+    setPreviewMediaEffects,
+    previewMediaStyleId,
+    setPreviewMediaStyleId,
     currentFormatting,
     hasRealSelection,
     activePendingFormatting,

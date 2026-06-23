@@ -43,6 +43,16 @@
   border-bottom: 2px solid #d6452f;
 }
 
+.toolbar-tab--contextual {
+  color: #7c3aed;
+  font-weight: 500;
+}
+
+.toolbar-tab--contextual.active {
+  border-bottom-color: #7c3aed;
+  color: #5b21b6;
+}
+
 .toolbar-ribbon {
   height: 92px;
   display: flex;

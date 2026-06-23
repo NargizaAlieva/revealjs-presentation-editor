@@ -46,13 +46,22 @@ export const resizeElement = (presentation, slideIndex, elementId, newSize) => {
   const updateSize = (element) => {
     if (element.id !== elementId) return element;
     const updates = { ...element, width: newSize.width, height: newSize.height };
-    // Keep source-width/source-height in sync for media elements so crop mode uses the right base size
     if ("source-width" in element) {
-      updates["source-width"] = newSize.width;
-      updates["source-height"] = newSize.height;
-      // Only reset crop if all values are >= 0 (no empty space outside image)
-      const [ct = 0, cr = 0, cb = 0, cl = 0] = element.crop ?? [];
-      if (ct >= 0 && cr >= 0 && cb >= 0 && cl >= 0) updates.crop = [];
+      const hasCrop = (element.crop ?? []).some((v) => v !== 0);
+      if (hasCrop) {
+        // Image already has an active crop — scale the source image proportionally
+        // with the container so the same cropped region stays visible at the new size.
+        const scaleX = element.width > 0 ? newSize.width  / element.width  : 1;
+        const scaleY = element.height > 0 ? newSize.height / element.height : 1;
+        updates["source-width"]  = (element["source-width"]  ?? element.width)  * scaleX;
+        updates["source-height"] = (element["source-height"] ?? element.height) * scaleY;
+        // crop percentages are relative to source dimensions — no change needed
+      } else {
+        // No active crop: source dimensions equal container dimensions
+        updates["source-width"]  = newSize.width;
+        updates["source-height"] = newSize.height;
+        updates.crop = [];
+      }
     }
     return updates;
   };
