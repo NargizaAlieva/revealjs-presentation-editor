@@ -25,6 +25,7 @@ export {
   toggleSlideHidden,
   updateSlideNotes,
   updateSlideTransition,
+  updateSlideBackgroundImage,
 } from "./operations/slideOperations";
 
 export {

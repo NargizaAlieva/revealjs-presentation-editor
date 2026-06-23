@@ -51,6 +51,10 @@ export default function SlideThumbnail({
   const thumbH = Math.round(thumbW * slideHeight / slideWidth);
   const colorThemeStyle = buildColorThemeStyle(presentation);
   const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
+  const bgImageKey = slide?.contents?.["background-image"] ?? null;
+  const bgImageSrc = useMediaSrc(bgImageKey);
+  const bgImagePosition = slide?.contents?.["background-image-position"] ?? "center center";
+  const bgImageScale = slide?.contents?.["background-image-scale"] ?? 100;
 
   return (
     <div
@@ -77,6 +81,12 @@ export default function SlideThumbnail({
             !slide?.contents?.background || slide.contents.background === "#FFFFFFFF"
               ? "var(--bg-light, white)"
               : slide.contents.background,
+          ...(bgImageSrc ? {
+            backgroundImage: `url(${bgImageSrc})`,
+            backgroundSize: bgImageScale === 100 ? "cover" : `${bgImageScale}%`,
+            backgroundPosition: bgImagePosition,
+            backgroundRepeat: "no-repeat",
+          } : {}),
           position: "relative",
           overflow: "hidden",
         }}
@@ -87,7 +97,6 @@ export default function SlideThumbnail({
           height={slideHeight}
           layoutId={slide?.["layout-id"]}
         />
-
         {textElements.filter((element) => !element.hidden).map((textElement, index) => {
           const placeholderFormatting = getPlaceholderFormatting(presentation, slide, textElement);
           const style = buildTextElementStyle(textElement, index, masterFormatting, placeholderFormatting);
@@ -97,7 +106,6 @@ export default function SlideThumbnail({
             </div>
           );
         })}
-
         {mediaElements.filter((element) => !element.hidden).map((media) => (
           <ThumbnailMedia key={media.id} media={media} />
         ))}

@@ -26,6 +26,7 @@ import {
   reorderSlides,
   toggleSlideHidden,
   updateSlideNotes,
+  updateSlideBackgroundImage,
 } from "../operations/slideOperations";
 import {
   addLayout,
@@ -524,6 +525,36 @@ export const editorReducer = (state, event) => {
         lastEvent: event,
         lastUpdated: Date.now(),
       };
+
+    case EditorEventType.SLIDE.UPDATE_BACKGROUND_IMAGE:
+      return {
+        ...state,
+        presentation: updateSlideBackgroundImage(
+          state.presentation,
+          event.payload.slideIndex ?? state.selectedSlideIndex,
+          event.payload.backgroundImage,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+
+    case EditorEventType.SLIDE.UPDATE_BACKGROUND_IMAGE_POSITION:
+    case EditorEventType.SLIDE.UPDATE_BACKGROUND_IMAGE_SCALE: {
+      const si = event.payload.slideIndex ?? state.selectedSlideIndex;
+      const slideContents = state.presentation?.slideset?.slides?.[si]?.contents ?? {};
+      return {
+        ...state,
+        presentation: updateSlideBackgroundImage(
+          state.presentation,
+          si,
+          slideContents["background-image"],
+          event.payload.position,
+          event.payload.scale,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+    }
 
     case EditorEventType.TEXT.ADD:
       return withHistory(state, {

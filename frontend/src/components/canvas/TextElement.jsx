@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import FormatToolbar from "./FormatToolbar";
 import "./TextElement.css";
-import { getPlaceholderFormatting } from "../../core/render/slidesetRenderUtils";
+import { getPlaceholderFormatting, getPlaceholderPadding } from "../../core/render/slidesetRenderUtils";
 import {
   resolveWeight,
   paragraphsToHTML,
@@ -78,6 +78,7 @@ export default function TextElement({
   const selectionFrameRef = useRef(null);
   const lastAutoFitHeightRef = useRef(null);
   const isDeletingRef = useRef(false);
+  const toolbarFormInputActiveRef = useRef(false);
 
 useEffect(() => {
   if (clearSelectionSignal === 0) return;
@@ -95,6 +96,15 @@ useEffect(() => {
     slide,
     textElement,
   );
+  const placeholderPadding = getPlaceholderPadding(presentation, slide, textElement);
+
+  const verticalAlign = formatting["vertical-align"]
+    ?? placeholderFormatting["vertical-align"]
+    ?? masterFormatting["vertical-align"]
+    ?? "top";
+  const justifyContent =
+    verticalAlign === "middle" ? "center" :
+    verticalAlign === "bottom" ? "flex-end" : "flex-start";
 
   const effectiveParaFormatting = resolveEffectiveFormatting(
     masterFormatting,
@@ -126,7 +136,7 @@ useEffect(() => {
     : { ...effectiveParaFormatting, ...pendingFormatting };
 
   // Per-paragraph list info so markers are scoped to each paragraph individually.
-  const paragraphListInfos = (textElement.paragraphs ?? []).map((p) => {
+  const paragraphListInfos = useMemo(() => (textElement.paragraphs ?? []).map((p) => {
     const pFmt = p.formatting ?? {};
     const firstRunFmt =
       (p.runs ?? []).find((run) => (run.text ?? "").length > 0)?.formatting ??
@@ -173,7 +183,7 @@ useEffect(() => {
         ),
       },
     };
-  });
+  }), [textElement.paragraphs, placeholderFormatting, masterFormatting]);
   const anyListPara = paragraphListInfos.find((p) => p.listType) ?? null;
   const listType = anyListPara?.listType ?? null;
 
@@ -264,7 +274,8 @@ useEffect(() => {
 
   useLayoutEffect(() => {
     const editable = editableRef.current;
-    if (!editable || !onAutoFit) return undefined;
+    const overflowMode = textElement.overflow ?? "auto-fit";
+    if (!editable || !onAutoFit || overflowMode !== "auto-fit") return undefined;
 
     const fitToContent = () => {
       const currentHeight = textElement.height ?? 80;
@@ -307,6 +318,29 @@ useEffect(() => {
     textElement.position,
     textElement.width,
   ]);
+
+  useLayoutEffect(() => {
+    const editable = editableRef.current;
+    if (!editable || (textElement.overflow ?? "auto-fit") !== "shrink-on-overflow") return;
+    const maxH = textElement.height ?? 80;
+    let scale = 1;
+    editable.style.transform = "";
+    editable.style.transformOrigin = "";
+    editable.style.width = "";
+    while (editable.scrollHeight > maxH + 1 && scale > 0.4) {
+      scale -= 0.02;
+      editable.style.transform = `scale(${scale})`;
+      editable.style.transformOrigin = "top left";
+      editable.style.width = `${(textElement.width ?? 300) / scale}px`;
+    }
+    return () => {
+      if (editable) {
+        editable.style.transform = "";
+        editable.style.transformOrigin = "";
+        editable.style.width = "";
+      }
+    };
+  }, [innerHTML, textElement.overflow, textElement.height, textElement.width]);
 
   const updateToolbarPosition = (anchorPoint = null) => {
     setTimeout(() => {
@@ -365,6 +399,9 @@ useEffect(() => {
   const syncSelectionToolbar = () => {
     const el = editableRef.current;
     if (!el) return;
+    // If focus is inside the FormatToolbar (e.g. size input), don't close the toolbar
+    const activeEl = document.activeElement;
+    if (activeEl && activeEl.closest?.(".format-toolbar")) return;
     const selection = window.getSelection();
     const hasTextSelection =
       selection &&
@@ -420,11 +457,21 @@ useEffect(() => {
         left: `${textElement.position?.x ?? 0}px`,
         top: `${textElement.position?.y ?? 0}px`,
         width: `${textElement.width ?? 300}px`,
-        minHeight: `${textElement.height ?? 80}px`,
+        ...(() => {
+          const om = textElement.overflow ?? "auto-fit";
+          const fixedH = `${textElement.height ?? 80}px`;
+          return om === "auto-fit"
+            ? { minHeight: fixedH }
+            : { height: fixedH, overflow: om === "none" ? "hidden" : "visible" };
+        })(),
         background: textElement.background ?? "transparent",
         zIndex: textElement["z-index"] ?? 1,
         transform: `rotate(${textElement.rotation ?? 0}deg)`,
         transformOrigin: "center center",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent,
+        ...(placeholderPadding ? { padding: placeholderPadding } : {}),
       }}
       onMouseDown={(event) => {
         if (
@@ -466,6 +513,7 @@ useEffect(() => {
             formatPainterClipboard={formatPainterClipboard}
             onFormatPainterCopy={onFormatPainterCopy}
             onFormatPainterPaste={onFormatPainterPaste}
+            onFormInputMouseDown={() => { toolbarFormInputActiveRef.current = true; }}
             style={{
               position: "fixed",
               top: toolbarPos.top,
@@ -481,6 +529,7 @@ useEffect(() => {
           className="list-markers-overlay"
           style={{
             left: 0,
+            top: placeholderPadding ? placeholderPadding.trim().split(/\s+/)[0] : 0,
             width: "100%",
             fontSize: resolveTextStyle(
               formatting.size,
@@ -683,11 +732,13 @@ useEffect(() => {
         onBlur={(e) => {
           const relatedTarget = e.relatedTarget;
           const goingToToolbar =
-            relatedTarget &&
+            toolbarFormInputActiveRef.current ||
+            (relatedTarget &&
             (relatedTarget.closest?.(".format-toolbar") ||
               relatedTarget.closest?.(".toolbar") ||
               relatedTarget.closest?.(".toolbar-ribbon") ||
-              relatedTarget.closest?.(".bg-palette-popup"));
+              relatedTarget.closest?.(".bg-palette-popup")));
+          toolbarFormInputActiveRef.current = false;
           const domSel = window.getSelection();
           const hasRealSelection =
             domSel && !domSel.isCollapsed && domSel.rangeCount > 0;

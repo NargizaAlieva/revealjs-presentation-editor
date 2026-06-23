@@ -17,7 +17,7 @@ export default function SlideList({
 }) {
   const commentCounts = getSlideCommentCounts(slides);
   const listRef = useRef(null);
-  const [panelWidth, setPanelWidth] = useState(220);
+  const [panelWidth, setPanelWidth] = useState(280);
   const isDraggingResize = useRef(false);
   const startX = useRef(0);
   const startWidth = useRef(0);

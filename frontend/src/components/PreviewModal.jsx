@@ -23,6 +23,7 @@ import {
   getPerLineFragments,
 } from "../core/render/revealRenderer";
 import { getPlaceholderFormatting } from "../core/render/slidesetRenderUtils";
+import { REFLECTION_PRESETS } from "../core/model/imageEffects";
 
 function PreviewMediaElement({ media, index, fragmentProps }) {
   const src = useMediaSrc(media["file-link"]);
@@ -30,14 +31,41 @@ function PreviewMediaElement({ media, index, fragmentProps }) {
   const innerStyle = buildMediaInnerStyle(media);
   const videoAttrs = buildVideoAttributes(media);
 
+  const refId = media.effects?.reflectionId;
+  const rp = refId && refId !== "none" ? REFLECTION_PRESETS.find((p) => p.id === refId) : null;
+
   return (
-    <div style={buildMediaContainerStyle(media, index)} {...fragmentProps}>
-      {isVideo ? (
-        <video src={src} style={innerStyle} controls preload="metadata" {...videoAttrs} />
-      ) : (
-        <img src={src} alt="" style={innerStyle} />
+    <>
+      <div style={buildMediaContainerStyle(media, index)} {...fragmentProps}>
+        {isVideo ? (
+          <video src={src} style={innerStyle} controls preload="metadata" {...videoAttrs} />
+        ) : (
+          <img src={src} alt="" style={innerStyle} />
+        )}
+      </div>
+      {rp && rp.size > 0 && src && (
+        <img
+          src={src}
+          alt=""
+          style={{
+            position: "absolute",
+            left: media.position?.x ?? 0,
+            top: (media.position?.y ?? 0) + (media.height ?? 200) + (rp.offset ?? 0),
+            width: media.width ?? 200,
+            height: Math.round((rp.size / 100) * (media.height ?? 200)),
+            objectFit: "cover",
+            objectPosition: "top",
+            transform: "scaleY(-1)",
+            opacity: rp.opacity,
+            filter: rp.blur > 0 ? `blur(${rp.blur}px)` : undefined,
+            WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
+            maskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
+            pointerEvents: "none",
+            zIndex: media["z-index"] ?? index + 1,
+          }}
+        />
       )}
-    </div>
+    </>
   );
 }
 

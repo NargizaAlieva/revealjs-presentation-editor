@@ -83,6 +83,8 @@ export default function EditorPage() {
           currentFormatting={ctrl.currentFormatting}
           onFormatChange={ctrl.handleFormatChange}
           onChangeCase={ctrl.handleChangeCase}
+          onTextOverflowChange={ctrl.handleTextOverflowChange}
+          selectedTextOverflow={ctrl.selectedTextEl?.overflow ?? ctrl.masterSelectedTextEl?.overflow ?? "auto-fit"}
           isTextSelected={
             !!(ctrl.isSlideMasterOpen
               ? ctrl.masterSelectedTextEl
@@ -108,6 +110,11 @@ export default function EditorPage() {
           onApplyLayoutFont={ctrl.applyLayoutFont}
           onUpdateDimensions={ctrl.handleUpdateDimensions}
           onApplyBackground={ctrl.handleApplyBackground}
+          onApplyBackgroundImage={ctrl.handleApplyBackgroundImage}
+          onRemoveBackgroundImage={ctrl.handleRemoveBackgroundImage}
+          onUpdateBackgroundImagePosition={ctrl.handleUpdateBackgroundImagePosition}
+          onUpdateBackgroundImageScale={ctrl.handleUpdateBackgroundImageScale}
+          selectedSlide={ctrl.selectedSlide}
           layouts={ctrl.layouts}
           currentView={ctrl.currentView}
           onChangeView={ctrl.setCurrentView}
@@ -251,6 +258,7 @@ export default function EditorPage() {
                   onCut={ctrl.handleCut}
                   onNewComment={ctrl.handleNewComment}
                   onOpenPictureFormat={() => ctrl.setActiveTab("Picture Format")}
+                  onUpdateBackgroundImagePosition={ctrl.handleUpdateBackgroundImagePosition}
                   cropSignal={ctrl.cropSignal}
                   previewMediaEffects={ctrl.previewMediaEffects}
                   previewMediaStyleId={ctrl.previewMediaStyleId}

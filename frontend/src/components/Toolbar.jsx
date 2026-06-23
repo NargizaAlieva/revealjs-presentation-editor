@@ -66,6 +66,8 @@ export default function Toolbar({
   currentFormatting,
   onFormatChange,
   onChangeCase,
+  onTextOverflowChange,
+  selectedTextOverflow,
   isTextSelected,
   presentation,
   onNewPresentation,
@@ -88,6 +90,11 @@ export default function Toolbar({
   onApplyFont,
   onApplyLayoutFont,
   onUpdateDimensions,
+  onApplyBackgroundImage,
+  onRemoveBackgroundImage,
+  onUpdateBackgroundImagePosition,
+  onUpdateBackgroundImageScale,
+  selectedSlide,
   currentView,
   onChangeView,
   showNotes,
@@ -241,6 +248,8 @@ useEffect(() => {
             currentFormatting={currentFormatting}
             onFormatChange={onFormatChange}
             onChangeCase={onChangeCase}
+            onTextOverflowChange={onTextOverflowChange}
+            selectedTextOverflow={selectedTextOverflow}
             isTextSelected={isTextSelected}
             presentation={presentation}
             onCut={onCut}
@@ -268,6 +277,13 @@ useEffect(() => {
             onAddSlide={onAddSlide}
             onAddTextElement={onAddTextElement}
             layouts={layouts}
+            onApplyBackgroundImage={onApplyBackgroundImage}
+            onRemoveBackgroundImage={onRemoveBackgroundImage}
+            onUpdateBackgroundImagePosition={onUpdateBackgroundImagePosition}
+            onUpdateBackgroundImageScale={onUpdateBackgroundImageScale}
+            currentBgImage={selectedSlide?.contents?.["background-image"] ?? null}
+            currentBgPosition={selectedSlide?.contents?.["background-image-position"] ?? "center center"}
+            currentBgScale={selectedSlide?.contents?.["background-image-scale"] ?? 100}
           />
         )}
 
@@ -277,6 +293,9 @@ useEffect(() => {
             onApplyTheme={onApplyTheme}
             onApplyFont={onApplyFont}
             onUpdateDimensions={onUpdateDimensions}
+            onApplyBackgroundImage={onApplyBackgroundImage}
+            onRemoveBackgroundImage={onRemoveBackgroundImage}
+            selectedSlide={selectedSlide}
           />
         )}
 

@@ -405,7 +405,7 @@ function PresetSubPanel({ src, effects, onSelect, onHover, onHoverClear }) {
     }
     if (fx.rotation3dId) {
       const rp = ROTATION3D_PRESETS.find((r) => r.id === fx.rotation3dId);
-      if (rp?.transform) style.transform = rp.transform;
+      if (rp?.transform) style.transform = rp.transform.replace("perspective(none) ", "");
     }
     return style;
   };
@@ -945,6 +945,8 @@ function PictureEffectsPopover({ src, effects, onUpdate, onClose, anchorRef, onP
               e.preventDefault();
               const cleaned = { ...effects };
               FX_MENU.forEach((m) => delete cleaned[m.key]);
+              delete cleaned._glowShadow;
+              delete cleaned._glowColor;
               onUpdate({ effects: cleaned });
             }}>
             ↺ Remove All Effects

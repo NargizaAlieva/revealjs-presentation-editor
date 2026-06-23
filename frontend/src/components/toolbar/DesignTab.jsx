@@ -84,7 +84,7 @@ function ThemeThumbnail({ theme, isActive, onClick }) {
     );
 }
 
-function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions }) {
+function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onApplyBackgroundImage, onRemoveBackgroundImage, currentBgImage }) {
     const [showPalette, setShowPalette] = useState(false);
     const [showSizeMenu, setShowSizeMenu] = useState(false);
     const [showCustomSize, setShowCustomSize] = useState(false);
@@ -163,7 +163,6 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
                     </select>
                 </div>
 
-                <span className="ribbon-group-title">Customize</span>
             </div>
 
             <div className="design-right-divider" />
@@ -243,14 +242,13 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
                     </div>
                 </div>
 
-                <span className="ribbon-group-title">Slide Size</span>
             </div>
 
         </div>
     );
 }
 
-export default function DesignTab({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions }) {
+export default function DesignTab({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onApplyBackgroundImage, onRemoveBackgroundImage, selectedSlide }) {
     const currentTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
     const activeTheme = findActiveTheme(currentTheme);
 
@@ -277,6 +275,9 @@ export default function DesignTab({ presentation, onApplyTheme, onApplyFont, onU
                 onApplyTheme={onApplyTheme}
                 onApplyFont={onApplyFont}
                 onUpdateDimensions={onUpdateDimensions}
+                onApplyBackgroundImage={onApplyBackgroundImage}
+                onRemoveBackgroundImage={onRemoveBackgroundImage}
+                currentBgImage={selectedSlide?.contents?.["background-image"] ?? null}
             />
         </div>
     );

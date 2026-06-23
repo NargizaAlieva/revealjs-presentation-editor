@@ -14,6 +14,7 @@ import {
   isSelectAllShortcut,
 } from "../core/events/keyboardShortcuts";
 import { useCanvasInteractions } from "../hooks/useCanvasInteractions";
+import { useMediaSrc } from "../hooks/useMediaSrc";
 import { findElementInSlide } from "../core/operations/elementOperations";
 import { TRANSPARENT_SLIDE_BG } from "../core/operations/slideOperations";
 import TextElement from "./canvas/TextElement";
@@ -64,6 +65,7 @@ export default function EditorCanvas({
   onCut,
   onNewComment,
   onOpenPictureFormat,
+  onUpdateBackgroundImagePosition,
   cropSignal,
   previewMediaEffects,
   previewMediaStyleId,
@@ -84,6 +86,25 @@ export default function EditorCanvas({
 
   const { width, height } = getSlideSize(presentation);
   const colorThemeStyle = buildColorThemeStyle(presentation);
+
+  const bgImageKey = slide?.contents?.["background-image"] ?? null;
+  const bgImageSrc = useMediaSrc(bgImageKey);
+  const bgImageScale = slide?.contents?.["background-image-scale"] ?? 100;
+
+  // Parse stored position ("50% 50%", "left top", etc.) → {x,y} in percent
+  const parseBgPosition = (pos) => {
+    const keywordMap = { left: 0, center: 50, right: 100, top: 0, bottom: 100 };
+    const parts = (pos ?? "center center").split(" ");
+    const parse = (v) => (v in keywordMap ? keywordMap[v] : parseFloat(v));
+    return { x: parse(parts[0] ?? "50"), y: parse(parts[1] ?? "50") };
+  };
+
+  const storedBgPos = parseBgPosition(slide?.contents?.["background-image-position"]);
+  const [bgDragPos, setBgDragPos] = useState(null); // {x,y} while dragging
+  const bgDragRef = useRef(null);
+  const bgImagePosition = bgDragPos
+    ? `${bgDragPos.x}% ${bgDragPos.y}%`
+    : `${storedBgPos.x}% ${storedBgPos.y}%`;
 
   const zoomScale = zoom / 100;
   const scaledWidth = width * zoomScale;
@@ -403,11 +424,50 @@ export default function EditorCanvas({
                     slide.contents.background === TRANSPARENT_SLIDE_BG
                       ? "var(--bg-light, white)"
                       : slide.contents.background,
+                  ...(bgImageSrc ? {
+                    backgroundImage: `url(${bgImageSrc})`,
+                    backgroundSize: bgImageScale === 100 ? "cover" : `${bgImageScale}%`,
+                    backgroundPosition: bgImagePosition,
+                    backgroundRepeat: "no-repeat",
+                  } : {}),
                   color: "var(--text-dark, black)",
+                  cursor: bgImageSrc && !selectedElementId ? "grab" : undefined,
                 }}
                 onMouseMove={handleMouseMove}
                 onMouseUp={stopInteraction}
                 onMouseLeave={stopInteraction}
+                onMouseDown={(event) => {
+                  if (!bgImageSrc || event.target !== event.currentTarget) return;
+                  if (event.button !== 0) return;
+                  event.preventDefault();
+                  const startX = event.clientX;
+                  const startY = event.clientY;
+                  const startPos = { ...storedBgPos };
+                  bgDragRef.current = true;
+
+                  const onMove = (me) => {
+                    const dx = (me.clientX - startX) / (width * zoomScale / 100);
+                    const dy = (me.clientY - startY) / (height * zoomScale / 100);
+                    setBgDragPos({
+                      x: Math.max(0, Math.min(100, startPos.x - dx)),
+                      y: Math.max(0, Math.min(100, startPos.y - dy)),
+                    });
+                  };
+                  const onUp = (me) => {
+                    window.removeEventListener("mousemove", onMove);
+                    window.removeEventListener("mouseup", onUp);
+                    if (!bgDragRef.current) return;
+                    const dx = (me.clientX - startX) / (width * zoomScale / 100);
+                    const dy = (me.clientY - startY) / (height * zoomScale / 100);
+                    const nx = Math.max(0, Math.min(100, startPos.x - dx));
+                    const ny = Math.max(0, Math.min(100, startPos.y - dy));
+                    setBgDragPos(null);
+                    bgDragRef.current = false;
+                    onUpdateBackgroundImagePosition?.(`${Math.round(nx)}% ${Math.round(ny)}%`);
+                  };
+                  window.addEventListener("mousemove", onMove);
+                  window.addEventListener("mouseup", onUp);
+                }}
                 onClick={(event) => {
                   if (event.target === event.currentTarget) {
                     onSelectElement?.(null);

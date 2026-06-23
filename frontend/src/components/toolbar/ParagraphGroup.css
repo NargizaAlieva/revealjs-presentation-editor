@@ -1,6 +1,6 @@
 .paragraph-group {
-  width: 190px;
-  flex: 0 0 190px;
+  width: 250px;
+  flex: 0 0 250px;
   padding-left: 10px;
   padding-right: 10px;
   overflow: visible;
@@ -140,4 +140,168 @@
   height: 2px;
   background: #ccc;
   border-radius: 1px;
+}
+
+/* ── Line spacing split-button ── */
+
+.ls-split-btn {
+  width: 38px;
+  flex: 0 0 38px;
+}
+
+.ls-split-btn > .small-format {
+  width: 24px;
+  flex: 0 0 24px;
+}
+
+/* ── Line spacing preset dropdown ── */
+
+.ls-popup {
+  min-width: 160px;
+  padding: 4px 0;
+}
+
+.ls-preset-item {
+  display: block;
+  width: 100%;
+  padding: 5px 14px;
+  text-align: left;
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: #222;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.ls-preset-item:hover {
+  background: #eef0fd;
+  color: #4f46e5;
+}
+
+.ls-preset-item.selected {
+  font-weight: 600;
+  color: #4f46e5;
+}
+
+.ls-popup-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 4px 0;
+}
+
+.ls-options-link {
+  display: block;
+  width: 100%;
+  padding: 5px 14px;
+  text-align: left;
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: #4f46e5;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.ls-options-link:hover {
+  background: #eef0fd;
+}
+
+/* ── Line Spacing Options panel ── */
+
+.ls-options-popup {
+  min-width: 200px;
+  padding: 10px 12px;
+}
+
+.ls-options-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+.ls-options-row {
+  margin-bottom: 6px;
+}
+
+.ls-options-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #374151;
+}
+
+.ls-options-label > span:first-child {
+  min-width: 72px;
+  color: #6b7280;
+}
+
+.ls-options-input {
+  width: 46px;
+  height: 22px;
+  padding: 0 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 3px;
+  font-size: 12px;
+  text-align: center;
+  background: #fff;
+  -moz-appearance: textfield;
+}
+
+.ls-options-input::-webkit-inner-spin-button,
+.ls-options-input::-webkit-outer-spin-button {
+  opacity: 1;
+}
+
+.ls-options-input:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.ls-options-select {
+  height: 22px;
+  padding: 0 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 3px;
+  font-size: 12px;
+  background: #fff;
+}
+
+.ls-options-select:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.ls-options-unit {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.ls-options-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.ls-options-ok {
+  padding: 3px 14px;
+  background: #4f46e5;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ls-options-ok:hover {
+  background: #4338ca;
+}
+
+.align-text-item {
+  display: flex;
+  align-items: center;
 }

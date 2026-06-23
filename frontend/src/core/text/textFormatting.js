@@ -178,8 +178,15 @@ export const runsToHTML = (runs) =>
           : superSub === "sub"
             ? "vertical-align:sub;font-size:0.75em"
             : "";
-      const allStyles = [styles, superSubStyle].filter(Boolean).join(";");
+      const linkStyle = run.link?.href
+        ? "color:var(--link,#2563eb);text-decoration:underline;cursor:pointer"
+        : "";
+      const allStyles = [styles, superSubStyle, linkStyle].filter(Boolean).join(";");
       const text = escapeHTML(run.text ?? "");
+      if (run.link?.href) {
+        const title = `title="🔗 ${escapeHTML(run.link.href)}"`;
+        return `<span style="${allStyles}" ${title} data-link="${escapeHTML(run.link.href)}">${text}</span>`;
+      }
       return allStyles ? `<span style="${allStyles}">${text}</span>` : text;
     })
     .join("");
@@ -204,6 +211,9 @@ export const paragraphsToHTML = (paragraphs, masterFormatting = {}, placeholderF
           : "",
         formatting["line-spacing"] || placeholderFormatting["line-spacing"] || masterFormatting["line-spacing"]
           ? `line-height:${r(formatting["line-spacing"], placeholderFormatting["line-spacing"], masterFormatting["line-spacing"])}`
+          : "",
+        r(formatting.margin, placeholderFormatting.margin, masterFormatting.margin)
+          ? `margin:${r(formatting.margin, placeholderFormatting.margin, masterFormatting.margin)}`
           : "",
       ]
         .filter(Boolean)

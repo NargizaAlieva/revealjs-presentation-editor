@@ -14,6 +14,7 @@ import {
   computeFormattingState,
   useApplyFormatting,
 } from "./useFormattingState";
+import { EditorEventType, createEditorEvent } from "../core/events/editorEvents";
 import { getSlideSize } from "../core/render/slidesetRenderUtils";
 import { getSlideElement } from "../core/operations/slideOperations";
 import { getElementLabel } from "../core/operations/elementOperations";
@@ -551,6 +552,35 @@ useEffect(() => {
     [presentation, updateMasterTheme],
   );
 
+  const handleApplyBackgroundImage = useCallback(
+    async (file) => {
+      if (!file || !file.type.startsWith("image/")) return;
+      const { key } = await storeMediaFile(file);
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.SLIDE.UPDATE_BACKGROUND_IMAGE, { backgroundImage: `indexeddb://${key}` }),
+      );
+    },
+    [eventBus],
+  );
+
+  const handleRemoveBackgroundImage = useCallback(() => {
+    eventBus.dispatch(
+      createEditorEvent(EditorEventType.SLIDE.UPDATE_BACKGROUND_IMAGE, { backgroundImage: null }),
+    );
+  }, [eventBus]);
+
+  const handleUpdateBackgroundImagePosition = useCallback((position) => {
+    eventBus.dispatch(
+      createEditorEvent(EditorEventType.SLIDE.UPDATE_BACKGROUND_IMAGE_POSITION, { position }),
+    );
+  }, [eventBus]);
+
+  const handleUpdateBackgroundImageScale = useCallback((scale) => {
+    eventBus.dispatch(
+      createEditorEvent(EditorEventType.SLIDE.UPDATE_BACKGROUND_IMAGE_SCALE, { scale }),
+    );
+  }, [eventBus]);
+
   const handleUpdateDimensions = useCallback(
     (dimensions, aspectRatio, units) => {
       const w = clampSlideDimension(dimensions.width, 1280);
@@ -895,6 +925,14 @@ useEffect(() => {
     ],
   );
 
+  const handleTextOverflowChange = useCallback(
+    (mode) => {
+      if (!selectedElementId) return;
+      updateElement(selectedElementId, { overflow: mode });
+    },
+    [selectedElementId, updateElement],
+  );
+
   const handleChangeCase = useCallback(
     (mode) => {
       if (!selectedTextEl) return;
@@ -1118,9 +1156,6 @@ useEffect(() => {
     [updateMasterElement],
   );
 
-  // Global undo/redo shortcut — intercepts Ctrl+Z/Y everywhere including contentEditable,
-  // preventing the browser's built-in undo from interfering with our history stack.
-  // Native <input> and <textarea> elements are excluded so they keep browser-native undo.
   useEffect(() => {
     const handleKeyDown = (event) => {
       const target = event.target;
@@ -1210,6 +1245,10 @@ useEffect(() => {
     objectSelectionMode,
 
     handleApplyBackground,
+    handleApplyBackgroundImage,
+    handleRemoveBackgroundImage,
+    handleUpdateBackgroundImagePosition,
+    handleUpdateBackgroundImageScale,
     handleUpdateDimensions,
     activeImageUpload,
     activeVideoUpload,
@@ -1228,6 +1267,7 @@ useEffect(() => {
     handleDeleteAndGoHome,
     handleFormatChange,
     handleChangeCase,
+    handleTextOverflowChange,
     handleStartEditing,
     handleStopEditing,
     handleSaveSelection,

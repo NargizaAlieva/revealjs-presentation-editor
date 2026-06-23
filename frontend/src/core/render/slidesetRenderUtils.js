@@ -105,6 +105,19 @@ export function getPlaceholderFormatting(presentation, slide, textElement) {
   return placeholder?.formatting ?? {};
 }
 
+export function getPlaceholderPadding(presentation, slide, textElement) {
+  const layoutId = slide?.["layout-id"];
+  const placeholderId = textElement?.["placeholder-id"];
+  if (!layoutId || !placeholderId) return null;
+  const layout = (presentation?.slideset?.layouts ?? []).find(
+    (l) => l["layout-id"] === layoutId,
+  );
+  const placeholder = (layout?.placeholders ?? []).find(
+    (ph) => ph["placeholder-id"] === placeholderId,
+  );
+  return placeholder?.padding?.css ?? null;
+}
+
 const RUN_LEVEL_KEYS = new Set(["super-sub-script"]);
 
 export function migrateParagraphFormatting(paragraphs, placeholderFormatting, masterFormatting = {}) {

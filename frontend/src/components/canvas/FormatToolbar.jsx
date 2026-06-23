@@ -35,6 +35,7 @@ export default function FormatToolbar({
   formatPainterClipboard = null,
   onFormatPainterCopy,
   onFormatPainterPaste,
+  onFormInputMouseDown,
 }) {
   const [lastHighlightColor, setLastHighlightColor] = useState("#ffff00");
   const [justCopied, setJustCopied] = useState(false);
@@ -127,6 +128,8 @@ export default function FormatToolbar({
         const tag = event.target.tagName;
         if (tag !== "SELECT" && tag !== "INPUT" && tag !== "TEXTAREA") {
           event.preventDefault();
+        } else {
+          onFormInputMouseDown?.();
         }
       }}
       onClick={stop}

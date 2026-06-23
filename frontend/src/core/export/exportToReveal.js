@@ -5,6 +5,7 @@ import {
   getTextElements,
   getMediaElements,
   getPlaceholderFormatting,
+  getPlaceholderPadding,
 } from "../render/slidesetRenderUtils";
 import {
   buildTextElementStyle,
@@ -14,6 +15,8 @@ import {
   buildAnimationMap,
   styleToString,
 } from "../render/revealRenderer";
+import { getListMarker, getListIndent } from "../utils/listUtils";
+import { REFLECTION_PRESETS } from "../model/imageEffects";
 import { downloadHtml } from "./downloadHtml";
 import { getMediaFile } from "../persistence/persistenceFacade";
 import JSZip from "jszip";
@@ -130,12 +133,17 @@ function applyFragment(innerHtml, wrapperStyle, animation) {
   return `<div class="${classes}" ${dataAttrs} style="${wrapperStyle}">${innerHtml}</div>`;
 }
 
-function buildPStyle(paragraphFormatting) {
+function buildPStyle(paragraphFormatting, listPaddingLeft = null) {
+  const indent = paragraphFormatting["indent-level"] ?? 0;
+  const paddingLeft = listPaddingLeft
+    ?? (indent > 0 ? getListIndent(indent - 1, "indent") : null);
   return [
     paragraphFormatting.align ? `text-align: ${paragraphFormatting.align}` : "",
     paragraphFormatting.margin
       ? `margin: ${paragraphFormatting.margin}`
       : "margin: 0 0 4px 0",
+    paragraphFormatting["line-spacing"] ? `line-height: ${paragraphFormatting["line-spacing"]}` : "",
+    paddingLeft ? `padding-left: ${paddingLeft}` : "",
   ].filter(Boolean).join("; ");
 }
 
@@ -147,7 +155,9 @@ function buildRunHtml(run) {
     runFormatting.italics ? "font-style: italic" : "",
     runFormatting.color ? `color: ${runFormatting.color}` : "",
     runFormatting.size ? `font-size: ${runFormatting.size}` : "",
+    runFormatting.font ? `font-family: ${runFormatting.font}` : "",
     runFormatting["text-decoration"] ? `text-decoration: ${runFormatting["text-decoration"]}` : "",
+    runFormatting.highlight && runFormatting.highlight !== "transparent" ? `background-color: ${runFormatting.highlight}` : "",
     superSub === "super" ? "vertical-align: super; font-size: 0.75em" : "",
     superSub === "sub" ? "vertical-align: sub; font-size: 0.75em" : "",
   ].filter(Boolean).join("; ");
@@ -163,13 +173,34 @@ function buildTextElementContent(textElement, animation) {
   const sequenceMode = animation?.["effect-options"]?.sequence ?? "as-one-object";
   const perLine = animation && sequenceMode !== "as-one-object";
 
+  let numberedCounter = 0;
   return textElement.paragraphs
     .map((paragraph, pIdx) => {
       const paragraphFormatting = paragraph.formatting ?? {};
-      const pStyle = buildPStyle(paragraphFormatting);
+      const listType = paragraphFormatting["list-type"];
+      const listLevel = paragraphFormatting["indent-level"] ?? 0;
+      const listMarker = paragraphFormatting["list-marker"];
+      const listNumberedStyle = paragraphFormatting["list-numbered-style"];
+
+      if (listType === "numbered") numberedCounter++;
+      else if (!listType) numberedCounter = 0;
+
+      const listPaddingLeft = listType
+        ? `calc(${getListIndent(listLevel, listType)} + 1.2em)`
+        : null;
+      const pStyle = buildPStyle(paragraphFormatting, listPaddingLeft);
+
+      const markerHtml = listType
+        ? `<span style="display:inline-block;width:1.2em;margin-left:calc(-1.2em);text-align:center;">${
+            listType === "numbered"
+              ? getListMarker(numberedCounter - 1, "numbered", null, listNumberedStyle)
+              : getListMarker(pIdx, "bullets", listMarker, null)
+          }</span>`
+        : "";
+
       const runsHtml = (paragraph.runs ?? []).map(buildRunHtml).join("");
 
-      if (!perLine) return `<p style="${pStyle}">${runsHtml}</p>`;
+      if (!perLine) return `<p style="${pStyle}">${markerHtml}${runsHtml}</p>`;
 
       const fragIndex = sequenceMode === "all-at-once"
         ? animation.sequence
@@ -179,7 +210,7 @@ function buildTextElementContent(textElement, animation) {
         fragIndex,
         animation["effect-options"]?.speed ?? animation.speed,
       );
-      return `<p class="${classes}" ${dataAttrs} style="${pStyle}">${runsHtml}</p>`;
+      return `<p class="${classes}" ${dataAttrs} style="${pStyle}">${markerHtml}${runsHtml}</p>`;
     })
     .join("");
 }
@@ -204,7 +235,35 @@ function buildMasterElementsHtml(presentation, masterFormatting, getSrc) {
     const inner = isVideo
       ? `<video src="${escapeHtml(src)}" style="${innerStyle}" preload="metadata"${autoPlay ? " autoplay" : ""}${loop ? " loop" : ""}${muted ? " muted" : ""}></video>`
       : `<img src="${escapeHtml(src)}" alt="${escapeHtml(media.decorative ? "" : (media.alt ?? ""))}" style="${innerStyle}" />`;
-    return `<div style="${wrapperStyle}">${inner}</div>`;
+
+    const refId = media.effects?.reflectionId;
+    const rp = refId && refId !== "none" ? REFLECTION_PRESETS.find((p) => p.id === refId) : null;
+    const reflectionHtml = rp && rp.size > 0 ? (() => {
+      const elH = media.height ?? 200;
+      const elW = media.width ?? 200;
+      const refH = Math.round((rp.size / 100) * elH);
+      const x = media.position?.x ?? 0;
+      const y = (media.position?.y ?? 0) + elH + (rp.offset ?? 0);
+      const refStyle = [
+        `position:absolute`,
+        `left:${x}px`,
+        `top:${y}px`,
+        `width:${elW}px`,
+        `height:${refH}px`,
+        `object-fit:cover`,
+        `object-position:top`,
+        `transform:scaleY(-1)`,
+        `opacity:${rp.opacity}`,
+        rp.blur > 0 ? `filter:blur(${rp.blur}px)` : "",
+        `-webkit-mask-image:linear-gradient(to bottom,black 0%,transparent 100%)`,
+        `mask-image:linear-gradient(to bottom,black 0%,transparent 100%)`,
+        `pointer-events:none`,
+        `z-index:${(media["z-index"] ?? index + 1)}`,
+      ].filter(Boolean).join(";");
+      return `<img src="${escapeHtml(src)}" alt="" style="${refStyle}" />`;
+    })() : "";
+
+    return `<div style="${wrapperStyle}">${inner}</div>${reflectionHtml}`;
   }).join("");
 
   return textsHtml + mediaHtml;
@@ -237,6 +296,11 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
   const transitionDuration = slide.contents?.transitionDuration ?? 0.75;
   const transitionSpeed = TRANSITION_SPEED_MAP[transitionDuration] ?? "default";
   const background = slide.contents?.background ?? "var(--bg-light, white)";
+  const backgroundImageKey = slide.contents?.["background-image"] ?? null;
+  const backgroundImageSrc = backgroundImageKey ? getSrc(backgroundImageKey) : null;
+  const backgroundImagePosition = slide.contents?.["background-image-position"] ?? "center center";
+  const backgroundImageScale = slide.contents?.["background-image-scale"] ?? 100;
+  const backgroundImageSize = backgroundImageScale === 100 ? "cover" : `${backgroundImageScale}%`;
   const animationMap = buildAnimationMap(slide);
   const adjustedSeqMap = buildAdjustedSequenceMap(
     slide.contents?.animations ?? [],
@@ -249,7 +313,8 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
       const animation = animationMap.get(textElement.id);
       const sequenceMode = animation?.["effect-options"]?.sequence ?? "as-one-object";
       const placeholderFormatting = getPlaceholderFormatting(presentation, slide, textElement);
-      const style = styleToString(buildTextElementStyle(textElement, index, masterFormatting, placeholderFormatting));
+      const placeholderPadding = getPlaceholderPadding(presentation, slide, textElement);
+      const style = styleToString(buildTextElementStyle(textElement, index, masterFormatting, placeholderFormatting, placeholderPadding));
       const adjustedAnim = animation && adjustedSeqMap.has(animation.id)
         ? { ...animation, sequence: adjustedSeqMap.get(animation.id) }
         : animation;
@@ -268,11 +333,12 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
       const wrapperStyle = styleToString(buildMediaContainerStyle(media, index));
       const innerStyle = styleToString(buildMediaInnerStyle(media));
       const { autoPlay, loop, muted } = buildVideoAttributes(media);
+      const showControls = media.playback?.controls !== false;
       const src = getSrc(media["file-link"] ?? "");
       const isVideo = media["media-type"] === "video";
 
       const mediaHtml = isVideo
-        ? `<video src="${escapeHtml(src)}" style="${innerStyle}" preload="metadata"${autoPlay ? " autoplay" : ""}${loop ? " loop" : ""}${muted ? " muted" : ""}></video>`
+        ? `<video src="${escapeHtml(src)}" style="${innerStyle}" preload="metadata"${autoPlay ? " autoplay" : ""}${loop ? " loop" : ""}${muted ? " muted" : ""}${showControls ? " controls" : ""}></video>`
         : `<img src="${escapeHtml(src)}" alt="${escapeHtml(media.decorative ? "" : (media.alt ?? ""))}" style="${innerStyle}" />`;
 
       const adjustedMediaAnim = animation && adjustedSeqMap.has(animation.id)
@@ -282,11 +348,14 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
     })
     .join("");
 
+  const notes = slide.contents?.notes ?? "";
+  const notesHtml = notes ? `<aside class="notes">${escapeHtml(notes)}</aside>` : "";
+
   return `
     <section
       data-transition="${escapeHtml(transition)}"
       data-transition-speed="${transitionSpeed}"
-      style="background: ${background};"
+      ${backgroundImageSrc ? `data-background-image="${escapeHtml(backgroundImageSrc)}" data-background-size="${backgroundImageSize}" data-background-position="${escapeHtml(backgroundImagePosition)}"` : `style="background: ${background};"`}
     >
       <div style="position: relative; width: ${width}px; height: ${height}px; overflow: hidden;">
         ${buildDecorationsHtml(presentation, width, height)}
@@ -294,6 +363,7 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
         ${textElementsHtml}
         ${mediaElementsHtml}
       </div>
+      ${notesHtml}
     </section>`;
 }
 
