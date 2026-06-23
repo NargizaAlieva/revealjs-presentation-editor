@@ -6,6 +6,8 @@ import {
   buildVideoAttributes,
 } from "../../core/render/revealRenderer";
 import MediaContextMenu from "./MediaContextMenu";
+import ImageStylePicker from "./ImageStylePicker";
+import { getStyleById } from "../../core/model/imageStyles";
 import "./MediaElement.css";
 
 const RESIZE_HANDLES = [
@@ -49,6 +51,8 @@ export default function MediaElement({
   const isVideo = media["media-type"] === "video";
 
   const [contextMenu, setContextMenu] = useState(null);
+  const [stylePicker, setStylePicker] = useState(null);
+  const [previewStyleId, setPreviewStyleId] = useState(null);
   const [isCropping, setIsCropping] = useState(false);
   const [localCrop, setLocalCrop] = useState([0, 0, 0, 0]);
   // full image origin/size while in crop mode
@@ -255,6 +259,14 @@ export default function MediaElement({
     window.addEventListener("mouseup", onUp);
   }, []);
 
+  const activeStyleId = previewStyleId ?? media.effects?.["style-id"];
+  const activeStyleCss = activeStyleId ? getStyleById(activeStyleId).css : {};
+  const baseContainerStyle = buildMediaContainerStyle(media, 0);
+  const combinedTransform = [
+    baseContainerStyle.transform ?? null,
+    activeStyleCss.transform ?? null,
+  ].filter(Boolean).join(" ");
+
   const containerStyle = isCropping && cropOrigin
     ? {
         position: "absolute",
@@ -266,7 +278,7 @@ export default function MediaElement({
         zIndex: media["z-index"] ?? 1,
         overflow: "visible",
       }
-    : buildMediaContainerStyle(media, 0);
+    : { ...baseContainerStyle, ...activeStyleCss, ...(combinedTransform ? { transform: combinedTransform } : {}), overflow: "visible" };
 
   const innerStyle = isCropping
     ? { width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "auto" }
@@ -359,19 +371,23 @@ export default function MediaElement({
           <div className="crop-shade" style={{ top: tPx, bottom: bPx, left: 0, width: lPx, cursor: "move" }} onMouseDown={startCropElementDrag} />
           <div className="crop-shade" style={{ top: tPx, bottom: bPx, right: 0, width: rPx, cursor: "move" }} onMouseDown={startCropElementDrag} />
         </div>
-      ) : isVideo ? (
-        <>
-          <video
-            src={resolvedSrc} className="canvas-media" style={innerStyle}
-            controls={isPrimarySelected}
-            {...videoAttrs}
-          />
-          {!isPrimarySelected && (
-            <div style={{ position: "absolute", inset: 0, cursor: "move" }} />
-          )}
-        </>
       ) : (
-        <img src={resolvedSrc} alt="" className="canvas-media" style={innerStyle} />
+        <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: "inherit" }}>
+          {isVideo ? (
+            <>
+              <video
+                src={resolvedSrc} className="canvas-media" style={innerStyle}
+                controls={isPrimarySelected}
+                {...videoAttrs}
+              />
+              {!isPrimarySelected && (
+                <div style={{ position: "absolute", inset: 0, cursor: "move" }} />
+              )}
+            </>
+          ) : (
+            <img src={resolvedSrc} alt="" className="canvas-media" style={innerStyle} />
+          )}
+        </div>
       )}
 
       {/* ── Crop mode overlay (outside overflow:hidden) ───── */}
@@ -454,9 +470,19 @@ export default function MediaElement({
         <MediaContextMenu
           position={contextMenu}
           onCrop={enterCropMode}
-          onStyle={() => {}}
+          onStyle={() => { setStylePicker(contextMenu); setContextMenu(null); }}
           onNewComment={onNewComment}
           onClose={() => setContextMenu(null)}
+        />
+      )}
+
+      {stylePicker && (
+        <ImageStylePicker
+          position={stylePicker}
+          currentStyleId={media.effects?.["style-id"]}
+          onPreview={setPreviewStyleId}
+          onSelect={(styleId) => { setPreviewStyleId(null); onUpdateMedia?.(media.id, { effects: { ...media.effects, "style-id": styleId } }); }}
+          onClose={() => { setPreviewStyleId(null); setStylePicker(null); }}
         />
       )}
     </div>

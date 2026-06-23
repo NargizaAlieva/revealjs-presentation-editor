@@ -4,6 +4,7 @@ import {
   getTextElements,
   getMediaElements,
 } from "../render/slidesetRenderUtils";
+import { getStyleById } from "../model/imageStyles";
 
 export function buildTextElementStyle(textElement, index, masterFormatting = {}, placeholderFormatting = {}) {
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
@@ -45,6 +46,12 @@ export function styleToString(styleObj) {
 
 export function buildMediaContainerStyle(media, index) {
   const rotation = media.rotation ?? 0;
+  const styleId = media.effects?.["style-id"];
+  const styleCss = styleId ? getStyleById(styleId).css : {};
+  const transforms = [
+    rotation ? `rotate(${rotation}deg)` : null,
+    styleCss.transform ?? null,
+  ].filter(Boolean).join(" ");
   return {
     position: "absolute",
     left: `${media.position?.x ?? 0}px`,
@@ -53,7 +60,8 @@ export function buildMediaContainerStyle(media, index) {
     height: `${media.height ?? 120}px`,
     zIndex: media["z-index"] ?? index + 1,
     overflow: "hidden",
-    ...(rotation ? { transform: `rotate(${rotation}deg)`, transformOrigin: "center center" } : {}),
+    ...styleCss,
+    ...(transforms ? { transform: transforms, transformOrigin: "center center" } : {}),
   };
 }
 

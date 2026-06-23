@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { MdCrop, MdStyle, MdAddComment } from "react-icons/md";
+import { MdCrop, MdAddComment } from "react-icons/md";
+import { PiFrameCornersBold } from "react-icons/pi";
 import "./MediaContextMenu.css";
 
 export default function MediaContextMenu({ position, onCrop, onStyle, onNewComment, onClose }) {
@@ -19,31 +20,28 @@ export default function MediaContextMenu({ position, onCrop, onStyle, onNewComme
     };
   }, [onClose]);
 
-  const handle = (fn) => (e) => {
-    e.stopPropagation();
-    fn?.();
-    onClose();
-  };
+  const items = [
+    { icon: <PiFrameCornersBold />, label: "Style", action: onStyle, close: false },
+    { icon: <MdCrop />, label: "Crop", action: onCrop, close: true },
+    { icon: <MdAddComment />, label: "New Comment", action: onNewComment, close: true },
+  ];
 
   return createPortal(
-    <div
-      ref={menuRef}
-      className="media-context-menu"
-      style={{ top: position.y, left: position.x }}
-    >
-      <button className="media-context-menu__item" onMouseDown={handle(onStyle)}>
-        <MdStyle className="media-context-menu__icon" />
-        <span>Style</span>
-      </button>
-      <button className="media-context-menu__item" onMouseDown={handle(onCrop)}>
-        <MdCrop className="media-context-menu__icon" />
-        <span>Crop</span>
-      </button>
-      <div className="media-context-menu__divider" />
-      <button className="media-context-menu__item" onMouseDown={handle(onNewComment)}>
-        <MdAddComment className="media-context-menu__icon" />
-        <span>New Comment</span>
-      </button>
+    <div ref={menuRef} className="media-context-menu" style={{ top: position.y, left: position.x }}>
+      {items.map(({ icon, label, action, close }) => (
+        <button
+          key={label}
+          className="media-context-menu__item"
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            action?.();
+            if (close) onClose();
+          }}
+        >
+          <span className="media-context-menu__icon">{icon}</span>
+          <span className="media-context-menu__label">{label}</span>
+        </button>
+      ))}
     </div>,
     document.body,
   );
