@@ -5,6 +5,7 @@ import { toHex6, toHex9 } from "../../core/utils/colorUtils";
 import { DESIGN_THEMES, findActiveTheme, updateThemeBackground, THEME_PALETTE_COLUMNS, STANDARD_COLORS } from "../../core/model/designThemes";
 import { SLIDE_SIZES, clampSlideDimension } from "../../core/model/slideSizes";
 import { renderShapes } from "../../core/render/shapeRenderer";
+import { ThemeColorEditor } from "./ThemeColorEditor";
 
 
 export function ColorPalettePopup({ currentColor, onSelect, onClose }) {
@@ -84,10 +85,11 @@ function ThemeThumbnail({ theme, isActive, onClick }) {
     );
 }
 
-function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onApplyBackgroundImage, onRemoveBackgroundImage, currentBgImage }) {
+function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onApplyBackgroundImage, onRemoveBackgroundImage, onUpdateThemeColor, currentBgImage }) {
     const [showPalette, setShowPalette] = useState(false);
     const [showSizeMenu, setShowSizeMenu] = useState(false);
     const [showCustomSize, setShowCustomSize] = useState(false);
+    const [showColorEditor, setShowColorEditor] = useState(false);
     const sizeRef = useRef(null);
 
     const colorTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
@@ -244,11 +246,34 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
 
             </div>
 
+            <div className="design-right-divider" />
+
+            <div className="design-right-section">
+                <button
+                    className="design-advanced-colors-btn"
+                    onClick={() => setShowColorEditor(v => !v)}
+                >
+                    <span>⚙ Advanced Theme Colors</span>
+                    <span className="design-advanced-colors-arrow">{showColorEditor ? "▲" : "▾"}</span>
+                </button>
+
+                {showColorEditor && onUpdateThemeColor && (
+                    <div style={{ marginTop: 12 }}>
+                        <ThemeColorEditor
+                            colorTheme={colorTheme}
+                            onColorChange={(variable, color) => {
+                                onUpdateThemeColor(variable, color);
+                            }}
+                        />
+                    </div>
+                )}
+            </div>
+
         </div>
     );
 }
 
-export default function DesignTab({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onApplyBackgroundImage, onRemoveBackgroundImage, selectedSlide }) {
+export default function DesignTab({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onApplyBackgroundImage, onRemoveBackgroundImage, onUpdateThemeColor, selectedSlide }) {
     const currentTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
     const activeTheme = findActiveTheme(currentTheme);
 
@@ -277,6 +302,7 @@ export default function DesignTab({ presentation, onApplyTheme, onApplyFont, onU
                 onUpdateDimensions={onUpdateDimensions}
                 onApplyBackgroundImage={onApplyBackgroundImage}
                 onRemoveBackgroundImage={onRemoveBackgroundImage}
+                onUpdateThemeColor={onUpdateThemeColor}
                 currentBgImage={selectedSlide?.contents?.["background-image"] ?? null}
             />
         </div>
