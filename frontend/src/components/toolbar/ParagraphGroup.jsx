@@ -34,16 +34,20 @@ export default function ParagraphGroup({
   currentFormatting = {},
   isTextSelected = false,
   onFormatChange,
+  onTextOverflowChange,
+  selectedTextOverflow = "auto-fit",
 }) {
   const [showBulletPicker, setShowBulletPicker] = useState(false);
   const [showNumberedPicker, setShowNumberedPicker] = useState(false);
   const [showLineSpacing, setShowLineSpacing] = useState(false);
   const [showSpacingOptions, setShowSpacingOptions] = useState(false);
   const [showAlignText, setShowAlignText] = useState(false);
+  const [showOverflow, setShowOverflow] = useState(false);
   const bulletPickerRef = useRef(null);
   const numberedPickerRef = useRef(null);
   const lineSpacingRef = useRef(null);
   const alignTextRef = useRef(null);
+  const overflowRef = useRef(null);
 
   const fmt = (updates) => {
     if (!isTextSelected || !onFormatChange) return;
@@ -58,7 +62,7 @@ export default function ParagraphGroup({
   const currentVerticalAlign = currentFormatting["vertical-align"] ?? "top";
 
   useEffect(() => {
-    if (!showBulletPicker && !showNumberedPicker && !showLineSpacing && !showAlignText) return;
+    if (!showBulletPicker && !showNumberedPicker && !showLineSpacing && !showAlignText && !showOverflow) return;
     const handleClick = (e) => {
       if (bulletPickerRef.current && !bulletPickerRef.current.contains(e.target))
         setShowBulletPicker(false);
@@ -70,10 +74,12 @@ export default function ParagraphGroup({
       }
       if (alignTextRef.current && !alignTextRef.current.contains(e.target))
         setShowAlignText(false);
+      if (overflowRef.current && !overflowRef.current.contains(e.target))
+        setShowOverflow(false);
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [showBulletPicker, showNumberedPicker, showLineSpacing]);
+  }, [showBulletPicker, showNumberedPicker, showLineSpacing, showAlignText, showOverflow]);
 
   return (
     <div className="ribbon-group paragraph-group">
@@ -385,6 +391,42 @@ export default function ParagraphGroup({
             </div>
           )}
         </div>
+
+        {/* Text Overflow */}
+        <div className="list-split-btn ls-split-btn" ref={overflowRef}>
+          <button
+            className="small-format"
+            disabled={!isTextSelected}
+            title="Text Overflow"
+            onClick={() => setShowOverflow(v => !v)}
+          >
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "-0.5px" }}>OVF</span>
+          </button>
+          <button
+            className="list-split-arrow"
+            disabled={!isTextSelected}
+            onClick={() => setShowOverflow(v => !v)}
+          >▾</button>
+
+          {showOverflow && (
+            <div className="list-picker-popup ls-popup">
+              {[
+                { value: "auto-fit",          label: "Auto-fit (expand box)" },
+                { value: "shrink-on-overflow", label: "Shrink text on overflow" },
+                { value: "none",               label: "Do not autofit (clip)" },
+              ].map(({ value, label }) => (
+                <button
+                  key={value}
+                  className={`ls-preset-item${selectedTextOverflow === value ? " selected" : ""}`}
+                  onClick={() => { onTextOverflowChange?.(value); setShowOverflow(false); }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
       </div>
 
       <div className="ribbon-group-title">Paragraph</div>

@@ -4,6 +4,8 @@
 }
 
 .text-editable {
+  align-self: stretch;
+  min-width: 0;
   width: 100%;
   min-height: 100%;
   overflow: visible;
@@ -13,8 +15,6 @@
   background: transparent;
 
   white-space: pre-wrap;
-  overflow-wrap: break-word;
-  word-break: break-word;
 
   cursor: text;
 }
@@ -133,8 +133,12 @@
   position: absolute;
   top: 0;
   pointer-events: none;
-  text-align: center;
   user-select: none;
+}
+
+.list-markers-overlay .list-marker-line {
+  text-align: right;
+  padding-right: 4px;
 }
 
 .list-marker-line {

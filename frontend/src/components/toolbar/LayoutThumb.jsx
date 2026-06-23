@@ -61,7 +61,7 @@ export default function LayoutThumb({ layout, presentation }) {
           const style = buildTextElementStyle(el, index, masterFormatting, phFormatting);
           return (
             <div key={el.id} style={{ ...style, overflow: "hidden", zIndex: 1 }}>
-              {extractPlainTextFromParagraphs(el.paragraphs, " ")}
+              {extractPlainTextFromParagraphs(el.paragraphs, "\n")}
             </div>
           );
         })}

@@ -102,6 +102,25 @@ export default function EditorCanvas({
   const storedBgPos = parseBgPosition(slide?.contents?.["background-image-position"]);
   const [bgDragPos, setBgDragPos] = useState(null); // {x,y} while dragging
   const bgDragRef = useRef(null);
+
+  // Activate reposition mode automatically right after a new bg image is inserted
+  const [bgRepoMode, setBgRepoMode] = useState(false);
+  const prevBgKeyRef = useRef(bgImageKey);
+  useEffect(() => {
+    if (!prevBgKeyRef.current && bgImageKey) setBgRepoMode(true);
+    if (!bgImageKey) setBgRepoMode(false);
+    prevBgKeyRef.current = bgImageKey;
+  }, [bgImageKey]);
+
+  useEffect(() => {
+    if (!bgRepoMode) return;
+    const handler = (e) => {
+      if (!containerRef.current?.contains(e.target)) setBgRepoMode(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [bgRepoMode]);
+
   const bgImagePosition = bgDragPos
     ? `${bgDragPos.x}% ${bgDragPos.y}%`
     : `${storedBgPos.x}% ${storedBgPos.y}%`;
@@ -431,13 +450,13 @@ export default function EditorCanvas({
                     backgroundRepeat: "no-repeat",
                   } : {}),
                   color: "var(--text-dark, black)",
-                  cursor: bgImageSrc && !selectedElementId ? "grab" : undefined,
+                  cursor: bgRepoMode ? "grab" : undefined,
                 }}
                 onMouseMove={handleMouseMove}
                 onMouseUp={stopInteraction}
                 onMouseLeave={stopInteraction}
                 onMouseDown={(event) => {
-                  if (!bgImageSrc || event.target !== event.currentTarget) return;
+                  if (!bgRepoMode || event.target !== event.currentTarget) return;
                   if (event.button !== 0) return;
                   event.preventDefault();
                   const startX = event.clientX;
@@ -481,6 +500,47 @@ export default function EditorCanvas({
                   hideMasterElements={hideMasterElements}
                   layoutId={slide?.["layout-id"]}
                 />
+
+                {bgRepoMode && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: 12,
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      zIndex: 9999,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      background: "rgba(0,0,0,0.62)",
+                      color: "#fff",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 13,
+                      pointerEvents: "none",
+                      userSelect: "none",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <span>✥ Drag to reposition</span>
+                    <button
+                      onMouseDown={(e) => { e.stopPropagation(); setBgRepoMode(false); }}
+                      style={{
+                        pointerEvents: "all",
+                        background: "#4f46e5",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: 4,
+                        padding: "2px 10px",
+                        fontSize: 12,
+                        cursor: "pointer",
+                        fontWeight: 600,
+                      }}
+                    >
+                      Done
+                    </button>
+                  </div>
+                )}
 
                 {textElements.map((textElement) => {
                   const isPlaying = playingElementId === textElement.id;

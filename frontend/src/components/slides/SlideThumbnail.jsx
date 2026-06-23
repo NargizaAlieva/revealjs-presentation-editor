@@ -102,7 +102,7 @@ export default function SlideThumbnail({
           const style = buildTextElementStyle(textElement, index, masterFormatting, placeholderFormatting);
           return (
             <div key={textElement.id} style={{ ...style, overflow: "hidden", zIndex: 1 }}>
-              {extractPlainTextFromParagraphs(textElement.paragraphs, " ")}
+              {extractPlainTextFromParagraphs(textElement.paragraphs, "\n")}
             </div>
           );
         })}
