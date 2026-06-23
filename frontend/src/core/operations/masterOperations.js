@@ -10,23 +10,27 @@ export const buildMasterPseudoSlide = (masterElements) => ({
   },
 });
 
-export const buildLayoutPseudoSlide = (layout, masterFormatting) => ({
-  contents: {
-    text: [
-      ...(layout.placeholders ?? [])
-        .filter((p) => p.type === "text")
-        .map((p) => createPlaceholderPseudoElement(p, masterFormatting)),
-      ...(layout.elements?.text ?? []),
-    ],
-    media: [
-      ...(layout.placeholders ?? [])
-        .filter((p) => p.type === "image" || p.type === "video")
-        .map((p) => createPlaceholderPseudoElement(p, masterFormatting)),
-      ...(layout.elements?.media ?? []),
-    ],
-    background: "#FFFFFFFF",
-  },
-});
+export const buildLayoutPseudoSlide = (layout, masterFormatting, masterColorTheme) => {
+  const bgEntry = (masterColorTheme ?? []).find((e) => e["css-variable-name"] === "bg-light");
+  const background = bgEntry?.color ?? "#FFFFFFFF";
+  return {
+    contents: {
+      text: [
+        ...(layout.placeholders ?? [])
+          .filter((p) => p.type === "text")
+          .map((p) => createPlaceholderPseudoElement(p, masterFormatting)),
+        ...(layout.elements?.text ?? []),
+      ],
+      media: [
+        ...(layout.placeholders ?? [])
+          .filter((p) => p.type === "image" || p.type === "video")
+          .map((p) => createPlaceholderPseudoElement(p, masterFormatting)),
+        ...(layout.elements?.media ?? []),
+      ],
+      background,
+    },
+  };
+};
 
 export const toggleMasterTitle = (presentation, layoutId) => {
   if (layoutId) {

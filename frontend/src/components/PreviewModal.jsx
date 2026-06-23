@@ -7,7 +7,9 @@ import SlideDecorations from "./canvas/SlideDecorations";
 import {
   initRevealDeck,
   buildTextElementStyle,
-  buildMediaElementStyle,
+  buildMediaContainerStyle,
+  buildMediaInnerStyle,
+  buildVideoAttributes,
   buildSlideContainerStyle,
   buildColorThemeStyle,
   getTextLines,
@@ -25,26 +27,17 @@ import { getPlaceholderFormatting } from "../core/render/slidesetRenderUtils";
 function PreviewMediaElement({ media, index, fragmentProps }) {
   const src = useMediaSrc(media["file-link"]);
   const isVideo = media["media-type"] === "video";
-
-  if (isVideo) {
-    return (
-      <video
-        src={src}
-        style={buildMediaElementStyle(media, index)}
-        controls
-        preload="metadata"
-        {...fragmentProps}
-      />
-    );
-  }
+  const innerStyle = buildMediaInnerStyle(media);
+  const videoAttrs = buildVideoAttributes(media);
 
   return (
-    <img
-      src={src}
-      alt=""
-      style={buildMediaElementStyle(media, index)}
-      {...fragmentProps}
-    />
+    <div style={buildMediaContainerStyle(media, index)} {...fragmentProps}>
+      {isVideo ? (
+        <video src={src} style={innerStyle} controls preload="metadata" {...videoAttrs} />
+      ) : (
+        <img src={src} alt="" style={innerStyle} />
+      )}
+    </div>
   );
 }
 

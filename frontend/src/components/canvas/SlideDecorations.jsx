@@ -66,7 +66,7 @@ export default function SlideDecorations({ presentation, width, height, hideMast
             overflow: "hidden",
             zIndex: 0,
           }}
-          viewBox="0 0 1280 720"
+          viewBox={`0 0 ${width ?? 960} ${height ?? 540}`}
           preserveAspectRatio="none"
         >
           {decorations.shapes.map((shape, i) => {
@@ -111,6 +111,7 @@ export default function SlideDecorations({ presentation, width, height, hideMast
 
       {(masterElements?.text ?? []).map((el) => {
         const fmt = el.paragraphs?.[0]?.formatting ?? {};
+        const mf = master?.formatting ?? {};
         const text = extractPlainTextFromParagraphs(el.paragraphs, "\n");
         return (
           <div
@@ -121,13 +122,13 @@ export default function SlideDecorations({ presentation, width, height, hideMast
               top: el.position?.y ?? 0,
               width: el.width ?? 300,
               height: el.height ?? 80,
-              fontSize: fmt.size ?? "16px",
-              fontWeight: fmt.weight ?? "normal",
-              fontStyle: fmt.italics ? "italic" : "normal",
-              fontFamily: fmt.font ?? master?.formatting?.font ?? "inherit",
-              color: fmt.color ?? "var(--text-dark, black)",
-              textAlign: fmt.align ?? "left",
-              lineHeight: fmt["line-spacing"] ?? "1.4",
+              fontSize: fmt.size ?? mf.size ?? "16px",
+              fontWeight: fmt.weight ?? mf.weight ?? "normal",
+              fontStyle: (fmt.italics ?? mf.italics) ? "italic" : "normal",
+              fontFamily: fmt.font ?? mf.font ?? "inherit",
+              color: fmt.color ?? mf.color ?? "var(--text-dark, black)",
+              textAlign: fmt.align ?? mf.align ?? "left",
+              lineHeight: fmt["line-spacing"] ?? mf["line-spacing"] ?? "1.4",
               background: el.background ?? "transparent",
               overflow: "hidden",
               pointerEvents: "none",
@@ -148,6 +149,7 @@ export default function SlideDecorations({ presentation, width, height, hideMast
 
       {(layoutElements?.text ?? []).map((el) => {
         const fmt = el.paragraphs?.[0]?.formatting ?? {};
+        const mf = master?.formatting ?? {};
         const text = extractPlainTextFromParagraphs(el.paragraphs, "\n");
         return (
           <div
@@ -158,13 +160,13 @@ export default function SlideDecorations({ presentation, width, height, hideMast
               top: el.position?.y ?? 0,
               width: el.width ?? 300,
               height: el.height ?? 80,
-              fontSize: fmt.size ?? "16px",
-              fontWeight: fmt.weight ?? "normal",
-              fontStyle: fmt.italics ? "italic" : "normal",
-              fontFamily: fmt.font ?? master?.formatting?.font ?? "inherit",
-              color: fmt.color ?? "var(--text-dark, black)",
-              textAlign: fmt.align ?? "left",
-              lineHeight: fmt["line-spacing"] ?? "1.4",
+              fontSize: fmt.size ?? mf.size ?? "16px",
+              fontWeight: fmt.weight ?? mf.weight ?? "normal",
+              fontStyle: (fmt.italics ?? mf.italics) ? "italic" : "normal",
+              fontFamily: fmt.font ?? mf.font ?? "inherit",
+              color: fmt.color ?? mf.color ?? "var(--text-dark, black)",
+              textAlign: fmt.align ?? mf.align ?? "left",
+              lineHeight: fmt["line-spacing"] ?? mf["line-spacing"] ?? "1.4",
               background: el.background ?? "transparent",
               overflow: "hidden",
               pointerEvents: "none",

@@ -43,10 +43,19 @@ export const resizeElement = (presentation, slideIndex, elementId, newSize) => {
   const slide = slides[slideIndex];
   if (!slide) return presentation;
 
-  const updateSize = (element) =>
-    element.id === elementId
-      ? { ...element, width: newSize.width, height: newSize.height }
-      : element;
+  const updateSize = (element) => {
+    if (element.id !== elementId) return element;
+    const updates = { ...element, width: newSize.width, height: newSize.height };
+    // Keep source-width/source-height in sync for media elements so crop mode uses the right base size
+    if ("source-width" in element) {
+      updates["source-width"] = newSize.width;
+      updates["source-height"] = newSize.height;
+      // Only reset crop if all values are >= 0 (no empty space outside image)
+      const [ct = 0, cr = 0, cb = 0, cl = 0] = element.crop ?? [];
+      if (ct >= 0 && cr >= 0 && cb >= 0 && cl >= 0) updates.crop = [];
+    }
+    return updates;
+  };
 
   slides[slideIndex] = {
     ...slide,

@@ -6,6 +6,14 @@ import {
   getMediaElements,
   getPlaceholderFormatting,
 } from "../render/slidesetRenderUtils";
+import {
+  buildTextElementStyle,
+  buildMediaContainerStyle,
+  buildMediaInnerStyle,
+  buildVideoAttributes,
+  buildAnimationMap,
+  styleToString,
+} from "../render/revealRenderer";
 import { downloadHtml } from "./downloadHtml";
 import { getMediaFile } from "../persistence/persistenceFacade";
 import JSZip from "jszip";
@@ -78,15 +86,6 @@ async function resolveMediaForZip(slides) {
   return resolvedMap;
 }
 
-function buildAnimationMap(slide) {
-  const animations = slide.contents?.animations ?? [];
-  const map = new Map();
-  animations.forEach((animation) => {
-    if (animation?.id) map.set(animation.id, animation);
-  });
-  return map;
-}
-
 function buildAdjustedSequenceMap(animations, textElements) {
   if (!animations?.length) return new Map();
   const sorted = [...animations].sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0));
@@ -131,32 +130,6 @@ function applyFragment(innerHtml, wrapperStyle, animation) {
   return `<div class="${classes}" ${dataAttrs} style="${wrapperStyle}">${innerHtml}</div>`;
 }
 
-function buildTextElementStyle(textElement, index, masterFormatting = {}, placeholderFormatting = {}) {
-  const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
-  const rotation = textElement.rotation ?? 0;
-  const r = (elemVal, phVal, masterVal, fallback) => elemVal ?? phVal ?? masterVal ?? fallback;
-
-  return [
-    "position: absolute",
-    `left: ${textElement.position?.x ?? 0}px`,
-    `top: ${textElement.position?.y ?? 0}px`,
-    `width: ${textElement.width ?? 300}px`,
-    `height: ${textElement.height ?? 80}px`,
-    `background: ${textElement.background ?? "transparent"}`,
-    "overflow: hidden",
-    `z-index: ${textElement["z-index"] ?? index + 1}`,
-    ...(rotation ? [`transform: rotate(${rotation}deg)`] : []),
-    `font-size: ${r(formatting.size, placeholderFormatting.size, masterFormatting.size, index === 0 ? "44px" : "28px")}`,
-    `font-weight: ${r(formatting.weight, placeholderFormatting.weight, masterFormatting.weight, index === 0 ? "bold" : "normal")}`,
-    `font-style: ${r(formatting.italics, placeholderFormatting.italics, masterFormatting.italics, false) ? "italic" : "normal"}`,
-    `font-family: ${r(formatting.font, placeholderFormatting.font, masterFormatting.font, "inherit")}`,
-    `color: ${r(formatting.color, placeholderFormatting.color, masterFormatting.color, "var(--text-dark, black)")}`,
-    `text-align: ${r(formatting.align, placeholderFormatting.align, masterFormatting.align, "left")}`,
-    `line-height: ${r(formatting["line-spacing"], placeholderFormatting["line-spacing"], masterFormatting["line-spacing"], "1.4")}`,
-    "box-sizing: border-box",
-  ].join("; ");
-}
-
 function buildPStyle(paragraphFormatting) {
   return [
     paragraphFormatting.align ? `text-align: ${paragraphFormatting.align}` : "",
@@ -168,14 +141,15 @@ function buildPStyle(paragraphFormatting) {
 
 function buildRunHtml(run) {
   const runFormatting = run.formatting ?? {};
+  const superSub = run["super-sub-script"];
   const style = [
     runFormatting.weight ? `font-weight: ${runFormatting.weight}` : "",
     runFormatting.italics ? "font-style: italic" : "",
     runFormatting.color ? `color: ${runFormatting.color}` : "",
     runFormatting.size ? `font-size: ${runFormatting.size}` : "",
-    runFormatting["text-decoration"]
-      ? `text-decoration: ${runFormatting["text-decoration"]}`
-      : "",
+    runFormatting["text-decoration"] ? `text-decoration: ${runFormatting["text-decoration"]}` : "",
+    superSub === "super" ? "vertical-align: super; font-size: 0.75em" : "",
+    superSub === "sub" ? "vertical-align: sub; font-size: 0.75em" : "",
   ].filter(Boolean).join("; ");
   const text = escapeHtml(run.text ?? "");
   if (run.link?.href) {
@@ -216,25 +190,20 @@ function buildMasterElementsHtml(presentation, masterFormatting, getSrc) {
   const mediaElements = masterElements.media ?? [];
 
   const textsHtml = textElements.filter((element) => !element.hidden).map((el, index) => {
-    const style = buildTextElementStyle(el, index, masterFormatting, {});
+    const style = styleToString(buildTextElementStyle(el, index, masterFormatting, {}));
     const content = buildTextElementContent(el, null);
     return `<div style="${style}">${content}</div>`;
   }).join("");
 
-  const mediaHtml = mediaElements.filter((element) => !element.hidden).map((media) => {
+  const mediaHtml = mediaElements.filter((element) => !element.hidden).map((media, index) => {
     const src = getSrc(media["file-link"] ?? "");
     const isVideo = media["media-type"] === "video";
-    const wrapperStyle = [
-      "position: absolute",
-      `left: ${media.position?.x ?? 0}px`,
-      `top: ${media.position?.y ?? 0}px`,
-      `width: ${media.width ?? 100}px`,
-      `height: ${media.height ?? 100}px`,
-      `z-index: ${media["z-index"] ?? 0}`,
-    ].join("; ");
+    const wrapperStyle = styleToString(buildMediaContainerStyle(media, index));
+    const innerStyle = styleToString(buildMediaInnerStyle(media));
+    const { autoPlay, loop, muted } = buildVideoAttributes(media);
     const inner = isVideo
-      ? `<video src="${escapeHtml(src)}" style="width:100%;height:100%;object-fit:contain;" preload="metadata"></video>`
-      : `<img src="${escapeHtml(src)}" alt="" style="width:100%;height:100%;object-fit:contain;" />`;
+      ? `<video src="${escapeHtml(src)}" style="${innerStyle}" preload="metadata"${autoPlay ? " autoplay" : ""}${loop ? " loop" : ""}${muted ? " muted" : ""}></video>`
+      : `<img src="${escapeHtml(src)}" alt="" style="${innerStyle}" />`;
     return `<div style="${wrapperStyle}">${inner}</div>`;
   }).join("");
 
@@ -280,7 +249,7 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
       const animation = animationMap.get(textElement.id);
       const sequenceMode = animation?.["effect-options"]?.sequence ?? "as-one-object";
       const placeholderFormatting = getPlaceholderFormatting(presentation, slide, textElement);
-      const style = buildTextElementStyle(textElement, index, masterFormatting, placeholderFormatting);
+      const style = styleToString(buildTextElementStyle(textElement, index, masterFormatting, placeholderFormatting));
       const adjustedAnim = animation && adjustedSeqMap.has(animation.id)
         ? { ...animation, sequence: adjustedSeqMap.get(animation.id) }
         : animation;
@@ -296,30 +265,15 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
     .filter((element) => !element.hidden)
     .map((media, index) => {
       const animation = animationMap.get(media.id);
-      const rotation = media.rotation ?? 0;
-      const wrapperStyle = [
-        "position: absolute",
-        `left: ${media.position?.x ?? 0}px`,
-        `top: ${media.position?.y ?? 0}px`,
-        `width: ${media.width ?? 200}px`,
-        `height: ${media.height ?? 120}px`,
-        `z-index: ${media["z-index"] ?? index + 1}`,
-      ].join("; ");
-
-      const imgStyle = [
-        "width: 100%",
-        "height: 100%",
-        "object-fit: contain",
-        ...(rotation ? [`transform: rotate(${rotation}deg)`] : []),
-      ].join("; ");
-
-      const fileLink = media["file-link"] ?? "";
-      const src = getSrc(fileLink);
+      const wrapperStyle = styleToString(buildMediaContainerStyle(media, index));
+      const innerStyle = styleToString(buildMediaInnerStyle(media));
+      const { autoPlay, loop, muted } = buildVideoAttributes(media);
+      const src = getSrc(media["file-link"] ?? "");
       const isVideo = media["media-type"] === "video";
 
       const mediaHtml = isVideo
-        ? `<video src="${escapeHtml(src)}" style="${imgStyle}" controls preload="metadata"></video>`
-        : `<img src="${escapeHtml(src)}" alt="" style="${imgStyle}" />`;
+        ? `<video src="${escapeHtml(src)}" style="${innerStyle}" preload="metadata"${autoPlay ? " autoplay" : ""}${loop ? " loop" : ""}${muted ? " muted" : ""}></video>`
+        : `<img src="${escapeHtml(src)}" alt="" style="${innerStyle}" />`;
 
       const adjustedMediaAnim = animation && adjustedSeqMap.has(animation.id)
         ? { ...animation, sequence: adjustedSeqMap.get(animation.id) }

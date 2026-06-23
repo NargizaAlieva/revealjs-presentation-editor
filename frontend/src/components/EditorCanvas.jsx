@@ -495,6 +495,8 @@ export default function EditorCanvas({
                         onDeleteMedia(id);
                         onSelectElement?.(null);
                       }}
+                      onUpdateMedia={updateMedia ? (id, updates) => updateMedia(id, updates) : undefined}
+                      onNewComment={onNewComment}
                       previewClassName={playClass}
                       animationOrder={
                         showAnimationBadges

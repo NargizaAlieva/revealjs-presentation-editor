@@ -171,8 +171,16 @@ export const runsToHTML = (runs) =>
   (runs ?? [])
     .map((run) => {
       const styles = buildRunStyles(run.formatting ?? {});
+      const superSub = run["super-sub-script"];
+      const superSubStyle =
+        superSub === "super"
+          ? "vertical-align:super;font-size:0.75em"
+          : superSub === "sub"
+            ? "vertical-align:sub;font-size:0.75em"
+            : "";
+      const allStyles = [styles, superSubStyle].filter(Boolean).join(";");
       const text = escapeHTML(run.text ?? "");
-      return styles ? `<span style="${styles}">${text}</span>` : text;
+      return allStyles ? `<span style="${allStyles}">${text}</span>` : text;
     })
     .join("");
 

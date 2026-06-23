@@ -515,7 +515,7 @@ useEffect(() => {
     [updateMasterDimensions],
   );
 
-  const { handleImageUpload } = useImageUpload(addMedia);
+  const { handleImageUpload } = useImageUpload(addMedia, slideWidth, slideHeight);
   const { handleVideoUpload } = useVideoUpload(addMedia);
 
   const handleAddTextElement = useCallback(
@@ -677,10 +677,11 @@ useEffect(() => {
   const activeMasterSlide = useMemo(() => {
     const masterElements = presentation?.slideset?.master?.elements ?? {};
     const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
+    const masterColorTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
     return selectedMasterLayout
-      ? buildLayoutPseudoSlide(selectedMasterLayout, masterFormatting)
+      ? buildLayoutPseudoSlide(selectedMasterLayout, masterFormatting, masterColorTheme)
       : buildMasterPseudoSlide(masterElements);
-  }, [selectedMasterLayout, presentation?.slideset?.master?.elements, presentation?.slideset?.master?.formatting]);
+  }, [selectedMasterLayout, presentation?.slideset?.master?.elements, presentation?.slideset?.master?.formatting, presentation?.slideset?.master?.["color-theme"]]);
 
   // --- Master view unified event handlers (routing master vs layout elements) ---
   const masterViewChangeText = useCallback(

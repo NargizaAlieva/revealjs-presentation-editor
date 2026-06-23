@@ -107,13 +107,22 @@ export function useCanvasInteractions({
       }
 
       if (resizingState?.type === "media") {
-        const { newX, newY, newW, newH } = computeResize(
+        let { newX, newY, newW, newH } = computeResize(
           resizingState.dir,
           resizingState.initial,
           mouse,
           width,
           height,
         );
+        // Lock aspect ratio only for corner handles (diagonal drag)
+        const dir = resizingState.dir;
+        const isCorner = (dir.includes("n") || dir.includes("s")) && (dir.includes("e") || dir.includes("w"));
+        if (resizingState.aspectRatio && isCorner) {
+          const ar = resizingState.aspectRatio;
+          if (newW / ar > newH) { newH = newW / ar; } else { newW = newH * ar; }
+          if (dir.includes("w")) newX = resizingState.initial.x + resizingState.initial.width - newW;
+          if (dir.includes("n")) newY = resizingState.initial.y + resizingState.initial.height - newH;
+        }
         onMoveMediaElement(resizingState.id, newX, newY);
         onResizeMediaElement(resizingState.id, newW, newH);
       }
@@ -261,17 +270,20 @@ export function useCanvasInteractions({
       const mouseX = (event.clientX - rect.left) / zoomScale;
       const mouseY = (event.clientY - rect.top) / zoomScale;
 
+      const initW = media.width ?? 300;
+      const initH = media.height ?? 200;
       onBeginHistory?.();
       onSelectElement?.(mediaId, { preserveIfSelected: true });
       setResizingState({
         type: "media",
         id: mediaId,
         dir,
+        aspectRatio: initW / initH,
         initial: {
           x: media.position?.x ?? 0,
           y: media.position?.y ?? 0,
-          width: media.width ?? 300,
-          height: media.height ?? 200,
+          width: initW,
+          height: initH,
           mouseX,
           mouseY,
         },

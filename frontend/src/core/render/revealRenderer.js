@@ -32,18 +32,67 @@ export function buildTextElementStyle(textElement, index, masterFormatting = {},
   };
 }
 
-export function buildMediaElementStyle(media, index) {
-  const rotation = media.rotation ?? 0;
+// Converts a React camelCase style object to a CSS string for HTML export.
+export function styleToString(styleObj) {
+  return Object.entries(styleObj)
+    .filter(([, v]) => v != null)
+    .map(([k, v]) => {
+      const prop = k.replace(/([A-Z])/g, (m) => `-${m.toLowerCase()}`);
+      return `${prop}: ${v}`;
+    })
+    .join("; ");
+}
 
+export function buildMediaContainerStyle(media, index) {
+  const rotation = media.rotation ?? 0;
   return {
     position: "absolute",
     left: `${media.position?.x ?? 0}px`,
     top: `${media.position?.y ?? 0}px`,
     width: `${media.width ?? 200}px`,
     height: `${media.height ?? 120}px`,
-    objectFit: "contain",
     zIndex: media["z-index"] ?? index + 1,
-    ...(rotation ? { transform: `rotate(${rotation}deg)` } : {}),
+    overflow: "hidden",
+    ...(rotation ? { transform: `rotate(${rotation}deg)`, transformOrigin: "center center" } : {}),
+  };
+}
+
+export function buildMediaInnerStyle(media) {
+  const scale = media.scale ?? 1;
+  const [ct = 0, cr = 0, cb = 0, cl = 0] = media.crop ?? [];
+  const hasCrop = ct !== 0 || cr !== 0 || cb !== 0 || cl !== 0;
+
+  if (hasCrop) {
+    // Use source-width/source-height so image is always positioned correctly,
+    // including when crop extends outside image (negative cl/cr/ct/cb).
+    const srcW = media["source-width"] ?? media.width ?? 200;
+    const srcH = media["source-height"] ?? media.height ?? 120;
+    return {
+      position: "absolute",
+      width: `${srcW}px`,
+      height: `${srcH}px`,
+      left: `${-(cl / 100) * srcW}px`,
+      top: `${-(ct / 100) * srcH}px`,
+      objectFit: "fill",
+      ...(scale !== 1 ? { transform: `scale(${scale})`, transformOrigin: "center center" } : {}),
+    };
+  }
+
+  return {
+    width: "100%",
+    height: "100%",
+    objectFit: "fill",
+    display: "block",
+    ...(scale !== 1 ? { transform: `scale(${scale})`, transformOrigin: "center center" } : {}),
+  };
+}
+
+export function buildVideoAttributes(media) {
+  const playback = media.playback ?? {};
+  return {
+    ...(playback.autoplay ? { autoPlay: true } : {}),
+    ...(playback.loop ? { loop: true } : {}),
+    ...(playback.muted ? { muted: true } : {}),
   };
 }
 

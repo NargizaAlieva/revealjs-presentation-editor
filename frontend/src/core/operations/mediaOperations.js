@@ -1,12 +1,14 @@
 import { createId, getSlides, setSlides } from "../utils/presentationUtils";
 
-export const createImageMediaElement = (mediaId, key) => ({
+export const createImageMediaElement = (mediaId, key, { width = 300, height = 200 } = {}) => ({
   id: mediaId,
   "file-link": `indexeddb://${key}`,
   "media-type": "image",
   position: { x: 60, y: 60 },
-  width: 300,
-  height: 200,
+  width,
+  height,
+  "source-width": width,
+  "source-height": height,
   rotation: 0,
   "z-index": 1,
   scale: 1,
@@ -43,6 +45,8 @@ export const addMedia = (presentation, slideIndex, mediaData) => {
     position: mediaData.position ?? { x: 10, y: 10 },
     width: mediaData.width ?? 300,
     height: mediaData.height ?? 200,
+    ...(mediaData."source-width" != null ? { "source-width": mediaData."source-width" } : {}),
+    ...(mediaData."source-height" != null ? { "source-height": mediaData."source-height" } : {}),
     rotation: mediaData.rotation ?? 0,
     "z-index": mediaData["z-index"] ?? 1,
     scale: mediaData.scale ?? 1,

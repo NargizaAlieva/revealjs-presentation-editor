@@ -1,11 +1,12 @@
 .canvas-media-wrapper {
   cursor: move;
   box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
 }
 
 .canvas-media-wrapper.selected {
-  outline: 1px solid #4f46e5;
-  outline-offset: 2px;
+  box-shadow: inset 0 0 0 2px #4f46e5;
 }
 
 .canvas-media {
@@ -86,3 +87,91 @@ video.canvas-media {
 }
 
 .media-rotate-handle:active { cursor: grabbing; }
+
+/* ── Crop mode ───────────────────────────────────────────── */
+
+.canvas-media-wrapper.cropping {
+  outline: none;
+  cursor: default;
+}
+
+.crop-shade {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.crop-border {
+  position: absolute;
+  outline: 1.5px solid #ffffff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  z-index: 11;
+}
+
+/* rule-of-thirds grid */
+.crop-grid {
+  position: absolute;
+  pointer-events: none;
+  z-index: 12;
+}
+.crop-grid-line {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.35);
+}
+.crop-grid-line--v { top: 0; bottom: 0; width: 1px; }
+.crop-grid-line--h { left: 0; right: 0; height: 1px; }
+
+/* crop corner/edge handles */
+.crop-handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #ffffff;
+  border: 1.5px solid rgba(0, 0, 0, 0.5);
+  z-index: 20;
+  transform: translate(-50%, -50%);
+}
+
+/* make corner handles slightly bigger */
+.crop-handle--nw,
+.crop-handle--ne,
+.crop-handle--se,
+.crop-handle--sw {
+  width: 12px;
+  height: 12px;
+}
+
+/* Apply / Cancel bar */
+.crop-actions {
+  position: absolute;
+  display: flex;
+  gap: 6px;
+  z-index: 30;
+  padding-top: 4px;
+}
+
+.crop-actions__btn {
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.crop-actions__btn--cancel {
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+.crop-actions__btn--cancel:hover { background: #f3f4f6; }
+
+.crop-actions__btn--apply {
+  background: #4f46e5;
+  color: #ffffff;
+}
+.crop-actions__btn--apply:hover { background: #4338ca; }
