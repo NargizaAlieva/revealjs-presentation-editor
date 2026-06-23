@@ -1,0 +1,172 @@
+.text-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 13000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.text-context-dialog {
+  width: min(570px, calc(100vw - 32px));
+  padding: 0 8px 12px;
+  border: 1px solid #d76a61;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.25);
+  color: #222;
+  font: 14px "Segoe UI", Arial, sans-serif;
+}
+
+.text-context-dialog-header {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.text-context-dialog-header button {
+  width: 38px;
+  height: 32px;
+  border: 0;
+  background: transparent;
+  font-size: 25px;
+}
+
+.paragraph-dialog-section-title {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding-bottom: 5px;
+  border-bottom: 3px solid #d9322b;
+  font-size: 15px;
+}
+
+.text-context-dialog fieldset {
+  margin: 0 0 9px;
+  padding: 4px 0 7px;
+  border: 0;
+}
+
+.text-context-dialog legend {
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.text-context-dialog label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.text-context-dialog label > span {
+  white-space: nowrap;
+}
+
+.text-context-dialog input,
+.text-context-dialog select {
+  height: 28px;
+  padding: 2px 7px;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+  background: white;
+  box-sizing: border-box;
+  font: inherit;
+}
+
+.text-context-dialog fieldset:first-of-type label {
+  margin-left: 12px;
+}
+
+.paragraph-dialog-grid {
+  display: grid;
+  gap: 8px 12px;
+}
+
+.paragraph-dialog-grid label {
+  display: grid;
+  grid-template-columns: 92px 106px;
+}
+
+.paragraph-dialog-grid--indent {
+  grid-template-columns: 1fr 1fr 0.75fr;
+}
+
+.paragraph-dialog-grid--spacing {
+  grid-template-columns: 1fr 1.4fr;
+}
+
+.paragraph-dialog-disabled {
+  color: #999;
+}
+
+.text-context-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.text-context-dialog-actions button {
+  min-width: 68px;
+  height: 31px;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+  background: #fff;
+}
+
+.text-context-dialog-actions .primary {
+  border: 2px solid #111;
+}
+
+.font-dialog {
+  width: min(430px, calc(100vw - 32px));
+}
+
+.font-dialog-grid {
+  display: grid;
+  grid-template-columns: 1fr 110px;
+  gap: 14px;
+  margin: 14px 8px 20px;
+}
+
+.font-dialog-grid label {
+  align-items: stretch;
+  flex-direction: column;
+}
+
+.font-dialog-grid select,
+.font-dialog-grid input {
+  width: 100%;
+}
+
+.font-dialog-effects {
+  display: flex;
+  gap: 25px;
+  margin: 0 8px 22px;
+}
+
+.font-dialog-effects input {
+  width: 16px;
+  height: 16px;
+}
+
+.hyperlink-dialog {
+  width: min(430px, calc(100vw - 32px));
+}
+
+.hyperlink-dialog-field {
+  align-items: stretch;
+  flex-direction: column;
+  margin: 12px 8px 8px;
+}
+
+.hyperlink-dialog-field input {
+  width: 100%;
+}
+
+.text-context-dialog-error {
+  margin: 0 8px 8px;
+  color: #b42318;
+  font-size: 13px;
+}

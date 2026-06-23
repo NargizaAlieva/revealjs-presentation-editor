@@ -20,6 +20,7 @@ import { TRANSPARENT_SLIDE_BG } from "../core/operations/slideOperations";
 import TextElement from "./canvas/TextElement";
 import MediaElement from "./canvas/MediaElement";
 import SlideDecorations from "./canvas/SlideDecorations";
+import CanvasContextMenu from "./canvas/CanvasContextMenu";
 
 export default function EditorCanvas({
   slide,
@@ -30,6 +31,7 @@ export default function EditorCanvas({
   onMoveTextElement,
   onResizeTextElement,
   onFormatTextElement,
+  currentFormatting = {},
   onFormatTextRangeElement,
   onStartEditing,
   onStopEditing,
@@ -62,8 +64,20 @@ export default function EditorCanvas({
   onRedo,
   onCopy,
   onPaste,
+  onPasteText,
+  onPastePicture,
   onCut,
   onNewComment,
+  onHyperlink,
+  canHyperlink = false,
+  canPaste = false,
+  canUndo = false,
+  canRedo = false,
+  onBringToFront,
+  onBringForward,
+  onSendBackward,
+  onSendToBack,
+  onRotateRight,
   onOpenPictureFormat,
   onUpdateBackgroundImagePosition,
   cropSignal,
@@ -80,6 +94,7 @@ export default function EditorCanvas({
   const [playingParagraphIndex, setPlayingParagraphIndex] = useState(null);
   const [playingByParagraph, setPlayingByParagraph] = useState(false);
   const [playingTransition, setPlayingTransition] = useState(null);
+  const [contextMenu, setContextMenu] = useState(null);
 
   const workspaceRef = useRef(null);
   const containerRef = useRef(null);
@@ -109,6 +124,30 @@ export default function EditorCanvas({
   const zoomScale = zoom / 100;
   const scaledWidth = width * zoomScale;
   const scaledHeight = height * zoomScale;
+
+  const closeContextMenu = () => setContextMenu(null);
+
+  const openContextMenu = (event, elementId = null, contextType = "canvas") => {
+    event.preventDefault();
+    if (elementId && !selectedElementIds.includes(elementId)) {
+      onSelectElement?.(elementId);
+    }
+    setContextMenu({
+      x: event.clientX,
+      y: event.clientY,
+      hasSelection: Boolean(elementId),
+      elementId,
+      contextType,
+    });
+  };
+
+  const exitTextEditing = (elementId) => {
+    const editable = containerRef.current?.querySelector(
+      `[data-element-id="${elementId}"] [contenteditable="true"]`,
+    );
+    editable?.blur();
+    onStopEditing?.(elementId);
+  };
 
   const textElements = useMemo(
     () => (slide?.contents?.text ?? []).filter((element) => !element.hidden),
@@ -265,6 +304,10 @@ export default function EditorCanvas({
       if (!inCanvas && !onBody) return;
 
       const editable = isEditableTarget(target);
+
+      if (event.key === "Escape") {
+        setContextMenu(null);
+      }
 
       if (isSelectAllShortcut(event) && !editable) {
         event.preventDefault();
@@ -473,6 +516,10 @@ export default function EditorCanvas({
                     onSelectElement?.(null);
                   }
                 }}
+                onContextMenu={(event) => {
+                  onSelectElement?.(null);
+                  openContextMenu(event);
+                }}
               >
                 <SlideDecorations
                   presentation={presentation}
@@ -531,6 +578,7 @@ export default function EditorCanvas({
                       formatPainterClipboard={formatPainterClipboard}
                       onFormatPainterCopy={onFormatPainterCopy}
                       onFormatPainterPaste={onFormatPainterPaste}
+                      onContextMenu={openContextMenu}
                       animationOrder={
                         showAnimationBadges
                           ? animationSequenceMap.get(textElement.id)
@@ -556,6 +604,7 @@ export default function EditorCanvas({
                       onStartDrag={startDraggingMedia}
                       onStartResize={startResizingMedia}
                       onStartRotate={startRotatingMedia}
+                      onContextMenu={openContextMenu}
                       onDeleteMedia={(id) => {
                         onDeleteMedia(id);
                         onSelectElement?.(null);
@@ -691,6 +740,41 @@ export default function EditorCanvas({
           </div>
         </div>
       </div>
+
+      {contextMenu && (
+        <CanvasContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          hasSelection={contextMenu.hasSelection}
+          contextType={contextMenu.contextType}
+          elementId={contextMenu.elementId}
+          formatting={currentFormatting}
+          presentation={presentation}
+          canPaste={canPaste}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onClose={closeContextMenu}
+          onUndo={onUndo}
+          onRedo={onRedo}
+          onCut={onCut}
+          onCopy={onCopy}
+          onPaste={onPaste}
+          onPasteText={onPasteText}
+          onPastePicture={onPastePicture}
+          onDelete={onDeleteSelection}
+          onSelectAll={onSelectAll}
+          onBringToFront={onBringToFront}
+          onBringForward={onBringForward}
+          onSendBackward={onSendBackward}
+          onSendToBack={onSendToBack}
+          onRotateRight={onRotateRight}
+          onNewComment={onNewComment}
+          onHyperlink={onHyperlink}
+          canHyperlink={canHyperlink}
+          onExitEditText={exitTextEditing}
+          onFormatText={onFormatTextElement}
+        />
+      )}
 
       {showNotes && (
         <div className="slide-notes">

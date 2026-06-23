@@ -11,7 +11,6 @@ import {
 import { REFLECTION_PRESETS } from "../../core/model/imageEffects";
 import MediaContextMenu from "./MediaContextMenu";
 import ImageStylePicker from "./ImageStylePicker";
-import ImageFormatPanel from "./ImageFormatPanel";
 import { getStyleById } from "../../core/model/imageStyles";
 import "./MediaElement.css";
 
@@ -48,6 +47,7 @@ export default function MediaElement({
   onUpdateMedia,
   onNewComment,
   onOpenPictureFormat,
+  onContextMenu,
   previewClassName,
   animationOrder,
   cropSignal,
@@ -55,7 +55,6 @@ export default function MediaElement({
   externalPreviewStyleId,
 }) {
   const resolvedSrc = useMediaSrc(media["file-link"]);
-  // Merge previewEffects on top of media.effects for hover preview
   const effectiveMedia = previewEffects
     ? { ...media, effects: { ...(media.effects ?? {}), ...previewEffects } }
     : media;
@@ -70,27 +69,19 @@ export default function MediaElement({
   // Screen-space rect of the crop container, updated after each DOM commit.
   // Used to position the portal crop overlay at the correct screen coordinates.
   const [cropPortalRect, setCropPortalRect] = useState(null);
-  const [panelPos, setPanelPos] = useState(null);
 
   const wrapperRef = useRef(null);
   const cropDragRef = useRef(null);
   const localCropRef = useRef(localCrop);
-  localCropRef.current = localCrop;
   const cropOriginRef = useRef(cropOrigin);
-  cropOriginRef.current = cropOrigin;
 
-  // Position the ImageFormatPanel above (or below) the element when selected.
-  useLayoutEffect(() => {
-    if (isPrimarySelected && !isCropping && wrapperRef.current) {
-      const r = wrapperRef.current.getBoundingClientRect();
-      const panelH = 70;
-      const top = r.top - panelH - 8 > 0 ? r.top - panelH - 8 : r.bottom + 8;
-      const left = Math.max(8, Math.min(r.left, window.innerWidth - 560));
-      setPanelPos({ top, left });
-    } else {
-      setPanelPos(null);
-    }
-  }, [isPrimarySelected, isCropping, media.width, media.height, media.position?.x, media.position?.y]);
+  useEffect(() => {
+    localCropRef.current = localCrop;
+  }, [localCrop]);
+
+  useEffect(() => {
+    cropOriginRef.current = cropOrigin;
+  }, [cropOrigin]);
 
   // After every DOM commit where the crop container has moved, read its
   // screen rect and store it so the portal overlay can reposition.
@@ -115,18 +106,37 @@ export default function MediaElement({
     }
   }, [isCropping, cropOrigin]);
 
+  const mediaCrop = media.crop;
+  const mediaWidth = media.width;
+  const mediaHeight = media.height;
+  const mediaX = media.position?.x;
+  const mediaY = media.position?.y;
+  const sourceWidth = media["source-width"];
+  const sourceHeight = media["source-height"];
+
   const enterCropMode = useCallback(() => {
-    const [ct = 0, cr = 0, cb = 0, cl = 0] = media.crop?.length === 4 ? media.crop : [0, 0, 0, 0];
-    const W = media.width ?? 300;
-    const H = media.height ?? 200;
-    const srcW = media["source-width"] ?? W / Math.max(0.01, 1 - cl / 100 - cr / 100);
-    const srcH = media["source-height"] ?? H / Math.max(0.01, 1 - ct / 100 - cb / 100);
-    const fullX = (media.position?.x ?? 0) - (cl / 100) * srcW;
-    const fullY = (media.position?.y ?? 0) - (ct / 100) * srcH;
+    const [ct = 0, cr = 0, cb = 0, cl = 0] =
+      mediaCrop?.length === 4 ? mediaCrop : [0, 0, 0, 0];
+    const W = mediaWidth ?? 300;
+    const H = mediaHeight ?? 200;
+    const srcW =
+      sourceWidth ?? W / Math.max(0.01, 1 - cl / 100 - cr / 100);
+    const srcH =
+      sourceHeight ?? H / Math.max(0.01, 1 - ct / 100 - cb / 100);
+    const fullX = (mediaX ?? 0) - (cl / 100) * srcW;
+    const fullY = (mediaY ?? 0) - (ct / 100) * srcH;
     setCropOrigin({ fullX, fullY, srcW, srcH });
     setLocalCrop([ct, cr, cb, cl]);
     setIsCropping(true);
-  }, [media.crop, media.width, media.height, media.position, media["source-width"], media["source-height"]]);
+  }, [
+    mediaCrop,
+    mediaWidth,
+    mediaHeight,
+    mediaX,
+    mediaY,
+    sourceWidth,
+    sourceHeight,
+  ]);
 
   const handledCropSignalRef = useRef(cropSignal ?? 0);
   useEffect(() => {
@@ -134,7 +144,7 @@ export default function MediaElement({
       handledCropSignalRef.current = cropSignal;
       enterCropMode();
     }
-  }, [cropSignal]);
+  }, [cropSignal, enterCropMode, isCropping, isPrimarySelected]);
 
   const applyCrop = useCallback(() => {
     let [ct, cr, cb, cl] = localCropRef.current;
@@ -520,6 +530,7 @@ export default function MediaElement({
   return (
     <div
       ref={wrapperRef}
+      data-element-id={media.id}
       className={[
         "canvas-media-wrapper",
         isSelected && !isCropping ? "selected" : "",
@@ -546,7 +557,11 @@ export default function MediaElement({
         if (isCropping) return;
         event.preventDefault();
         event.stopPropagation();
-        setContextMenu({ x: event.clientX, y: event.clientY });
+        if (onContextMenu) {
+          onContextMenu(event, media.id, "media");
+        } else {
+          setContextMenu({ x: event.clientX, y: event.clientY });
+        }
       }}
     >
       {animationOrder != null && !isCropping && (

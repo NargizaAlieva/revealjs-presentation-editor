@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useLayoutEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import FormatToolbar from "./FormatToolbar";
 import "./TextElement.css";
@@ -64,6 +64,7 @@ export default function TextElement({
   formatPainterClipboard = null,
   onFormatPainterCopy,
   onFormatPainterPaste,
+  onContextMenu,
   clearSelectionSignal = 0,
 }) {
   const [toolbarPos, setToolbarPos] = useState({ top: 0, left: 0 });
@@ -136,7 +137,7 @@ useEffect(() => {
     : { ...effectiveParaFormatting, ...pendingFormatting };
 
   // Per-paragraph list info so markers are scoped to each paragraph individually.
-  const paragraphListInfos = useMemo(() => (textElement.paragraphs ?? []).map((p) => {
+  const paragraphListInfos = (textElement.paragraphs ?? []).map((p) => {
     const pFmt = p.formatting ?? {};
     const firstRunFmt =
       (p.runs ?? []).find((run) => (run.text ?? "").length > 0)?.formatting ??
@@ -183,7 +184,7 @@ useEffect(() => {
         ),
       },
     };
-  }), [textElement.paragraphs, placeholderFormatting, masterFormatting]);
+  });
   const anyListPara = paragraphListInfos.find((p) => p.listType) ?? null;
   const listType = anyListPara?.listType ?? null;
 
@@ -229,7 +230,7 @@ useEffect(() => {
         setCaretOffset(el, savedCaret);
       }
     }
-  }, [innerHTML]);
+  }, [innerHTML, textElement.paragraphs]);
 
   useLayoutEffect(() => {
     const editable = editableRef.current;
@@ -316,6 +317,7 @@ useEffect(() => {
     textElement.id,
     textElement.paragraphs,
     textElement.position,
+    textElement.overflow,
     textElement.width,
   ]);
 
@@ -425,7 +427,6 @@ useEffect(() => {
 
   useEffect(() => {
     if (isPrimarySelected && isToolbarOpen) updateToolbarPosition();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPrimarySelected, isToolbarOpen]);
 
   useEffect(() => {
@@ -612,7 +613,14 @@ useEffect(() => {
         }}
         onContextMenu={(event) => {
           saveCurrentSelection();
-          openToolbar({ x: event.clientX, y: event.clientY });
+          if (onContextMenu) {
+            event.preventDefault();
+            event.stopPropagation();
+            setIsToolbarOpen(false);
+            onContextMenu(event, textElement.id, "text");
+          } else {
+            openToolbar({ x: event.clientX, y: event.clientY });
+          }
         }}
         onKeyUp={() => {
           saveCurrentSelection();
