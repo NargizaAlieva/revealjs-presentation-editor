@@ -273,9 +273,10 @@ useEffect(() => {
     paragraphListInfos,
   ]);
 
+  const overflowMode = textElement.overflow ?? "auto-fit";
+
   useLayoutEffect(() => {
     const editable = editableRef.current;
-    const overflowMode = textElement.overflow ?? "auto-fit";
     if (!editable || !onAutoFit || overflowMode !== "auto-fit") return undefined;
 
     const fitToContent = () => {
@@ -312,6 +313,7 @@ useEffect(() => {
   }, [
     innerHTML,
     onAutoFit,
+    overflowMode,
     slideHeight,
     textElement.height,
     textElement.id,
@@ -323,18 +325,28 @@ useEffect(() => {
 
   useLayoutEffect(() => {
     const editable = editableRef.current;
-    if (!editable || (textElement.overflow ?? "auto-fit") !== "shrink-on-overflow") return;
+    if (!editable || overflowMode !== "shrink-on-overflow") return;
     const maxH = textElement.height ?? 80;
-    let scale = 1;
+    const containerW = textElement.width ?? 300;
+
     editable.style.transform = "";
     editable.style.transformOrigin = "";
     editable.style.width = "";
-    while (editable.scrollHeight > maxH + 1 && scale > 0.4) {
-      scale -= 0.02;
-      editable.style.transform = `scale(${scale})`;
+
+    if (editable.scrollHeight <= maxH + 1) return;
+
+    let lo = 0.3, hi = 1.0;
+    for (let i = 0; i < 14; i++) {
+      const mid = (lo + hi) / 2;
+      editable.style.transform = `scale(${mid})`;
       editable.style.transformOrigin = "top left";
-      editable.style.width = `${(textElement.width ?? 300) / scale}px`;
+      editable.style.width = `${containerW / mid}px`;
+      if (editable.scrollHeight * mid <= maxH + 1) lo = mid; else hi = mid;
     }
+    editable.style.transform = `scale(${lo})`;
+    editable.style.transformOrigin = "top left";
+    editable.style.width = `${containerW / lo}px`;
+
     return () => {
       if (editable) {
         editable.style.transform = "";
@@ -342,7 +354,7 @@ useEffect(() => {
         editable.style.width = "";
       }
     };
-  }, [innerHTML, textElement.overflow, textElement.height, textElement.width]);
+  }, [innerHTML, overflowMode, textElement.height, textElement.width]);
 
   const updateToolbarPosition = (anchorPoint = null) => {
     setTimeout(() => {
@@ -458,13 +470,9 @@ useEffect(() => {
         left: `${textElement.position?.x ?? 0}px`,
         top: `${textElement.position?.y ?? 0}px`,
         width: `${textElement.width ?? 300}px`,
-        ...(() => {
-          const om = textElement.overflow ?? "auto-fit";
-          const fixedH = `${textElement.height ?? 80}px`;
-          return om === "auto-fit"
-            ? { minHeight: fixedH }
-            : { height: fixedH, overflow: om === "none" ? "hidden" : "visible" };
-        })(),
+        ...(overflowMode === "auto-fit"
+          ? { minHeight: `${textElement.height ?? 80}px` }
+          : { height: `${textElement.height ?? 80}px`, overflow: "hidden" }),
         background: textElement.background ?? "transparent",
         zIndex: textElement["z-index"] ?? 1,
         transform: `rotate(${textElement.rotation ?? 0}deg)`,
@@ -596,6 +604,7 @@ useEffect(() => {
         ref={editableRef}
         contentEditable={isPrimarySelected && !objectSelectionMode}
         suppressContentEditableWarning
+        spellCheck={false}
         className="text-editable"
         data-placeholder="Click to edit text"
         onFocus={() => {
@@ -840,6 +849,8 @@ useEffect(() => {
             "inherit",
           ),
           position: "relative",
+          wordBreak: "break-all",
+          overflowWrap: "anywhere",
         }}
         data-list-type={listType ?? undefined}
         data-list-marker={

@@ -28,7 +28,7 @@ export function buildTextElementStyle(textElement, index, masterFormatting = {},
     width: `${textElement.width ?? 300}px`,
     height: `${textElement.height ?? 80}px`,
     background: textElement.background ?? "transparent",
-    overflow: textElement.overflow === "overflow-visible" ? "visible" : "hidden",
+    overflow: "hidden",
     zIndex: textElement["z-index"] ?? index + 1,
     ...(rotation ? { transform: `rotate(${rotation}deg)` } : {}),
     fontSize: r(formatting.size, placeholderFormatting.size, masterFormatting.size, index === 0 ? "44px" : "28px"),
@@ -40,6 +40,9 @@ export function buildTextElementStyle(textElement, index, masterFormatting = {},
     textAlignLast: r(formatting.align, placeholderFormatting.align, masterFormatting.align, "left") === "justify" ? "left" : undefined,
     lineHeight: r(formatting["line-spacing"], placeholderFormatting["line-spacing"], masterFormatting["line-spacing"], "1.4"),
     boxSizing: "border-box",
+    wordBreak: "break-all",
+    overflowWrap: "anywhere",
+    whiteSpace: "pre-wrap",
   };
 }
 

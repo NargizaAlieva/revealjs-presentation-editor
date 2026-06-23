@@ -1,0 +1,143 @@
+.theme-color-editor {
+  padding: 16px;
+  background: #f5f5f5;
+  border-radius: 6px;
+}
+
+.theme-color-editor-header {
+  margin-bottom: 16px;
+}
+
+.theme-color-editor-header h3 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.theme-color-editor-header p {
+  margin: 0;
+  font-size: 12px;
+  color: #999;
+}
+
+.theme-colors-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.theme-color-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+}
+
+.theme-color-label-section {
+  flex: 1;
+}
+
+.theme-color-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  margin: 0 0 2px 0;
+}
+
+.theme-color-description {
+  font-size: 11px;
+  color: #999;
+  margin: 0;
+}
+
+.theme-color-input-wrapper {
+  position: relative;
+  min-width: 100px;
+}
+
+.theme-color-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: #333;
+  transition: all 0.2s ease;
+}
+
+.theme-color-button:hover {
+  border-color: #999;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.theme-color-button:active {
+  background: #f9f9f9;
+}
+
+.theme-color-value {
+  display: inline-block;
+  width: 60px;
+  text-align: center;
+  font-family: "Courier New", monospace;
+  font-size: 11px;
+}
+
+.theme-color-picker-popup {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  padding: 12px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 180px;
+}
+
+.theme-color-picker-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.theme-color-picker-label span {
+  min-width: 50px;
+  font-weight: 500;
+}
+
+.theme-color-picker-input {
+  width: 40px;
+  height: 32px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.theme-color-hex-input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-family: "Courier New", monospace;
+}
+
+.theme-color-hex-input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+}
