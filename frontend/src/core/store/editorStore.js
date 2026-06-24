@@ -49,6 +49,7 @@ import {
   updateLayoutPlaceholder,
   updateLayoutElementsFont,
   updateLayoutItem,
+  updateLayoutTextFormatting,
 } from "../operations/layoutOperations";
 import {
   addMedia,
@@ -1104,6 +1105,19 @@ export const editorReducer = (state, event) => {
         lastUpdated: Date.now(),
       });
     }
+
+    case EditorEventType.LAYOUT.UPDATE_TEXT_FORMATTING:
+      return withHistory(state, {
+        ...state,
+        presentation: updateLayoutTextFormatting(
+          state.presentation,
+          event.payload.layoutId,
+          event.payload.elementId,
+          event.payload.formattingUpdate,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
 
     case EditorEventType.LAYOUT.RESET:
       return withHistory(state, {

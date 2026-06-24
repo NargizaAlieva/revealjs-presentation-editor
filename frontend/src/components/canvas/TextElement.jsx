@@ -81,6 +81,7 @@ export default function TextElement({
   const selectionFrameRef = useRef(null);
   const isDeletingRef = useRef(false);
   const toolbarFormInputActiveRef = useRef(false);
+  const lastAutoFitHeightRef = useRef(null);
 
 useEffect(() => {
   if (clearSelectionSignal === 0) return;

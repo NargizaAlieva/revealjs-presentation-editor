@@ -357,6 +357,7 @@ export function useEditorController() {
     removeLayoutPlaceholder,
     updateLayoutPlaceholder,
     updateLayoutItem,
+    updateLayoutTextFormattingAction,
     updateMasterTheme,
     updateMasterFormatting,
     updateMasterDimensions,
@@ -1163,8 +1164,24 @@ useEffect(() => {
   const masterViewChangeParagraphs = useCallback(
     (id, paragraphs) => {
       if (selectedMasterLayoutId && !masterTextIds.has(id)) {
-        const text = paragraphs.map((p) => p.runs.map((r) => r.text).join("")).join("\n");
-        updateLayoutItem(selectedMasterLayoutId, id, { promptText: text });
+        const layout = (presentation?.slideset?.layouts ?? []).find(
+          (l) => l["layout-id"] === selectedMasterLayoutId,
+        );
+        const isPlaceholder = (layout?.placeholders ?? []).some(
+          (p) => p["placeholder-id"] === id,
+        );
+        if (isPlaceholder) {
+          const text = paragraphs.map((p) => p.runs.map((r) => r.text).join("")).join("\n");
+          updateLayoutItem(selectedMasterLayoutId, id, { promptText: text });
+        } else {
+          const paragraphsWithKeys = paragraphs.map((p) => ({
+            ...p,
+            userSetKeys: p.userSetKeys?.length
+              ? p.userSetKeys
+              : Object.keys(p.formatting ?? {}),
+          }));
+          updateLayoutItem(selectedMasterLayoutId, id, { paragraphs: paragraphsWithKeys, userModified: true });
+        }
       } else {
         const paragraphsWithKeys = paragraphs.map((p) => ({
           ...p,
@@ -1175,18 +1192,37 @@ useEffect(() => {
         updateMasterElement("text", id, { paragraphs: paragraphsWithKeys, userModified: true });
       }
     },
-    [selectedMasterLayoutId, masterTextIds, updateLayoutItem, updateMasterElement],
+    [selectedMasterLayoutId, masterTextIds, presentation, updateLayoutItem, updateMasterElement],
   );
 
   const masterViewFormatText = useCallback(
-    (id, fmt) => {
+    (id, rawFmt) => {
+      const delta = Number(rawFmt["font-size-delta"] ?? 0);
+      let fmt = rawFmt;
+      if (delta) {
+        const el = findMasterTextElement(presentation, selectedMasterLayoutId, id);
+        const currentSize = parseFloat(el?.paragraphs?.[0]?.formatting?.size ?? masterFormatting?.size ?? "24") || 24;
+        const newSize = Math.max(6, Math.min(120, currentSize + delta));
+        fmt = { ...rawFmt, "font-size-delta": undefined, size: `${newSize}px` };
+        delete fmt["font-size-delta"];
+      }
       if (selectedMasterLayoutId && !masterTextIds.has(id)) {
-        updateLayoutItem(selectedMasterLayoutId, id, { formatting: fmt });
+        const layout = (presentation?.slideset?.layouts ?? []).find(
+          (l) => l["layout-id"] === selectedMasterLayoutId,
+        );
+        const isPlaceholder = (layout?.placeholders ?? []).some(
+          (p) => p["placeholder-id"] === id,
+        );
+        if (isPlaceholder) {
+          updateLayoutItem(selectedMasterLayoutId, id, { formatting: fmt });
+        } else {
+          updateLayoutTextFormattingAction(selectedMasterLayoutId, id, fmt);
+        }
       } else {
         updateMasterTextFormatting(id, fmt);
       }
     },
-    [selectedMasterLayoutId, masterTextIds, updateLayoutItem, updateMasterTextFormatting],
+    [selectedMasterLayoutId, masterTextIds, presentation, masterFormatting, updateLayoutItem, updateLayoutTextFormattingAction, updateMasterTextFormatting],
   );
 
   const masterViewMoveText = useCallback(
@@ -1752,6 +1788,7 @@ useEffect(() => {
     removeLayoutPlaceholder,
     updateLayoutPlaceholder,
     updateLayoutItem,
+    updateLayoutTextFormattingAction,
     updateMasterTheme,
     updateMasterFormatting,
     updateMasterDimensions,

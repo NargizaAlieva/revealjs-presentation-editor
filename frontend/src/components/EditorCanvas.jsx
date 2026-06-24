@@ -695,6 +695,7 @@ export default function EditorCanvas({
                       onFormatPainterPaste={onFormatPainterPaste}
                       onAutoFit={updateElement}
                       onContextMenu={openContextMenu}
+                      onAutoFit={updateElement}
                       animationOrder={
                         showAnimationBadges
                           ? animationSequenceMap.get(textElement.id)

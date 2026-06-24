@@ -1,50 +1,63 @@
 import { useMediaSrc } from "../../hooks/useMediaSrc";
 import { extractPlainTextFromParagraphs } from "../../core/text/textFormatting";
 
-function MasterMediaImage({ el }) {
+function MediaDecorationElement({ el, zIndex, interactive = false }) {
   const resolvedSrc = useMediaSrc(el["file-link"]);
+  const src = el.src ?? resolvedSrc;
+  const isVideo = el["media-type"] === "video";
+  const style = {
+    position: "absolute",
+    left: el.position?.x ?? 0,
+    top: el.position?.y ?? 0,
+    width: el.width ?? 200,
+    height: el.height ?? 120,
+    objectFit: "contain",
+    pointerEvents: interactive ? "auto" : "none",
+    zIndex: zIndex ?? 5,
+    transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
+  };
 
-  return (
-    <img
-      src={el.src ?? resolvedSrc}
-      alt=""
-      style={{
-        position: "absolute",
-        left: el.position?.x ?? 0,
-        top: el.position?.y ?? 0,
-        width: el.width ?? 200,
-        height: el.height ?? 120,
-        objectFit: "contain",
-        pointerEvents: "none",
-        zIndex: el["z-index"] ?? 5,
-        transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
-      }}
-    />
-  );
+  if (isVideo) {
+    if (interactive) {
+      return (
+        <div style={{ ...style, objectFit: undefined, overflow: "hidden" }}>
+          <video
+            src={src}
+            controls
+            preload="metadata"
+            style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+          />
+        </div>
+      );
+    }
+    return (
+      <div style={{ ...style, objectFit: undefined, overflow: "hidden" }}>
+        <video
+          src={src}
+          preload="metadata"
+          onLoadedMetadata={(e) => { e.target.currentTime = 0; }}
+          style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+        />
+        <div style={{
+          position: "absolute", inset: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: "50%",
+            background: "rgba(0,0,0,0.45)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return <img src={src} alt="" style={style} />;
 }
 
-function LayoutMediaImage({ el }) {
-  const resolvedSrc = useMediaSrc(el["file-link"]);
-  return (
-    <img
-      src={el.src ?? resolvedSrc}
-      alt=""
-      style={{
-        position: "absolute",
-        left: el.position?.x ?? 0,
-        top: el.position?.y ?? 0,
-        width: el.width ?? 200,
-        height: el.height ?? 120,
-        objectFit: "contain",
-        pointerEvents: "none",
-        zIndex: el["z-index"] ?? 4,
-        transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
-      }}
-    />
-  );
-}
-
-export default function SlideDecorations({ presentation, width, height, hideMasterElements = false, layoutId }) {
+export default function SlideDecorations({ presentation, width, height, hideMasterElements = false, layoutId, interactive = false }) {
   const master = presentation?.slideset?.master;
   const decorations = master?.decorations;
   const masterElements = hideMasterElements ? null : master?.elements;
@@ -144,7 +157,7 @@ export default function SlideDecorations({ presentation, width, height, hideMast
       })}
 
       {(masterElements?.media ?? []).filter((el) => !el.hidden).map((el) => (
-        <MasterMediaImage key={el.id} el={el} />
+        <MediaDecorationElement key={el.id} el={el} zIndex={el["z-index"] ?? 5} interactive={interactive} />
       ))}
 
       {(layoutElements?.text ?? []).filter((el) => !el.hidden).map((el) => {
@@ -182,7 +195,7 @@ export default function SlideDecorations({ presentation, width, height, hideMast
       })}
 
       {(layoutElements?.media ?? []).filter((el) => !el.hidden).map((el) => (
-        <LayoutMediaImage key={el.id} el={el} />
+        <MediaDecorationElement key={el.id} el={el} zIndex={el["z-index"] ?? 4} interactive={interactive} />
       ))}
     </>
   );
