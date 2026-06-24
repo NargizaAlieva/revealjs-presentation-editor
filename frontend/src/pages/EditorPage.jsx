@@ -110,8 +110,14 @@ export default function EditorPage() {
           onApplyLayoutFont={ctrl.applyLayoutFont}
           onUpdateDimensions={ctrl.handleUpdateDimensions}
           onApplyBackground={ctrl.handleApplyBackground}
+          onApplySlideBackground={ctrl.handleApplySlideBackground}
+          onApplyBgFillImage={ctrl.handleApplyBgFillImage}
+          onRemoveBgFillImage={ctrl.handleRemoveBgFillImage}
+          onUpdateBgFillSettings={ctrl.handleUpdateBgFillSettings}
+          onApplyBackgroundToAll={ctrl.handleApplyBackgroundToAll}
           onApplyBackgroundImage={ctrl.handleApplyBackgroundImage}
           onRemoveBackgroundImage={ctrl.handleRemoveBackgroundImage}
+          onUpdateBackgroundImageRect={ctrl.handleUpdateBackgroundImageRect}
           onUpdateBackgroundImagePosition={ctrl.handleUpdateBackgroundImagePosition}
           onUpdateBackgroundImageScale={ctrl.handleUpdateBackgroundImageScale}
           selectedSlide={ctrl.selectedSlide}
@@ -273,6 +279,7 @@ export default function EditorPage() {
                   onRotateRight={ctrl.handleRotateRight}
                   onNewComment={ctrl.handleNewComment}
                   onOpenPictureFormat={() => ctrl.setActiveTab("Picture Format")}
+                  onUpdateBackgroundImageRect={ctrl.handleUpdateBackgroundImageRect}
                   onUpdateBackgroundImagePosition={ctrl.handleUpdateBackgroundImagePosition}
                   cropSignal={ctrl.cropSignal}
                   previewMediaEffects={ctrl.previewMediaEffects}

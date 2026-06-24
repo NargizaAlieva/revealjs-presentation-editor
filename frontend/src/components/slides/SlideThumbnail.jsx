@@ -88,8 +88,10 @@ export default function SlideThumbnail({
   const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
   const bgImageKey = slide?.contents?.["background-image"] ?? null;
   const bgImageSrc = useMediaSrc(bgImageKey);
-  const bgImagePosition = slide?.contents?.["background-image-position"] ?? "center center";
-  const bgImageScale = slide?.contents?.["background-image-scale"] ?? 100;
+  const bgImageRect = slide?.contents?.["background-image-rect"] ?? { x: 0, y: 0, w: slideWidth, h: slideHeight };
+  const bgFillImageKey = slide?.contents?.["bg-fill-image"] ?? null;
+  const bgFillImageSrc = useMediaSrc(bgFillImageKey);
+  const bgFillSettings = slide?.contents?.["bg-fill-settings"] ?? {};
 
   return (
     <div
@@ -116,16 +118,46 @@ export default function SlideThumbnail({
             !slide?.contents?.background || slide.contents.background === "#FFFFFFFF"
               ? "var(--bg-light, white)"
               : slide.contents.background,
-          ...(bgImageSrc ? {
-            backgroundImage: `url(${bgImageSrc})`,
-            backgroundSize: bgImageScale === 100 ? "cover" : `${bgImageScale}%`,
-            backgroundPosition: bgImagePosition,
-            backgroundRepeat: "no-repeat",
-          } : {}),
           position: "relative",
           overflow: "hidden",
         }}
       >
+        {bgFillImageSrc && (() => {
+          const s = bgFillSettings;
+          const scale = s.fitToCanvas ?? false;
+          const ol = scale ? 0 : (s.offsetLeft ?? 0) / 100;
+          const or = scale ? 0 : (s.offsetRight ?? 0) / 100;
+          const ot = scale ? 0 : (s.offsetTop ?? 0) / 100;
+          const ob = scale ? 0 : (s.offsetBottom ?? 0) / 100;
+          return (
+            <div style={{ position: "absolute", inset: 0, overflow: "hidden", zIndex: 0, pointerEvents: "none" }}>
+              <img src={bgFillImageSrc} alt="" style={{
+                position: "absolute",
+                left: ol * slideWidth, top: ot * slideHeight,
+                width: (1 - ol - or) * slideWidth,
+                height: (1 - ot - ob) * slideHeight,
+                objectFit: scale ? "fill" : "cover",
+                opacity: 1 - (s.transparency ?? 0) / 100,
+              }} />
+            </div>
+          );
+        })()}
+        {bgImageSrc && (
+          <img
+            src={bgImageSrc}
+            alt=""
+            style={{
+              position: "absolute",
+              left: bgImageRect.x,
+              top: bgImageRect.y,
+              width: bgImageRect.w,
+              height: bgImageRect.h,
+              objectFit: "fill",
+              zIndex: 0,
+              pointerEvents: "none",
+            }}
+          />
+        )}
         <SlideDecorations
           presentation={presentation}
           width={slideWidth}

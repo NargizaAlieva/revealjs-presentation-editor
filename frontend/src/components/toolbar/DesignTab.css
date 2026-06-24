@@ -207,6 +207,23 @@
     line-height: 1;
 }
 
+.design-format-bg-btn {
+    padding: 3px 8px;
+    font-size: 11px;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    background: #fff;
+    color: #374151;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+}
+.design-format-bg-btn:hover {
+    background: #f0f0ff;
+    border-color: #6366f1;
+    color: #4f46e5;
+}
+
 .bg-palette-popup {
     position: absolute;
     top: calc(100% + 4px);

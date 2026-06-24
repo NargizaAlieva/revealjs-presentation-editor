@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { MdAdd, MdImage, MdTextFields, MdVideoLibrary } from "react-icons/md";
 import { LAYOUTS } from "./homeTabConstants";
+import FormatBackgroundPanel from "./FormatBackgroundPanel";
 
 function BgFormatPopup({ currentScale, onChangeScale, onClose, anchorRef }) {
   const ref = useRef(null);
@@ -45,7 +46,7 @@ function BgFormatPopup({ currentScale, onChangeScale, onClose, anchorRef }) {
   );
 }
 
-export default function InsertTab({ onImageUpload, onVideoUpload, onAddSlide, onAddTextElement, layouts: propLayouts, onApplyBackgroundImage, onRemoveBackgroundImage, onUpdateBackgroundImagePosition, onUpdateBackgroundImageScale, currentBgImage, currentBgPosition = "center center", currentBgScale = 100 }) {
+export default function InsertTab({ onImageUpload, onVideoUpload, onAddSlide, onAddTextElement, layouts: propLayouts, onApplyBackgroundImage, onRemoveBackgroundImage, onUpdateBackgroundImagePosition, onUpdateBackgroundImageScale, currentBgImage, currentBgPosition = "center center", currentBgScale = 100, selectedSlide, presentation, onApplyBackground, onApplySlideBackground, onApplyBgFillImage, onRemoveBgFillImage, onUpdateBgFillSettings, onApplyBackgroundToAll, isSlideMasterOpen }) {
   const layouts = (propLayouts && propLayouts.length > 0) ? propLayouts : LAYOUTS;
   const [showLayouts, setShowLayouts] = useState(false);
   const [newSlidePos, setNewSlidePos] = useState({ top: 0, left: 0 });
@@ -53,6 +54,11 @@ export default function InsertTab({ onImageUpload, onVideoUpload, onAddSlide, on
   const [showBgPosition, setShowBgPosition] = useState(false);
   const [bgPopupPos, setBgPopupPos] = useState({ top: 0, left: 0 });
   const bgPositionBtnRef = useRef(null);
+  const [showFormatBg, setShowFormatBg] = useState(false);
+
+  useEffect(() => {
+    if (isSlideMasterOpen) setShowFormatBg(false);
+  }, [isSlideMasterOpen]);
 
   const handleNewSlideToggle = () => {
     if (!showLayouts && newSlideBtnRef.current) {
@@ -131,48 +137,29 @@ export default function InsertTab({ onImageUpload, onVideoUpload, onAddSlide, on
       </div>
 
       <div className="ribbon-group">
-        <label className="toolbar-item large toolbar-upload">
+        <button
+          className={`toolbar-item large${showFormatBg ? " active" : ""}`}
+          onClick={() => setShowFormatBg(v => !v)}
+          title="Format Background"
+          disabled={isSlideMasterOpen}
+        >
           <MdImage style={{ color: currentBgImage ? "#4caf50" : undefined }} />
           <span>Background<br/>Image</span>
-          <input type="file" accept="image/*" onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) onApplyBackgroundImage?.(file);
-            e.target.value = "";
-          }} hidden />
-        </label>
-        {currentBgImage && (
-          <>
-            <button
-              ref={bgPositionBtnRef}
-              className={`toolbar-item large${showBgPosition ? " active" : ""}`}
-              title="Format background image"
-              onClick={() => {
-                if (!showBgPosition && bgPositionBtnRef.current) {
-                  const rect = bgPositionBtnRef.current.getBoundingClientRect();
-                  setBgPopupPos({ top: rect.bottom + 4, left: rect.left });
-                }
-                setShowBgPosition(v => !v);
-              }}
-            >
-              <span style={{ fontSize: 16 }}>⊹</span>
-              <span>Format</span>
-            </button>
-            <button className="toolbar-item large" onClick={onRemoveBackgroundImage} title="Remove background image">
-              <span style={{ fontSize: 18 }}>✕</span>
-              <span>Remove Bg</span>
-            </button>
-          </>
+        </button>
+
+        {showFormatBg && (
+          <FormatBackgroundPanel
+            slide={selectedSlide}
+            presentation={presentation}
+            onApplySlideBackground={onApplySlideBackground}
+            onApplyBgFillImage={onApplyBgFillImage}
+            onRemoveBgFillImage={onRemoveBgFillImage}
+            onUpdateBgFillSettings={onUpdateBgFillSettings}
+            onApplyBackgroundToAll={onApplyBackgroundToAll}
+            onClose={() => setShowFormatBg(false)}
+          />
         )}
-        {showBgPosition && currentBgImage && (
-          <div style={{ position: "fixed", top: bgPopupPos.top, left: bgPopupPos.left, zIndex: 9999 }}>
-            <BgFormatPopup
-              currentScale={currentBgScale}
-              onChangeScale={(scale) => onUpdateBackgroundImageScale?.(scale)}
-              onClose={() => setShowBgPosition(false)}
-              anchorRef={bgPositionBtnRef}
-            />
-          </div>
-        )}
+
         <div className="ribbon-group-title">Background</div>
       </div>
     </>

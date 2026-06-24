@@ -59,6 +59,11 @@ export default function Toolbar({
   onAnimationPreview,
   layouts,
   onApplyBackground,
+  onApplySlideBackground,
+  onApplyBgFillImage,
+  onRemoveBgFillImage,
+  onUpdateBgFillSettings,
+  onApplyBackgroundToAll,
   activeTab,
   onTabChange,
   onBeginHistory,
@@ -276,6 +281,15 @@ useEffect(() => {
             currentBgImage={selectedSlide?.contents?.["background-image"] ?? null}
             currentBgPosition={selectedSlide?.contents?.["background-image-position"] ?? "center center"}
             currentBgScale={selectedSlide?.contents?.["background-image-scale"] ?? 100}
+            selectedSlide={selectedSlide}
+            presentation={presentation}
+            onApplyBackground={onApplyBackground}
+            onApplySlideBackground={onApplySlideBackground}
+            onApplyBgFillImage={onApplyBgFillImage}
+            onRemoveBgFillImage={onRemoveBgFillImage}
+            onUpdateBgFillSettings={onUpdateBgFillSettings}
+            onApplyBackgroundToAll={onApplyBackgroundToAll}
+            isSlideMasterOpen={isSlideMasterOpen}
           />
         )}
 
@@ -287,6 +301,12 @@ useEffect(() => {
             onUpdateDimensions={onUpdateDimensions}
             onApplyBackgroundImage={onApplyBackgroundImage}
             onRemoveBackgroundImage={onRemoveBackgroundImage}
+            onApplyBackground={onApplyBackground}
+            onApplySlideBackground={onApplySlideBackground}
+            onApplyBgFillImage={onApplyBgFillImage}
+            onRemoveBgFillImage={onRemoveBgFillImage}
+            onUpdateBgFillSettings={onUpdateBgFillSettings}
+            onApplyBackgroundToAll={onApplyBackgroundToAll}
             selectedSlide={selectedSlide}
           />
         )}

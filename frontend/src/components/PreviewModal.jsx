@@ -26,6 +26,52 @@ import { getPlaceholderFormatting } from "../core/render/slidesetRenderUtils";
 import { paragraphsToHTML } from "../core/text/textFormatting";
 import { REFLECTION_PRESETS } from "../core/model/imageEffects";
 
+function BgFillElement({ fileLink, width, height, settings = {} }) {
+  const src = useMediaSrc(fileLink);
+  if (!src) return null;
+  const scale = settings.fitToCanvas ?? false;
+  const ol = scale ? 0 : (settings.offsetLeft ?? 0) / 100;
+  const or = scale ? 0 : (settings.offsetRight ?? 0) / 100;
+  const ot = scale ? 0 : (settings.offsetTop ?? 0) / 100;
+  const ob = scale ? 0 : (settings.offsetBottom ?? 0) / 100;
+  return (
+    <div style={{ position: "absolute", inset: 0, overflow: "hidden", zIndex: 0, pointerEvents: "none" }}>
+      <img
+        src={src}
+        alt=""
+        style={{
+          position: "absolute",
+          left: ol * width, top: ot * height,
+          width: (1 - ol - or) * width,
+          height: (1 - ot - ob) * height,
+          objectFit: scale ? "fill" : "cover",
+          opacity: 1 - (settings.transparency ?? 0) / 100,
+        }}
+      />
+    </div>
+  );
+}
+
+function BgImageElement({ fileLink, rect }) {
+  const src = useMediaSrc(fileLink);
+  return src ? (
+    <img
+      src={src}
+      alt=""
+      style={{
+        position: "absolute",
+        left: rect.x,
+        top: rect.y,
+        width: rect.w,
+        height: rect.h,
+        objectFit: "fill",
+        zIndex: 0,
+        pointerEvents: "none",
+      }}
+    />
+  ) : null;
+}
+
 function PreviewMediaElement({ media, index, fragmentProps }) {
   const src = useMediaSrc(media["file-link"]);
   const isVideo = media["media-type"] === "video";
@@ -140,6 +186,7 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
               const textElements = getSlideTextElements(slide);
               const mediaElements = getSlideMediaElements(slide);
               const animationMap = buildAdjustedAnimationMap(slide);
+              const bgImageRect = slide?.contents?.["background-image-rect"] ?? { x: 0, y: 0, w: width, h: height };
 
               return (
                 <section
@@ -152,10 +199,17 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
                         : slide.contents.background,
                   }}>
                   <div style={buildSlideContainerStyle(width, height)}>
+                    {slide?.contents?.["bg-fill-image"] && (
+                      <BgFillElement fileLink={slide.contents["bg-fill-image"]} width={width} height={height} settings={slide.contents["bg-fill-settings"] ?? {}} />
+                    )}
+                    {slide?.contents?.["background-image"] && (
+                      <BgImageElement fileLink={slide.contents["background-image"]} rect={bgImageRect} />
+                    )}
                     <SlideDecorations
                       presentation={presentation}
                       width={width}
                       height={height}
+                      layoutId={slide?.["layout-id"]}
                     />
                     {textElements.filter((element) => !element.hidden).map((textElement, index) => {
                       const animation = animationMap.get(textElement.id);

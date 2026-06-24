@@ -6,6 +6,7 @@ import { DESIGN_THEMES, findActiveTheme, updateThemeBackground, THEME_PALETTE_CO
 import { SLIDE_SIZES, clampSlideDimension } from "../../core/model/slideSizes";
 import { renderShapes } from "../../core/render/shapeRenderer";
 import { ThemeColorEditor } from "./ThemeColorEditor";
+import FormatBackgroundPanel from "./FormatBackgroundPanel";
 
 
 export function ColorPalettePopup({ currentColor, onSelect, onClose }) {
@@ -85,11 +86,12 @@ function ThemeThumbnail({ theme, isActive, onClick }) {
     );
 }
 
-function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onApplyBackgroundImage, onRemoveBackgroundImage, onUpdateThemeColor, currentBgImage }) {
+function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onApplyBackgroundImage, onRemoveBackgroundImage, onUpdateThemeColor, currentBgImage, onApplyBackground, onApplySlideBackground, onApplyBgFillImage, onRemoveBgFillImage, onUpdateBgFillSettings, onApplyBackgroundToAll, selectedSlide }) {
     const [showPalette, setShowPalette] = useState(false);
     const [showSizeMenu, setShowSizeMenu] = useState(false);
     const [showCustomSize, setShowCustomSize] = useState(false);
     const [showColorEditor, setShowColorEditor] = useState(false);
+    const [showFormatBg, setShowFormatBg] = useState(false);
     const sizeRef = useRef(null);
 
     const colorTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
@@ -133,6 +135,7 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
     const sizeLabel = currentPreset ? currentPreset.aspectRatio : "Custom";
 
     return (
+        <>
         <div className="design-right-panel">
 
             {/* ── Customize ── */}
@@ -150,6 +153,13 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
                             <ColorPalettePopup currentColor={bgColor} onSelect={applyBg} onClose={() => setShowPalette(false)} />
                         )}
                     </div>
+                    <button
+                        className="design-format-bg-btn"
+                        title="Format Background"
+                        onClick={() => setShowFormatBg(v => !v)}
+                    >
+                        Format Background
+                    </button>
                 </div>
 
                 <div className="design-customize-row">
@@ -270,10 +280,24 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
             </div>
 
         </div>
+
+        {showFormatBg && (
+            <FormatBackgroundPanel
+                slide={selectedSlide}
+                presentation={presentation}
+                onApplySlideBackground={onApplySlideBackground}
+                onApplyBgFillImage={onApplyBgFillImage}
+                onRemoveBgFillImage={onRemoveBgFillImage}
+                onUpdateBgFillSettings={onUpdateBgFillSettings}
+                onApplyBackgroundToAll={onApplyBackgroundToAll}
+                onClose={() => setShowFormatBg(false)}
+            />
+        )}
+        </>
     );
 }
 
-export default function DesignTab({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onApplyBackgroundImage, onRemoveBackgroundImage, onUpdateThemeColor, selectedSlide }) {
+export default function DesignTab({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onApplyBackgroundImage, onRemoveBackgroundImage, onUpdateThemeColor, onApplyBackground, onApplySlideBackground, onApplyBgFillImage, onRemoveBgFillImage, onUpdateBgFillSettings, onApplyBackgroundToAll, selectedSlide }) {
     const currentTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
     const activeTheme = findActiveTheme(currentTheme);
 
@@ -303,6 +327,13 @@ export default function DesignTab({ presentation, onApplyTheme, onApplyFont, onU
                 onApplyBackgroundImage={onApplyBackgroundImage}
                 onRemoveBackgroundImage={onRemoveBackgroundImage}
                 onUpdateThemeColor={onUpdateThemeColor}
+                onApplyBackground={onApplyBackground}
+                onApplySlideBackground={onApplySlideBackground}
+                onApplyBgFillImage={onApplyBgFillImage}
+                onRemoveBgFillImage={onRemoveBgFillImage}
+                onUpdateBgFillSettings={onUpdateBgFillSettings}
+                onApplyBackgroundToAll={onApplyBackgroundToAll}
+                selectedSlide={selectedSlide}
                 currentBgImage={selectedSlide?.contents?.["background-image"] ?? null}
             />
         </div>

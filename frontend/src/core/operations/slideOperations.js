@@ -237,6 +237,64 @@ export const updateSlideBackgroundImage = (presentation, slideIndex, backgroundI
   return setSlides(presentation, slides);
 };
 
+export const updateSlideBackgroundImageRect = (presentation, slideIndex, rect) => {
+  const slides = [...getSlides(presentation)];
+  const slide = slides[slideIndex];
+  if (!slide) return presentation;
+  slides[slideIndex] = {
+    ...slide,
+    contents: { ...slide.contents, "background-image-rect": rect },
+  };
+  return setSlides(presentation, slides);
+};
+
+export const applyBackgroundToAllSlides = (presentation, { background, bgFillImage, bgFillSettings }) => {
+  const slides = getSlides(presentation);
+  const updated = slides.map(slide => ({
+    ...slide,
+    contents: {
+      ...slide.contents,
+      ...(background !== undefined ? { background } : {}),
+      ...(bgFillImage !== undefined ? { "bg-fill-image": bgFillImage } : {}),
+      ...(bgFillSettings !== undefined ? { "bg-fill-settings": bgFillSettings } : {}),
+    },
+  }));
+  return setSlides(presentation, updated);
+};
+
+export const updateSlideBgFillSettings = (presentation, slideIndex, settings) => {
+  const slides = [...getSlides(presentation)];
+  const slide = slides[slideIndex];
+  if (!slide) return presentation;
+  slides[slideIndex] = {
+    ...slide,
+    contents: { ...slide.contents, "bg-fill-settings": settings },
+  };
+  return setSlides(presentation, slides);
+};
+
+export const updateSlideBgFillImage = (presentation, slideIndex, fileLink) => {
+  const slides = [...getSlides(presentation)];
+  const slide = slides[slideIndex];
+  if (!slide) return presentation;
+  slides[slideIndex] = {
+    ...slide,
+    contents: { ...slide.contents, "bg-fill-image": fileLink ?? null },
+  };
+  return setSlides(presentation, slides);
+};
+
+export const updateSlideBackground = (presentation, slideIndex, color) => {
+  const slides = [...getSlides(presentation)];
+  const slide = slides[slideIndex];
+  if (!slide) return presentation;
+  slides[slideIndex] = {
+    ...slide,
+    contents: { ...slide.contents, background: color },
+  };
+  return setSlides(presentation, slides);
+};
+
 export const updateSlideTransition = (presentation, slideIndex, transition) => {
   const slides = [...getSlides(presentation)];
   const slide = slides[slideIndex];

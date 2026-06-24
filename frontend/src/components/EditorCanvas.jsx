@@ -79,6 +79,7 @@ export default function EditorCanvas({
   onSendToBack,
   onRotateRight,
   onOpenPictureFormat,
+  onUpdateBackgroundImageRect,
   onUpdateBackgroundImagePosition,
   cropSignal,
   previewMediaEffects,
@@ -104,41 +105,103 @@ export default function EditorCanvas({
 
   const bgImageKey = slide?.contents?.["background-image"] ?? null;
   const bgImageSrc = useMediaSrc(bgImageKey);
-  const bgImageScale = slide?.contents?.["background-image-scale"] ?? 100;
+  const bgFillImageKey = slide?.contents?.["bg-fill-image"] ?? null;
+  const bgFillImageSrc = useMediaSrc(bgFillImageKey);
+  const bgFillSettings = slide?.contents?.["bg-fill-settings"] ?? {};
 
-  // Parse stored position ("50% 50%", "left top", etc.) → {x,y} in percent
-  const parseBgPosition = (pos) => {
-    const keywordMap = { left: 0, center: 50, right: 100, top: 0, bottom: 100 };
-    const parts = (pos ?? "center center").split(" ");
-    const parse = (v) => (v in keywordMap ? keywordMap[v] : parseFloat(v));
-    return { x: parse(parts[0] ?? "50"), y: parse(parts[1] ?? "50") };
-  };
+  const storedBgRect = slide?.contents?.["background-image-rect"] ?? null;
+  const defaultBgRect = { x: 0, y: 0, w: width, h: height };
+  const bgRect = storedBgRect ?? defaultBgRect;
 
-  const storedBgPos = parseBgPosition(slide?.contents?.["background-image-position"]);
-  const [bgDragPos, setBgDragPos] = useState(null); // {x,y} while dragging
-  const bgDragRef = useRef(null);
+  const [bgImageSelected, setBgImageSelected] = useState(false);
+  const [bgDragRect, setBgDragRect] = useState(null);
 
-  // Activate reposition mode automatically right after a new bg image is inserted
-  const [bgRepoMode, setBgRepoMode] = useState(false);
   const prevBgKeyRef = useRef(bgImageKey);
   useEffect(() => {
-    if (!prevBgKeyRef.current && bgImageKey) setBgRepoMode(true);
-    if (!bgImageKey) setBgRepoMode(false);
+    if (!bgImageKey) setBgImageSelected(false);
     prevBgKeyRef.current = bgImageKey;
   }, [bgImageKey]);
 
   useEffect(() => {
-    if (!bgRepoMode) return;
+    if (!bgImageSelected) return;
     const handler = (e) => {
-      if (!containerRef.current?.contains(e.target)) setBgRepoMode(false);
+      if (!containerRef.current?.contains(e.target)) setBgImageSelected(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [bgRepoMode]);
+  }, [bgImageSelected]);
 
-  const bgImagePosition = bgDragPos
-    ? `${bgDragPos.x}% ${bgDragPos.y}%`
-    : `${storedBgPos.x}% ${storedBgPos.y}%`;
+  const BG_RESIZE_HANDLES = [
+    { dir: "nw", cursor: "nwse-resize" },
+    { dir: "n",  cursor: "ns-resize"   },
+    { dir: "ne", cursor: "nesw-resize" },
+    { dir: "e",  cursor: "ew-resize"   },
+    { dir: "se", cursor: "nwse-resize" },
+    { dir: "s",  cursor: "ns-resize"   },
+    { dir: "sw", cursor: "nesw-resize" },
+    { dir: "w",  cursor: "ew-resize"   },
+  ];
+
+  const startBgResize = (e, dir) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startRect = { ...bgRect };
+    const onMove = (me) => {
+      const dx = (me.clientX - startX) / zoomScale;
+      const dy = (me.clientY - startY) / zoomScale;
+      let { x, y, w, h } = startRect;
+      if (dir.includes("e")) w = Math.max(20, w + dx);
+      if (dir.includes("s")) h = Math.max(20, h + dy);
+      if (dir.includes("w")) { x = x + dx; w = Math.max(20, w - dx); }
+      if (dir.includes("n")) { y = y + dy; h = Math.max(20, h - dy); }
+      setBgDragRect({ x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) });
+    };
+    const onUp = (me) => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      const dx = (me.clientX - startX) / zoomScale;
+      const dy = (me.clientY - startY) / zoomScale;
+      let { x, y, w, h } = startRect;
+      if (dir.includes("e")) w = Math.max(20, w + dx);
+      if (dir.includes("s")) h = Math.max(20, h + dy);
+      if (dir.includes("w")) { x = x + dx; w = Math.max(20, w - dx); }
+      if (dir.includes("n")) { y = y + dy; h = Math.max(20, h - dy); }
+      const newRect = { x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) };
+      setBgDragRect(null);
+      onUpdateBackgroundImageRect?.(newRect);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
+
+  const startBgMove = (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startRect = { ...bgRect };
+    const onMove = (me) => {
+      const dx = (me.clientX - startX) / zoomScale;
+      const dy = (me.clientY - startY) / zoomScale;
+      setBgDragRect({ ...startRect, x: Math.round(startRect.x + dx), y: Math.round(startRect.y + dy) });
+    };
+    const onUp = (me) => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      const dx = (me.clientX - startX) / zoomScale;
+      const dy = (me.clientY - startY) / zoomScale;
+      const newRect = { ...startRect, x: Math.round(startRect.x + dx), y: Math.round(startRect.y + dy) };
+      setBgDragRect(null);
+      onUpdateBackgroundImageRect?.(newRect);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
+
+  const liveBgRect = bgDragRect ?? bgRect;
 
   const zoomScale = zoom / 100;
   const scaledWidth = width * zoomScale;
@@ -486,51 +549,17 @@ export default function EditorCanvas({
                     slide.contents.background === TRANSPARENT_SLIDE_BG
                       ? "var(--bg-light, white)"
                       : slide.contents.background,
-                  backgroundImage: bgImageSrc ? `url(${bgImageSrc})` : undefined,
-                  backgroundSize: bgImageSrc ? (bgImageScale === 100 ? "cover" : `${bgImageScale}%`) : undefined,
-                  backgroundPosition: bgImageSrc ? bgImagePosition : undefined,
-                  backgroundRepeat: bgImageSrc ? "no-repeat" : undefined,
                   color: "var(--text-dark, black)",
-                  cursor: bgRepoMode ? "grab" : undefined,
+                  overflow: "hidden",
                 }}
                 onMouseMove={handleMouseMove}
                 onMouseUp={stopInteraction}
                 onMouseLeave={stopInteraction}
-                onMouseDown={(event) => {
-                  if (!bgRepoMode || event.target !== event.currentTarget) return;
-                  if (event.button !== 0) return;
-                  event.preventDefault();
-                  const startX = event.clientX;
-                  const startY = event.clientY;
-                  const startPos = { ...storedBgPos };
-                  bgDragRef.current = true;
-
-                  const onMove = (me) => {
-                    const dx = (me.clientX - startX) / (width * zoomScale / 100);
-                    const dy = (me.clientY - startY) / (height * zoomScale / 100);
-                    setBgDragPos({
-                      x: Math.max(0, Math.min(100, startPos.x - dx)),
-                      y: Math.max(0, Math.min(100, startPos.y - dy)),
-                    });
-                  };
-                  const onUp = (me) => {
-                    window.removeEventListener("mousemove", onMove);
-                    window.removeEventListener("mouseup", onUp);
-                    if (!bgDragRef.current) return;
-                    const dx = (me.clientX - startX) / (width * zoomScale / 100);
-                    const dy = (me.clientY - startY) / (height * zoomScale / 100);
-                    const nx = Math.max(0, Math.min(100, startPos.x - dx));
-                    const ny = Math.max(0, Math.min(100, startPos.y - dy));
-                    setBgDragPos(null);
-                    bgDragRef.current = false;
-                    onUpdateBackgroundImagePosition?.(`${Math.round(nx)}% ${Math.round(ny)}%`);
-                  };
-                  window.addEventListener("mousemove", onMove);
-                  window.addEventListener("mouseup", onUp);
-                }}
+                onMouseDown={(event) => {}}
                 onClick={(event) => {
                   if (event.target === event.currentTarget) {
                     onSelectElement?.(null);
+                    setBgImageSelected(false);
                   }
                 }}
                 onContextMenu={(event) => {
@@ -538,6 +567,76 @@ export default function EditorCanvas({
                   openContextMenu(event);
                 }}
               >
+                {bgFillImageSrc && (() => {
+                  const s = bgFillSettings;
+                  const scale = s.fitToCanvas ?? false;
+                  const ol = scale ? 0 : (s.offsetLeft ?? 0) / 100;
+                  const or = scale ? 0 : (s.offsetRight ?? 0) / 100;
+                  const ot = scale ? 0 : (s.offsetTop ?? 0) / 100;
+                  const ob = scale ? 0 : (s.offsetBottom ?? 0) / 100;
+                  return (
+                    <div style={{ position: "absolute", inset: 0, overflow: "hidden", zIndex: 0, pointerEvents: "none" }}>
+                      <img
+                        src={bgFillImageSrc}
+                        alt=""
+                        style={{
+                          position: "absolute",
+                          left: ol * width,
+                          top: ot * height,
+                          width: (1 - ol - or) * width,
+                          height: (1 - ot - ob) * height,
+                          objectFit: scale ? "fill" : "cover",
+                          opacity: 1 - (s.transparency ?? 0) / 100,
+                        }}
+                      />
+                    </div>
+                  );
+                })()}
+
+                {bgImageSrc && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: liveBgRect.x,
+                      top: liveBgRect.y,
+                      width: liveBgRect.w,
+                      height: liveBgRect.h,
+                      zIndex: 0,
+                      outline: bgImageSelected ? "2px solid #4f46e5" : "none",
+                      boxSizing: "border-box",
+                      cursor: bgImageSelected ? "move" : "default",
+                    }}
+                    onMouseDown={bgImageSelected ? startBgMove : undefined}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectElement?.(null);
+                      setBgImageSelected(true);
+                    }}
+                  >
+                    <img
+                      src={bgImageSrc}
+                      alt=""
+                      draggable={false}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "fill",
+                        display: "block",
+                        pointerEvents: "none",
+                        userSelect: "none",
+                      }}
+                    />
+                    {bgImageSelected && BG_RESIZE_HANDLES.map(({ dir, cursor }) => (
+                      <div
+                        key={dir}
+                        className={`resize-handle resize-handle-${dir}`}
+                        style={{ cursor, zIndex: 10 }}
+                        onMouseDown={(e) => startBgResize(e, dir)}
+                      />
+                    ))}
+                  </div>
+                )}
+
                 <SlideDecorations
                   presentation={presentation}
                   width={width}
@@ -545,47 +644,6 @@ export default function EditorCanvas({
                   hideMasterElements={hideMasterElements}
                   layoutId={slide?.["layout-id"]}
                 />
-
-                {bgRepoMode && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      bottom: 12,
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      zIndex: 9999,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      background: "rgba(0,0,0,0.62)",
-                      color: "#fff",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 13,
-                      pointerEvents: "none",
-                      userSelect: "none",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    <span>✥ Drag to reposition</span>
-                    <button
-                      onMouseDown={(e) => { e.stopPropagation(); setBgRepoMode(false); }}
-                      style={{
-                        pointerEvents: "all",
-                        background: "#4f46e5",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: 4,
-                        padding: "2px 10px",
-                        fontSize: 12,
-                        cursor: "pointer",
-                        fontWeight: 600,
-                      }}
-                    >
-                      Done
-                    </button>
-                  </div>
-                )}
 
                 {textElements.map((textElement) => {
                   const isPlaying = playingElementId === textElement.id;
@@ -635,6 +693,7 @@ export default function EditorCanvas({
                       formatPainterClipboard={formatPainterClipboard}
                       onFormatPainterCopy={onFormatPainterCopy}
                       onFormatPainterPaste={onFormatPainterPaste}
+                      onAutoFit={updateElement}
                       onContextMenu={openContextMenu}
                       animationOrder={
                         showAnimationBadges

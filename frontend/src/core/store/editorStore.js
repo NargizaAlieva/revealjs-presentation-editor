@@ -27,6 +27,11 @@ import {
   toggleSlideHidden,
   updateSlideNotes,
   updateSlideBackgroundImage,
+  updateSlideBackgroundImageRect,
+  updateSlideBackground,
+  updateSlideBgFillImage,
+  updateSlideBgFillSettings,
+  applyBackgroundToAllSlides,
 } from "../operations/slideOperations";
 import {
   addLayout,
@@ -526,6 +531,50 @@ export const editorReducer = (state, event) => {
         lastUpdated: Date.now(),
       };
 
+    case EditorEventType.SLIDE.APPLY_BACKGROUND_TO_ALL:
+      return {
+        ...state,
+        presentation: applyBackgroundToAllSlides(state.presentation, event.payload),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+
+    case EditorEventType.SLIDE.UPDATE_BG_FILL_SETTINGS:
+      return {
+        ...state,
+        presentation: updateSlideBgFillSettings(
+          state.presentation,
+          event.payload.slideIndex ?? state.selectedSlideIndex,
+          event.payload.settings,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+
+    case EditorEventType.SLIDE.UPDATE_BG_FILL_IMAGE:
+      return {
+        ...state,
+        presentation: updateSlideBgFillImage(
+          state.presentation,
+          event.payload.slideIndex ?? state.selectedSlideIndex,
+          event.payload.fileLink,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+
+    case EditorEventType.SLIDE.UPDATE_BACKGROUND:
+      return {
+        ...state,
+        presentation: updateSlideBackground(
+          state.presentation,
+          event.payload.slideIndex ?? state.selectedSlideIndex,
+          event.payload.color,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+
     case EditorEventType.SLIDE.UPDATE_BACKGROUND_IMAGE:
       return {
         ...state,
@@ -537,6 +586,20 @@ export const editorReducer = (state, event) => {
         lastEvent: event,
         lastUpdated: Date.now(),
       };
+
+    case EditorEventType.SLIDE.UPDATE_BACKGROUND_IMAGE_RECT: {
+      const si = event.payload.slideIndex ?? state.selectedSlideIndex;
+      return {
+        ...state,
+        presentation: updateSlideBackgroundImageRect(
+          state.presentation,
+          si,
+          event.payload.rect,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+    }
 
     case EditorEventType.SLIDE.UPDATE_BACKGROUND_IMAGE_POSITION:
     case EditorEventType.SLIDE.UPDATE_BACKGROUND_IMAGE_SCALE: {
@@ -802,7 +865,6 @@ export const editorReducer = (state, event) => {
 
     case EditorEventType.MEDIA.UPDATE:
       if (state.pendingSnapshot) {
-        // Slider drag in progress — update state without creating a history entry
         return {
           ...state,
           presentation: updateMedia(
@@ -1027,7 +1089,6 @@ export const editorReducer = (state, event) => {
       );
       const updates = event.payload.updates ?? {};
       const isDragUpdate = "position" in updates || "width" in updates || "height" in updates;
-      // During drag (pendingSnapshot active + position/size update), skip withHistory
       if (state.pendingSnapshot && isDragUpdate) {
         return {
           ...state,
