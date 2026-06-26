@@ -802,6 +802,19 @@ export const editorReducer = (state, event) => {
         lastUpdated: Date.now(),
       });
 
+    case EditorEventType.ELEMENT.UPDATE_SILENT:
+      return {
+        ...state,
+        presentation: updateElement(
+          state.presentation,
+          state.selectedSlideIndex,
+          event.payload.elementId,
+          event.payload.updates,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+
     case EditorEventType.ELEMENT.UPDATE_MANY: {
       const updatesById = new Map(
         (event.payload.updates ?? []).map((entry) => [

@@ -58,6 +58,7 @@ export default function EditorCanvas({
   onCommitHistory,
   onCancelHistory,
   updateElement,
+  updateElementSilent,
   updateMedia,
   previewEffect,
   showAnimationBadges = false,
@@ -541,9 +542,6 @@ export default function EditorCanvas({
                   color: "var(--text-dark, black)",
                   overflow: "hidden",
                 }}
-                onMouseMove={handleMouseMove}
-                onMouseUp={stopInteraction}
-                onMouseLeave={stopInteraction}
                 onClick={(event) => {
                   if (event.target === event.currentTarget) {
                     onSelectElement?.(null);
@@ -627,7 +625,7 @@ export default function EditorCanvas({
                       formatPainterClipboard={formatPainterClipboard}
                       onFormatPainterCopy={onFormatPainterCopy}
                       onFormatPainterPaste={onFormatPainterPaste}
-                      onAutoFit={updateElement}
+                      onAutoFit={updateElementSilent}
                       onContextMenu={openContextMenu}
                       onPlaceholderImageClick={() =>
                         {

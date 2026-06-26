@@ -282,6 +282,17 @@ export function useEditorActions(
     [eventBus],
   );
 
+  const updateElementSilent = useCallback(
+    (elementId, updates) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.ELEMENT.UPDATE_SILENT, {
+          elementId,
+          updates,
+        }),
+      ),
+    [eventBus],
+  );
+
   const addAnimation = useCallback(
     (animation) =>
       eventBus.dispatch(
@@ -783,6 +794,7 @@ export function useEditorActions(
     updateElementPosition,
     updateElementSize,
     updateElement,
+    updateElementSilent,
     updateElements,
     deleteElement,
     addMedia,

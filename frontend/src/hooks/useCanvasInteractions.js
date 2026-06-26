@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef, useEffect } from "react";
 import { snapAngle, normalizeAngle, computeResize, getElementRotationAngle } from "../core/geometry/canvasGeometry";
 
 export function useCanvasInteractions({
@@ -24,22 +24,36 @@ export function useCanvasInteractions({
 }) {
   const [draggingElementId, setDraggingElementId] = useState(null);
   const [draggingMediaId, setDraggingMediaId] = useState(null);
-
   const [resizingState, setResizingState] = useState(null);
-
   const [rotatingElement, setRotatingElement] = useState(null);
   const [snapInfo, setSnapInfo] = useState(null);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
   const zoomScale = zoom / 100;
 
-  const hasActiveInteraction =
-    Boolean(draggingElementId) ||
-    Boolean(draggingMediaId) ||
-    Boolean(resizingState) ||
-    Boolean(rotatingElement);
+  const activeRef = useRef(null);
 
-  const clearInteractionState = useCallback(() => {
+  const latestRef = useRef({});
+  latestRef.current = {
+    zoomScale,
+    width,
+    height,
+    textElements,
+    mediaElements,
+    onMoveTextElement,
+    onResizeTextElement,
+    onRotateTextElement,
+    onMoveMediaElement,
+    onResizeMediaElement,
+    onRotateMediaElement,
+    onCommitHistory,
+    onCancelHistory,
+  };
+
+  const slideRectRef = useRef(null);
+
+  const clearAll = useCallback(() => {
+    activeRef.current = null;
+    slideRectRef.current = null;
     setDraggingElementId(null);
     setDraggingMediaId(null);
     setResizingState(null);
@@ -47,136 +61,93 @@ export function useCanvasInteractions({
     setSnapInfo(null);
   }, []);
 
-  const getMousePosition = useCallback(
-    (event, rect) => ({
-      x: (event.clientX - rect.left) / zoomScale,
-      y: (event.clientY - rect.top) / zoomScale,
-    }),
-    [zoomScale],
-  );
+  const windowMoveHandler = useRef((event) => {
+    const active = activeRef.current;
+    const rect = slideRectRef.current;
+    if (!active || !rect) return;
 
+    const c = latestRef.current;
+    const mouse = {
+      x: (event.clientX - rect.left) / c.zoomScale,
+      y: (event.clientY - rect.top) / c.zoomScale,
+    };
+
+    if (active.kind === "drag-text") {
+      c.onMoveTextElement(active.elementId, mouse.x - active.offset.x, mouse.y - active.offset.y);
+    }
+    if (active.kind === "drag-media") {
+      c.onMoveMediaElement(active.elementId, mouse.x - active.offset.x, mouse.y - active.offset.y);
+    }
+    if (active.kind === "resize-text") {
+      const r = active.resizing;
+      const { newX, newY, newW, newH } = computeResize(r.dir, r.initial, mouse, c.width, c.height);
+      c.onMoveTextElement(r.id, newX, newY);
+      c.onResizeTextElement(r.id, newW, newH);
+    }
+    if (active.kind === "resize-media") {
+      const r = active.resizing;
+      let { newX, newY, newW, newH } = computeResize(r.dir, r.initial, mouse, c.width, c.height);
+      const isCorner = (r.dir.includes("n") || r.dir.includes("s")) && (r.dir.includes("e") || r.dir.includes("w"));
+      if (r.aspectRatio && isCorner) {
+        const ar = r.aspectRatio;
+        if (newW / ar > newH) { newH = newW / ar; } else { newW = newH * ar; }
+        if (r.dir.includes("w")) newX = r.initial.x + r.initial.width - newW;
+        if (r.dir.includes("n")) newY = r.initial.y + r.initial.height - newH;
+      }
+      c.onMoveMediaElement(r.id, newX, newY);
+      c.onResizeMediaElement(r.id, newW, newH);
+    }
+    if (active.kind === "rotate-text") {
+      const el = c.textElements.find((e) => e.id === active.elementId);
+      if (!el) return;
+      const raw = getElementRotationAngle(el, mouse.x, mouse.y) - active.angleOffset;
+      const snapped = snapAngle(raw);
+      setSnapInfo({ angle: Math.round(snapped), snapped: snapped !== normalizeAngle(raw), elementId: active.elementId });
+      c.onRotateTextElement?.(active.elementId, snapped);
+    }
+    if (active.kind === "rotate-media") {
+      const media = c.mediaElements.find((e) => e.id === active.elementId);
+      if (!media) return;
+      const raw = getElementRotationAngle(media, mouse.x, mouse.y) - active.angleOffset;
+      const snapped = snapAngle(raw);
+      setSnapInfo({ angle: Math.round(snapped), snapped: snapped !== normalizeAngle(raw), elementId: active.elementId });
+      c.onRotateMediaElement?.(active.elementId, snapped);
+    }
+  });
+  
+  const windowUpHandler = useRef(null);
 
   const stopInteraction = useCallback(() => {
-    if (!hasActiveInteraction) return;
-    onCommitHistory?.();
-    clearInteractionState();
-  }, [hasActiveInteraction, onCommitHistory, clearInteractionState]);
+    if (!activeRef.current) return;
+    window.removeEventListener("mousemove", windowMoveHandler.current);
+    window.removeEventListener("mouseup", windowUpHandler.current);
+    latestRef.current.onCommitHistory?.();
+    clearAll();
+  }, [clearAll]);
 
   const cancelInteraction = useCallback(() => {
-    if (!hasActiveInteraction) return;
-    onCancelHistory?.();
-    clearInteractionState();
-  }, [hasActiveInteraction, onCancelHistory, clearInteractionState]);
+    if (!activeRef.current) return;
+    window.removeEventListener("mousemove", windowMoveHandler.current);
+    window.removeEventListener("mouseup", windowUpHandler.current);
+    latestRef.current.onCancelHistory?.();
+    clearAll();
+  }, [clearAll]);
 
-  const handleMouseMove = useCallback(
-    (event) => {
-      const rect = event.currentTarget.getBoundingClientRect();
-      const mouse = getMousePosition(event, rect);
+  useEffect(() => {
+    windowUpHandler.current = stopInteraction;
+  }, [stopInteraction]);
 
-      // ── drag text ──────────────────────────────────────────────────
-      if (draggingElementId) {
-        const el = textElements.find((e) => e.id === draggingElementId);
-        if (!el) return;
-        onMoveTextElement(
-          draggingElementId,
-          mouse.x - dragOffset.x,
-          mouse.y - dragOffset.y,
-        );
-      }
+  const attachListeners = () => {
+    window.addEventListener("mousemove", windowMoveHandler.current);
+    window.addEventListener("mouseup", windowUpHandler.current);
+  };
 
-      if (draggingMediaId) {
-        const media = mediaElements.find((e) => e.id === draggingMediaId);
-        if (!media) return;
-        onMoveMediaElement(
-          draggingMediaId,
-          mouse.x - dragOffset.x,
-          mouse.y - dragOffset.y,
-        );
-      }
-
-      if (resizingState?.type === "text") {
-        const { newX, newY, newW, newH } = computeResize(
-          resizingState.dir,
-          resizingState.initial,
-          mouse,
-          width,
-          height,
-        );
-        onMoveTextElement(resizingState.id, newX, newY);
-        onResizeTextElement(resizingState.id, newW, newH);
-      }
-
-      if (resizingState?.type === "media") {
-        let { newX, newY, newW, newH } = computeResize(
-          resizingState.dir,
-          resizingState.initial,
-          mouse,
-          width,
-          height,
-        );
-        // Lock aspect ratio only for corner handles (diagonal drag)
-        const dir = resizingState.dir;
-        const isCorner = (dir.includes("n") || dir.includes("s")) && (dir.includes("e") || dir.includes("w"));
-        if (resizingState.aspectRatio && isCorner) {
-          const ar = resizingState.aspectRatio;
-          if (newW / ar > newH) { newH = newW / ar; } else { newW = newH * ar; }
-          if (dir.includes("w")) newX = resizingState.initial.x + resizingState.initial.width - newW;
-          if (dir.includes("n")) newY = resizingState.initial.y + resizingState.initial.height - newH;
-        }
-        onMoveMediaElement(resizingState.id, newX, newY);
-        onResizeMediaElement(resizingState.id, newW, newH);
-      }
-
-      if (rotatingElement?.type === "text") {
-        const el = textElements.find((e) => e.id === rotatingElement.id);
-        if (!el) return;
-        const raw =
-          getElementRotationAngle(el, mouse.x, mouse.y) -
-          (rotatingElement.angleOffset ?? 0);
-        const snapped = snapAngle(raw);
-        setSnapInfo({
-          angle: Math.round(snapped),
-          snapped: snapped !== normalizeAngle(raw),
-          elementId: rotatingElement.id,
-        });
-        onRotateTextElement?.(rotatingElement.id, snapped);
-      }
-
-      if (rotatingElement?.type === "media") {
-        const media = mediaElements.find((e) => e.id === rotatingElement.id);
-        if (!media) return;
-        const raw =
-          getElementRotationAngle(media, mouse.x, mouse.y) -
-          (rotatingElement.angleOffset ?? 0);
-        const snapped = snapAngle(raw);
-        setSnapInfo({
-          angle: Math.round(snapped),
-          snapped: snapped !== normalizeAngle(raw),
-          elementId: rotatingElement.id,
-        });
-        onRotateMediaElement?.(rotatingElement.id, snapped);
-      }
-    },
-    [
-      draggingElementId,
-      draggingMediaId,
-      resizingState,
-      rotatingElement,
-      dragOffset,
-      width,
-      height,
-      textElements,
-      mediaElements,
-      getMousePosition,
-      onMoveTextElement,
-      onResizeTextElement,
-      onRotateTextElement,
-      onMoveMediaElement,
-      onResizeMediaElement,
-      onRotateMediaElement,
-      onBeginHistory,
-    ],
-  );
+  useEffect(() => {
+    return () => {
+      window.removeEventListener("mousemove", windowMoveHandler.current);
+      window.removeEventListener("mouseup", windowUpHandler.current);
+    };
+  }, []);
 
   const startDraggingText = useCallback(
     (event, textElementId) => {
@@ -187,16 +158,18 @@ export function useCanvasInteractions({
       const el = textElements.find((e) => e.id === textElementId);
       if (!el) return;
 
-      onBeginHistory?.();
-      onSelectElement?.(textElementId, { preserveIfSelected: true });
-
-      const rect =
-        event.currentTarget.parentElement.parentElement.getBoundingClientRect();
-      setDraggingElementId(textElementId);
-      setDragOffset({
+      const rect = event.currentTarget.parentElement.parentElement.getBoundingClientRect();
+      const offset = {
         x: (event.clientX - rect.left) / zoomScale - (el.position?.x ?? 0),
         y: (event.clientY - rect.top) / zoomScale - (el.position?.y ?? 0),
-      });
+      };
+
+      slideRectRef.current = rect;
+      activeRef.current = { kind: "drag-text", elementId: textElementId, offset };
+      onBeginHistory?.();
+      onSelectElement?.(textElementId, { preserveIfSelected: true });
+      setDraggingElementId(textElementId);
+      attachListeners();
     },
     [textElements, onBeginHistory, onSelectElement, zoomScale],
   );
@@ -210,15 +183,18 @@ export function useCanvasInteractions({
       const media = mediaElements.find((e) => e.id === mediaId);
       if (!media) return;
 
-      onBeginHistory?.();
-      onSelectElement?.(mediaId, { preserveIfSelected: true });
-
       const rect = event.currentTarget.parentElement.getBoundingClientRect();
-      setDraggingMediaId(mediaId);
-      setDragOffset({
+      const offset = {
         x: (event.clientX - rect.left) / zoomScale - (media.position?.x ?? 0),
         y: (event.clientY - rect.top) / zoomScale - (media.position?.y ?? 0),
-      });
+      };
+
+      slideRectRef.current = rect;
+      activeRef.current = { kind: "drag-media", elementId: mediaId, offset };
+      onBeginHistory?.();
+      onSelectElement?.(mediaId, { preserveIfSelected: true });
+      setDraggingMediaId(mediaId);
+      attachListeners();
     },
     [mediaElements, onBeginHistory, onSelectElement, zoomScale],
   );
@@ -232,26 +208,20 @@ export function useCanvasInteractions({
       const el = textElements.find((e) => e.id === textElementId);
       if (!el) return;
 
-      const rect =
-        event.currentTarget.parentElement.parentElement.getBoundingClientRect();
+      const rect = event.currentTarget.parentElement.parentElement.getBoundingClientRect();
       const mouseX = (event.clientX - rect.left) / zoomScale;
       const mouseY = (event.clientY - rect.top) / zoomScale;
+      const resizing = {
+        id: textElementId, dir,
+        initial: { x: el.position?.x ?? 0, y: el.position?.y ?? 0, width: el.width ?? 300, height: el.height ?? 80, mouseX, mouseY },
+      };
 
+      slideRectRef.current = rect;
+      activeRef.current = { kind: "resize-text", resizing };
       onBeginHistory?.();
       onSelectElement?.(textElementId, { preserveIfSelected: true });
-      setResizingState({
-        type: "text",
-        id: textElementId,
-        dir,
-        initial: {
-          x: el.position?.x ?? 0,
-          y: el.position?.y ?? 0,
-          width: el.width ?? 300,
-          height: el.height ?? 80,
-          mouseX,
-          mouseY,
-        },
-      });
+      setResizingState({ type: "text", ...resizing });
+      attachListeners();
     },
     [textElements, onBeginHistory, onSelectElement, zoomScale],
   );
@@ -265,29 +235,22 @@ export function useCanvasInteractions({
       const media = mediaElements.find((e) => e.id === mediaId);
       if (!media) return;
 
-      const rect =
-        event.currentTarget.parentElement.parentElement.getBoundingClientRect();
+      const rect = event.currentTarget.parentElement.parentElement.getBoundingClientRect();
       const mouseX = (event.clientX - rect.left) / zoomScale;
       const mouseY = (event.clientY - rect.top) / zoomScale;
-
       const initW = media.width ?? 300;
       const initH = media.height ?? 200;
+      const resizing = {
+        id: mediaId, dir, aspectRatio: initW / initH,
+        initial: { x: media.position?.x ?? 0, y: media.position?.y ?? 0, width: initW, height: initH, mouseX, mouseY },
+      };
+
+      slideRectRef.current = rect;
+      activeRef.current = { kind: "resize-media", resizing };
       onBeginHistory?.();
       onSelectElement?.(mediaId, { preserveIfSelected: true });
-      setResizingState({
-        type: "media",
-        id: mediaId,
-        dir,
-        aspectRatio: initW / initH,
-        initial: {
-          x: media.position?.x ?? 0,
-          y: media.position?.y ?? 0,
-          width: initW,
-          height: initH,
-          mouseX,
-          mouseY,
-        },
-      });
+      setResizingState({ type: "media", ...resizing });
+      attachListeners();
     },
     [mediaElements, onBeginHistory, onSelectElement, zoomScale],
   );
@@ -301,16 +264,17 @@ export function useCanvasInteractions({
       const el = textElements.find((e) => e.id === textElementId);
       if (!el) return;
 
-      const rect =
-        event.currentTarget.parentElement.parentElement.getBoundingClientRect();
+      const rect = event.currentTarget.parentElement.parentElement.getBoundingClientRect();
       const mouseX = (event.clientX - rect.left) / zoomScale;
       const mouseY = (event.clientY - rect.top) / zoomScale;
-      const angleOffset =
-        getElementRotationAngle(el, mouseX, mouseY) - (el.rotation ?? 0);
+      const angleOffset = getElementRotationAngle(el, mouseX, mouseY) - (el.rotation ?? 0);
 
+      slideRectRef.current = rect;
+      activeRef.current = { kind: "rotate-text", elementId: textElementId, angleOffset };
       onBeginHistory?.();
       onSelectElement?.(textElementId, { preserveIfSelected: true });
       setRotatingElement({ type: "text", id: textElementId, angleOffset });
+      attachListeners();
     },
     [textElements, onBeginHistory, onSelectElement, zoomScale],
   );
@@ -324,22 +288,23 @@ export function useCanvasInteractions({
       const media = mediaElements.find((e) => e.id === mediaId);
       if (!media) return;
 
-      const rect =
-        event.currentTarget.parentElement.parentElement.getBoundingClientRect();
+      const rect = event.currentTarget.parentElement.parentElement.getBoundingClientRect();
       const mouseX = (event.clientX - rect.left) / zoomScale;
       const mouseY = (event.clientY - rect.top) / zoomScale;
-      const angleOffset =
-        getElementRotationAngle(media, mouseX, mouseY) - (media.rotation ?? 0);
+      const angleOffset = getElementRotationAngle(media, mouseX, mouseY) - (media.rotation ?? 0);
 
+      slideRectRef.current = rect;
+      activeRef.current = { kind: "rotate-media", elementId: mediaId, angleOffset };
       onBeginHistory?.();
       onSelectElement?.(mediaId, { preserveIfSelected: true });
       setRotatingElement({ type: "media", id: mediaId, angleOffset });
+      attachListeners();
     },
     [mediaElements, onBeginHistory, onSelectElement, zoomScale],
   );
 
   return {
-    handleMouseMove,
+    handleMouseMove: () => {},
     stopInteraction,
     cancelInteraction,
     startDraggingText,

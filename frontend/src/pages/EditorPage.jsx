@@ -260,6 +260,7 @@ export default function EditorPage() {
                   onCommitHistory={ctrl.commitHistory}
                   onCancelHistory={ctrl.cancelHistory}
                   updateElement={ctrl.updateElement}
+                  updateElementSilent={ctrl.updateElementSilent}
                   updateMedia={ctrl.updateMedia}
                   previewEffect={ctrl.previewEffect}
                   animations={ctrl.selectedSlide?.contents?.animations ?? []}

@@ -12,7 +12,7 @@ const parseVerticalMargin = (margin) => {
     .match(/-?\d*\.?\d+/g)
     ?.map(Number) ?? [0];
   if (values.length === 1) return { before: values[0], after: values[0] };
-  if (values.length === 2) return { before: values[0], after: values[0] };
+  if (values.length === 2) return { before: values[0], after: values[1] };
   return { before: values[0] ?? 0, after: values[2] ?? values[0] ?? 0 };
 };
 
