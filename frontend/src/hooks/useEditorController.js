@@ -1152,7 +1152,7 @@ useEffect(() => {
           ? `mailto:${trimmedHref}`
           : linkType === "web" &&
               trimmedHref &&
-              !/^(https?:|mailto:|#|\/)/i.test(trimmedHref)
+              !/^(https?:|mailto:|blob:|file:|indexeddb:|#|\/)/i.test(trimmedHref)
             ? `https://${trimmedHref}`
             : trimmedHref;
       if (

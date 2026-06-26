@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   MdChevronRight,
@@ -15,8 +15,8 @@ import {
   MdFormatAlignLeft,
   MdFormatListBulleted,
   MdFormatListNumbered,
-  MdHelpOutline,
   MdImage,
+  MdInsertDriveFile,
   MdMailOutline,
   MdRedo,
   MdLink,
@@ -71,25 +71,138 @@ const HYPERLINK_FILES = [
   "generative_ai_acm",
 ];
 
-function HyperlinkDialog({ selectedText = "", onApply, onClose }) {
+const HYPERLINK_BROWSED_PAGES = [
+  "ms-screenclip:///?source=HotKey",
+  "file:///C:/Users/user/Pictures/Screenshots/photo_2026-03-24_12-29-21.jpg",
+  "file:///C:/Users/user/Pictures/Screenshots/Altynai%20Munduzbaeva.jpg",
+  "file:///C:/Users/user/Pictures/Screenshots/photo_2026-02-21_15-19-57.jpg",
+  "file:///C:/Users/user/Downloads/MM-AI%20-%20Uebung_02.pptx",
+  "file:///C:/Users/user/Desktop/Hof/SWE/final/revealjs-presentation-editor",
+  "file:///C:/Users/user/Documents/cloud/20261_group_07",
+  "file:///C:/Users/user/Desktop/Hof/Cloud",
+  "file:///C:/Users/user/Desktop/Hof/processMining/process/process/Poster.pdf",
+  "file:///C:/Users/user/Documents/Inductive%20Miner.pdf",
+];
+
+const HYPERLINK_RECENT_FILES = [
+  "C:\\Users\\user\\Downloads\\MM-AI - Uebung_02.pptx",
+  "https://hochschulehof-my.sharepoint.com/personal/amunduzbaeva_hof-university_de",
+  "C:\\Users\\user\\Downloads\\Telegram Desktop\\Review Paper 09.docx",
+  "C:\\Users\\user\\Downloads\\Lecture 2 (2).pptx",
+  "C:\\Users\\user\\Pictures\\Screenshot 2026-05-10 173944.png",
+  "C:\\Users\\user\\Documents\\new.doc",
+  "https://d.docs.live.net/f68e3bb0184e891d/Document.odt",
+  "C:\\Users\\user\\Downloads\\Telegram Desktop\\A2.1 - Modellprufung neu.docx",
+  "C:\\Users\\user\\Downloads\\A2.1 - Modellprufung neu.pdf",
+  "C:\\Users\\user\\Documents\\Technical Description of Mobile Robot Platform1.docx",
+  "C:\\Users\\user\\Documents\\B Netzwerk neu A2 - Ubungsbuch, Kap. 1.pdf",
+];
+
+function HyperlinkBrowseButton({ title, icon, active = false, onClick }) {
+  return (
+    <button
+      type="button"
+      className={active ? "active" : ""}
+      title={title}
+      aria-label={title}
+      onClick={onClick}
+    >
+      {icon}
+    </button>
+  );
+}
+
+function HyperlinkDialog({ selectedText = "", presentation, onApply, onClose }) {
   const [href, setHref] = useState("");
   const [displayText, setDisplayText] = useState(selectedText);
   const [screenTip, setScreenTip] = useState("");
   const [linkType, setLinkType] = useState("web");
   const [error, setError] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [webFolder, setWebFolder] = useState("Current Folder");
+  const [selectedSlideIndex, setSelectedSlideIndex] = useState(0);
+  const [showAndReturn, setShowAndReturn] = useState(false);
+  const [newDocumentName, setNewDocumentName] = useState("");
+  const [editNewDocumentNow, setEditNewDocumentNow] = useState(true);
+  const [emailAddress, setEmailAddress] = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [activeBrowseButton, setActiveBrowseButton] = useState("");
+  const fileInputRef = useRef(null);
+  const objectUrlRef = useRef("");
+  const slideTitles =
+    presentation?.slideset?.slides?.map((slide, index) => {
+      const content = slide?.title?.content?.trim();
+      return content || `Slide ${index + 1}`;
+    }) ?? [];
+  const webFolderItems =
+    webFolder === "Browsed Pages"
+      ? HYPERLINK_BROWSED_PAGES
+      : webFolder === "Recent Files"
+        ? HYPERLINK_RECENT_FILES
+        : HYPERLINK_FILES;
+  const isCurrentFolder = webFolder === "Current Folder";
+
+  useEffect(
+    () => () => {
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    },
+    [],
+  );
+
+  const chooseLocalFile = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    const objectUrl = URL.createObjectURL(file);
+    objectUrlRef.current = objectUrl;
+    setSelectedFile({
+      name: file.name,
+      size: file.size,
+      type: file.type || "file",
+      href: objectUrl,
+    });
+    setHref(objectUrl);
+    if (!displayText.trim()) setDisplayText(file.name);
+    if (!screenTip.trim()) setScreenTip(file.name);
+    setError("");
+  };
 
   const submit = (event) => {
     event.preventDefault();
-    const trimmed = href.trim();
+    const typedHref = href.trim();
+    const trimmed =
+      linkType === "place"
+        ? `#slide-${selectedSlideIndex + 1}`
+        : linkType === "new"
+          ? newDocumentName.trim()
+          : linkType === "email"
+            ? emailAddress.trim()
+            : typedHref;
     if (!trimmed) {
-      setError("Enter a link address.");
+      setError(
+        linkType === "place"
+          ? "Select a place in this document."
+          : linkType === "new"
+            ? "Enter a new document name."
+            : linkType === "email"
+              ? "Enter an e-mail address."
+              : "Enter a link address.",
+      );
       return;
     }
+    const emailHref =
+      linkType === "email" && emailSubject.trim()
+        ? `${trimmed}?subject=${encodeURIComponent(emailSubject.trim())}`
+        : trimmed;
     const ok = onApply?.({
-      href: trimmed,
+      href: linkType === "email" ? emailHref : trimmed,
       text: displayText.trim(),
       screenTip: screenTip.trim(),
       type: linkType,
+      showAndReturn,
+      editNewDocumentNow,
     });
     if (ok === false) {
       setError("Select text in one paragraph before adding a hyperlink.");
@@ -148,37 +261,114 @@ function HyperlinkDialog({ selectedText = "", onApply, onClose }) {
           <section className="insert-hyperlink-main">
             {linkType === "web" ? (
               <>
-                <div className="insert-hyperlink-lookin-row">
-                  <span>Look in:</span>
-                  <select defaultValue="Downloads">
-                    <option>Downloads</option>
-                    <option>Documents</option>
-                    <option>Desktop</option>
-                  </select>
-                  <button type="button" title="Folder" aria-label="Folder">
-                    <MdFolder />
-                  </button>
-                  <button type="button" title="Search" aria-label="Search">
-                    <MdSearch />
-                  </button>
-                  <button type="button" title="Help" aria-label="Help">
-                    <MdHelpOutline />
-                  </button>
-                </div>
-                <div className="insert-hyperlink-browser">
+                {isCurrentFolder ? (
+                  <div className="insert-hyperlink-lookin-row">
+                    <span>Look in:</span>
+                    <select defaultValue="Downloads">
+                      <option>Downloads</option>
+                      <option>Documents</option>
+                      <option>Desktop</option>
+                    </select>
+                    <HyperlinkBrowseButton
+                      title="Browse the Web"
+                      icon={<MdSearch />}
+                      active={activeBrowseButton === "web"}
+                      onClick={() => setActiveBrowseButton("web")}
+                    />
+                    <HyperlinkBrowseButton
+                      title="Browse for File"
+                      icon={<MdDescription />}
+                      active={activeBrowseButton === "file"}
+                      onClick={() => {
+                        setActiveBrowseButton("file");
+                        fileInputRef.current?.click();
+                      }}
+                    />
+                    <HyperlinkBrowseButton
+                      title="Browse for Folder"
+                      icon={<MdFolder />}
+                      active={activeBrowseButton === "folder"}
+                      onClick={() => {
+                        setActiveBrowseButton("folder");
+                        fileInputRef.current?.click();
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="insert-hyperlink-history-toolbar">
+                    <HyperlinkBrowseButton
+                      title="Browse the Web"
+                      icon={<MdSearch />}
+                      active={activeBrowseButton === "web"}
+                      onClick={() => setActiveBrowseButton("web")}
+                    />
+                    <HyperlinkBrowseButton
+                      title="Browse for File"
+                      icon={<MdDescription />}
+                      active={activeBrowseButton === "file"}
+                      onClick={() => {
+                        setActiveBrowseButton("file");
+                        fileInputRef.current?.click();
+                      }}
+                    />
+                    <HyperlinkBrowseButton
+                      title="Browse for Folder"
+                      icon={<MdFolder />}
+                      active={activeBrowseButton === "folder"}
+                      onClick={() => {
+                        setActiveBrowseButton("folder");
+                        fileInputRef.current?.click();
+                      }}
+                    />
+                  </div>
+                )}
+                <div
+                  className={[
+                    "insert-hyperlink-browser",
+                    !isCurrentFolder ? "insert-hyperlink-browser--history" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
                   <nav>
-                    {HYPERLINK_FOLDERS.map((folder, index) => (
+                    {HYPERLINK_FOLDERS.map((folder) => (
                       <button
                         type="button"
                         key={folder}
-                        className={index === 0 ? "active" : ""}
+                        className={webFolder === folder ? "active" : ""}
+                        onClick={() => {
+                          setWebFolder(folder);
+                          setError("");
+                        }}
                       >
                         {folder}
                       </button>
                     ))}
                   </nav>
-                  <div className="insert-hyperlink-file-list">
-                    {HYPERLINK_FILES.map((file) => (
+                  <div
+                    className={[
+                      "insert-hyperlink-file-list",
+                      !isCurrentFolder
+                        ? "insert-hyperlink-file-list--history"
+                        : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  >
+                    {isCurrentFolder && selectedFile && (
+                      <button
+                        type="button"
+                        className="selected"
+                        onClick={() => {
+                          setHref(selectedFile.href);
+                          setError("");
+                        }}
+                      >
+                        <MdInsertDriveFile />
+                        <span>{selectedFile.name}</span>
+                      </button>
+                    )}
+                    {webFolderItems.map((file) => (
                       <button
                         type="button"
                         key={file}
@@ -187,16 +377,137 @@ function HyperlinkDialog({ selectedText = "", onApply, onClose }) {
                           setError("");
                         }}
                       >
-                        <MdFolder />
+                        {isCurrentFolder ? <MdFolder /> : null}
                         <span>{file}</span>
                       </button>
                     ))}
                   </div>
                   <div className="insert-hyperlink-side-buttons">
+                    <button
+                      type="button"
+                      title="Choose file from PC"
+                      aria-label="Choose file from PC"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      Browse...
+                    </button>
                     <button type="button">Bookmark...</button>
                   </div>
                 </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="insert-hyperlink-file-input"
+                  onChange={chooseLocalFile}
+                />
               </>
+            ) : linkType === "place" ? (
+              <div className="insert-hyperlink-place-panel">
+                <div className="insert-hyperlink-place-column">
+                  <span>Select a place in this document:</span>
+                  <div className="insert-hyperlink-slide-tree">
+                    <div className="insert-hyperlink-tree-root">
+                      <span className="insert-hyperlink-tree-toggle">⊟</span>
+                      <span>Slide Titles</span>
+                    </div>
+                    <div className="insert-hyperlink-tree-items">
+                      {slideTitles.map((title, index) => (
+                        <button
+                          type="button"
+                          key={`${title}-${index}`}
+                          className={
+                            selectedSlideIndex === index ? "selected" : ""
+                          }
+                          onClick={() => {
+                            setSelectedSlideIndex(index);
+                            setHref(`#slide-${index + 1}`);
+                            setError("");
+                          }}
+                        >
+                          {index + 1}. {title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="insert-hyperlink-preview-column">
+                  <span>Slide preview:</span>
+                  <div className="insert-hyperlink-slide-preview" />
+                  <label className="insert-hyperlink-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={showAndReturn}
+                      onChange={(event) =>
+                        setShowAndReturn(event.target.checked)
+                      }
+                    />
+                    <span>Show and return</span>
+                  </label>
+                </div>
+              </div>
+            ) : linkType === "new" ? (
+              <div className="insert-hyperlink-new-panel">
+                <label>
+                  <span>Name of new document:</span>
+                  <input
+                    value={newDocumentName}
+                    onChange={(event) => {
+                      setNewDocumentName(event.target.value);
+                      setHref(event.target.value);
+                      setError("");
+                    }}
+                  />
+                </label>
+                <div className="insert-hyperlink-full-path-row">
+                  <span>Full path:</span>
+                  <button type="button">Change...</button>
+                  <strong>C:\Users\user\Downloads\</strong>
+                </div>
+                <fieldset className="insert-hyperlink-edit-options">
+                  <legend>When to edit:</legend>
+                  <label>
+                    <input
+                      type="radio"
+                      name="edit-new-document"
+                      checked={!editNewDocumentNow}
+                      onChange={() => setEditNewDocumentNow(false)}
+                    />
+                    <span>Edit the new document later</span>
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name="edit-new-document"
+                      checked={editNewDocumentNow}
+                      onChange={() => setEditNewDocumentNow(true)}
+                    />
+                    <span>Edit the new document now</span>
+                  </label>
+                </fieldset>
+              </div>
+            ) : linkType === "email" ? (
+              <div className="insert-hyperlink-email-panel">
+                <label>
+                  <span>E-mail address:</span>
+                  <input
+                    value={emailAddress}
+                    onChange={(event) => {
+                      setEmailAddress(event.target.value);
+                      setHref(event.target.value);
+                      setError("");
+                    }}
+                  />
+                </label>
+                <label>
+                  <span>Subject:</span>
+                  <input
+                    value={emailSubject}
+                    onChange={(event) => setEmailSubject(event.target.value)}
+                  />
+                </label>
+                <span>Recently used e-mail addresses:</span>
+                <div className="insert-hyperlink-recent-emails" />
+              </div>
             ) : (
               <div className="insert-hyperlink-placeholder-panel">
                 {linkType === "place" &&
@@ -209,20 +520,20 @@ function HyperlinkDialog({ selectedText = "", onApply, onClose }) {
             )}
           </section>
         </div>
-        <label className="hyperlink-dialog-field insert-hyperlink-address-row">
-          <span>{linkType === "email" ? "E-mail address:" : "Address:"}</span>
-          <input
-            autoFocus
-            value={href}
-            onChange={(event) => {
-              setHref(event.target.value);
-              setError("");
-            }}
-            placeholder={
-              linkType === "email" ? "name@example.com" : "https://example.com"
-            }
-          />
-        </label>
+        {linkType === "web" && (
+          <label className="hyperlink-dialog-field insert-hyperlink-address-row">
+            <span>Address:</span>
+            <input
+              autoFocus
+              value={href}
+              onChange={(event) => {
+                setHref(event.target.value);
+                setError("");
+              }}
+              placeholder="https://example.com"
+            />
+          </label>
+        )}
         {screenTip && (
           <div className="insert-hyperlink-screentip">
             ScreenTip: {screenTip}
@@ -401,6 +712,7 @@ export default function CanvasContextMenu({
     return (
       <HyperlinkDialog
         selectedText={hyperlinkText}
+        presentation={presentation}
         onApply={(payload) => {
           const ok = onHyperlink?.(elementId, payload);
           if (ok !== false) onClose?.();
