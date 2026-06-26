@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
-import { MdFileUpload, MdImage, MdVideocam } from "react-icons/md";
 import FormatToolbar from "../tools/FormatToolbar";
+import PlaceholderActionButtons from "./text/PlaceholderActionButtons";
+import TextEditableSurface from "./text/TextEditableSurface";
+import TextElementHandles, { TextSelectionBorders } from "./text/TextElementHandles";
 import "./TextElement.css";
 import { getPlaceholderFormatting, getPlaceholderPadding } from "../../../core/render/slidesetRenderUtils";
 import {
@@ -22,17 +24,6 @@ import {
   getCollapsedCursorOffset,
   domToParagraphs,
 } from "../../../core/text/domSelectionManager";
-
-const RESIZE_HANDLES = [
-  { dir: "nw", cursor: "nwse-resize" },
-  { dir: "n", cursor: "ns-resize" },
-  { dir: "ne", cursor: "nesw-resize" },
-  { dir: "e", cursor: "ew-resize" },
-  { dir: "se", cursor: "nwse-resize" },
-  { dir: "s", cursor: "ns-resize" },
-  { dir: "sw", cursor: "nesw-resize" },
-  { dir: "w", cursor: "ew-resize" },
-];
 
 const TOOLBAR_WIDTH = 590;
 const TEXT_BOX_PLACEHOLDER = "Click to edit text";
@@ -557,13 +548,10 @@ useEffect(() => {
       )}
 
       {isPrimarySelected &&
-        ["top", "right", "bottom", "left"].map((side) => (
-          <div
-            key={side}
-            className={`drag-border drag-border-${side}`}
-            onMouseDown={(event) => onStartDrag(event, textElement.id)}
-          />
-        ))}
+        <TextSelectionBorders
+          elementId={textElement.id}
+          onStartDrag={onStartDrag}
+        />}
 
       {isPrimarySelected &&
         isToolbarOpen &&
@@ -656,15 +644,11 @@ useEffect(() => {
         </div>
       )}
 
-      <div
+      <TextEditableSurface
         ref={editableRef}
-        contentEditable={isPrimarySelected && !objectSelectionMode}
-        suppressContentEditableWarning
-        spellCheck={false}
-        className="text-editable"
-        data-placeholder="Click to edit text"
-        data-empty={isTextBoxEmpty ? "true" : undefined}
-        data-prompt-text={isTextBoxPrompt ? "true" : undefined}
+        isEditable={isPrimarySelected && !objectSelectionMode}
+        isTextBoxEmpty={isTextBoxEmpty}
+        isTextBoxPrompt={isTextBoxPrompt}
         onFocus={() => {
           isDeletingRef.current = false;
           onStartEditing?.(textElement.id);
@@ -885,7 +869,7 @@ useEffect(() => {
             onStopEditing?.(textElement.id);
           }
         }}
-        style={{
+        editableStyle={{
           fontSize: resolveTextStyle(
             formatting.size,
             placeholderFormatting.size,
@@ -949,13 +933,13 @@ useEffect(() => {
           wordBreak: "break-all",
           overflowWrap: "anywhere",
         }}
-        data-list-type={listType ?? undefined}
-        data-list-marker={
+        listType={listType}
+        listMarker={
           anyListPara?.listType === "bullets"
             ? anyListPara.listMarker
             : undefined
         }
-        data-list-numbered-style={
+        listNumberedStyle={
           anyListPara?.listType === "numbered"
             ? anyListPara.listNumberedStyle
             : undefined
@@ -963,76 +947,17 @@ useEffect(() => {
       />
 
       {shouldShowPlaceholderButtons && (
-        <div
-          className="content-placeholder-buttons"
-          aria-label="Content placeholder actions"
-        >
-          {onPlaceholderImageClick && (
-            <button
-              type="button"
-              title="Insert Picture"
-              aria-label="Insert Picture"
-              onMouseDown={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-              }}
-              onClick={(event) => {
-                event.stopPropagation();
-                onPlaceholderImageClick();
-              }}
-            >
-              <MdImage />
-              <span className="placeholder-upload-badge">
-                <MdFileUpload />
-              </span>
-            </button>
-          )}
-          {onPlaceholderVideoClick && (
-            <button
-              type="button"
-              title="Insert Video"
-              aria-label="Insert Video"
-              onMouseDown={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-              }}
-              onClick={(event) => {
-                event.stopPropagation();
-                onPlaceholderVideoClick();
-              }}
-            >
-              <MdVideocam />
-              <span className="placeholder-upload-badge">
-                <MdFileUpload />
-              </span>
-            </button>
-          )}
-        </div>
+        <PlaceholderActionButtons
+          onImageClick={onPlaceholderImageClick}
+          onVideoClick={onPlaceholderVideoClick}
+        />
       )}
 
-      {isPrimarySelected &&
-        RESIZE_HANDLES.map(({ dir, cursor }) => (
-          <div
-            key={dir}
-            className={`resize-handle resize-handle-${dir}`}
-            style={{ cursor }}
-            onMouseDown={(event) => {
-              event.stopPropagation();
-              onStartResize(event, textElement.id, dir);
-            }}
-          />
-        ))}
-
       {isPrimarySelected && (
-        <button
-          type="button"
-          className="text-rotate-handle"
-          onMouseDown={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            onStartRotate(event, textElement.id);
-          }}
-          aria-label="Rotate text element"
+        <TextElementHandles
+          elementId={textElement.id}
+          onStartResize={onStartResize}
+          onStartRotate={onStartRotate}
         />
       )}
     </div>
