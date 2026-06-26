@@ -91,10 +91,6 @@ export default function ViewTab({
   onToggleNotes,
   onOpenSlideMaster,
   isSlideMasterOpen,
-  zoom,
-  onZoomIn,
-  onZoomOut,
-  onZoomChange,
 }) {
   return (
     <div className="view-tab-wrapper">

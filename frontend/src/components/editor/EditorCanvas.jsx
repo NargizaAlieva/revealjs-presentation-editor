@@ -59,7 +59,6 @@ export default function EditorCanvas({
   updateElement,
   updateMedia,
   previewEffect,
-  animations = [],
   showAnimationBadges = false,
   onUndo,
   onRedo,
@@ -83,7 +82,6 @@ export default function EditorCanvas({
   onRotateRight,
   onOpenPictureFormat,
   onUpdateBackgroundImageRect,
-  onUpdateBackgroundImagePosition,
   cropSignal,
   previewMediaEffects,
   previewMediaStyleId,
@@ -121,21 +119,16 @@ export default function EditorCanvas({
 
   const [bgImageSelected, setBgImageSelected] = useState(false);
   const [bgDragRect, setBgDragRect] = useState(null);
-
-  const prevBgKeyRef = useRef(bgImageKey);
-  useEffect(() => {
-    if (!bgImageKey) setBgImageSelected(false);
-    prevBgKeyRef.current = bgImageKey;
-  }, [bgImageKey]);
+  const activeBgImageSelected = Boolean(bgImageKey && bgImageSelected);
 
   useEffect(() => {
-    if (!bgImageSelected) return;
+    if (!activeBgImageSelected) return;
     const handler = (e) => {
       if (!containerRef.current?.contains(e.target)) setBgImageSelected(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [bgImageSelected]);
+  }, [activeBgImageSelected]);
 
   const BG_RESIZE_HANDLES = [
     { dir: "nw", cursor: "nwse-resize" },
@@ -607,11 +600,11 @@ export default function EditorCanvas({
                       width: liveBgRect.w,
                       height: liveBgRect.h,
                       zIndex: 0,
-                      outline: bgImageSelected ? "2px solid #4f46e5" : "none",
+                      outline: activeBgImageSelected ? "2px solid #4f46e5" : "none",
                       boxSizing: "border-box",
-                      cursor: bgImageSelected ? "move" : "default",
+                      cursor: activeBgImageSelected ? "move" : "default",
                     }}
-                    onMouseDown={bgImageSelected ? startBgMove : undefined}
+                    onMouseDown={activeBgImageSelected ? startBgMove : undefined}
                     onClick={(e) => {
                       e.stopPropagation();
                       onSelectElement?.(null);
@@ -631,7 +624,7 @@ export default function EditorCanvas({
                         userSelect: "none",
                       }}
                     />
-                    {bgImageSelected && BG_RESIZE_HANDLES.map(({ dir, cursor }) => (
+                    {activeBgImageSelected && BG_RESIZE_HANDLES.map(({ dir, cursor }) => (
                       <div
                         key={dir}
                         className={`resize-handle resize-handle-${dir}`}

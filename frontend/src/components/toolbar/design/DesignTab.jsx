@@ -86,7 +86,7 @@ function ThemeThumbnail({ theme, isActive, onClick }) {
     );
 }
 
-function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onApplyBackgroundImage, onRemoveBackgroundImage, onUpdateThemeColor, currentBgImage, onApplyBackground, onApplySlideBackground, onApplyBgFillImage, onRemoveBgFillImage, onUpdateBgFillSettings, onApplyBackgroundToAll, selectedSlide }) {
+function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onUpdateThemeColor, onApplySlideBackground, onApplyBgFillImage, onRemoveBgFillImage, onUpdateBgFillSettings, onApplyBackgroundToAll, selectedSlide }) {
     const [showPalette, setShowPalette] = useState(false);
     const [showSizeMenu, setShowSizeMenu] = useState(false);
     const [showCustomSize, setShowCustomSize] = useState(false);
@@ -297,7 +297,7 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
     );
 }
 
-export default function DesignTab({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onApplyBackgroundImage, onRemoveBackgroundImage, onUpdateThemeColor, onApplyBackground, onApplySlideBackground, onApplyBgFillImage, onRemoveBgFillImage, onUpdateBgFillSettings, onApplyBackgroundToAll, selectedSlide }) {
+export default function DesignTab({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onUpdateThemeColor, onApplySlideBackground, onApplyBgFillImage, onRemoveBgFillImage, onUpdateBgFillSettings, onApplyBackgroundToAll, selectedSlide }) {
     const currentTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
     const activeTheme = findActiveTheme(currentTheme);
 
@@ -324,17 +324,13 @@ export default function DesignTab({ presentation, onApplyTheme, onApplyFont, onU
                 onApplyTheme={onApplyTheme}
                 onApplyFont={onApplyFont}
                 onUpdateDimensions={onUpdateDimensions}
-                onApplyBackgroundImage={onApplyBackgroundImage}
-                onRemoveBackgroundImage={onRemoveBackgroundImage}
                 onUpdateThemeColor={onUpdateThemeColor}
-                onApplyBackground={onApplyBackground}
                 onApplySlideBackground={onApplySlideBackground}
                 onApplyBgFillImage={onApplyBgFillImage}
                 onRemoveBgFillImage={onRemoveBgFillImage}
                 onUpdateBgFillSettings={onUpdateBgFillSettings}
                 onApplyBackgroundToAll={onApplyBackgroundToAll}
                 selectedSlide={selectedSlide}
-                currentBgImage={selectedSlide?.contents?.["background-image"] ?? null}
             />
         </div>
     );

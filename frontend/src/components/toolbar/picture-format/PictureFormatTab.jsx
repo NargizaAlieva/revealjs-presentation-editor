@@ -37,7 +37,6 @@ import {
   MdChevronRight,
   MdCheck,
 } from "react-icons/md";
-import { PiFrameCornersBold } from "react-icons/pi";
 import { createPortal } from "react-dom";
 import ImageStylePicker from "../../canvas/media/ImageStylePicker";
 import AltTextPanel from "./AltTextPanel";
@@ -48,14 +47,13 @@ const SVG_PREVIEW = `data:image/svg+xml,${encodeURIComponent(
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 48"><defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#a8d8f0"/><stop offset="100%" stop-color="#d6eef8"/></linearGradient><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7bc67e"/><stop offset="100%" stop-color="#4caf50"/></linearGradient></defs><rect width="64" height="48" fill="url(#sky)"/><circle cx="10" cy="11" r="6" fill="#fdd835"/><polygon points="0,48 0,28 12,16 24,26 36,12 52,26 64,18 64,48" fill="url(#g1)"/></svg>`,
 )}`;
 
-function Popover({ children, onClose, anchorRef, wide }) {
+function Popover({ children, anchorRect, wide }) {
   const ref = useRef(null);
-  const rect = anchorRef?.current?.getBoundingClientRect();
-  const left = rect
-    ? Math.min(rect.left, window.innerWidth - (wide ? 360 : 220) - 8)
+  const left = anchorRect
+    ? Math.min(anchorRect.left, window.innerWidth - (wide ? 360 : 220) - 8)
     : 100;
-  const style = rect
-    ? { position: "fixed", top: rect.bottom + 4, left, zIndex: 9999 }
+  const style = anchorRect
+    ? { position: "fixed", top: anchorRect.bottom + 4, left, zIndex: 9999 }
     : { position: "fixed", top: 100, left: 100, zIndex: 9999 };
 
   return createPortal(
@@ -90,7 +88,7 @@ function SliderRow({ label, min, max, value, onChange, onBeginHistory, onCommitH
 const BC_BRIGHTNESS = [-0.4, -0.2, 0, 0.2, 0.4];
 const BC_CONTRAST   = [0.4, 0.2, 0, -0.2, -0.4];
 
-function CorrectionsPopover({ src, effects, onUpdate, onClose, anchorRef, onBeginHistory, onCommitHistory }) {
+function CorrectionsPopover({ src, effects, onUpdate, anchorRect, onBeginHistory, onCommitHistory }) {
   const activeBrightness = effects.brightness ?? 0;
   const activeContrast   = effects.contrast   ?? 0;
   const activeSharpen    = effects.sharpenId  ?? "none";
@@ -114,7 +112,7 @@ function CorrectionsPopover({ src, effects, onUpdate, onClose, anchorRef, onBegi
     Math.abs(activeBrightness - b) < 0.05 && Math.abs(activeContrast - c) < 0.05;
 
   return (
-    <Popover anchorRef={anchorRef} onClose={onClose} wide>
+    <Popover anchorRect={anchorRect} wide>
       <div className="pft-corr-section-title">Sharpen/Soften</div>
       <div className="pft-corr-row">
         {SHARPEN_PRESETS.map((p) => {
@@ -195,7 +193,7 @@ function ImgThumb({ src, cssFilter, label, active, onSelect }) {
   );
 }
 
-function ColorPopover({ src, effects, onUpdate, onClose, anchorRef }) {
+function ColorPopover({ src, effects, onUpdate, anchorRect }) {
   const currentId = effects.tintId ?? "none";
 
   const apply = useCallback((preset) => {
@@ -203,7 +201,7 @@ function ColorPopover({ src, effects, onUpdate, onClose, anchorRef }) {
   }, [effects, onUpdate]);
 
   return (
-    <Popover anchorRef={anchorRef} onClose={onClose} wide>
+    <Popover anchorRect={anchorRect} wide>
       <div className="pft-color-section-title">Color Saturation</div>
       <div className="pft-color-row">
         {COLOR_SATURATION.map((p) => (
@@ -270,14 +268,7 @@ const DASH_PRESETS = [
   { id: "groove",   label: "Groove",      style: "groove", gap: null },
 ];
 
-const SKETCHED_PRESETS = [
-  { id: "none",      label: "None",       borderRadius: "0" },
-  { id: "curved",    label: "Curved",     borderRadius: "6px" },
-  { id: "round",     label: "Rounded",    borderRadius: "12px" },
-  { id: "circle",    label: "Circle",     borderRadius: "50%" },
-];
-
-function PictureBorderPopover({ effects, onUpdate, onClose, anchorRef }) {
+function PictureBorderPopover({ effects, onUpdate, anchorRect }) {
   const [sub, setSub] = useState(null);
   const border = effects.border ?? {};
   const currentColor = border.color ?? null;
@@ -296,12 +287,13 @@ function PictureBorderPopover({ effects, onUpdate, onClose, anchorRef }) {
     onUpdate({ effects: { ...effects, border: { ...border, color, dash } } });
   };
   const removeOutline = () => {
-    const { border: _b, ...rest } = effects;
+    const rest = { ...effects };
+    delete rest.border;
     onUpdate({ effects: rest });
   };
 
   return (
-    <Popover anchorRef={anchorRef} onClose={onClose}>
+    <Popover anchorRect={anchorRect}>
       <div className="pft-border-section">Theme Colors</div>
       <div className="pft-border-theme">
         {THEME_COLORS.map((row, ri) => (
@@ -522,7 +514,7 @@ const STD_COLORS_GLOW = [
   "#C00000","#FF0000","#FFC000","#FFFF00","#92D050","#00B050","#00B0F0","#0070C0","#002060","#7030A0",
 ];
 
-function GlowSubPanel({ src, activeId, effects, onApply, onHover, onHoverClear }) {
+function GlowSubPanel({ src, activeId, onApply, onHover, onHoverClear }) {
   const [colorPicker, setColorPicker] = useState(false);
 
   const applyVariant = (colorHex, sizeIdx) => {
@@ -628,8 +620,8 @@ function GlowSubPanel({ src, activeId, effects, onApply, onHover, onHoverClear }
   );
 }
 
+// eslint-disable-next-line no-unused-vars
 function SectionPanel({ src, activeId, onSelect, noLabel, varLabel, variations, cols = 3 }) {
-  const nonePreset = SOFT_EDGES_PRESETS[0]; // fallback — overridden by caller
   return (
     <div className="pft-fx-preset-panel pft-fx-shadow-panel">
       <div>
@@ -858,7 +850,7 @@ function EffectSubItem({ preset, active, onSelect, src }) {
   );
 }
 
-function PictureEffectsPopover({ src, effects, onUpdate, onClose, anchorRef, onPreviewEffects }) {
+function PictureEffectsPopover({ src, effects, onUpdate, anchorRect, onPreviewEffects }) {
   const [sub, setSub] = useState(null);
 
   const preview = (partialEffects) => onPreviewEffects?.(partialEffects);
@@ -900,7 +892,7 @@ function PictureEffectsPopover({ src, effects, onUpdate, onClose, anchorRef, onP
   const hasEffect = FX_MENU.some((m) => effects[m.key] && effects[m.key] !== "none");
 
   return (
-    <Popover anchorRef={anchorRef} onClose={() => { clearPreview(); onClose(); }}>
+    <Popover anchorRect={anchorRect}>
       {FX_MENU.map((m) => (
         <div
           key={m.key}
@@ -919,7 +911,7 @@ function PictureEffectsPopover({ src, effects, onUpdate, onClose, anchorRef, onP
               : m.special === "reflection"
               ? <ReflectionSubPanel src={src} activeId={effects.reflectionId ?? "none"} onSelect={(p) => apply("reflectionId", p)} onHover={(p) => previewKey("reflectionId", p)} onHoverClear={clearPreview} />
               : m.special === "glow"
-              ? <GlowSubPanel src={src} activeId={effects.glowId ?? "none"} effects={effects} onApply={applyGlow} onHover={previewGlow} onHoverClear={clearPreview} />
+              ? <GlowSubPanel src={src} activeId={effects.glowId ?? "none"} onApply={applyGlow} onHover={previewGlow} onHoverClear={clearPreview} />
               : m.special === "softEdges"
               ? <SoftEdgesSubPanel src={src} activeId={effects.softEdgesId ?? "none"} onSelect={(p) => apply("softEdgesId", p)} onHover={(p) => previewKey("softEdgesId", p)} onHoverClear={clearPreview} />
               : m.special === "bevel"
@@ -962,9 +954,9 @@ function PictureEffectsPopover({ src, effects, onUpdate, onClose, anchorRef, onP
 
 const TRANSPARENCY_PRESETS = [0, 15, 30, 50, 65, 80, 95];
 
-function TransparencyPopover({ src, opacity, onUpdate, onClose, anchorRef, onBeginHistory, onCommitHistory }) {
+function TransparencyPopover({ src, opacity, onUpdate, anchorRect, onBeginHistory, onCommitHistory }) {
   return (
-    <Popover anchorRef={anchorRef} onClose={onClose} wide>
+    <Popover anchorRect={anchorRect} wide>
       <div className="pft-transp-row">
         {TRANSPARENCY_PRESETS.map((t) => {
           const opacityVal = (100 - t) / 100;
@@ -996,7 +988,7 @@ function TransparencyPopover({ src, opacity, onUpdate, onClose, anchorRef, onBeg
   );
 }
 
-function ArtisticPopover({ src, effects, onUpdate, onClose, anchorRef }) {
+function ArtisticPopover({ src, effects, onUpdate, anchorRect }) {
   const currentId = effects.artisticId ?? "none";
 
   const apply = useCallback((preset) => {
@@ -1004,7 +996,7 @@ function ArtisticPopover({ src, effects, onUpdate, onClose, anchorRef }) {
   }, [effects, onUpdate]);
 
   return (
-    <Popover anchorRef={anchorRef} onClose={onClose} wide>
+    <Popover anchorRect={anchorRect} wide>
       <div className="pft-art-grid">
         {ARTISTIC_EFFECTS.map((p) => {
           const style = p.filter ? { filter: p.filter } : undefined;
@@ -1035,6 +1027,7 @@ function ArtisticPopover({ src, effects, onUpdate, onClose, anchorRef }) {
   );
 }
 
+// eslint-disable-next-line no-unused-vars
 function TintGrid({ items, currentId, onSelect }) {
   return (
     <div className="pft-tint-grid">
@@ -1056,21 +1049,24 @@ function TintGrid({ items, currentId, onSelect }) {
 export default function PictureFormatTab({ media, onUpdate, onCrop, onBringForward, onSendBackward, onChangePicture, onPreviewEffects, onPreviewStyle, onBeginHistory, onCommitHistory }) {
   const resolvedSrc = useMediaSrc(media?.["file-link"]);
   const [openPopover, setOpenPopover] = useState(null);
+  const [popoverAnchorRect, setPopoverAnchorRect] = useState(null);
   const [showAltPanel, setShowAltPanel] = useState(false);
   const changeInputRef = useRef(null);
   const [stylePickerPos, setStylePickerPos] = useState(null);
   const [galleryPage, setGalleryPage] = useState(0);
   const GALLERY_PER_PAGE = 6;
   const [lockedRatio, setLockedRatio] = useState(true);
-  const [localW, setLocalW] = useState(String(Math.round(media?.width ?? 0)));
-  const [localH, setLocalH] = useState(String(Math.round(media?.height ?? 0)));
-
-  const prevIdRef = useRef(media?.id);
-  if (media?.id !== prevIdRef.current) {
-    prevIdRef.current = media?.id;
-    setLocalW(String(Math.round(media?.width ?? 0)));
-    setLocalH(String(Math.round(media?.height ?? 0)));
-  }
+  const [sizeDraft, setSizeDraft] = useState(() => ({
+    mediaId: media?.id,
+    width: String(Math.round(media?.width ?? 0)),
+    height: String(Math.round(media?.height ?? 0)),
+  }));
+  const localW = sizeDraft.mediaId === media?.id
+    ? sizeDraft.width
+    : String(Math.round(media?.width ?? 0));
+  const localH = sizeDraft.mediaId === media?.id
+    ? sizeDraft.height
+    : String(Math.round(media?.height ?? 0));
 
   const brightnessRef = useRef(null);
   const colorRef = useRef(null);
@@ -1089,7 +1085,10 @@ export default function PictureFormatTab({ media, onUpdate, onCrop, onBringForwa
   const currentArtistic = effects.artisticId ?? "none";
   const currentStyleId  = effects["style-id"] ?? "none";
 
-  const toggle = (name) => setOpenPopover((p) => (p === name ? null : name));
+  const toggle = (name, event) => {
+    setPopoverAnchorRect(event?.currentTarget?.getBoundingClientRect() ?? null);
+    setOpenPopover((p) => (p === name ? null : name));
+  };
 
   const applySize = (w, h) => {
     const nw = parseFloat(w);
@@ -1101,18 +1100,20 @@ export default function PictureFormatTab({ media, onUpdate, onCrop, onBringForwa
 
   const onWChange = (e) => {
     const val = e.target.value;
-    setLocalW(val);
+    let nextHeight = localH;
     if (lockedRatio && (media.width ?? 0) > 0) {
-      setLocalH(String(Math.round(parseFloat(val) * (media.height / media.width)) || ""));
+      nextHeight = String(Math.round(parseFloat(val) * (media.height / media.width)) || "");
     }
+    setSizeDraft({ mediaId: media?.id, width: val, height: nextHeight });
   };
 
   const onHChange = (e) => {
     const val = e.target.value;
-    setLocalH(val);
+    let nextWidth = localW;
     if (lockedRatio && (media.height ?? 0) > 0) {
-      setLocalW(String(Math.round(parseFloat(val) * (media.width / media.height)) || ""));
+      nextWidth = String(Math.round(parseFloat(val) * (media.width / media.height)) || "");
     }
+    setSizeDraft({ mediaId: media?.id, width: nextWidth, height: val });
   };
 
   const onSizeKey = (e) => { if (e.key === "Enter") applySize(localW, localH); };
@@ -1123,7 +1124,7 @@ export default function PictureFormatTab({ media, onUpdate, onCrop, onBringForwa
       <div className="ribbon-group">
         <div className="pft-row">
           <div style={{ position: "relative" }}>
-            <button ref={brightnessRef} className={`toolbar-item${brightness !== 0 || contrast !== 0 ? " pft-active" : ""}`} onClick={() => toggle("brightness")} title="Brightness / Contrast">
+            <button ref={brightnessRef} className={`toolbar-item${brightness !== 0 || contrast !== 0 ? " pft-active" : ""}`} onClick={(e) => toggle("brightness", e)} title="Brightness / Contrast">
               <MdTune /><span>Corrections</span>
             </button>
             {openPopover === "brightness" && (
@@ -1131,8 +1132,7 @@ export default function PictureFormatTab({ media, onUpdate, onCrop, onBringForwa
                 src={resolvedSrc}
                 effects={effects}
                 onUpdate={onUpdate}
-                onClose={() => setOpenPopover(null)}
-                anchorRef={brightnessRef}
+                anchorRect={popoverAnchorRect}
                 onBeginHistory={onBeginHistory}
                 onCommitHistory={onCommitHistory}
               />
@@ -1140,7 +1140,7 @@ export default function PictureFormatTab({ media, onUpdate, onCrop, onBringForwa
           </div>
 
           <div style={{ position: "relative" }}>
-            <button ref={colorRef} className={`toolbar-item${currentTint !== "none" ? " pft-active" : ""}`} onClick={() => toggle("color")} title="Color">
+            <button ref={colorRef} className={`toolbar-item${currentTint !== "none" ? " pft-active" : ""}`} onClick={(e) => toggle("color", e)} title="Color">
               <MdColorLens /><span>Color</span>
             </button>
             {openPopover === "color" && (
@@ -1148,14 +1148,13 @@ export default function PictureFormatTab({ media, onUpdate, onCrop, onBringForwa
                 src={resolvedSrc}
                 effects={effects}
                 onUpdate={onUpdate}
-                onClose={() => setOpenPopover(null)}
-                anchorRef={colorRef}
+                anchorRect={popoverAnchorRect}
               />
             )}
           </div>
 
           <div style={{ position: "relative" }}>
-            <button ref={artisticRef} className={`toolbar-item${currentArtistic !== "none" ? " pft-active" : ""}`} onClick={() => toggle("artistic")} title="Artistic Effects">
+            <button ref={artisticRef} className={`toolbar-item${currentArtistic !== "none" ? " pft-active" : ""}`} onClick={(e) => toggle("artistic", e)} title="Artistic Effects">
               <MdAutoAwesome /><span>Artistic</span>
             </button>
             {openPopover === "artistic" && (
@@ -1163,14 +1162,13 @@ export default function PictureFormatTab({ media, onUpdate, onCrop, onBringForwa
                 src={resolvedSrc}
                 effects={effects}
                 onUpdate={onUpdate}
-                onClose={() => setOpenPopover(null)}
-                anchorRef={artisticRef}
+                anchorRect={popoverAnchorRect}
               />
             )}
           </div>
 
           <div style={{ position: "relative" }}>
-            <button ref={opacityRef} className={`toolbar-item${opacity < 100 ? " pft-active" : ""}`} onClick={() => toggle("opacity")} title="Transparency">
+            <button ref={opacityRef} className={`toolbar-item${opacity < 100 ? " pft-active" : ""}`} onClick={(e) => toggle("opacity", e)} title="Transparency">
               <MdOpacity /><span>Transparency</span>
             </button>
             {openPopover === "opacity" && (
@@ -1178,8 +1176,7 @@ export default function PictureFormatTab({ media, onUpdate, onCrop, onBringForwa
                 src={resolvedSrc}
                 opacity={opacity}
                 onUpdate={onUpdate}
-                onClose={() => setOpenPopover(null)}
-                anchorRef={opacityRef}
+                anchorRect={popoverAnchorRect}
                 onBeginHistory={onBeginHistory}
                 onCommitHistory={onCommitHistory}
               />
@@ -1263,7 +1260,7 @@ export default function PictureFormatTab({ media, onUpdate, onCrop, onBringForwa
           <button
             ref={borderRef}
             className={`toolbar-item${effects.border?.color ? " pft-active" : ""}`}
-            onClick={() => toggle("border")}
+            onClick={(e) => toggle("border", e)}
             title="Picture Border"
           >
             <MdOutlineBorderColor /><span>Picture Border</span>
@@ -1272,8 +1269,7 @@ export default function PictureFormatTab({ media, onUpdate, onCrop, onBringForwa
             <PictureBorderPopover
               effects={effects}
               onUpdate={onUpdate}
-              onClose={() => setOpenPopover(null)}
-              anchorRef={borderRef}
+              anchorRect={popoverAnchorRect}
             />
           )}
         </div>
@@ -1281,7 +1277,7 @@ export default function PictureFormatTab({ media, onUpdate, onCrop, onBringForwa
           <button
             ref={fxRef}
             className={`toolbar-item${FX_MENU.some((m) => effects[m.key] && effects[m.key] !== "none") ? " pft-active" : ""}`}
-            onClick={() => toggle("fx")}
+            onClick={(e) => toggle("fx", e)}
             title="Picture Effects"
           >
             <MdAutoAwesome /><span>Picture Effects</span>
@@ -1292,7 +1288,7 @@ export default function PictureFormatTab({ media, onUpdate, onCrop, onBringForwa
               effects={effects}
               onUpdate={onUpdate}
               onClose={() => setOpenPopover(null)}
-              anchorRef={fxRef}
+              anchorRect={popoverAnchorRect}
               onPreviewEffects={onPreviewEffects}
             />
           )}

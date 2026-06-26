@@ -127,7 +127,6 @@ function SlideSizeDropdown({ presentation, onUpdateDimensions }) {
   const currentH = presentation?.slideset?.master?.["slide-dimensions"]?.height ?? 720;
   const [customW, setCustomW] = useState(currentW);
   const [customH, setCustomH] = useState(currentH);
-  const currentPreset = SLIDE_SIZES.find(s => s.width === currentW && s.height === currentH);
 
   useEffect(() => {
     const fn = (e) => {
@@ -365,15 +364,15 @@ function MasterThumb({ label, isSelected, onClick, presentation, layout, isMaste
 export function SlideMasterRibbon({
   onClose, presentation, onApplyTheme, onApplyBackground, onApplyFont, onUpdateDimensions,
   masterName, onRenameMaster, selectedMasterLayoutId, onInsertLayout, onRenameLayout,
-  onDeleteLayout, onAddLayoutPlaceholder, onRemoveLayoutPlaceholder,
+  onDeleteLayout,
   onAddTextElement, onImageUpload, onVideoUpload,
-  onAddMasterElement, onDeleteMasterElement, onApplyMasterTransition, onApplyLayoutFont,
   onToggleTitle, onToggleFooters,
 }) {
   const imageInputRef = useRef(null);
   const videoInputRef = useRef(null);
   const [renaming, setRenaming] = useState(false);
   const [showPlaceholderMenu, setShowPlaceholderMenu] = useState(false);
+  const [placeholderMenuPosition, setPlaceholderMenuPosition] = useState({ top: 80, left: 0 });
   const [showBgPalette, setShowBgPalette] = useState(false);
   const placeholderBtnRef = useRef(null);
   const placeholderMenuRef = useRef(null);
@@ -389,9 +388,6 @@ export function SlideMasterRibbon({
     ? (presentation?.slideset?.layouts ?? []).find((l) => l["layout-id"] === selectedMasterLayoutId)
     : null;
 
-  const masterElements = presentation?.slideset?.master?.elements ?? {};
-  const layoutPlaceholders = selectedLayout?.placeholders ?? [];
-
   const titleVisible = hasTitle(presentation, selectedMasterLayoutId ?? null);
   const footersVisible = hasFooters(presentation, selectedMasterLayoutId ?? null);
 
@@ -401,8 +397,6 @@ export function SlideMasterRibbon({
     ? (selectedLayout?.name ?? selectedMasterLayoutId)
     : (masterName ?? "Office Theme");
   const [nameVal, setNameVal] = useState(currentName);
-
-  useEffect(() => { setNameVal(currentName); }, [currentName]);
 
   const commitRename = () => {
     setRenaming(false);
@@ -465,7 +459,13 @@ export function SlideMasterRibbon({
                 </svg>
                 Delete
               </button>
-              <button className="master-ribbon-btn master-ribbon-btn--small" onClick={() => setRenaming(true)}>
+              <button
+                className="master-ribbon-btn master-ribbon-btn--small"
+                onClick={() => {
+                  setNameVal(currentName);
+                  setRenaming(true);
+                }}
+              >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path d="M2 10 L9 3 L11 5 L4 12 L2 12 Z" stroke="#4472c4" strokeWidth="1" fill="#dce6f4" />
                 </svg>
@@ -482,7 +482,11 @@ export function SlideMasterRibbon({
               <button
                 ref={placeholderBtnRef}
                 className="master-ribbon-btn master-ribbon-btn--large"
-                onClick={() => setShowPlaceholderMenu((v) => !v)}
+                onClick={(event) => {
+                  const rect = event.currentTarget.getBoundingClientRect();
+                  setPlaceholderMenuPosition({ top: rect.bottom + 4, left: rect.left });
+                  setShowPlaceholderMenu((v) => !v);
+                }}
               >
                 <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
                   <rect x="3" y="5" width="26" height="18" rx="2" stroke="#4472c4" strokeWidth="1.2" fill="#dce6f4" strokeDasharray="3 2" />
@@ -494,8 +498,8 @@ export function SlideMasterRibbon({
               {showPlaceholderMenu && (
                 <div ref={placeholderMenuRef} className="placeholder-type-menu" style={{
                   position: "fixed",
-                  top: placeholderBtnRef.current ? placeholderBtnRef.current.getBoundingClientRect().bottom + 4 : 80,
-                  left: placeholderBtnRef.current ? placeholderBtnRef.current.getBoundingClientRect().left : 0,
+                  top: placeholderMenuPosition.top,
+                  left: placeholderMenuPosition.left,
                   background: "#fff",
                   border: "1px solid #ccc",
                   borderRadius: 4,

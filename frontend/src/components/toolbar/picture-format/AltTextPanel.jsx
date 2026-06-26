@@ -1,16 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import { MdClose, MdInfoOutline } from "react-icons/md";
 import "./AltTextPanel.css";
 
 export default function AltTextPanel({ media, onUpdate, onClose }) {
-  const [altText, setAltText] = useState(media?.alt ?? "");
-  const [decorative, setDecorative] = useState(media?.decorative ?? false);
-
-  useEffect(() => {
-    setAltText(media?.alt ?? "");
-    setDecorative(media?.decorative ?? false);
-  }, [media?.id]);
+  const [draft, setDraft] = useState(() => ({
+    mediaId: media?.id,
+    altText: media?.alt ?? "",
+    decorative: media?.decorative ?? false,
+  }));
+  const altText = draft.mediaId === media?.id ? draft.altText : media?.alt ?? "";
+  const decorative = draft.mediaId === media?.id ? draft.decorative : media?.decorative ?? false;
 
   const commit = () => {
     onUpdate({ alt: decorative ? "" : altText, decorative });
@@ -42,7 +42,7 @@ export default function AltTextPanel({ media, onUpdate, onClose }) {
           value={decorative ? "" : altText}
           disabled={decorative}
           placeholder="Enter a description…"
-          onChange={(e) => setAltText(e.target.value)}
+          onChange={(e) => setDraft({ mediaId: media?.id, altText: e.target.value, decorative })}
           onBlur={commit}
         />
 
@@ -51,7 +51,7 @@ export default function AltTextPanel({ media, onUpdate, onClose }) {
             type="checkbox"
             checked={decorative}
             onChange={(e) => {
-              setDecorative(e.target.checked);
+              setDraft({ mediaId: media?.id, altText, decorative: e.target.checked });
               onUpdate({ decorative: e.target.checked, alt: e.target.checked ? "" : altText });
             }}
           />
