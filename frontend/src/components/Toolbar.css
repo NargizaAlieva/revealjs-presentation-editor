@@ -130,11 +130,25 @@
   font-size: 23px;
 }
 
+.toolbar-links-group,
+.toolbar-comments-group {
+  gap: 8px;
+}
+
 .toolbar-item span,
 .toolbar-upload span {
   font-size: 11px;
   line-height: 1.05;
   text-align: center;
+}
+
+.toolbar-dropdown-mark {
+  display: inline-block;
+  margin-left: 2px;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  line-height: 1;
+  vertical-align: baseline;
 }
 
 .mini-stack {

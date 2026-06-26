@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  MdArrowDropDown,
   MdBorderColor,
   MdFormatBold,
   MdFormatClear,
@@ -80,6 +79,7 @@ function SizePicker({ value, disabled, onChange }) {
           if (!wrapRef.current?.contains(event.relatedTarget)) commit(inputVal);
         }}
       />
+      <span className="sz-picker-arrow">▾</span>
       {open && (
         <ul
           className="sz-dropdown"
@@ -139,7 +139,7 @@ function ColorCommand({
       >
         {icon}
         <span className="font-color-bar" style={{ background: color }} />
-        <span className="font-command-arrow">▼</span>
+        <span className="font-command-arrow">▾</span>
       </button>
 
       {open &&
@@ -330,7 +330,7 @@ export default function FontGroup({
             title="Change case"
             onClick={() => setShowCaseMenu((open) => !open)}
           >
-            Aa <MdArrowDropDown />
+            Aa <span className="toolbar-dropdown-mark">▾</span>
           </button>
           {showCaseMenu && (
             <div className="font-case-menu">

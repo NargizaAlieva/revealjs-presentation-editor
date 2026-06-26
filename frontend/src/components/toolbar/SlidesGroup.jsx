@@ -6,9 +6,29 @@ import {
   MdVisibility,
   MdVisibilityOff,
 } from "react-icons/md";
-import { getLayoutDisplayList } from "../../core/operations/layoutOperations";
 import LayoutThumb from "./LayoutThumb";
 import "./SlidesGroup.css";
+
+function LayoutGrid({ layouts, presentation, onSelect }) {
+  return (
+    <div className="layout-grid">
+      {layouts.map((layout) => (
+        <button
+          key={layout["layout-id"]}
+          className="layout-grid-item"
+          onClick={() => onSelect(layout["layout-id"])}
+        >
+          <div className="layout-grid-thumb">
+            <LayoutThumb layout={layout} presentation={presentation} />
+          </div>
+          <span className="layout-grid-label">
+            {layout.name ?? layout["layout-id"]}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export default function SlidesGroup({
   onAddSlide,
@@ -84,23 +104,6 @@ export default function SlidesGroup({
     return () => document.removeEventListener("mousedown", handler);
   }, [showLayoutPanel]);
 
-  const LayoutGrid = ({ onSelect }) => (
-    <div className="layout-grid">
-      {layouts.map((layout) => (
-        <button
-          key={layout["layout-id"]}
-          className="layout-grid-item"
-          onClick={() => onSelect(layout["layout-id"])}
-        >
-          <div className="layout-grid-thumb">
-            <LayoutThumb layout={layout} presentation={presentation} />
-          </div>
-          <span className="layout-grid-label">{layout.name ?? layout["layout-id"]}</span>
-        </button>
-      ))}
-    </div>
-  );
-
   return (
     <div className="ribbon-group slides-group">
       <div className="toolbar-dropdown-container">
@@ -110,7 +113,9 @@ export default function SlidesGroup({
           onClick={handleNewSlideToggle}
         >
           <MdAdd />
-          <span>New Slide</span>
+          <span>
+            New Slide <span className="toolbar-dropdown-mark">▾</span>
+          </span>
         </button>
 
         {showLayouts && (
@@ -119,7 +124,11 @@ export default function SlidesGroup({
             style={{ top: newSlidePos.top, left: newSlidePos.left }}
           >
             <h4>Layouts</h4>
-            <LayoutGrid onSelect={handleLayoutSelect} />
+            <LayoutGrid
+              layouts={layouts}
+              presentation={presentation}
+              onSelect={handleLayoutSelect}
+            />
           </div>
         )}
       </div>
@@ -131,7 +140,7 @@ export default function SlidesGroup({
             className="mini-text-command layout-apply-btn"
             onClick={handleLayoutPanelToggle}
           >
-            Layout
+            Layout <span className="toolbar-dropdown-mark">▾</span>
           </button>
           {showLayoutPanel && (
             <div
@@ -139,7 +148,14 @@ export default function SlidesGroup({
               style={{ top: popupPos.top, left: popupPos.left }}
             >
               <h4>Layouts</h4>
-              <LayoutGrid onSelect={(id) => { onApplyLayout?.(id); setShowLayoutPanel(false); }} />
+              <LayoutGrid
+                layouts={layouts}
+                presentation={presentation}
+                onSelect={(id) => {
+                  onApplyLayout?.(id);
+                  setShowLayoutPanel(false);
+                }}
+              />
             </div>
           )}
         </div>

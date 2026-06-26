@@ -93,7 +93,9 @@
 
 .editing-chevron {
   text-align: right;
-  font-size: 15px !important;
+  font-family: Arial, sans-serif;
+  font-size: 11px !important;
+  line-height: 1;
 }
 
 .editing-dropdown {

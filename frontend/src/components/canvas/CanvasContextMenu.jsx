@@ -112,7 +112,12 @@ function HyperlinkBrowseButton({ title, icon, active = false, onClick }) {
   );
 }
 
-function HyperlinkDialog({ selectedText = "", presentation, onApply, onClose }) {
+export function HyperlinkDialog({
+  selectedText = "",
+  presentation,
+  onApply,
+  onClose,
+}) {
   const [href, setHref] = useState("");
   const [displayText, setDisplayText] = useState(selectedText);
   const [screenTip, setScreenTip] = useState("");

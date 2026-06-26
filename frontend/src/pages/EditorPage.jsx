@@ -130,6 +130,9 @@ export default function EditorPage() {
           onZoomIn={ctrl.zoomIn}
           onZoomOut={ctrl.zoomOut}
           onZoomChange={ctrl.setZoom}
+          selectedHyperlinkText={ctrl.selectedHyperlinkText}
+          onHyperlink={ctrl.handleHyperlink}
+          onNewComment={ctrl.handleNewComment}
           onOpenSlideMaster={() => ctrl.setIsSlideMasterOpen(true)}
           isSlideMasterOpen={ctrl.isSlideMasterOpen}
           onCloseSlideMaster={() => ctrl.setIsSlideMasterOpen(false)}

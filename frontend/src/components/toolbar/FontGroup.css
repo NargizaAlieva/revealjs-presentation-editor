@@ -28,13 +28,25 @@
   position: relative;
 }
 
+.sz-picker-arrow {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #555;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  line-height: 1;
+  pointer-events: none;
+}
+
 .font-group .toolbar-size {
   width: 48px;
   height: 26px;
   border: 1px solid #cfcfcf;
   border-radius: 4px;
   background: white;
-  padding: 0 4px;
+  padding: 0 14px 0 4px;
   box-sizing: border-box;
   font-size: 12px;
   text-align: right;
@@ -196,6 +208,7 @@
   top: 8px;
   right: 2px;
   width: auto;
-  font-size: 9px;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
   line-height: 1;
 }

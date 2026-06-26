@@ -51,7 +51,7 @@ export default function EditingGroup({
             <span>b</span>
           </span>
           <span>Replace</span>
-          <span className="editing-chevron">⌄</span>
+          <span className="editing-chevron">▾</span>
         </button>
         {openMenu === "replace" && (
           <div className="editing-menu">
@@ -78,7 +78,7 @@ export default function EditingGroup({
         >
           <FiMousePointer className="editing-select-icon" />
           <span>Select</span>
-          <span className="editing-chevron">⌄</span>
+          <span className="editing-chevron">▾</span>
         </button>
         {openMenu === "select" && (
           <div className="editing-menu editing-select-menu">

@@ -109,6 +109,9 @@ export default function Toolbar({
   onZoomIn,
   onZoomOut,
   onZoomChange,
+  selectedHyperlinkText,
+  onHyperlink,
+  onNewComment,
 
   selectedMediaElement,
   onUpdateSelectedMedia,
@@ -290,6 +293,10 @@ useEffect(() => {
             onUpdateBgFillSettings={onUpdateBgFillSettings}
             onApplyBackgroundToAll={onApplyBackgroundToAll}
             isSlideMasterOpen={isSlideMasterOpen}
+            selectedElement={selectedElement}
+            selectedHyperlinkText={selectedHyperlinkText}
+            onHyperlink={onHyperlink}
+            onNewComment={onNewComment}
           />
         )}
 

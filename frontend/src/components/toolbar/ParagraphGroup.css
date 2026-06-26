@@ -44,7 +44,8 @@
   height: 26px;
   border: none;
   background: transparent;
-  font-size: 10px;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
   cursor: pointer;
   padding: 0;
   color: #555;
