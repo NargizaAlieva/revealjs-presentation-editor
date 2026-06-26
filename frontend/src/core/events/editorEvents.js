@@ -1,17 +1,9 @@
-const createEventId = () => {
-  if (globalThis.crypto?.randomUUID) {
-    return globalThis.crypto.randomUUID();
-  }
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-};
-
 export const EditorEventType = {
   PRESENTATION: {
     CREATE: "PRESENTATION.CREATE",
     UPDATE: "PRESENTATION.UPDATE",
     SAVE: "PRESENTATION.SAVE",
     LOAD: "PRESENTATION.LOAD",
-    EXPORT: "PRESENTATION.EXPORT",
     TOGGLE_AUTOSAVE: "PRESENTATION.TOGGLE_AUTOSAVE",
   },
 
@@ -41,7 +33,6 @@ export const EditorEventType = {
     DELETE_ELEMENT: "LAYOUT.DELETE_ELEMENT",
     ADD_PLACEHOLDER: "LAYOUT.ADD_PLACEHOLDER",
     UPDATE_PLACEHOLDER: "LAYOUT.UPDATE_PLACEHOLDER",
-    DELETE_PLACEHOLDER: "LAYOUT.DELETE_PLACEHOLDER",
     REMOVE_PLACEHOLDER: "LAYOUT.REMOVE_PLACEHOLDER",
     UPDATE_FONT: "LAYOUT.UPDATE_FONT",
     UPDATE_ITEM: "LAYOUT.UPDATE_ITEM",
@@ -82,7 +73,6 @@ export const EditorEventType = {
     UPDATE: "ELEMENT.UPDATE",
     UPDATE_SILENT: "ELEMENT.UPDATE_SILENT",
     UPDATE_MANY: "ELEMENT.UPDATE_MANY",
-
     COPY: "ELEMENT.COPY",
     PASTE: "ELEMENT.PASTE",
     CUT: "ELEMENT.CUT",
@@ -94,7 +84,6 @@ export const EditorEventType = {
     UPDATE: "MEDIA.UPDATE",
     DELETE: "MEDIA.DELETE",
   },
-
 
   COMMENT: {
     ADD: "COMMENT.ADD",
@@ -122,9 +111,4 @@ export const EditorEventType = {
   },
 };
 
-export const createEditorEvent = (type, payload = {}) => ({
-  id: createEventId(),
-  type,
-  payload,
-  timestamp: Date.now(),
-});
+export const createEditorEvent = (type, payload = {}) => ({ type, payload });

@@ -1,9 +1,6 @@
 import { getSlides, setSlides } from "../utils/presentationUtils";
 
-const createParagraphId = () =>
-  globalThis.crypto?.randomUUID
-    ? `paragraph-${globalThis.crypto.randomUUID()}`
-    : `paragraph-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+const createParagraphId = () => `paragraph-${crypto.randomUUID()}`;
 
 const RUN_ONLY_KEYS = new Set(["super-sub-script"]);
 const SHARED_KEYS = new Set([

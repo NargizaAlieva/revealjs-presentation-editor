@@ -1,12 +1,7 @@
 import { createDefaultLayouts } from "./defaultLayouts";
+import { DESIGN_THEMES } from "./designThemes";
 
-const createId = (prefix = "id") => {
-  if (globalThis.crypto?.randomUUID) {
-    return `${prefix}-${globalThis.crypto.randomUUID()}`;
-  }
-
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-};
+const createId = (prefix = "id") => `${prefix}-${crypto.randomUUID()}`;
 
 const createTextFormatting = ({
   size = "28px",
@@ -177,20 +172,7 @@ export const createDefaultPresentation = () => {
           height: 720,
         },
         "dimension-units": "px",
-        "color-theme": [
-          { "css-variable-name": "bg-light", color: "#FFFFFFFF" },
-          { "css-variable-name": "bg-dark", color: "#1E1E2EFF" },
-          { "css-variable-name": "text-dark", color: "#111111FF" },
-          { "css-variable-name": "text-light", color: "#F8F8F8FF" },
-          { "css-variable-name": "accent1", color: "#4F46E5FF" },
-          { "css-variable-name": "accent2", color: "#7C3AEDFF" },
-          { "css-variable-name": "accent3", color: "#06B6D4FF" },
-          { "css-variable-name": "accent4", color: "#10B981FF" },
-          { "css-variable-name": "accent5", color: "#F59E0BFF" },
-          { "css-variable-name": "accent6", color: "#EF4444FF" },
-          { "css-variable-name": "link", color: "#2563EBFF" },
-          { "css-variable-name": "link-visited", color: "#7C3AEDFF" },
-        ],
+        "color-theme": DESIGN_THEMES.find((t) => t.id === "default").colorTheme,
         elements: {
           text: [],
           shapes: [],

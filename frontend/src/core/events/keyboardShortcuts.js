@@ -4,12 +4,13 @@ export const isEditableTarget = (target) =>
   target.isContentEditable;
 
 export const isUndoShortcut = (event) =>
-  (event.ctrlKey || event.metaKey) && !event.shiftKey &&
-  (event.key.toLowerCase() === "z" || event.code === "KeyZ");
+  (event.ctrlKey || event.metaKey) && !event.shiftKey && event.code === "KeyZ";
 
-export const isRedoShortcut = (event) =>
-  ((event.ctrlKey || event.metaKey) && (event.key.toLowerCase() === "y" || event.code === "KeyY")) ||
-  ((event.ctrlKey || event.metaKey) && event.shiftKey && (event.key.toLowerCase() === "z" || event.code === "KeyZ"));
+export const isRedoShortcut = (event) => {
+  const mod = event.ctrlKey || event.metaKey;
+  return (mod && event.code === "KeyY") ||
+         (mod && event.shiftKey && event.code === "KeyZ");
+};
 
 export const isCopyShortcut = (event) =>
   (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "c";

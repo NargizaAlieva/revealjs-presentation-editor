@@ -101,6 +101,3 @@ export const updateMedia = (presentation, slideIndex, mediaId, updates) => {
 
   return setSlides(presentation, slides);
 };
-
-export const rotateMedia = (presentation, slideIndex, mediaId, rotation) =>
-  updateMedia(presentation, slideIndex, mediaId, { rotation });

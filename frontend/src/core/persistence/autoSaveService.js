@@ -1,7 +1,10 @@
 import { serializePresentation } from "./serializationOperations";
 import { updateIndexEntry } from "./presentationsLibrary";
+import { setSetting } from "./persistenceFacade";
 import { EditorEventType } from "../events/editorEvents";
 import { storageAdapter } from "./storageAdapter";
+
+const AUTOSAVE_SETTING_KEY = "autosaveEnabled";
 
 const DEFAULT_STORAGE_KEY = "presentation";
 const DEFAULT_AUTOSAVE_DELAY = 2000;
@@ -61,7 +64,6 @@ const AUTO_SAVE_EVENTS = new Set([
   EditorEventType.LAYOUT.DELETE_ELEMENT,
   EditorEventType.LAYOUT.ADD_PLACEHOLDER,
   EditorEventType.LAYOUT.UPDATE_PLACEHOLDER,
-  EditorEventType.LAYOUT.DELETE_PLACEHOLDER,
   EditorEventType.LAYOUT.REMOVE_PLACEHOLDER,
   EditorEventType.LAYOUT.UPDATE_FONT,
   EditorEventType.LAYOUT.UPDATE_ITEM,
@@ -133,5 +135,9 @@ export const createAutosaveService = (
     }
   };
 
-  return { scheduleAutosave: schedule, saveImmediately, shouldAutosave };
+  const persistAutosaveSetting = (enabled) => {
+    try { setSetting(AUTOSAVE_SETTING_KEY, String(enabled)); } catch {}
+  };
+
+  return { scheduleAutosave: schedule, saveImmediately, shouldAutosave, persistAutosaveSetting };
 };

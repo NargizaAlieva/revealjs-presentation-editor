@@ -127,13 +127,6 @@ const scaleElement = (el, scaleX, scaleY, newW, newH) => {
   return { ...el, position: { x, y }, width: w, height: h };
 };
 
-const scalePlaceholder = (p, scaleX, scaleY, newW, newH) => {
-  const w = Math.max(20, Math.min(Math.round((p.width ?? 100) * scaleX), newW));
-  const h = Math.max(10, Math.min(Math.round((p.height ?? 50) * scaleY), newH));
-  const x = Math.max(0, Math.min(Math.round((p.position?.x ?? 0) * scaleX), newW - w));
-  const y = Math.max(0, Math.min(Math.round((p.position?.y ?? 0) * scaleY), newH - h));
-  return { ...p, position: { x, y }, width: w, height: h };
-};
 
 const scaleElements = (elements, scaleX, scaleY, newW, newH) => ({
   text: (elements?.text ?? []).map((el) => scaleElement(el, scaleX, scaleY, newW, newH)),
@@ -175,7 +168,7 @@ export const updateMasterDimensions = (
 
   const scaledLayouts = (presentation.slideset.layouts ?? []).map((layout) => ({
     ...layout,
-    placeholders: (layout.placeholders ?? []).map((p) => scalePlaceholder(p, scaleX, scaleY, newW, newH)),
+    placeholders: (layout.placeholders ?? []).map((p) => scaleElement(p, scaleX, scaleY, newW, newH)),
     elements: scaleElements(layout.elements ?? {}, scaleX, scaleY, newW, newH),
   }));
 
@@ -303,7 +296,7 @@ export const deleteMasterElement = (presentation, type, elementId) => ({
   },
 });
 
-const createParagraphId = () => crypto.randomUUID?.() ?? `p-${Date.now()}`;
+const createParagraphId = () => crypto.randomUUID();
 
 const RUN_ONLY_KEYS = new Set(["super-sub-script"]);
 
@@ -398,19 +391,4 @@ export const hasFooters = (presentation, layoutId = null) => {
     return (layout?.placeholders ?? []).some((p) => p["placeholder-id"]?.startsWith("footer-"));
   }
   return (presentation?.slideset?.master?.elements?.text ?? []).some((el) => el.id?.startsWith("master-footer-"));
-};
-
-export const applyBackgroundColor = (presentation, hex) => {
-  const newColor = (hex.length === 7 ? hex : hex.slice(0, 7)) + "FF";
-  const colorTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
-  const updated = colorTheme.map((e) =>
-    e["css-variable-name"] === "bg-light" ? { ...e, color: newColor } : e,
-  );
-  return {
-    ...presentation,
-    slideset: {
-      ...presentation.slideset,
-      master: { ...presentation.slideset.master, "color-theme": updated },
-    },
-  };
 };

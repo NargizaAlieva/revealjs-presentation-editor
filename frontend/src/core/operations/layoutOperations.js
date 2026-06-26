@@ -161,7 +161,7 @@ export const createPlaceholderPseudoElement = (placeholder, masterFormatting = {
     width: placeholder.width,
     height: placeholder.height,
     rotation: placeholder.rotation ?? 0,
-      "z-index": 1,
+    "z-index": 1,
     background: placeholder.background ?? "#FFFFFF00",
     userModified: false,
     isPlaceholder: true,
@@ -350,7 +350,6 @@ const isMediaModified = (el) =>
 export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
   const slides = [...getSlides(presentation)];
   const slide = slides[slideIndex];
-  const masterFormatting = presentation.slideset?.master?.formatting ?? {};
   const layout = getLayouts(presentation).find(
     (l) => l["layout-id"] === layoutId,
   );
@@ -472,10 +471,8 @@ export const updateLayoutItem = (presentation, layoutId, itemId, updates) => {
 
   if (isPlaceholder) {
     const { promptText, ...rest } = updates;
-    let result = presentation;
-    if (Object.keys(rest).length) result = updateLayoutPlaceholder(result, layoutId, itemId, rest);
-    if (promptText !== undefined) result = updateLayoutPlaceholder(result, layoutId, itemId, { promptText });
-    return result;
+    const merged = promptText !== undefined ? { ...rest, promptText } : rest;
+    return updateLayoutPlaceholder(presentation, layoutId, itemId, merged);
   }
 
   const { formatting, promptText, ...rest } = updates;
@@ -556,43 +553,39 @@ export const resetSlideToLayout = (presentation, slideIndex) => {
   );
 
   const resetText = (slide.contents?.text ?? []).map((el) => {
-      const pid = el["placeholder-id"];
-      const match = pid ? placeholderMap.get(pid) : null;
+    const pid = el["placeholder-id"];
+    const match = pid ? placeholderMap.get(pid) : null;
+    if (!match) return el;
+    const resetParagraphs = (el.paragraphs ?? []).map((p) => ({
+      ...p,
+      formatting: {},
+      userSetKeys: [],
+      runs: (p.runs ?? []).map((r) => ({ ...r, formatting: {} })),
+    }));
+    return {
+      ...el,
+      position: { ...match.position },
+      width: match.width,
+      height: match.height,
+      background: match.background ?? el.background,
+      rotation: 0,
+      userModified: false,
+      paragraphs: resetParagraphs,
+    };
+  });
 
-      if (!match) return el;
-
-      const resetParagraphs = (el.paragraphs ?? []).map((p) => ({
-        ...p,
-        formatting: {},
-        userSetKeys: [],
-        runs: (p.runs ?? []).map((r) => ({ ...r, formatting: {} })),
-      }));
-
-      return {
-        ...el,
-        position: { ...match.position },
-        width: match.width,
-        height: match.height,
-        background: match.background ?? el.background,
-        rotation: 0,
-        userModified: false,
-        paragraphs: resetParagraphs,
-      };
-    });
-
-    const resetMedia = (slide.contents?.media ?? []).map((el) => {
-      const pid = el["placeholder-id"];
-      const match = pid ? placeholderMap.get(pid) : null;
-
-      if (!match) return el;
-      return {
-        ...el,
-        position: { ...match.position },
-        width: match.width,
-        height: match.height,
-        rotation: 0,
-      };
-    });
+  const resetMedia = (slide.contents?.media ?? []).map((el) => {
+    const pid = el["placeholder-id"];
+    const match = pid ? placeholderMap.get(pid) : null;
+    if (!match) return el;
+    return {
+      ...el,
+      position: { ...match.position },
+      width: match.width,
+      height: match.height,
+      rotation: 0,
+    };
+  });
 
   const handledPids = new Set([
     ...resetText.map((el) => el["placeholder-id"]).filter(Boolean),

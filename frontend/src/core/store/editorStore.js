@@ -1,4 +1,4 @@
-import { createDefaultPresentation } from "../model/presentation";
+import { createDefaultPresentation } from "../model/defaultPresentation";
 import { EditorEventType } from "../events/editorEvents";
 import { deserializePresentation } from "../persistence/serializationOperations";
 
