@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useMediaSrc } from "../hooks/useMediaSrc";
+import { useMediaSrc } from "../../hooks/useMediaSrc";
 import "reveal.js/reveal.css";
 import "reveal.js/theme/white.css";
 import "./PreviewModal.css";
-import SlideDecorations from "./canvas/SlideDecorations";
+import SlideDecorations from "../canvas/SlideDecorations";
 import {
   initRevealDeck,
   buildTextElementStyle,
@@ -21,10 +21,10 @@ import {
   buildAdjustedAnimationMap,
   getFragmentProps,
   getPerLineFragments,
-} from "../core/render/revealRenderer";
-import { getPlaceholderFormatting } from "../core/render/slidesetRenderUtils";
-import { paragraphsToHTML } from "../core/text/textFormatting";
-import { REFLECTION_PRESETS } from "../core/model/imageEffects";
+} from "../../core/render/revealRenderer";
+import { getPlaceholderFormatting } from "../../core/render/slidesetRenderUtils";
+import { paragraphsToHTML } from "../../core/text/textFormatting";
+import { REFLECTION_PRESETS } from "../../core/model/imageEffects";
 
 function BgFillElement({ fileLink, width, height, settings = {} }) {
   const src = useMediaSrc(fileLink);

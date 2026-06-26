@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import "./EditorCanvas.css";
-import { getSlideSize } from "../core/render/slidesetRenderUtils";
-import { getAnimationDurationMs } from "../core/operations/animationOperations";
-import { buildColorThemeStyle, buildAdjustedAnimationMap } from "../core/render/revealRenderer";
+import { getSlideSize } from "../../core/render/slidesetRenderUtils";
+import { getAnimationDurationMs } from "../../core/operations/animationOperations";
+import { buildColorThemeStyle, buildAdjustedAnimationMap } from "../../core/render/revealRenderer";
 import {
   isEditableTarget,
   isUndoShortcut,
@@ -12,15 +12,15 @@ import {
   isCutShortcut,
   isDeleteShortcut,
   isSelectAllShortcut,
-} from "../core/events/keyboardShortcuts";
-import { useCanvasInteractions } from "../hooks/useCanvasInteractions";
-import { useMediaSrc } from "../hooks/useMediaSrc";
-import { findElementInSlide } from "../core/operations/elementOperations";
-import { TRANSPARENT_SLIDE_BG } from "../core/operations/slideOperations";
-import TextElement from "./canvas/elements/TextElement";
-import MediaElement from "./canvas/elements/MediaElement";
-import SlideDecorations from "./canvas/SlideDecorations";
-import CanvasContextMenu from "./canvas/menus/CanvasContextMenu";
+} from "../../core/events/keyboardShortcuts";
+import { useCanvasInteractions } from "../../hooks/useCanvasInteractions";
+import { useMediaSrc } from "../../hooks/useMediaSrc";
+import { findElementInSlide } from "../../core/operations/elementOperations";
+import { TRANSPARENT_SLIDE_BG } from "../../core/operations/slideOperations";
+import TextElement from "../canvas/elements/TextElement";
+import MediaElement from "../canvas/elements/MediaElement";
+import SlideDecorations from "../canvas/SlideDecorations";
+import CanvasContextMenu from "../canvas/menus/CanvasContextMenu";
 
 export default function EditorCanvas({
   slide,

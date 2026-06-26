@@ -1,8 +1,8 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { useRecentPresentations } from "../hooks/useRecentPresentations";
+import { useRecentPresentations } from "../../hooks/useRecentPresentations";
 import "./FileMenu.css";
-import { greeting, formatDate } from "../core/utils/dateUtils";
+import { greeting, formatDate } from "../../core/utils/dateUtils";
 
 const NAV_ITEMS = [
   { label: "Home",        section: "top" },

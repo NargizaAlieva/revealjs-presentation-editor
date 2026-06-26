@@ -1,18 +1,18 @@
 import { useNavigate } from "react-router-dom";
-import SlideList from "../components/SlideList";
-import Toolbar from "../components/Toolbar";
-import EditorCanvas from "../components/EditorCanvas";
+import SlideList from "../components/views/SlideList";
+import Toolbar from "../components/editor/Toolbar";
+import EditorCanvas from "../components/editor/EditorCanvas";
 import "./EditorPage.css";
-import PreviewModal from "../components/PreviewModal";
-import CommentsPanel from "../components/CommentsPanel";
-import SlideSorterView from "../components/SlideSorterView";
-import OutlineView from "../components/OutlineView";
-import FileMenu from "../components/FileMenu";
-import NotesPageView from "../components/NotesPageView";
-import SlideMasterView from "../components/SlideMasterView";
-import StatusBar from "../components/StatusBar";
-import FindReplaceDialog from "../components/FindReplaceDialog";
-import SelectionPane from "../components/SelectionPane";
+import PreviewModal from "../components/dialogs/PreviewModal";
+import CommentsPanel from "../components/panels/CommentsPanel";
+import SlideSorterView from "../components/views/SlideSorterView";
+import OutlineView from "../components/views/OutlineView";
+import FileMenu from "../components/editor/FileMenu";
+import NotesPageView from "../components/views/NotesPageView";
+import SlideMasterView from "../components/views/SlideMasterView";
+import StatusBar from "../components/editor/StatusBar";
+import FindReplaceDialog from "../components/dialogs/FindReplaceDialog";
+import SelectionPane from "../components/panels/SelectionPane";
 import { useEditorController } from "../hooks/useEditorController";
 
 export default function EditorPage() {

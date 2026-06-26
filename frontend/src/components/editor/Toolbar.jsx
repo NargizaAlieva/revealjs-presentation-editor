@@ -1,15 +1,15 @@
 import { useState, useRef,useEffect } from "react";
 import "./Toolbar.css";
-import FileTab from "./toolbar/file/FileTab";
-import HomeTab from "./toolbar/home/HomeTab";
-import InsertTab from "./toolbar/insert/InsertTab";
-import TransitionsTab from "./toolbar/transitions/TransitionsTab";
-import AnimationsTab from "./toolbar/animations/AnimationsTab";
-import SlideShowTab from "./toolbar/slideshow/SlideShowTab";
-import DesignTab from "./toolbar/design/DesignTab";
-import ViewTab from "./toolbar/view/ViewTab";
-import { SlideMasterRibbon } from "./SlideMasterView";
-import PictureFormatTab from "./toolbar/picture-format/PictureFormatTab";
+import FileTab from "../toolbar/file/FileTab";
+import HomeTab from "../toolbar/home/HomeTab";
+import InsertTab from "../toolbar/insert/InsertTab";
+import TransitionsTab from "../toolbar/transitions/TransitionsTab";
+import AnimationsTab from "../toolbar/animations/AnimationsTab";
+import SlideShowTab from "../toolbar/slideshow/SlideShowTab";
+import DesignTab from "../toolbar/design/DesignTab";
+import ViewTab from "../toolbar/view/ViewTab";
+import { SlideMasterRibbon } from "../views/SlideMasterView";
+import PictureFormatTab from "../toolbar/picture-format/PictureFormatTab";
 import { MdPlayArrow, MdSave } from "react-icons/md";
 
 const BASE_TABS = [

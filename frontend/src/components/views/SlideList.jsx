@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import "./SlideList.css";
-import SlideThumbnail from "./slides/SlideThumbnail";
-import { getSlideCommentCounts } from "../core/operations/slideOperations";
+import SlideThumbnail from "../slides/SlideThumbnail";
+import { getSlideCommentCounts } from "../../core/operations/slideOperations";
 
 const MIN_WIDTH = 140;
 const MAX_WIDTH = 400;

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import "./NotesPageView.css";
-import { buildColorThemeStyle } from "../core/render/revealRenderer";
-import SlideDecorations from "./canvas/SlideDecorations";
+import { buildColorThemeStyle } from "../../core/render/revealRenderer";
+import SlideDecorations from "../canvas/SlideDecorations";
 
 function NotesPage({
     slide,

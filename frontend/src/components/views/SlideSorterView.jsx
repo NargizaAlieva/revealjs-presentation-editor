@@ -1,8 +1,8 @@
 import { Fragment, useState } from "react";
 import "./SlideSorterView.css";
-import { buildColorThemeStyle } from "../core/render/revealRenderer";
-import SlideDecorations from "./canvas/SlideDecorations";
-import { extractPlainTextFromParagraphs } from "../core/text/textFormatting";
+import { buildColorThemeStyle } from "../../core/render/revealRenderer";
+import SlideDecorations from "../canvas/SlideDecorations";
+import { extractPlainTextFromParagraphs } from "../../core/text/textFormatting";
 
 function SlideMiniature({
     slide,

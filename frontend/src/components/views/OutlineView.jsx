@@ -1,5 +1,5 @@
 import "./OutlineView.css";
-import { extractPlainTextFromParagraphs } from "../core/text/textFormatting";
+import { extractPlainTextFromParagraphs } from "../../core/text/textFormatting";
 
 export default function OutlineView({ slides, selectedSlideIndex, onSelectSlide }) {
     return (

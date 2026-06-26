@@ -6,19 +6,19 @@ import {
   buildMediaInnerStyle,
   buildMediaFilterStyle,
   buildBevelOverlayStyle,
-} from "../core/render/revealRenderer";
-import { useMediaSrc } from "../hooks/useMediaSrc";
-import { REFLECTION_PRESETS } from "../core/model/imageEffects";
-import SlideDecorations from "./canvas/SlideDecorations";
-import EditorCanvas from "./EditorCanvas";
-import { ColorPalettePopup } from "./toolbar/design/DesignTab";
-import { DESIGN_THEMES, findActiveTheme } from "../core/model/designThemes";
-import { SLIDE_SIZES } from "../core/model/slideSizes";
-import { createPlaceholderPseudoElement } from "../core/operations/layoutOperations";
-import { DEFAULT_FONTS } from "../core/model/fontConfig";
-import { renderShapes } from "../core/render/shapeRenderer";
-import { toHex6 } from "../core/utils/colorUtils";
-import { hasTitle, hasFooters } from "../core/operations/masterOperations";
+} from "../../core/render/revealRenderer";
+import { useMediaSrc } from "../../hooks/useMediaSrc";
+import { REFLECTION_PRESETS } from "../../core/model/imageEffects";
+import SlideDecorations from "../canvas/SlideDecorations";
+import EditorCanvas from "../editor/EditorCanvas";
+import { ColorPalettePopup } from "../toolbar/design/DesignTab";
+import { DESIGN_THEMES, findActiveTheme } from "../../core/model/designThemes";
+import { SLIDE_SIZES } from "../../core/model/slideSizes";
+import { createPlaceholderPseudoElement } from "../../core/operations/layoutOperations";
+import { DEFAULT_FONTS } from "../../core/model/fontConfig";
+import { renderShapes } from "../../core/render/shapeRenderer";
+import { toHex6 } from "../../core/utils/colorUtils";
+import { hasTitle, hasFooters } from "../../core/operations/masterOperations";
 
 
 function ThemeThumbnailMini({ theme, isActive, onClick }) {

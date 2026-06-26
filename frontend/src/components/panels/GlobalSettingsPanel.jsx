@@ -1,7 +1,7 @@
 import "./GlobalSettingsPanel.css";
-import { normalizeColorTheme } from "../core/utils/colorUtils";
-import { ASPECT_RATIOS } from "../core/model/slideSizes";
-import { DEFAULT_COLOR_THEME } from "../core/model/designThemes";
+import { normalizeColorTheme } from "../../core/utils/colorUtils";
+import { ASPECT_RATIOS } from "../../core/model/slideSizes";
+import { DEFAULT_COLOR_THEME } from "../../core/model/designThemes";
 
 export default function GlobalSettingsPanel({
   presentation,

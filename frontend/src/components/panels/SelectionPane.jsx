@@ -6,7 +6,7 @@ import {
   MdVisibility,
   MdVisibilityOff,
 } from "react-icons/md";
-import { getElementLabel } from "../core/operations/elementOperations";
+import { getElementLabel } from "../../core/operations/elementOperations";
 import "./SelectionPane.css";
 
 const getSelectionLabel = (element, index) => {

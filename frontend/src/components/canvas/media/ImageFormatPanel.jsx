@@ -182,16 +182,17 @@ export default function ImageFormatPanel({ media, position, onUpdate, onCrop, on
   const [openPopover, setOpenPopover] = useState(null); // "brightness" | "opacity" | "color" | "style" | "artistic"
   const [stylePickerPos, setStylePickerPos] = useState(null);
   const [lockedRatio, setLockedRatio] = useState(true);
-  const [localW, setLocalW] = useState(String(Math.round(media.width ?? 0)));
-  const [localH, setLocalH] = useState(String(Math.round(media.height ?? 0)));
-
-  // Sync inputs when media changes externally
-  const prevId = useRef(media.id);
-  if (prevId.current !== media.id) {
-    prevId.current = media.id;
-    setLocalW(String(Math.round(media.width ?? 0)));
-    setLocalH(String(Math.round(media.height ?? 0)));
-  }
+  const [sizeDraft, setSizeDraft] = useState(() => ({
+    mediaId: media.id,
+    width: String(Math.round(media.width ?? 0)),
+    height: String(Math.round(media.height ?? 0)),
+  }));
+  const localW = sizeDraft.mediaId === media.id
+    ? sizeDraft.width
+    : String(Math.round(media.width ?? 0));
+  const localH = sizeDraft.mediaId === media.id
+    ? sizeDraft.height
+    : String(Math.round(media.height ?? 0));
 
   const effects = media.effects ?? {};
   const brightness = effects.brightness ?? 0;
@@ -219,20 +220,22 @@ export default function ImageFormatPanel({ media, position, onUpdate, onCrop, on
 
   const onWChange = (e) => {
     const val = e.target.value;
-    setLocalW(val);
+    let nextHeight = localH;
     if (lockedRatio && media.width > 0) {
       const ratio = (media.height ?? 0) / media.width;
-      setLocalH(String(Math.round(parseFloat(val) * ratio) || ""));
+      nextHeight = String(Math.round(parseFloat(val) * ratio) || "");
     }
+    setSizeDraft({ mediaId: media.id, width: val, height: nextHeight });
   };
 
   const onHChange = (e) => {
     const val = e.target.value;
-    setLocalH(val);
+    let nextWidth = localW;
     if (lockedRatio && media.height > 0) {
       const ratio = (media.width ?? 0) / media.height;
-      setLocalW(String(Math.round(parseFloat(val) * ratio) || ""));
+      nextWidth = String(Math.round(parseFloat(val) * ratio) || "");
     }
+    setSizeDraft({ mediaId: media.id, width: nextWidth, height: val });
   };
 
   const onSizeBlur = () => commitSize(localW, localH);
