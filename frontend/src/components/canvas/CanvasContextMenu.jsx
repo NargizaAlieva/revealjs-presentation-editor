@@ -6,14 +6,18 @@ import {
   MdContentCut,
   MdContentPaste,
   MdDeleteOutline,
+  MdDescription,
   MdExitToApp,
   MdFlipToBack,
   MdFlipToFront,
+  MdFolder,
   MdFontDownload,
   MdFormatAlignLeft,
   MdFormatListBulleted,
   MdFormatListNumbered,
+  MdHelpOutline,
   MdImage,
+  MdMailOutline,
   MdRedo,
   MdLink,
   MdRotateRight,
@@ -24,6 +28,7 @@ import {
   MdVerticalAlignTop,
   MdAddComment,
   MdTextFields,
+  MdWeb,
 } from "react-icons/md";
 import FontDialog from "./FontDialog";
 import ParagraphDialog from "./ParagraphDialog";
@@ -47,8 +52,30 @@ const NUMBER_STYLES = [
   { value: "upper-roman", label: "I. II. III." },
 ];
 
-function HyperlinkDialog({ onApply, onClose }) {
+const HYPERLINK_TYPES = [
+  { value: "web", label: "Existing File or Web Page", icon: <MdWeb /> },
+  { value: "place", label: "Place in This Document", icon: <MdDescription /> },
+  { value: "new", label: "Create New Document", icon: <MdDescription /> },
+  { value: "email", label: "E-mail Address", icon: <MdMailOutline /> },
+];
+
+const HYPERLINK_FOLDERS = ["Current Folder", "Browsed Pages", "Recent Files"];
+
+const HYPERLINK_FILES = [
+  "9.641j-spring-2005",
+  "conference-latex-template",
+  "eCommerce-React-main",
+  "Example",
+  "fashion-images",
+  "films-main",
+  "generative_ai_acm",
+];
+
+function HyperlinkDialog({ selectedText = "", onApply, onClose }) {
   const [href, setHref] = useState("");
+  const [displayText, setDisplayText] = useState(selectedText);
+  const [screenTip, setScreenTip] = useState("");
+  const [linkType, setLinkType] = useState("web");
   const [error, setError] = useState("");
 
   const submit = (event) => {
@@ -58,16 +85,26 @@ function HyperlinkDialog({ onApply, onClose }) {
       setError("Enter a link address.");
       return;
     }
-    const ok = onApply?.(trimmed);
+    const ok = onApply?.({
+      href: trimmed,
+      text: displayText.trim(),
+      screenTip: screenTip.trim(),
+      type: linkType,
+    });
     if (ok === false) {
       setError("Select text in one paragraph before adding a hyperlink.");
     }
   };
 
+  const askScreenTip = () => {
+    const next = window.prompt("ScreenTip text:", screenTip);
+    if (next !== null) setScreenTip(next);
+  };
+
   return (
     <div className="text-dialog-backdrop" role="presentation">
       <form
-        className="text-context-dialog hyperlink-dialog"
+        className="text-context-dialog insert-hyperlink-dialog"
         aria-label="Hyperlink"
         onSubmit={submit}
         onKeyDown={(event) => {
@@ -80,8 +117,100 @@ function HyperlinkDialog({ onApply, onClose }) {
             ×
           </button>
         </div>
-        <label className="hyperlink-dialog-field">
-          <span>Address:</span>
+        <div className="insert-hyperlink-display-row">
+          <span>Text to display:</span>
+          <input
+            value={displayText}
+            onChange={(event) => setDisplayText(event.target.value)}
+          />
+          <button type="button" onClick={askScreenTip}>
+            ScreenTip...
+          </button>
+        </div>
+        <div className="insert-hyperlink-body">
+          <aside className="insert-hyperlink-link-types">
+            <span className="insert-hyperlink-link-to">Link to:</span>
+            {HYPERLINK_TYPES.map((item) => (
+              <button
+                type="button"
+                key={item.value}
+                className={linkType === item.value ? "active" : ""}
+                onClick={() => {
+                  setLinkType(item.value);
+                  setError("");
+                }}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </aside>
+          <section className="insert-hyperlink-main">
+            {linkType === "web" ? (
+              <>
+                <div className="insert-hyperlink-lookin-row">
+                  <span>Look in:</span>
+                  <select defaultValue="Downloads">
+                    <option>Downloads</option>
+                    <option>Documents</option>
+                    <option>Desktop</option>
+                  </select>
+                  <button type="button" title="Folder" aria-label="Folder">
+                    <MdFolder />
+                  </button>
+                  <button type="button" title="Search" aria-label="Search">
+                    <MdSearch />
+                  </button>
+                  <button type="button" title="Help" aria-label="Help">
+                    <MdHelpOutline />
+                  </button>
+                </div>
+                <div className="insert-hyperlink-browser">
+                  <nav>
+                    {HYPERLINK_FOLDERS.map((folder, index) => (
+                      <button
+                        type="button"
+                        key={folder}
+                        className={index === 0 ? "active" : ""}
+                      >
+                        {folder}
+                      </button>
+                    ))}
+                  </nav>
+                  <div className="insert-hyperlink-file-list">
+                    {HYPERLINK_FILES.map((file) => (
+                      <button
+                        type="button"
+                        key={file}
+                        onClick={() => {
+                          setHref(file);
+                          setError("");
+                        }}
+                      >
+                        <MdFolder />
+                        <span>{file}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="insert-hyperlink-side-buttons">
+                    <button type="button">Bookmark...</button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="insert-hyperlink-placeholder-panel">
+                {linkType === "place" &&
+                  "Enter a slide bookmark or anchor address below."}
+                {linkType === "new" &&
+                  "Enter the new document path or web address below."}
+                {linkType === "email" &&
+                  "Enter an e-mail address below. It will be saved as a mailto link."}
+              </div>
+            )}
+          </section>
+        </div>
+        <label className="hyperlink-dialog-field insert-hyperlink-address-row">
+          <span>{linkType === "email" ? "E-mail address:" : "Address:"}</span>
           <input
             autoFocus
             value={href}
@@ -89,9 +218,16 @@ function HyperlinkDialog({ onApply, onClose }) {
               setHref(event.target.value);
               setError("");
             }}
-            placeholder="https://example.com"
+            placeholder={
+              linkType === "email" ? "name@example.com" : "https://example.com"
+            }
           />
         </label>
+        {screenTip && (
+          <div className="insert-hyperlink-screentip">
+            ScreenTip: {screenTip}
+          </div>
+        )}
         {error && <div className="text-context-dialog-error">{error}</div>}
         <div className="text-context-dialog-actions">
           <button type="button" onClick={onClose}>
@@ -177,9 +313,9 @@ export default function CanvasContextMenu({
   onRotateRight,
   onNewComment,
   onHyperlink,
+  hyperlinkText = "",
   onExitEditText,
   onFormatText,
-  canHyperlink = false,
 }) {
   const menuRef = useRef(null);
   const [position, setPosition] = useState({ left: x, top: y });
@@ -264,8 +400,9 @@ export default function CanvasContextMenu({
   if (dialog === "hyperlink") {
     return (
       <HyperlinkDialog
-        onApply={(href) => {
-          const ok = onHyperlink?.(elementId, href);
+        selectedText={hyperlinkText}
+        onApply={(payload) => {
+          const ok = onHyperlink?.(elementId, payload);
           if (ok !== false) onClose?.();
           return ok;
         }}
@@ -349,7 +486,7 @@ export default function CanvasContextMenu({
               />
               <PasteOptionButton
                 icon={<MdContentPaste />}
-                badge="🎨"
+                badge="F"
                 title="Keep Source Formatting"
                 onClick={() =>
                   run(() =>
@@ -520,7 +657,6 @@ export default function CanvasContextMenu({
               <MenuItem
                 icon={<MdLink />}
                 label="Hyperlink..."
-                disabled={!canHyperlink}
                 onClick={() => setDialog("hyperlink")}
               />
             </>

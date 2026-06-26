@@ -67,7 +67,7 @@
   border: 1px solid transparent;
   border-radius: 3px;
   background: transparent;
-  color: #333;
+  color: #3c596f;
 }
 
 .canvas-context-paste-option:hover:not(:disabled),
@@ -82,7 +82,7 @@
 }
 
 .canvas-context-paste-option-icon {
-  color: #d97706;
+  color: currentColor;
   font-size: 23px;
 }
 
@@ -97,7 +97,7 @@
   justify-content: center;
   border-radius: 2px;
   background: #ffffff;
-  color: #5a5a5a;
+  color: currentColor;
   font-size: 11px;
   line-height: 1;
 }

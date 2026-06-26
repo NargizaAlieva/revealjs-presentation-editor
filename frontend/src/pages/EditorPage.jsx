@@ -226,6 +226,7 @@ export default function EditorPage() {
                   onResizeTextElement={ctrl.updateElementSize}
                   onFormatTextElement={ctrl.applyFormatting}
                   currentFormatting={ctrl.currentFormatting}
+                  hyperlinkText={ctrl.selectedHyperlinkText}
                   onFormatTextRangeElement={ctrl.updateTextRangeFormatting}
                   clearSelectionSignal={ctrl.clearSelectionSignal}
                   onSaveSelection={ctrl.handleSaveSelection}

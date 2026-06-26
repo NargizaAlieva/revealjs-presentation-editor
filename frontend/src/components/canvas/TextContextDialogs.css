@@ -170,3 +170,190 @@
   color: #b42318;
   font-size: 13px;
 }
+
+.insert-hyperlink-dialog {
+  width: min(860px, calc(100vw - 28px));
+  padding: 0 10px 12px;
+  border-color: #b8b8b8;
+  border-radius: 7px;
+}
+
+.insert-hyperlink-dialog .text-context-dialog-header {
+  height: 39px;
+  margin: 0 -10px 8px;
+  padding: 0 8px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.insert-hyperlink-dialog .text-context-dialog-header button {
+  font-size: 0;
+}
+
+.insert-hyperlink-dialog .text-context-dialog-header button::before {
+  content: "×";
+  font-size: 25px;
+}
+
+.insert-hyperlink-display-row {
+  display: grid;
+  grid-template-columns: 102px minmax(180px, 1fr) 110px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.insert-hyperlink-display-row input {
+  width: 100%;
+}
+
+.insert-hyperlink-display-row button,
+.insert-hyperlink-lookin-row button,
+.insert-hyperlink-side-buttons button {
+  height: 28px;
+  border: 1px solid #c8c8c8;
+  border-radius: 4px;
+  background: #f8f8f8;
+  font: inherit;
+}
+
+.insert-hyperlink-body {
+  display: grid;
+  grid-template-columns: 116px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.insert-hyperlink-link-types {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #8f8f8f;
+}
+
+.insert-hyperlink-link-to {
+  padding: 8px 8px 3px;
+}
+
+.insert-hyperlink-link-types button {
+  min-height: 66px;
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 6px;
+  align-items: center;
+  padding: 7px;
+  border: 0;
+  background: white;
+  color: #111;
+  font: inherit;
+  text-align: left;
+}
+
+.insert-hyperlink-link-types button.active {
+  background: #cfe8ff;
+  outline: 1px dotted #2d5b87;
+  outline-offset: -4px;
+}
+
+.insert-hyperlink-link-types svg,
+.insert-hyperlink-lookin-row svg,
+.insert-hyperlink-file-list svg {
+  color: #3c596f;
+  font-size: 19px;
+}
+
+.insert-hyperlink-lookin-row {
+  display: grid;
+  grid-template-columns: 78px minmax(180px, 1fr) 32px 32px 32px;
+  gap: 7px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.insert-hyperlink-lookin-row select {
+  width: 100%;
+}
+
+.insert-hyperlink-browser {
+  height: 210px;
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr) 116px;
+  border: 1px solid #8f8f8f;
+  background: white;
+}
+
+.insert-hyperlink-browser nav {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #b9b9b9;
+}
+
+.insert-hyperlink-browser nav button {
+  min-height: 58px;
+  border: 0;
+  background: white;
+  font: inherit;
+}
+
+.insert-hyperlink-browser nav button.active {
+  background: #cfe8ff;
+}
+
+.insert-hyperlink-file-list {
+  overflow: auto;
+  padding: 4px;
+}
+
+.insert-hyperlink-file-list button {
+  width: 100%;
+  min-height: 22px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+}
+
+.insert-hyperlink-file-list button:hover {
+  background: #e9f2fb;
+}
+
+.insert-hyperlink-side-buttons {
+  padding: 0 8px;
+  border-left: 1px solid #d7d7d7;
+}
+
+.insert-hyperlink-side-buttons button {
+  width: 100%;
+  margin-top: 44px;
+}
+
+.insert-hyperlink-placeholder-panel {
+  height: 210px;
+  padding: 18px;
+  border: 1px solid #8f8f8f;
+  background: #fafafa;
+  color: #555;
+}
+
+.insert-hyperlink-address-row {
+  display: grid !important;
+  grid-template-columns: 78px minmax(0, 1fr);
+  gap: 7px;
+  align-items: center;
+  margin: 8px 0 0 !important;
+}
+
+.insert-hyperlink-address-row input {
+  width: 100%;
+}
+
+.insert-hyperlink-screentip {
+  margin: 8px 0 0 128px;
+  color: #555;
+  font-size: 12px;
+}
+
+.insert-hyperlink-actions {
+  padding-top: 8px;
+  border-top: 1px solid #e1e1e1;
+}

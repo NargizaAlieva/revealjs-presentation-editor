@@ -32,6 +32,7 @@ export default function EditorCanvas({
   onResizeTextElement,
   onFormatTextElement,
   currentFormatting = {},
+  hyperlinkText = "",
   onFormatTextRangeElement,
   onStartEditing,
   onStopEditing,
@@ -830,6 +831,7 @@ export default function EditorCanvas({
           onRotateRight={onRotateRight}
           onNewComment={onNewComment}
           onHyperlink={onHyperlink}
+          hyperlinkText={hyperlinkText}
           canHyperlink={canHyperlink}
           onExitEditText={exitTextEditing}
           onFormatText={onFormatTextElement}

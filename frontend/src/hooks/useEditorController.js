@@ -53,6 +53,32 @@ const PASTE_RUN_KEYS = new Set([
 const paragraphTextLength = (paragraph) =>
   (paragraph?.runs ?? []).reduce((sum, run) => sum + (run.text?.length ?? 0), 0);
 
+const paragraphText = (paragraph) =>
+  (paragraph?.runs ?? []).map((run) => run.text ?? "").join("");
+
+const getSelectedPlainText = (textElement, selection) => {
+  if (!textElement || !selection) return "";
+  const startParagraphIdx = Math.min(
+    selection.paragraphIdx,
+    selection.endParagraphIdx ?? selection.paragraphIdx,
+  );
+  const endParagraphIdx = Math.max(
+    selection.paragraphIdx,
+    selection.endParagraphIdx ?? selection.paragraphIdx,
+  );
+  const lines = [];
+  for (let pIdx = startParagraphIdx; pIdx <= endParagraphIdx; pIdx++) {
+    const text = paragraphText(textElement.paragraphs?.[pIdx]);
+    const start = pIdx === selection.paragraphIdx ? selection.rangeStart : 0;
+    const end =
+      pIdx === (selection.endParagraphIdx ?? selection.paragraphIdx)
+        ? selection.rangeEnd
+        : text.length;
+    lines.push(text.slice(Math.min(start, end), Math.max(start, end)));
+  }
+  return lines.join("\n");
+};
+
 const sliceRuns = (runs = [], start, end) => {
   const result = [];
   let offset = 0;
@@ -545,6 +571,13 @@ useEffect(() => {
     isEditingSelected,
     pendingFormatting,
   });
+  const selectedHyperlinkText = useMemo(
+    () =>
+      hasRealSelection
+        ? getSelectedPlainText(activeTextEl, activeSelectionForFormatting)
+        : "",
+    [activeTextEl, activeSelectionForFormatting, hasRealSelection],
+  );
 
   const applyFormatting = useApplyFormatting({
     activeSelectionRef,
@@ -998,10 +1031,22 @@ useEffect(() => {
   }, []);
 
   const handleHyperlink = useCallback(
-    (elementId, href) => {
+    (elementId, hyperlink) => {
       const selection = activeSelectionRef.current;
       const targetId = elementId ?? selectedElementId;
-      const normalizedHref = href.trim();
+      const rawHref =
+        typeof hyperlink === "string" ? hyperlink : hyperlink?.href;
+      const linkType =
+        typeof hyperlink === "string" ? "web" : (hyperlink?.type ?? "web");
+      const trimmedHref = rawHref?.trim() ?? "";
+      const normalizedHref =
+        linkType === "email" && !trimmedHref.startsWith("mailto:")
+          ? `mailto:${trimmedHref}`
+          : linkType === "web" &&
+              trimmedHref &&
+              !/^(https?:|mailto:|#|\/)/i.test(trimmedHref)
+            ? `https://${trimmedHref}`
+            : trimmedHref;
       if (
         !targetId ||
         !normalizedHref ||
@@ -1018,7 +1063,13 @@ useEffect(() => {
         selection.paragraphIdx,
         Math.min(selection.rangeStart, selection.rangeEnd),
         Math.max(selection.rangeStart, selection.rangeEnd),
-        { href: normalizedHref, target: "_blank" },
+        {
+          href: normalizedHref,
+          target: "_blank",
+          screenTip:
+            typeof hyperlink === "string" ? "" : (hyperlink?.screenTip ?? ""),
+          type: linkType,
+        },
       );
       return true;
     },
@@ -1533,6 +1584,7 @@ useEffect(() => {
     previewMediaStyleId,
     setPreviewMediaStyleId,
     currentFormatting,
+    selectedHyperlinkText,
     hasRealSelection,
     activePendingFormatting,
 
