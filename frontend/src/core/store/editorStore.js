@@ -27,6 +27,11 @@ import {
   toggleSlideHidden,
   updateSlideNotes,
   updateSlideBackgroundImage,
+  updateSlideBackgroundImageRect,
+  updateSlideBackground,
+  updateSlideBgFillImage,
+  updateSlideBgFillSettings,
+  applyBackgroundToAllSlides,
 } from "../operations/slideOperations";
 import {
   addLayout,
@@ -44,6 +49,7 @@ import {
   updateLayoutPlaceholder,
   updateLayoutElementsFont,
   updateLayoutItem,
+  updateLayoutTextFormatting,
 } from "../operations/layoutOperations";
 import {
   addMedia,
@@ -526,6 +532,50 @@ export const editorReducer = (state, event) => {
         lastUpdated: Date.now(),
       };
 
+    case EditorEventType.SLIDE.APPLY_BACKGROUND_TO_ALL:
+      return {
+        ...state,
+        presentation: applyBackgroundToAllSlides(state.presentation, event.payload),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+
+    case EditorEventType.SLIDE.UPDATE_BG_FILL_SETTINGS:
+      return {
+        ...state,
+        presentation: updateSlideBgFillSettings(
+          state.presentation,
+          event.payload.slideIndex ?? state.selectedSlideIndex,
+          event.payload.settings,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+
+    case EditorEventType.SLIDE.UPDATE_BG_FILL_IMAGE:
+      return {
+        ...state,
+        presentation: updateSlideBgFillImage(
+          state.presentation,
+          event.payload.slideIndex ?? state.selectedSlideIndex,
+          event.payload.fileLink,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+
+    case EditorEventType.SLIDE.UPDATE_BACKGROUND:
+      return {
+        ...state,
+        presentation: updateSlideBackground(
+          state.presentation,
+          event.payload.slideIndex ?? state.selectedSlideIndex,
+          event.payload.color,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+
     case EditorEventType.SLIDE.UPDATE_BACKGROUND_IMAGE:
       return {
         ...state,
@@ -537,6 +587,20 @@ export const editorReducer = (state, event) => {
         lastEvent: event,
         lastUpdated: Date.now(),
       };
+
+    case EditorEventType.SLIDE.UPDATE_BACKGROUND_IMAGE_RECT: {
+      const si = event.payload.slideIndex ?? state.selectedSlideIndex;
+      return {
+        ...state,
+        presentation: updateSlideBackgroundImageRect(
+          state.presentation,
+          si,
+          event.payload.rect,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+    }
 
     case EditorEventType.SLIDE.UPDATE_BACKGROUND_IMAGE_POSITION:
     case EditorEventType.SLIDE.UPDATE_BACKGROUND_IMAGE_SCALE: {
@@ -726,7 +790,7 @@ export const editorReducer = (state, event) => {
       };
 
     case EditorEventType.ELEMENT.UPDATE:
-      return {
+      return withHistory(state, {
         ...state,
         presentation: updateElement(
           state.presentation,
@@ -736,7 +800,7 @@ export const editorReducer = (state, event) => {
         ),
         lastEvent: event,
         lastUpdated: Date.now(),
-      };
+      });
 
     case EditorEventType.ELEMENT.UPDATE_MANY: {
       const updatesById = new Map(
@@ -801,7 +865,20 @@ export const editorReducer = (state, event) => {
       });
 
     case EditorEventType.MEDIA.UPDATE:
-      return {
+      if (state.pendingSnapshot) {
+        return {
+          ...state,
+          presentation: updateMedia(
+            state.presentation,
+            state.selectedSlideIndex,
+            event.payload.mediaId,
+            event.payload.updates,
+          ),
+          lastEvent: event,
+          lastUpdated: Date.now(),
+        };
+      }
+      return withHistory(state, {
         ...state,
         presentation: updateMedia(
           state.presentation,
@@ -811,7 +888,7 @@ export const editorReducer = (state, event) => {
         ),
         lastEvent: event,
         lastUpdated: Date.now(),
-      };
+      });
 
     case EditorEventType.ANIMATION.ADD:
       return withHistory(state, {
@@ -1013,7 +1090,6 @@ export const editorReducer = (state, event) => {
       );
       const updates = event.payload.updates ?? {};
       const isDragUpdate = "position" in updates || "width" in updates || "height" in updates;
-      // During drag (pendingSnapshot active + position/size update), skip withHistory
       if (state.pendingSnapshot && isDragUpdate) {
         return {
           ...state,
@@ -1029,6 +1105,19 @@ export const editorReducer = (state, event) => {
         lastUpdated: Date.now(),
       });
     }
+
+    case EditorEventType.LAYOUT.UPDATE_TEXT_FORMATTING:
+      return withHistory(state, {
+        ...state,
+        presentation: updateLayoutTextFormatting(
+          state.presentation,
+          event.payload.layoutId,
+          event.payload.elementId,
+          event.payload.formattingUpdate,
+        ),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      });
 
     case EditorEventType.LAYOUT.RESET:
       return withHistory(state, {

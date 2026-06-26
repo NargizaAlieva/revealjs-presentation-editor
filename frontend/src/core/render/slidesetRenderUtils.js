@@ -12,7 +12,7 @@ export function getVisibleSlides(presentation) {
 }
 
 export function getTextElements(slide) {
-    if (slide?.contents?.text?.length) {
+    if (slide?.contents?.text != null) {
         return slide.contents.text;
     }
 

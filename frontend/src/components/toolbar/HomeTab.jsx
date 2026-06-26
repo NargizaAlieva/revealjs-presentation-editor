@@ -18,8 +18,6 @@ export default function HomeTab({
   currentFormatting = {},
   onFormatChange,
   onChangeCase,
-  onTextOverflowChange,
-  selectedTextOverflow,
   isTextSelected = false,
   presentation,
   onCut,
@@ -78,8 +76,6 @@ export default function HomeTab({
         currentFormatting={currentFormatting}
         isTextSelected={isTextSelected}
         onFormatChange={onFormatChange}
-        onTextOverflowChange={onTextOverflowChange}
-        selectedTextOverflow={selectedTextOverflow}
       />
 
       <EditingGroup

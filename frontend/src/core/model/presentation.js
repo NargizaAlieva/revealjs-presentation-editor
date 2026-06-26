@@ -50,7 +50,7 @@ const createTextElement = ({
   width,
   height,
   rotation: 0,
-  overflow: "shrink-on-overflow",
+  overflow: "auto-fit",
   "z-index": zIndex,
   background: "transparent",
   userModified: false,

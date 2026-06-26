@@ -335,6 +335,10 @@ export default function MediaElement({
     activeStyleCss.transform ?? null,
   ].filter(Boolean).join(" ");
 
+  // Extract soft-edges mask so it applies to inner content only, not handles
+  const { maskImage, WebkitMaskImage, ...baseContainerWithoutMask } = baseContainerStyle;
+  const softEdgeMaskStyle = maskImage ? { maskImage, WebkitMaskImage } : {};
+
   // Crop mode: container covers the full source image, overflow hidden — the
   // crop overlay (border, handles, buttons) is rendered via portal to body
   // so it never needs overflow:visible here.
@@ -355,7 +359,7 @@ export default function MediaElement({
         willChange: "transform",
       }
     : {
-        ...baseContainerStyle,
+        ...baseContainerWithoutMask,
         ...activeStyleCss,
         ...(combinedTransform ? { transform: combinedTransform } : {}),
         overflow: "visible",
@@ -573,7 +577,7 @@ export default function MediaElement({
         <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
           {isVideo ? (
             <>
-              <video src={resolvedSrc} className="canvas-media" style={innerStyle} {...videoAttrs} />
+              <video src={resolvedSrc} className="canvas-media" style={innerStyle} preload="metadata" onLoadedMetadata={(e) => { e.target.currentTime = 0; }} />
               <div style={{ position: "absolute", inset: 0, cursor: "default" }} />
             </>
           ) : (
@@ -590,17 +594,24 @@ export default function MediaElement({
           <div className="crop-shade" style={{ top: tPx, bottom: bPx, right: 0, width: rPx, cursor: "move" }} onMouseDown={startCropElementDrag} />
         </div>
       ) : (
-        <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: "inherit" }}>
+        <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: "inherit", ...softEdgeMaskStyle }}>
           {isVideo ? (
             <>
               <video
                 src={resolvedSrc} className="canvas-media" style={innerStyle}
-                controls={isPrimarySelected}
-                {...videoAttrs}
+                preload="metadata"
+                onLoadedMetadata={(e) => { e.target.currentTime = 0; }}
               />
-              {!isPrimarySelected && (
-                <div style={{ position: "absolute", inset: 0, cursor: "move" }} />
-              )}
+              <div style={{ position: "absolute", inset: 0, cursor: "move", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: "50%",
+                  background: "rgba(0,0,0,0.45)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  pointerEvents: "none",
+                }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+                </div>
+              </div>
             </>
           ) : (
             <img src={resolvedSrc} alt={media.decorative ? "" : (media.alt ?? "")} className="canvas-media" style={filteredInnerStyle} />

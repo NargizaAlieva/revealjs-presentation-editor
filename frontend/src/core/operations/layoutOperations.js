@@ -37,7 +37,7 @@ const createTextFromPlaceholder = (placeholder) => ({
   width: placeholder.width,
   height: placeholder.height,
   rotation: 0,
-  overflow: "shrink-on-overflow",
+  overflow: "auto-fit",
   "z-index": 1,
   background: placeholder.background ?? "#FFFFFF00",
   userModified: false,
@@ -94,7 +94,6 @@ const updateElementFromPlaceholder = (element, placeholders, isModified) => {
       const userSetKeys = new Set(p.userSetKeys ?? []);
       const current = p.formatting ?? {};
 
-      // Build new paragraph formatting: keep user-set keys, apply placeholder for the rest.
       const merged = {};
       for (const [k, v] of Object.entries(current)) {
         if (userSetKeys.has(k)) merged[k] = v;
@@ -103,25 +102,15 @@ const updateElementFromPlaceholder = (element, placeholders, isModified) => {
         if (!userSetKeys.has(k)) merged[k] = v;
       }
 
-      // Clean up run formatting: strip keys that are now controlled by the placeholder
-      // AND whose value in the run equals what the paragraph previously had (i.e. the run
-      // was carrying a redundant copy of the inherited value, not an explicit user override).
-      // Keys where the run differs from the old paragraph value are intentional overrides
-      // and must be preserved.
       const runs = p.runs.map((r, rIdx) => {
-        // Prompt-text replacement takes priority
         if (pIdx === 0 && rIdx === 0 && match.promptText !== undefined) {
           return { ...r, text: match.promptText };
         }
 
         const cleanedFormatting = Object.fromEntries(
           Object.entries(r.formatting ?? {}).filter(([k, v]) => {
-            // Keep keys the placeholder doesn't control, or that the user explicitly set
-            // at paragraph level (userSetKeys).
             const placeholderOwns = (k in placeholderFormatting) && !userSetKeys.has(k);
             if (!placeholderOwns) return true;
-            // Strip only if the run value matches the OLD paragraph value —
-            // meaning the run was a redundant copy of what it inherited, not a true override.
             return v !== current[k];
           }),
         );
@@ -172,8 +161,7 @@ export const createPlaceholderPseudoElement = (placeholder, masterFormatting = {
     width: placeholder.width,
     height: placeholder.height,
     rotation: placeholder.rotation ?? 0,
-    overflow: "shrink-on-overflow",
-    "z-index": 1,
+      "z-index": 1,
     background: placeholder.background ?? "#FFFFFF00",
     userModified: false,
     isPlaceholder: true,
@@ -446,6 +434,34 @@ export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
   };
 
   return setSlides(presentation, slides);
+};
+
+const RUN_ONLY_KEYS = new Set(["super-sub-script"]);
+
+export const updateLayoutTextFormatting = (presentation, layoutId, elementId, formattingUpdate) => {
+  const paragraphUpdate = Object.fromEntries(
+    Object.entries(formattingUpdate).filter(([k]) => !RUN_ONLY_KEYS.has(k)),
+  );
+  const layouts = getLayouts(presentation);
+  const updatedLayouts = layouts.map((l) => {
+    if (l["layout-id"] !== layoutId) return l;
+    const textElements = (l.elements?.text ?? []).map((el) => {
+      if (el.id !== elementId) return el;
+      return {
+        ...el,
+        paragraphs: (el.paragraphs ?? []).map((paragraph) => ({
+          ...paragraph,
+          formatting: { ...(paragraph.formatting ?? {}), ...paragraphUpdate },
+          runs: (paragraph.runs ?? []).map((run) => ({
+            ...run,
+            formatting: { ...(run.formatting ?? {}), ...formattingUpdate },
+          })),
+        })),
+      };
+    });
+    return { ...l, elements: { ...(l.elements ?? {}), text: textElements } };
+  });
+  return setLayouts(presentation, updatedLayouts);
 };
 
 export const updateLayoutItem = (presentation, layoutId, itemId, updates) => {

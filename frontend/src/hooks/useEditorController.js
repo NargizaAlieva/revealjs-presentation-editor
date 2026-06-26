@@ -383,6 +383,7 @@ export function useEditorController() {
     removeLayoutPlaceholder,
     updateLayoutPlaceholder,
     updateLayoutItem,
+    updateLayoutTextFormattingAction,
     updateMasterTheme,
     updateMasterFormatting,
     updateMasterDimensions,
@@ -589,9 +590,19 @@ useEffect(() => {
     setPendingFormatting,
   });
 
-  const selectedElementRaw = getSlideElement(selectedSlide, selectedElementId);
+  const selectedElementRaw = isSlideMasterOpen
+    ? (() => {
+        const master = presentation?.slideset?.master;
+        const mediaEl = (master?.elements?.media ?? []).find((m) => m.id === selectedMasterElementId);
+        if (mediaEl) return mediaEl;
+        if (selectedMasterLayoutId) {
+          const layout = (presentation?.slideset?.layouts ?? []).find((l) => l["layout-id"] === selectedMasterLayoutId);
+          return (layout?.elements?.media ?? []).find((m) => m.id === selectedMasterElementId) ?? null;
+        }
+        return null;
+      })()
+    : getSlideElement(selectedSlide, selectedElementId);
 
-  // Close "Picture Format" tab when the selected element is no longer a media element.
   useEffect(() => {
     if (activeTab !== "Picture Format") return;
     const isMedia = selectedElementRaw && !selectedElementRaw.paragraphs;
@@ -794,6 +805,50 @@ useEffect(() => {
     [presentation, updateMasterTheme],
   );
 
+  const handleApplyBackgroundToAll = useCallback(
+    (payload) => {
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.SLIDE.APPLY_BACKGROUND_TO_ALL, payload),
+      );
+    },
+    [eventBus],
+  );
+
+  const handleUpdateBgFillSettings = useCallback(
+    (settings) => {
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.SLIDE.UPDATE_BG_FILL_SETTINGS, { settings }),
+      );
+    },
+    [eventBus],
+  );
+
+  const handleApplyBgFillImage = useCallback(
+    async (file) => {
+      if (!file || !file.type.startsWith("image/")) return;
+      const { key } = await storeMediaFile(file);
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.SLIDE.UPDATE_BG_FILL_IMAGE, { fileLink: `indexeddb://${key}` }),
+      );
+    },
+    [eventBus],
+  );
+
+  const handleRemoveBgFillImage = useCallback(() => {
+    eventBus.dispatch(
+      createEditorEvent(EditorEventType.SLIDE.UPDATE_BG_FILL_IMAGE, { fileLink: null }),
+    );
+  }, [eventBus]);
+
+  const handleApplySlideBackground = useCallback(
+    (color) => {
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.SLIDE.UPDATE_BACKGROUND, { color }),
+      );
+    },
+    [eventBus],
+  );
+
   const handleApplyBackgroundImage = useCallback(
     async (file) => {
       if (!file || !file.type.startsWith("image/")) return;
@@ -808,6 +863,12 @@ useEffect(() => {
   const handleRemoveBackgroundImage = useCallback(() => {
     eventBus.dispatch(
       createEditorEvent(EditorEventType.SLIDE.UPDATE_BACKGROUND_IMAGE, { backgroundImage: null }),
+    );
+  }, [eventBus]);
+
+  const handleUpdateBackgroundImageRect = useCallback((rect) => {
+    eventBus.dispatch(
+      createEditorEvent(EditorEventType.SLIDE.UPDATE_BACKGROUND_IMAGE_RECT, { rect }),
     );
   }, [eventBus]);
 
@@ -851,6 +912,8 @@ useEffect(() => {
       },
       [selectedMasterLayoutId, addLayoutElement, addMasterElement],
     ),
+    slideWidth,
+    slideHeight,
   );
 
   const { handleVideoUpload: handleMasterVideoUpload } = useVideoUpload(
@@ -1108,7 +1171,6 @@ useEffect(() => {
     navigate("/");
   }, [presentationId, navigate]);
 
-  // --- Master view derived state ---
   const masterTextIds = useMemo(
     () => new Set((presentation?.slideset?.master?.elements?.text ?? []).map((el) => el.id)),
     [presentation?.slideset?.master?.elements?.text],
@@ -1139,7 +1201,6 @@ useEffect(() => {
       : buildMasterPseudoSlide(masterElements ?? {});
   }, [selectedMasterLayout, masterElements, masterFormatting, masterColorTheme]);
 
-  // --- Master view unified event handlers (routing master vs layout elements) ---
   const masterViewChangeText = useCallback(
     (id, text) => {
       if (selectedMasterLayoutId && !masterTextIds.has(id)) {
@@ -1151,13 +1212,27 @@ useEffect(() => {
     [selectedMasterLayoutId, masterTextIds, updateLayoutItem, updateMasterTextContent],
   );
 
-  // Used instead of onChangeTextElement for master text elements so that
-  // lastTypedHTMLRef in TextElement is updated and the DOM is not reset on every keystroke.
   const masterViewChangeParagraphs = useCallback(
     (id, paragraphs) => {
       if (selectedMasterLayoutId && !masterTextIds.has(id)) {
-        const text = paragraphs.map((p) => p.runs.map((r) => r.text).join("")).join("\n");
-        updateLayoutItem(selectedMasterLayoutId, id, { promptText: text });
+        const layout = (presentation?.slideset?.layouts ?? []).find(
+          (l) => l["layout-id"] === selectedMasterLayoutId,
+        );
+        const isPlaceholder = (layout?.placeholders ?? []).some(
+          (p) => p["placeholder-id"] === id,
+        );
+        if (isPlaceholder) {
+          const text = paragraphs.map((p) => p.runs.map((r) => r.text).join("")).join("\n");
+          updateLayoutItem(selectedMasterLayoutId, id, { promptText: text });
+        } else {
+          const paragraphsWithKeys = paragraphs.map((p) => ({
+            ...p,
+            userSetKeys: p.userSetKeys?.length
+              ? p.userSetKeys
+              : Object.keys(p.formatting ?? {}),
+          }));
+          updateLayoutItem(selectedMasterLayoutId, id, { paragraphs: paragraphsWithKeys, userModified: true });
+        }
       } else {
         const paragraphsWithKeys = paragraphs.map((p) => ({
           ...p,
@@ -1168,18 +1243,37 @@ useEffect(() => {
         updateMasterElement("text", id, { paragraphs: paragraphsWithKeys, userModified: true });
       }
     },
-    [selectedMasterLayoutId, masterTextIds, updateLayoutItem, updateMasterElement],
+    [selectedMasterLayoutId, masterTextIds, presentation, updateLayoutItem, updateMasterElement],
   );
 
   const masterViewFormatText = useCallback(
-    (id, fmt) => {
+    (id, rawFmt) => {
+      const delta = Number(rawFmt["font-size-delta"] ?? 0);
+      let fmt = rawFmt;
+      if (delta) {
+        const el = findMasterTextElement(presentation, selectedMasterLayoutId, id);
+        const currentSize = parseFloat(el?.paragraphs?.[0]?.formatting?.size ?? masterFormatting?.size ?? "24") || 24;
+        const newSize = Math.max(6, Math.min(120, currentSize + delta));
+        fmt = { ...rawFmt, "font-size-delta": undefined, size: `${newSize}px` };
+        delete fmt["font-size-delta"];
+      }
       if (selectedMasterLayoutId && !masterTextIds.has(id)) {
-        updateLayoutItem(selectedMasterLayoutId, id, { formatting: fmt });
+        const layout = (presentation?.slideset?.layouts ?? []).find(
+          (l) => l["layout-id"] === selectedMasterLayoutId,
+        );
+        const isPlaceholder = (layout?.placeholders ?? []).some(
+          (p) => p["placeholder-id"] === id,
+        );
+        if (isPlaceholder) {
+          updateLayoutItem(selectedMasterLayoutId, id, { formatting: fmt });
+        } else {
+          updateLayoutTextFormattingAction(selectedMasterLayoutId, id, fmt);
+        }
       } else {
         updateMasterTextFormatting(id, fmt);
       }
     },
-    [selectedMasterLayoutId, masterTextIds, updateLayoutItem, updateMasterTextFormatting],
+    [selectedMasterLayoutId, masterTextIds, presentation, masterFormatting, updateLayoutItem, updateLayoutTextFormattingAction, updateMasterTextFormatting],
   );
 
   const masterViewMoveText = useCallback(
@@ -1217,13 +1311,29 @@ useEffect(() => {
 
   const masterViewResizeMedia = useCallback(
     (id, w, h) => {
+      const allMedia = presentation?.slideset?.master?.elements?.media ?? [];
+      const el = allMedia.find((m) => m.id === id);
+      const updates = { width: w, height: h };
+      if (el && "source-width" in el) {
+        const hasCrop = (el.crop ?? []).some((v) => v !== 0);
+        if (hasCrop) {
+          const scaleX = el.width > 0 ? w / el.width : 1;
+          const scaleY = el.height > 0 ? h / el.height : 1;
+          updates["source-width"] = (el["source-width"] ?? el.width) * scaleX;
+          updates["source-height"] = (el["source-height"] ?? el.height) * scaleY;
+        } else {
+          updates["source-width"] = w;
+          updates["source-height"] = h;
+          updates.crop = [];
+        }
+      }
       if (selectedMasterLayoutId && !masterMediaIds.has(id)) {
         updateLayoutItem(selectedMasterLayoutId, id, { width: w, height: h });
       } else {
-        updateMasterElement("media", id, { width: w, height: h });
+        updateMasterElement("media", id, updates);
       }
     },
-    [selectedMasterLayoutId, masterMediaIds, updateLayoutItem, updateMasterElement],
+    [selectedMasterLayoutId, masterMediaIds, updateLayoutItem, updateMasterElement, presentation],
   );
 
   const masterViewAutoFitText = useCallback(
@@ -1304,14 +1414,6 @@ useEffect(() => {
       applyFormatting,
       selectedElementId,
     ],
-  );
-
-  const handleTextOverflowChange = useCallback(
-    (mode) => {
-      if (!selectedElementId) return;
-      updateElement(selectedElementId, { overflow: mode });
-    },
-    [selectedElementId, updateElement],
   );
 
   const handleChangeCase = useCallback(
@@ -1627,8 +1729,14 @@ useEffect(() => {
     objectSelectionMode,
 
     handleApplyBackground,
+    handleApplyBackgroundToAll,
+    handleUpdateBgFillSettings,
+    handleApplyBgFillImage,
+    handleRemoveBgFillImage,
+    handleApplySlideBackground,
     handleApplyBackgroundImage,
     handleRemoveBackgroundImage,
+    handleUpdateBackgroundImageRect,
     handleUpdateBackgroundImagePosition,
     handleUpdateBackgroundImageScale,
     handleUpdateDimensions,
@@ -1651,7 +1759,6 @@ useEffect(() => {
     handleLoadFile,
     handleDeleteAndGoHome,
     handleFormatChange,
-    handleTextOverflowChange,
     handleChangeCase,
     handleStartEditing,
     handleStopEditing,
@@ -1733,6 +1840,7 @@ useEffect(() => {
     removeLayoutPlaceholder,
     updateLayoutPlaceholder,
     updateLayoutItem,
+    updateLayoutTextFormattingAction,
     updateMasterTheme,
     updateMasterFormatting,
     updateMasterDimensions,

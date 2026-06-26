@@ -48,7 +48,6 @@ export default function TextElement({
   onStartDrag,
   onStartResize,
   onStartRotate,
-  onAutoFit,
   slideHeight,
   onBeginHistory,
   onCommitHistory,
@@ -66,20 +65,23 @@ export default function TextElement({
   onFormatPainterPaste,
   onContextMenu,
   clearSelectionSignal = 0,
+  onAutoFit,
 }) {
   const [toolbarPos, setToolbarPos] = useState({ top: 0, left: 0 });
   const [isToolbarOpen, setIsToolbarOpen] = useState(false);
   const [paragraphTops, setParagraphTops] = useState([]);
+  const [editableOffsetTop, setEditableOffsetTop] = useState(0);
   const [savedSelState, setSavedSelState] = useState(null);
   const editableRef = useRef(null);
   const elementRef = useRef(null);
   const lastTypedHTMLRef = useRef(null);
+  const lastAutoFitHeightRef = useRef(null);
   const savedSelectionRef = useRef(null);
   const lastSyncedParagraphsRef = useRef(null);
   const selectionFrameRef = useRef(null);
-  const lastAutoFitHeightRef = useRef(null);
   const isDeletingRef = useRef(false);
   const toolbarFormInputActiveRef = useRef(false);
+  const lastAutoFitHeightRef = useRef(null);
 
 useEffect(() => {
   if (clearSelectionSignal === 0) return;
@@ -112,9 +114,7 @@ useEffect(() => {
     placeholderFormatting,
     formatting,
   );
-  // Popup toolbar formatting — 3 states matching computeCurrentFormatting:
-  //   real selection → mixed/run formatting; collapsed cursor → run at cursor + pending; no sel → effective + pending
-  // Use savedSelState (React state) so toolbar re-renders when cursor moves without typing.
+
   const savedSel = savedSelState;
   const isRealSelection =
     savedSel &&
@@ -136,7 +136,6 @@ useEffect(() => {
         }
     : { ...effectiveParaFormatting, ...pendingFormatting };
 
-  // Per-paragraph list info so markers are scoped to each paragraph individually.
   const paragraphListInfos = (textElement.paragraphs ?? []).map((p) => {
     const pFmt = p.formatting ?? {};
     const firstRunFmt =
@@ -188,7 +187,6 @@ useEffect(() => {
   const anyListPara = paragraphListInfos.find((p) => p.listType) ?? null;
   const listType = anyListPara?.listType ?? null;
 
-  // Save current selection offsets for formatting and selection restoration.
   const saveCurrentSelection = () => {
     const el = editableRef.current;
     if (!el) return;
@@ -258,6 +256,7 @@ useEffect(() => {
           ? current
           : nextTops,
       );
+      setEditableOffsetTop(editable.offsetTop);
     };
 
     measureParagraphs();
@@ -390,8 +389,6 @@ useEffect(() => {
     }, 0);
   };
 
-  // Sync live selection to parent before delegating — parent's applyFormatting reads
-  // activeSelectionRef.current (a ref, updated synchronously) to decide run vs range formatting.
   const handleFormat = (id, updates) => {
     const el = editableRef.current;
     const liveOffsets =
@@ -413,7 +410,6 @@ useEffect(() => {
   const syncSelectionToolbar = () => {
     const el = editableRef.current;
     if (!el) return;
-    // If focus is inside the FormatToolbar (e.g. size input), don't close the toolbar
     const activeEl = document.activeElement;
     if (activeEl && activeEl.closest?.(".format-toolbar")) return;
     const selection = window.getSelection();
@@ -470,9 +466,7 @@ useEffect(() => {
         left: `${textElement.position?.x ?? 0}px`,
         top: `${textElement.position?.y ?? 0}px`,
         width: `${textElement.width ?? 300}px`,
-        ...(overflowMode === "auto-fit"
-          ? { minHeight: `${textElement.height ?? 80}px` }
-          : { height: `${textElement.height ?? 80}px`, overflow: "hidden" }),
+        minHeight: `${textElement.height ?? 80}px`,
         background: textElement.background ?? "transparent",
         zIndex: textElement["z-index"] ?? 1,
         transform: `rotate(${textElement.rotation ?? 0}deg)`,
@@ -538,7 +532,7 @@ useEffect(() => {
           className="list-markers-overlay"
           style={{
             left: 0,
-            top: placeholderPadding ? placeholderPadding.trim().split(/\s+/)[0] : 0,
+            top: editableOffsetTop,
             width: "100%",
             fontSize: resolveTextStyle(
               formatting.size,
@@ -676,7 +670,6 @@ useEffect(() => {
             ? Math.max(0, currentLevel - 1)
             : Math.min(MAX_LIST_INDENT_LEVEL, currentLevel + 1);
           if (newLevel === currentLevel) return;
-          // Sync cursor to ref before formatting so applyFormatting targets the right paragraph.
           onSaveSelection?.(textElement.id, offset);
           onFormatTextElement?.(textElement.id, { "indent-level": newLevel });
         }}

@@ -20,7 +20,7 @@ export function usePresentationFonts(presentation) {
             if (src.startsWith("indexeddb://")) {
               const key = src.replace("indexeddb://", "");
               const blob = await getMediaFile(key);
-              if (!blob) return null;
+              if (cancelled || !blob) return null;
               const url = URL.createObjectURL(blob);
               objectUrls.push(url);
               src = url;

@@ -11,6 +11,8 @@ import {
   buildTextElementStyle,
   buildMediaContainerStyle,
   buildMediaInnerStyle,
+  buildMediaFilterStyle,
+  buildBevelOverlayStyle,
   buildVideoAttributes,
   buildAnimationMap,
   styleToString,
@@ -230,11 +232,18 @@ function buildMasterElementsHtml(presentation, masterFormatting, getSrc) {
     const src = getSrc(media["file-link"] ?? "");
     const isVideo = media["media-type"] === "video";
     const wrapperStyle = styleToString(buildMediaContainerStyle(media, index));
-    const innerStyle = styleToString(buildMediaInnerStyle(media));
+    const cssFilter = buildMediaFilterStyle(media);
+    const innerStyle = styleToString({
+      ...buildMediaInnerStyle(media),
+      ...(cssFilter ? { filter: cssFilter } : {}),
+    });
     const { autoPlay, loop, muted } = buildVideoAttributes(media);
     const inner = isVideo
       ? `<video src="${escapeHtml(src)}" style="${innerStyle}" preload="metadata"${autoPlay ? " autoplay" : ""}${loop ? " loop" : ""}${muted ? " muted" : ""}></video>`
       : `<img src="${escapeHtml(src)}" alt="${escapeHtml(media.decorative ? "" : (media.alt ?? ""))}" style="${innerStyle}" />`;
+
+    const bevelStyle = buildBevelOverlayStyle(media);
+    const bevelHtml = bevelStyle ? `<div style="${styleToString(bevelStyle)}"></div>` : "";
 
     const refId = media.effects?.reflectionId;
     const rp = refId && refId !== "none" ? REFLECTION_PRESETS.find((p) => p.id === refId) : null;
@@ -263,7 +272,7 @@ function buildMasterElementsHtml(presentation, masterFormatting, getSrc) {
       return `<img src="${escapeHtml(src)}" alt="" style="${refStyle}" />`;
     })() : "";
 
-    return `<div style="${wrapperStyle}">${inner}</div>${reflectionHtml}`;
+    return `<div style="${wrapperStyle}">${inner}${bevelHtml}${reflectionHtml}</div>`;
   }).join("");
 
   return textsHtml + mediaHtml;
@@ -331,7 +340,11 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
     .map((media, index) => {
       const animation = animationMap.get(media.id);
       const wrapperStyle = styleToString(buildMediaContainerStyle(media, index));
-      const innerStyle = styleToString(buildMediaInnerStyle(media));
+      const cssFilter = buildMediaFilterStyle(media);
+      const innerStyle = styleToString({
+        ...buildMediaInnerStyle(media),
+        ...(cssFilter ? { filter: cssFilter } : {}),
+      });
       const { autoPlay, loop, muted } = buildVideoAttributes(media);
       const showControls = media.playback?.controls !== false;
       const src = getSrc(media["file-link"] ?? "");
@@ -341,10 +354,41 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
         ? `<video src="${escapeHtml(src)}" style="${innerStyle}" preload="metadata"${autoPlay ? " autoplay" : ""}${loop ? " loop" : ""}${muted ? " muted" : ""}${showControls ? " controls" : ""}></video>`
         : `<img src="${escapeHtml(src)}" alt="${escapeHtml(media.decorative ? "" : (media.alt ?? ""))}" style="${innerStyle}" />`;
 
+      const bevelStyle = buildBevelOverlayStyle(media);
+      const bevelHtml = bevelStyle ? `<div style="${styleToString(bevelStyle)}"></div>` : "";
+
+      const refId = media.effects?.reflectionId;
+      const rp = refId && refId !== "none" ? REFLECTION_PRESETS.find((p) => p.id === refId) : null;
+      const reflectionHtml = rp && rp.size > 0 ? (() => {
+        const elH = media.height ?? 200;
+        const elW = media.width ?? 200;
+        const refH = Math.round((rp.size / 100) * elH);
+        const x = media.position?.x ?? 0;
+        const y = (media.position?.y ?? 0) + elH + (rp.offset ?? 0);
+        const refStyle = [
+          `position:absolute`,
+          `left:${x}px`,
+          `top:${y}px`,
+          `width:${elW}px`,
+          `height:${refH}px`,
+          `object-fit:cover`,
+          `object-position:top`,
+          `transform:scaleY(-1)`,
+          `opacity:${rp.opacity}`,
+          rp.blur > 0 ? `filter:blur(${rp.blur}px)` : "",
+          `-webkit-mask-image:linear-gradient(to bottom,black 0%,transparent 100%)`,
+          `mask-image:linear-gradient(to bottom,black 0%,transparent 100%)`,
+          `pointer-events:none`,
+          `z-index:${(media["z-index"] ?? index + 1)}`,
+        ].filter(Boolean).join(";");
+        return `<img src="${escapeHtml(src)}" alt="" style="${refStyle}" />`;
+      })() : "";
+
+      const innerHtml = `${mediaHtml}${bevelHtml}${reflectionHtml}`;
       const adjustedMediaAnim = animation && adjustedSeqMap.has(animation.id)
         ? { ...animation, sequence: adjustedSeqMap.get(animation.id) }
         : animation;
-      return applyFragment(mediaHtml, wrapperStyle, adjustedMediaAnim);
+      return applyFragment(innerHtml, wrapperStyle, adjustedMediaAnim);
     })
     .join("");
 
@@ -355,7 +399,7 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
     <section
       data-transition="${escapeHtml(transition)}"
       data-transition-speed="${transitionSpeed}"
-      ${backgroundImageSrc ? `data-background-image="${escapeHtml(backgroundImageSrc)}" data-background-size="${backgroundImageSize}" data-background-position="${escapeHtml(backgroundImagePosition)}"` : `style="background: ${background};"`}
+      ${backgroundImageSrc ? `data-background-image="${escapeHtml(backgroundImageSrc)}" data-background-size="${backgroundImageSize}" data-background-position="${escapeHtml(backgroundImagePosition)}"` : `style="background: ${background || "white"};"`}
     >
       <div style="position: relative; width: ${width}px; height: ${height}px; overflow: hidden;">
         ${buildDecorationsHtml(presentation, width, height)}

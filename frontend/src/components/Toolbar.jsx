@@ -59,15 +59,20 @@ export default function Toolbar({
   onAnimationPreview,
   layouts,
   onApplyBackground,
+  onApplySlideBackground,
+  onApplyBgFillImage,
+  onRemoveBgFillImage,
+  onUpdateBgFillSettings,
+  onApplyBackgroundToAll,
   activeTab,
   onTabChange,
+  onBeginHistory,
+  onCommitHistory,
 
   onAddTextElement,
   currentFormatting,
   onFormatChange,
   onChangeCase,
-  onTextOverflowChange,
-  selectedTextOverflow,
   isTextSelected,
   presentation,
   onNewPresentation,
@@ -153,17 +158,11 @@ useEffect(() => {
     else setLocalActiveTab(tab);
   };
 
-  const hasPictureFormat = !isSlideMasterOpen && !!selectedMediaElement;
+  const hasPictureFormat = !!selectedMediaElement;
   const TABS = isSlideMasterOpen
-    ? [
-        "File",
-        "Slide Master",
-        "Home",
-        "Insert",
-        "Transitions",
-        "Animations",
-        "View",
-      ]
+    ? hasPictureFormat
+      ? ["File", "Slide Master", "Home", "Insert", "Transitions", "Animations", "View", "Picture Format"]
+      : ["File", "Slide Master", "Home", "Insert", "Transitions", "Animations", "View"]
     : hasPictureFormat
       ? [...BASE_TABS, "Picture Format"]
       : BASE_TABS;
@@ -248,8 +247,6 @@ useEffect(() => {
             currentFormatting={currentFormatting}
             onFormatChange={onFormatChange}
             onChangeCase={onChangeCase}
-            onTextOverflowChange={onTextOverflowChange}
-            selectedTextOverflow={selectedTextOverflow}
             isTextSelected={isTextSelected}
             presentation={presentation}
             onCut={onCut}
@@ -284,6 +281,15 @@ useEffect(() => {
             currentBgImage={selectedSlide?.contents?.["background-image"] ?? null}
             currentBgPosition={selectedSlide?.contents?.["background-image-position"] ?? "center center"}
             currentBgScale={selectedSlide?.contents?.["background-image-scale"] ?? 100}
+            selectedSlide={selectedSlide}
+            presentation={presentation}
+            onApplyBackground={onApplyBackground}
+            onApplySlideBackground={onApplySlideBackground}
+            onApplyBgFillImage={onApplyBgFillImage}
+            onRemoveBgFillImage={onRemoveBgFillImage}
+            onUpdateBgFillSettings={onUpdateBgFillSettings}
+            onApplyBackgroundToAll={onApplyBackgroundToAll}
+            isSlideMasterOpen={isSlideMasterOpen}
           />
         )}
 
@@ -295,6 +301,12 @@ useEffect(() => {
             onUpdateDimensions={onUpdateDimensions}
             onApplyBackgroundImage={onApplyBackgroundImage}
             onRemoveBackgroundImage={onRemoveBackgroundImage}
+            onApplyBackground={onApplyBackground}
+            onApplySlideBackground={onApplySlideBackground}
+            onApplyBgFillImage={onApplyBgFillImage}
+            onRemoveBgFillImage={onRemoveBgFillImage}
+            onUpdateBgFillSettings={onUpdateBgFillSettings}
+            onApplyBackgroundToAll={onApplyBackgroundToAll}
             selectedSlide={selectedSlide}
           />
         )}
@@ -339,6 +351,8 @@ useEffect(() => {
             onChangePicture={onChangePicture}
             onPreviewEffects={onPreviewMediaEffects}
             onPreviewStyle={onPreviewMediaStyle}
+            onBeginHistory={onBeginHistory}
+            onCommitHistory={onCommitHistory}
           />
         )}
 

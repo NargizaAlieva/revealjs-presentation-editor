@@ -624,6 +624,18 @@ export function useEditorActions(
     [eventBus],
   );
 
+  const updateLayoutTextFormattingAction = useCallback(
+    (layoutId, elementId, formattingUpdate) =>
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.LAYOUT.UPDATE_TEXT_FORMATTING, {
+          layoutId,
+          elementId,
+          formattingUpdate,
+        }),
+      ),
+    [eventBus],
+  );
+
   const applyLayout = useCallback(
     (layoutId) =>
       eventBus.dispatch(
@@ -805,6 +817,7 @@ export function useEditorActions(
     removeLayoutPlaceholder,
     updateLayoutPlaceholder,
     updateLayoutItem,
+    updateLayoutTextFormattingAction,
     applyLayout,
     resetLayout,
     savePresentation,

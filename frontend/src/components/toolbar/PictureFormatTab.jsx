@@ -71,14 +71,15 @@ function Popover({ children, onClose, anchorRef, wide }) {
   );
 }
 
-function SliderRow({ label, min, max, value, onChange }) {
+function SliderRow({ label, min, max, value, onChange, onBeginHistory, onCommitHistory }) {
   return (
     <div className="pft-slider-row">
       <span className="pft-slider-label">{label}</span>
       <input
         type="range" min={min} max={max} value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        onMouseDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => { e.stopPropagation(); onBeginHistory?.(); }}
+        onMouseUp={onCommitHistory}
       />
       <span className="pft-slider-val">{value}</span>
     </div>
@@ -89,7 +90,7 @@ function SliderRow({ label, min, max, value, onChange }) {
 const BC_BRIGHTNESS = [-0.4, -0.2, 0, 0.2, 0.4];
 const BC_CONTRAST   = [0.4, 0.2, 0, -0.2, -0.4];
 
-function CorrectionsPopover({ src, effects, onUpdate, onClose, anchorRef }) {
+function CorrectionsPopover({ src, effects, onUpdate, onClose, anchorRef, onBeginHistory, onCommitHistory }) {
   const activeBrightness = effects.brightness ?? 0;
   const activeContrast   = effects.contrast   ?? 0;
   const activeSharpen    = effects.sharpenId  ?? "none";
@@ -166,10 +167,12 @@ function CorrectionsPopover({ src, effects, onUpdate, onClose, anchorRef }) {
       <div className="pft-corr-footer">
         <SliderRow label="Brightness" min={-100} max={100}
           value={Math.round(activeBrightness * 100)}
-          onChange={(v) => applyBc(v / 100, activeContrast)} />
+          onChange={(v) => applyBc(v / 100, activeContrast)}
+          onBeginHistory={onBeginHistory} onCommitHistory={onCommitHistory} />
         <SliderRow label="Contrast" min={-100} max={100}
           value={Math.round(activeContrast * 100)}
-          onChange={(v) => applyBc(activeBrightness, v / 100)} />
+          onChange={(v) => applyBc(activeBrightness, v / 100)}
+          onBeginHistory={onBeginHistory} onCommitHistory={onCommitHistory} />
       </div>
     </Popover>
   );
@@ -959,7 +962,7 @@ function PictureEffectsPopover({ src, effects, onUpdate, onClose, anchorRef, onP
 
 const TRANSPARENCY_PRESETS = [0, 15, 30, 50, 65, 80, 95];
 
-function TransparencyPopover({ src, opacity, onUpdate, onClose, anchorRef }) {
+function TransparencyPopover({ src, opacity, onUpdate, onClose, anchorRef, onBeginHistory, onCommitHistory }) {
   return (
     <Popover anchorRef={anchorRef} onClose={onClose} wide>
       <div className="pft-transp-row">
@@ -986,7 +989,8 @@ function TransparencyPopover({ src, opacity, onUpdate, onClose, anchorRef }) {
       <div className="pft-color-footer">
         <SliderRow label="Transparency" min={0} max={100}
           value={100 - opacity}
-          onChange={(v) => onUpdate({ opacity: (100 - v) / 100 })} />
+          onChange={(v) => onUpdate({ opacity: (100 - v) / 100 })}
+          onBeginHistory={onBeginHistory} onCommitHistory={onCommitHistory} />
       </div>
     </Popover>
   );
@@ -1049,7 +1053,7 @@ function TintGrid({ items, currentId, onSelect }) {
   );
 }
 
-export default function PictureFormatTab({ media, onUpdate, onCrop, onBringForward, onSendBackward, onChangePicture, onPreviewEffects, onPreviewStyle }) {
+export default function PictureFormatTab({ media, onUpdate, onCrop, onBringForward, onSendBackward, onChangePicture, onPreviewEffects, onPreviewStyle, onBeginHistory, onCommitHistory }) {
   const resolvedSrc = useMediaSrc(media?.["file-link"]);
   const [openPopover, setOpenPopover] = useState(null);
   const [showAltPanel, setShowAltPanel] = useState(false);
@@ -1129,6 +1133,8 @@ export default function PictureFormatTab({ media, onUpdate, onCrop, onBringForwa
                 onUpdate={onUpdate}
                 onClose={() => setOpenPopover(null)}
                 anchorRef={brightnessRef}
+                onBeginHistory={onBeginHistory}
+                onCommitHistory={onCommitHistory}
               />
             )}
           </div>
@@ -1174,6 +1180,8 @@ export default function PictureFormatTab({ media, onUpdate, onCrop, onBringForwa
                 onUpdate={onUpdate}
                 onClose={() => setOpenPopover(null)}
                 anchorRef={opacityRef}
+                onBeginHistory={onBeginHistory}
+                onCommitHistory={onCommitHistory}
               />
             )}
           </div>

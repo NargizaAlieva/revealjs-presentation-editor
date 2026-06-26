@@ -46,6 +46,8 @@ export default function EditorPage() {
         <Toolbar
           activeTab={ctrl.activeTab}
           onTabChange={ctrl.setActiveTab}
+          onBeginHistory={ctrl.beginHistory}
+          onCommitHistory={ctrl.commitHistory}
           onAddSlide={ctrl.addSlide}
           onDeleteSlide={ctrl.deleteSlide}
           onDuplicateSlide={ctrl.duplicateSlide}
@@ -83,8 +85,6 @@ export default function EditorPage() {
           currentFormatting={ctrl.currentFormatting}
           onFormatChange={ctrl.handleFormatChange}
           onChangeCase={ctrl.handleChangeCase}
-          onTextOverflowChange={ctrl.handleTextOverflowChange}
-          selectedTextOverflow={ctrl.selectedTextEl?.overflow ?? ctrl.masterSelectedTextEl?.overflow ?? "auto-fit"}
           isTextSelected={
             !!(ctrl.isSlideMasterOpen
               ? ctrl.masterSelectedTextEl
@@ -110,8 +110,14 @@ export default function EditorPage() {
           onApplyLayoutFont={ctrl.applyLayoutFont}
           onUpdateDimensions={ctrl.handleUpdateDimensions}
           onApplyBackground={ctrl.handleApplyBackground}
+          onApplySlideBackground={ctrl.handleApplySlideBackground}
+          onApplyBgFillImage={ctrl.handleApplyBgFillImage}
+          onRemoveBgFillImage={ctrl.handleRemoveBgFillImage}
+          onUpdateBgFillSettings={ctrl.handleUpdateBgFillSettings}
+          onApplyBackgroundToAll={ctrl.handleApplyBackgroundToAll}
           onApplyBackgroundImage={ctrl.handleApplyBackgroundImage}
           onRemoveBackgroundImage={ctrl.handleRemoveBackgroundImage}
+          onUpdateBackgroundImageRect={ctrl.handleUpdateBackgroundImageRect}
           onUpdateBackgroundImagePosition={ctrl.handleUpdateBackgroundImagePosition}
           onUpdateBackgroundImageScale={ctrl.handleUpdateBackgroundImageScale}
           selectedSlide={ctrl.selectedSlide}
@@ -141,7 +147,9 @@ export default function EditorPage() {
           onToggleFooters={ctrl.toggleFooters}
           selectedMediaElement={ctrl.selectedMediaElement}
           onUpdateSelectedMedia={(updates) =>
-            ctrl.selectedMediaElement && ctrl.updateMedia(ctrl.selectedMediaElement.id, updates)
+            ctrl.selectedMediaElement && (ctrl.isSlideMasterOpen
+              ? ctrl.masterViewAutoFitMedia(ctrl.selectedMediaElement.id, updates)
+              : ctrl.updateMedia(ctrl.selectedMediaElement.id, updates))
           }
           onCropSelectedMedia={ctrl.triggerCrop}
           onBringForward={ctrl.handleBringForward}
@@ -272,6 +280,7 @@ export default function EditorPage() {
                   onRotateRight={ctrl.handleRotateRight}
                   onNewComment={ctrl.handleNewComment}
                   onOpenPictureFormat={() => ctrl.setActiveTab("Picture Format")}
+                  onUpdateBackgroundImageRect={ctrl.handleUpdateBackgroundImageRect}
                   onUpdateBackgroundImagePosition={ctrl.handleUpdateBackgroundImagePosition}
                   cropSignal={ctrl.cropSignal}
                   previewMediaEffects={ctrl.previewMediaEffects}
