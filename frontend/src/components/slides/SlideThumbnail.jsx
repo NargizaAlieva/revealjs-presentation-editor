@@ -14,6 +14,24 @@ import { REFLECTION_PRESETS } from "../../core/model/imageEffects";
 import SlideDecorations from "../canvas/SlideDecorations";
 import "./SlideThumbnail.css";
 
+const PLACEHOLDER_PROMPTS = new Set([
+  "",
+  "Start editing your presentation.",
+  "Click to edit text",
+  "Click to add text",
+]);
+
+const getPlainText = (paragraphs = []) =>
+  paragraphs
+    .map((paragraph) =>
+      (paragraph.runs ?? []).map((run) => run.text ?? "").join(""),
+    )
+    .join("\n")
+    .trim();
+
+const isEmptyPlaceholderPrompt = (textElement) =>
+  textElement["placeholder-id"] && PLACEHOLDER_PROMPTS.has(getPlainText(textElement.paragraphs));
+
 function ThumbnailMedia({ media, index }) {
   const src = useMediaSrc(media["file-link"]);
   const containerStyle = buildMediaContainerStyle(media, index);
@@ -164,7 +182,7 @@ export default function SlideThumbnail({
           height={slideHeight}
           layoutId={slide?.["layout-id"]}
         />
-        {textElements.filter((element) => !element.hidden).map((textElement, index) => {
+        {textElements.filter((element) => !element.hidden && !isEmptyPlaceholderPrompt(element)).map((textElement, index) => {
           const placeholderFormatting = getPlaceholderFormatting(presentation, slide, textElement);
           const placeholderPadding = getPlaceholderPadding(presentation, slide, textElement);
           const style = buildTextElementStyle(textElement, index, masterFormatting, placeholderFormatting, placeholderPadding);
