@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
+import { MdFileUpload, MdImage, MdVideocam } from "react-icons/md";
 import FormatToolbar from "./FormatToolbar";
 import "./TextElement.css";
 import { getPlaceholderFormatting, getPlaceholderPadding } from "../../core/render/slidesetRenderUtils";
@@ -34,6 +35,54 @@ const RESIZE_HANDLES = [
 ];
 
 const TOOLBAR_WIDTH = 590;
+const TEXT_BOX_PLACEHOLDER = "Click to edit text";
+const CONTENT_PLACEHOLDER_PROMPTS = new Set([
+  "",
+  "Start editing your presentation.",
+  "Click to edit text",
+  "Click to add text",
+]);
+
+const getPlainText = (paragraphs = []) =>
+  paragraphs
+    .map((paragraph) =>
+      (paragraph.runs ?? []).map((run) => run.text ?? "").join(""),
+    )
+    .join("\n");
+
+const createEmptyParagraphs = (paragraphs = []) => {
+  const first = paragraphs[0] ?? {};
+  const firstRun = first.runs?.[0] ?? {};
+  return [
+    {
+      ...first,
+      runs: [
+        {
+          ...firstRun,
+          text: "",
+          link: null,
+        },
+      ],
+    },
+  ];
+};
+
+const createPromptParagraphs = (paragraphs = [], promptText) => {
+  const first = paragraphs[0] ?? {};
+  const firstRun = first.runs?.[0] ?? {};
+  return [
+    {
+      ...first,
+      runs: [
+        {
+          ...firstRun,
+          text: promptText,
+          link: null,
+        },
+      ],
+    },
+  ];
+};
 
 export default function TextElement({
   textElement,
@@ -66,6 +115,8 @@ export default function TextElement({
   onContextMenu,
   clearSelectionSignal = 0,
   onAutoFit,
+  onPlaceholderImageClick,
+  onPlaceholderVideoClick,
 }) {
   const [toolbarPos, setToolbarPos] = useState({ top: 0, left: 0 });
   const [isToolbarOpen, setIsToolbarOpen] = useState(false);
@@ -81,7 +132,6 @@ export default function TextElement({
   const selectionFrameRef = useRef(null);
   const isDeletingRef = useRef(false);
   const toolbarFormInputActiveRef = useRef(false);
-  const lastAutoFitHeightRef = useRef(null);
 
 useEffect(() => {
   if (clearSelectionSignal === 0) return;
@@ -186,6 +236,18 @@ useEffect(() => {
   });
   const anyListPara = paragraphListInfos.find((p) => p.listType) ?? null;
   const listType = anyListPara?.listType ?? null;
+  const plainText = getPlainText(textElement.paragraphs);
+  const isTextBoxPrompt =
+    textElement["placeholder-id"] == null && plainText === TEXT_BOX_PLACEHOLDER;
+  const isTextBoxEmpty = textElement["placeholder-id"] == null && plainText === "";
+  const isContentPlaceholder =
+    textElement["placeholder-id"]?.includes?.("body") ||
+    textElement["placeholder-id"]?.includes?.("content");
+  const isContentPlaceholderPrompt =
+    isContentPlaceholder && CONTENT_PLACEHOLDER_PROMPTS.has(plainText);
+  const shouldShowPlaceholderButtons =
+    isContentPlaceholderPrompt &&
+    (onPlaceholderImageClick || onPlaceholderVideoClick);
 
   const saveCurrentSelection = () => {
     const el = editableRef.current;
@@ -459,7 +521,7 @@ useEffect(() => {
     <div
       ref={elementRef}
       data-element-id={textElement.id}
-      className={["draggable", isSelected ? "selected" : "", previewClassName]
+      className={["draggable", "text-draggable", isSelected ? "selected" : "", previewClassName]
         .filter(Boolean)
         .join(" ")}
       style={{
@@ -601,9 +663,35 @@ useEffect(() => {
         spellCheck={false}
         className="text-editable"
         data-placeholder="Click to edit text"
+        data-empty={isTextBoxEmpty ? "true" : undefined}
+        data-prompt-text={isTextBoxPrompt ? "true" : undefined}
         onFocus={() => {
           isDeletingRef.current = false;
           onStartEditing?.(textElement.id);
+          if (isTextBoxPrompt) {
+            const emptyParagraphs = createEmptyParagraphs(textElement.paragraphs);
+            const emptyHTML = paragraphsToHTML(
+              emptyParagraphs,
+              masterFormatting,
+              placeholderFormatting,
+            );
+            const el = editableRef.current;
+            if (el) el.innerHTML = emptyHTML;
+            lastTypedHTMLRef.current = emptyHTML;
+            onChangeParagraphs?.(textElement.id, emptyParagraphs, true);
+          }
+          if (isContentPlaceholderPrompt && plainText !== "") {
+            const emptyParagraphs = createEmptyParagraphs(textElement.paragraphs);
+            const emptyHTML = paragraphsToHTML(
+              emptyParagraphs,
+              masterFormatting,
+              placeholderFormatting,
+            );
+            const el = editableRef.current;
+            if (el) el.innerHTML = emptyHTML;
+            lastTypedHTMLRef.current = emptyHTML;
+            onChangeParagraphs?.(textElement.id, emptyParagraphs, true);
+          }
           savedSelectionRef.current = null;
           setSavedSelState(null);
         }}
@@ -772,6 +860,22 @@ useEffect(() => {
               }
             }
           } else {
+            const el = editableRef.current;
+            const currentText = el?.innerText?.replace(/\u00a0/g, " ").trim() ?? "";
+            if (isContentPlaceholder && currentText === "") {
+              const promptParagraphs = createPromptParagraphs(
+                textElement.paragraphs,
+                "Click to add text",
+              );
+              const promptHTML = paragraphsToHTML(
+                promptParagraphs,
+                masterFormatting,
+                placeholderFormatting,
+              );
+              if (el) el.innerHTML = promptHTML;
+              lastTypedHTMLRef.current = promptHTML;
+              onChangeParagraphs?.(textElement.id, promptParagraphs, true);
+            }
             savedSelectionRef.current = null;
             setSavedSelState(null);
             setIsToolbarOpen(false);
@@ -857,6 +961,54 @@ useEffect(() => {
             : undefined
         }
       />
+
+      {shouldShowPlaceholderButtons && (
+        <div
+          className="content-placeholder-buttons"
+          aria-label="Content placeholder actions"
+        >
+          {onPlaceholderImageClick && (
+            <button
+              type="button"
+              title="Insert Picture"
+              aria-label="Insert Picture"
+              onMouseDown={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+              }}
+              onClick={(event) => {
+                event.stopPropagation();
+                onPlaceholderImageClick();
+              }}
+            >
+              <MdImage />
+              <span className="placeholder-upload-badge">
+                <MdFileUpload />
+              </span>
+            </button>
+          )}
+          {onPlaceholderVideoClick && (
+            <button
+              type="button"
+              title="Insert Video"
+              aria-label="Insert Video"
+              onMouseDown={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+              }}
+              onClick={(event) => {
+                event.stopPropagation();
+                onPlaceholderVideoClick();
+              }}
+            >
+              <MdVideocam />
+              <span className="placeholder-upload-badge">
+                <MdFileUpload />
+              </span>
+            </button>
+          )}
+        </div>
+      )}
 
       {isPrimarySelected &&
         RESIZE_HANDLES.map(({ dir, cursor }) => (

@@ -18,7 +18,10 @@ import { EditorEventType, createEditorEvent } from "../core/events/editorEvents"
 import { getSlideSize } from "../core/render/slidesetRenderUtils";
 import { getSlideElement } from "../core/operations/slideOperations";
 import { getElementLabel } from "../core/operations/elementOperations";
-import { createImageMediaElement } from "../core/operations/mediaOperations";
+import {
+  createImageMediaElement,
+  createVideoMediaElement,
+} from "../core/operations/mediaOperations";
 import { getPresentationTitle } from "../core/utils/presentationUtils";
 import { getSlideTransition } from "../core/model/transitionDefaults";
 import { importPresentationFromJson } from "../core/persistence/importPresentation";
@@ -897,7 +900,7 @@ useEffect(() => {
   const { handleVideoUpload } = useVideoUpload(addMedia);
 
   const handleAddTextElement = useCallback(
-    () => addTextElement(createTextElementDefaults(10, "Click to edit text")),
+    () => addTextElement(createTextElementDefaults(10, "")),
     [addTextElement],
   );
 
@@ -1083,6 +1086,48 @@ useEffect(() => {
       return false;
     }
   }, [addMedia, slideWidth, slideHeight]);
+
+  const handlePlaceholderImageUpload = useCallback(
+    async (placeholderElement, file) => {
+      if (!placeholderElement || !file?.type?.startsWith("image/")) return;
+      const [{ mediaId, key }, naturalSize] = await Promise.all([
+        storeMediaFile(file),
+        readImageDimensionsFromFile(file),
+      ]);
+      addMedia({
+        ...createImageMediaElement(mediaId, key, {
+          width: placeholderElement.width ?? naturalSize.width,
+          height: placeholderElement.height ?? naturalSize.height,
+        }),
+        "placeholder-id": placeholderElement["placeholder-id"],
+        position: { ...(placeholderElement.position ?? { x: 60, y: 60 }) },
+        width: placeholderElement.width ?? naturalSize.width,
+        height: placeholderElement.height ?? naturalSize.height,
+        "source-width": naturalSize.width,
+        "source-height": naturalSize.height,
+        "z-index": placeholderElement["z-index"] ?? 1,
+      });
+      updateElement(placeholderElement.id, { hidden: true });
+    },
+    [addMedia, updateElement],
+  );
+
+  const handlePlaceholderVideoUpload = useCallback(
+    async (placeholderElement, file) => {
+      if (!placeholderElement || !file?.type?.startsWith("video/")) return;
+      const { mediaId, key } = await storeMediaFile(file);
+      addMedia({
+        ...createVideoMediaElement(mediaId, key),
+        "placeholder-id": placeholderElement["placeholder-id"],
+        position: { ...(placeholderElement.position ?? { x: 60, y: 60 }) },
+        width: placeholderElement.width ?? 480,
+        height: placeholderElement.height ?? 270,
+        "z-index": placeholderElement["z-index"] ?? 1,
+      });
+      updateElement(placeholderElement.id, { hidden: true });
+    },
+    [addMedia, updateElement],
+  );
 
   const handleDeleteSelection = useCallback(() => {
     deleteSelectedElements(selectedElementIds);
@@ -1751,6 +1796,8 @@ useEffect(() => {
     handlePaste,
     handlePasteText,
     handlePastePicture,
+    handlePlaceholderImageUpload,
+    handlePlaceholderVideoUpload,
     handleDeleteSelection,
     handleNewComment,
     handleHyperlink,

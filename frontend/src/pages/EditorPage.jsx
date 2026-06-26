@@ -268,6 +268,8 @@ export default function EditorPage() {
                   onPasteText={ctrl.handlePasteText}
                   onPastePicture={ctrl.handlePastePicture}
                   onCut={ctrl.handleCut}
+                  onPlaceholderImageUpload={ctrl.handlePlaceholderImageUpload}
+                  onPlaceholderVideoUpload={ctrl.handlePlaceholderVideoUpload}
                   onHyperlink={ctrl.handleHyperlink}
                   canHyperlink={ctrl.hasRealSelection}
                   canPaste={!!ctrl.state.clipboard}

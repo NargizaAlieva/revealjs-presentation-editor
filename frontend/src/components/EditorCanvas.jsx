@@ -68,6 +68,8 @@ export default function EditorCanvas({
   onPasteText,
   onPastePicture,
   onCut,
+  onPlaceholderImageUpload,
+  onPlaceholderVideoUpload,
   onNewComment,
   onHyperlink,
   canHyperlink = false,
@@ -100,6 +102,9 @@ export default function EditorCanvas({
 
   const workspaceRef = useRef(null);
   const containerRef = useRef(null);
+  const placeholderImageInputRef = useRef(null);
+  const placeholderVideoInputRef = useRef(null);
+  const placeholderUploadTargetRef = useRef(null);
 
   const { width, height } = getSlideSize(presentation);
   const colorThemeStyle = buildColorThemeStyle(presentation);
@@ -556,7 +561,6 @@ export default function EditorCanvas({
                 onMouseMove={handleMouseMove}
                 onMouseUp={stopInteraction}
                 onMouseLeave={stopInteraction}
-                onMouseDown={(event) => {}}
                 onClick={(event) => {
                   if (event.target === event.currentTarget) {
                     onSelectElement?.(null);
@@ -696,7 +700,18 @@ export default function EditorCanvas({
                       onFormatPainterPaste={onFormatPainterPaste}
                       onAutoFit={updateElement}
                       onContextMenu={openContextMenu}
-                      onAutoFit={updateElement}
+                      onPlaceholderImageClick={() =>
+                        {
+                          placeholderUploadTargetRef.current = textElement;
+                          placeholderImageInputRef.current?.click();
+                        }
+                      }
+                      onPlaceholderVideoClick={() =>
+                        {
+                          placeholderUploadTargetRef.current = textElement;
+                          placeholderVideoInputRef.current?.click();
+                        }
+                      }
                       animationOrder={
                         showAnimationBadges
                           ? animationSequenceMap.get(textElement.id)
@@ -858,6 +873,39 @@ export default function EditorCanvas({
           </div>
         </div>
       </div>
+
+      <input
+        ref={placeholderImageInputRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file)
+            onPlaceholderImageUpload?.(
+              placeholderUploadTargetRef.current,
+              file,
+            );
+          placeholderUploadTargetRef.current = null;
+          event.target.value = "";
+        }}
+      />
+      <input
+        ref={placeholderVideoInputRef}
+        type="file"
+        accept="video/*"
+        hidden
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file)
+            onPlaceholderVideoUpload?.(
+              placeholderUploadTargetRef.current,
+              file,
+            );
+          placeholderUploadTargetRef.current = null;
+          event.target.value = "";
+        }}
+      />
 
       {contextMenu && (
         <CanvasContextMenu

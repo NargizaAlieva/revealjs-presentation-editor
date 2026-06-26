@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { MdClose } from "react-icons/md";
 import { useMediaSrc } from "../../hooks/useMediaSrc";
@@ -44,7 +44,6 @@ function BgImagePreview({ fileLink }) {
 
 export default function FormatBackgroundPanel({
   slide,
-  presentation,
   onApplySlideBackground,
   onApplyBgFillImage,
   onRemoveBgFillImage,
@@ -80,7 +79,11 @@ export default function FormatBackgroundPanel({
   const storedSettings = slide?.contents?.["bg-fill-settings"] ?? {};
 
   const parsed = parseStoredColor(storedBg);
-  const [fillType, setFillType] = useState(bgImage ? "picture" : "solid");
+  const [fillTypeOverride, setFillTypeOverride] = useState(null);
+  const fillType =
+    !bgImage && fillTypeOverride === "picture"
+      ? "solid"
+      : (fillTypeOverride ?? (bgImage ? "picture" : "solid"));
   const [solidColor, setSolidColor] = useState(parsed.hex);
   const [transparency, setTransparency] = useState(parsed.transparency);
   const [picTransparency, setPicTransparency] = useState(storedSettings.transparency ?? 0);
@@ -91,10 +94,6 @@ export default function FormatBackgroundPanel({
   const [fitToCanvas, setScaleToCanvas] = useState(storedSettings.fitToCanvas ?? false);
 
   const fileInputRef = useRef(null);
-
-  useEffect(() => {
-    setFillType(bgImage ? "picture" : "solid");
-  }, [bgImage]);
 
   const applyColor = (hex, transPct) => {
     onApplySlideBackground?.(colorWithAlpha(hex, transPct));
@@ -140,13 +139,16 @@ export default function FormatBackgroundPanel({
 
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
-    if (file) onApplyBgFillImage?.(file);
+    if (file) {
+      setFillTypeOverride("picture");
+      onApplyBgFillImage?.(file);
+    }
     e.target.value = "";
   };
 
   const handleRemovePicture = () => {
     onRemoveBgFillImage?.();
-    setFillType("solid");
+    setFillTypeOverride("solid");
   };
 
   const handleReset = () => {
@@ -156,7 +158,7 @@ export default function FormatBackgroundPanel({
     setPicTransparency(0);
     setOffsetLeft(0); setOffsetRight(0); setOffsetTop(0); setOffsetBottom(0);
     setScaleToCanvas(false);
-    setFillType("solid");
+    setFillTypeOverride("solid");
     onApplySlideBackground?.(null);
     onUpdateBgFillSettings?.(null);
   };
@@ -189,11 +191,11 @@ export default function FormatBackgroundPanel({
           <div className="fbp-section-title">▲ Fill</div>
 
           <label className="fbp-radio">
-            <input type="radio" name="fill" checked={fillType === "solid"} onChange={() => setFillType("solid")} />
+            <input type="radio" name="fill" checked={fillType === "solid"} onChange={() => setFillTypeOverride("solid")} />
             Solid fill
           </label>
           <label className="fbp-radio">
-            <input type="radio" name="fill" checked={fillType === "picture"} onChange={() => setFillType("picture")} />
+            <input type="radio" name="fill" checked={fillType === "picture"} onChange={() => setFillTypeOverride("picture")} />
             Picture fill
           </label>
         </div>

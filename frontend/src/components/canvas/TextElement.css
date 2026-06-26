@@ -3,7 +3,16 @@
   overflow: visible;
 }
 
+.text-draggable {
+  cursor: text;
+}
+
+.text-draggable * {
+  cursor: text;
+}
+
 .text-editable {
+  position: relative;
   align-self: stretch;
   min-width: 0;
   width: 100%;
@@ -19,8 +28,82 @@
   cursor: text;
 }
 
+.text-editable[data-empty="true"]::before {
+  content: attr(data-placeholder);
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: rgba(60, 89, 111, 0.42);
+  pointer-events: none;
+}
+
+.text-editable[data-empty="true"]:focus::before {
+  content: "";
+}
+
+.text-editable[data-prompt-text="true"] [data-paragraph-index] {
+  color: rgba(60, 89, 111, 0.42) !important;
+}
+
 .text-editable > [data-paragraph-index] {
   min-height: 1em;
+}
+
+.content-placeholder-buttons {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 8;
+  display: flex;
+  gap: 12px;
+  transform: translate(-50%, -50%);
+}
+
+.content-placeholder-buttons button {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #c8c8c8;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #3c596f;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+}
+
+.content-placeholder-buttons button:hover,
+.content-placeholder-buttons button:focus-visible {
+  border-color: #7ea6ce;
+  background: #eef7ff;
+  outline: none;
+}
+
+.content-placeholder-buttons svg {
+  width: 24px;
+  height: 24px;
+}
+
+.placeholder-upload-badge {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 15px;
+  height: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #0b8bdc;
+  box-shadow: 0 0 0 1px rgba(11, 139, 220, 0.2);
+}
+
+.placeholder-upload-badge svg {
+  width: 14px;
+  height: 14px;
 }
 
 .draggable.selected {
@@ -92,7 +175,13 @@
   cursor: grab;
 }
 
+.text-draggable .drag-border {
+  cursor: grab;
+}
+
 .drag-border:active { cursor: grabbing; }
+
+.text-draggable .drag-border:active { cursor: grabbing; }
 
 .drag-border-top    { top: -4px;    left: 8px;  right: 8px;  height: 10px; }
 .drag-border-bottom { bottom: -4px; left: 8px;  right: 8px;  height: 10px; }
@@ -115,6 +204,10 @@
 
   cursor: grab;
   z-index: 9999;
+}
+
+.text-draggable .resize-handle {
+  cursor: inherit;
 }
 
 .text-rotate-handle::before {
