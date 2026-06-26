@@ -15,12 +15,9 @@
   pointer-events: none;
 }
 
-/* video разрешаем pointer-events чтобы работали controls */
 video.canvas-media {
   pointer-events: auto;
 }
-
-/* ── Resize handles (те же что в TextElement) ───────────────── */
 
 .resize-handle {
   position: absolute;

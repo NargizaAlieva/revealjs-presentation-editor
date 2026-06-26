@@ -6,12 +6,11 @@ import {
   buildMediaInnerStyle,
   buildMediaFilterStyle,
   buildBevelOverlayStyle,
-  buildVideoAttributes,
 } from "../../../core/render/revealRenderer";
 import { REFLECTION_PRESETS } from "../../../core/model/imageEffects";
-import MediaContextMenu from "../menus/MediaContextMenu";
-import ImageStylePicker from "../media/ImageStylePicker";
 import { getStyleById } from "../../../core/model/imageStyles";
+import MediaElementHandles from "./media/MediaElementHandles";
+import MediaElementMenus from "./media/MediaElementMenus";
 import "./MediaElement.css";
 
 const RESIZE_HANDLES = [
@@ -66,8 +65,6 @@ export default function MediaElement({
   const [isCropping, setIsCropping] = useState(false);
   const [localCrop, setLocalCrop] = useState([0, 0, 0, 0]);
   const [cropOrigin, setCropOrigin] = useState(null);
-  // Screen-space rect of the crop container, updated after each DOM commit.
-  // Used to position the portal crop overlay at the correct screen coordinates.
   const [cropPortalRect, setCropPortalRect] = useState(null);
 
   const wrapperRef = useRef(null);
@@ -83,11 +80,6 @@ export default function MediaElement({
     cropOriginRef.current = cropOrigin;
   }, [cropOrigin]);
 
-  // After every DOM commit where the crop container has moved, read its
-  // screen rect and store it so the portal overlay can reposition.
-  // useLayoutEffect fires synchronously before the browser paints, so the
-  // re-render triggered by setCropPortalRect is also batched before paint —
-  // the user never sees an intermediate (mispositioned) overlay frame.
   useLayoutEffect(() => {
     if (isCropping && cropOrigin && wrapperRef.current) {
       const r = wrapperRef.current.getBoundingClientRect();
@@ -179,10 +171,6 @@ export default function MediaElement({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [isCropping, applyCrop, cancelCrop]);
-
-  // All drag handlers read the container's current screen rect at drag-start
-  // so that pixel deltas are divided by *screen* dimensions, not canvas dimensions.
-  // This makes crop interaction correct at any zoom level.
 
   const startCropDrag = useCallback((e, edges) => {
     e.preventDefault();
@@ -335,17 +323,9 @@ export default function MediaElement({
     activeStyleCss.transform ?? null,
   ].filter(Boolean).join(" ");
 
-  // Extract soft-edges mask so it applies to inner content only, not handles
   const { maskImage, WebkitMaskImage, ...baseContainerWithoutMask } = baseContainerStyle;
   const softEdgeMaskStyle = maskImage ? { maskImage, WebkitMaskImage } : {};
 
-  // Crop mode: container covers the full source image, overflow hidden — the
-  // crop overlay (border, handles, buttons) is rendered via portal to body
-  // so it never needs overflow:visible here.
-  // Normal mode: overflow:visible so resize/rotate handles can protrude outside
-  // the element bounds. willChange:transform promotes the element to its own
-  // compositing layer, preventing browser paint artifacts at stale positions
-  // during rapid drag updates.
   const containerStyle = isCropping && cropOrigin
     ? {
         position: "absolute",
@@ -373,8 +353,6 @@ export default function MediaElement({
   const mediaFilter = buildMediaFilterStyle(effectiveMedia);
   const filteredInnerStyle = mediaFilter ? { ...innerStyle, filter: mediaFilter } : innerStyle;
   const bevelOverlayStyle = buildBevelOverlayStyle(effectiveMedia);
-
-  const videoAttrs = buildVideoAttributes(media);
 
   // ── Crop geometry (canvas-space) ─────────────────────────────────────────
 
@@ -406,10 +384,6 @@ export default function MediaElement({
   };
 
   // ── Portal crop overlay ──────────────────────────────────────────────────
-  // All crop UI (border, grid, handles, buttons) is rendered via portal to
-  // document.body with position:fixed so it lives outside the slide's DOM
-  // subtree entirely. The container therefore needs no overflow:visible,
-  // eliminating paint artifacts.
 
   const pScale = cropPortalRect ? cropPortalRect.width / W : 1;
   const pL = cropPortalRect?.left ?? 0;
@@ -654,56 +628,35 @@ export default function MediaElement({
         );
       })()}
 
-      {/* Normal-mode resize & rotate handles — rendered outside the inner
-          overflow:hidden div so they can protrude beyond the element border */}
-      {isPrimarySelected && !isCropping &&
-        RESIZE_HANDLES.map(({ dir, cursor }) => (
-          <div
-            key={dir}
-            className={`resize-handle resize-handle-${dir}`}
-            style={{ cursor }}
-            onMouseDown={(event) => {
-              event.stopPropagation();
-              onStartResize(event, media.id, dir);
-            }}
-          />
-        ))}
-
       {isPrimarySelected && !isCropping && (
-        <button
-          type="button"
-          className="media-rotate-handle"
-          onMouseDown={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            onStartRotate(event, media.id);
-          }}
-          aria-label="Rotate media element"
+        <MediaElementHandles
+          mediaId={media.id}
+          onStartResize={onStartResize}
+          onStartRotate={onStartRotate}
         />
       )}
 
-      {contextMenu && (
-        <MediaContextMenu
-          position={contextMenu}
-          onCrop={enterCropMode}
-          onStyle={() => { setStylePicker(contextMenu); setContextMenu(null); }}
-          onNewComment={onNewComment}
-          onClose={() => setContextMenu(null)}
-        />
-      )}
-
-      {stylePicker && (
-        <ImageStylePicker
-          position={stylePicker}
-          currentStyleId={media.effects?.["style-id"]}
-          onPreview={setPreviewStyleId}
-          onSelect={(styleId) => {
-            setPreviewStyleId(null);
-            onUpdateMedia?.(media.id, { effects: { ...media.effects, "style-id": styleId } });
-          }}
-          onClose={() => { setPreviewStyleId(null); setStylePicker(null); }}
-        />
-      )}
+      <MediaElementMenus
+        media={media}
+        contextMenu={contextMenu}
+        stylePicker={stylePicker}
+        onEnterCropMode={enterCropMode}
+        onNewComment={onNewComment}
+        onCloseContextMenu={() => setContextMenu(null)}
+        onOpenStylePicker={() => {
+          setStylePicker(contextMenu);
+          setContextMenu(null);
+        }}
+        onPreviewStyle={setPreviewStyleId}
+        onSelectStyle={(styleId) => {
+          setPreviewStyleId(null);
+          onUpdateMedia?.(media.id, { effects: { ...media.effects, "style-id": styleId } });
+        }}
+        onCloseStylePicker={() => {
+          setPreviewStyleId(null);
+          setStylePicker(null);
+        }}
+      />
 
       {/* Crop overlay portal — rendered to document.body, position:fixed */}
       {cropPortal}
