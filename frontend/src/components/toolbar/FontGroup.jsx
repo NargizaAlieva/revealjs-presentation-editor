@@ -9,7 +9,7 @@ import {
   MdFormatStrikethrough,
   MdFormatUnderlined,
 } from "react-icons/md";
-import ColorPicker from "../canvas/ColorPicker";
+import ColorPicker from "../canvas/tools/ColorPicker";
 import "./FontGroup.css";
 
 const SIZES = [

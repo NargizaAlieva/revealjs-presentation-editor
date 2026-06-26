@@ -1,17 +1,17 @@
 import { useState, useRef, useEffect, useCallback, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
-import { useMediaSrc } from "../../hooks/useMediaSrc";
+import { useMediaSrc } from "../../../hooks/useMediaSrc";
 import {
   buildMediaContainerStyle,
   buildMediaInnerStyle,
   buildMediaFilterStyle,
   buildBevelOverlayStyle,
   buildVideoAttributes,
-} from "../../core/render/revealRenderer";
-import { REFLECTION_PRESETS } from "../../core/model/imageEffects";
-import MediaContextMenu from "./MediaContextMenu";
-import ImageStylePicker from "./ImageStylePicker";
-import { getStyleById } from "../../core/model/imageStyles";
+} from "../../../core/render/revealRenderer";
+import { REFLECTION_PRESETS } from "../../../core/model/imageEffects";
+import MediaContextMenu from "../menus/MediaContextMenu";
+import ImageStylePicker from "../media/ImageStylePicker";
+import { getStyleById } from "../../../core/model/imageStyles";
 import "./MediaElement.css";
 
 const RESIZE_HANDLES = [

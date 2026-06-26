@@ -30,8 +30,8 @@ import {
   MdTextFields,
   MdWeb,
 } from "react-icons/md";
-import FontDialog from "./FontDialog";
-import ParagraphDialog from "./ParagraphDialog";
+import FontDialog from "../dialogs/FontDialog";
+import ParagraphDialog from "../dialogs/ParagraphDialog";
 import "./CanvasContextMenu.css";
 
 const BULLET_STYLES = [

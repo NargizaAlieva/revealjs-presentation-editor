@@ -39,7 +39,7 @@ import {
 } from "react-icons/md";
 import { PiFrameCornersBold } from "react-icons/pi";
 import { createPortal } from "react-dom";
-import ImageStylePicker from "../canvas/ImageStylePicker";
+import ImageStylePicker from "../canvas/media/ImageStylePicker";
 import AltTextPanel from "./AltTextPanel";
 import { IMAGE_STYLES } from "../../core/model/imageStyles";
 import "./PictureFormatTab.css";

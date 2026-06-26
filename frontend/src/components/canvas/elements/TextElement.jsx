@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { MdFileUpload, MdImage, MdVideocam } from "react-icons/md";
-import FormatToolbar from "./FormatToolbar";
+import FormatToolbar from "../tools/FormatToolbar";
 import "./TextElement.css";
-import { getPlaceholderFormatting, getPlaceholderPadding } from "../../core/render/slidesetRenderUtils";
+import { getPlaceholderFormatting, getPlaceholderPadding } from "../../../core/render/slidesetRenderUtils";
 import {
   resolveWeight,
   paragraphsToHTML,
@@ -12,8 +12,8 @@ import {
   getFormattingAtCursor,
   resolveTextStyle,
   resolveEffectiveFormatting,
-} from "../../core/text/textFormatting";
-import { getListMarker, getListIndent } from "../../core/utils/listUtils";
+} from "../../../core/text/textFormatting";
+import { getListMarker, getListIndent } from "../../../core/utils/listUtils";
 import {
   getCaretOffset,
   setCaretOffset,
@@ -21,7 +21,7 @@ import {
   getSelectionOffsets,
   getCollapsedCursorOffset,
   domToParagraphs,
-} from "../../core/text/domSelectionManager";
+} from "../../../core/text/domSelectionManager";
 
 const RESIZE_HANDLES = [
   { dir: "nw", cursor: "nwse-resize" },

@@ -17,10 +17,10 @@ import { useCanvasInteractions } from "../hooks/useCanvasInteractions";
 import { useMediaSrc } from "../hooks/useMediaSrc";
 import { findElementInSlide } from "../core/operations/elementOperations";
 import { TRANSPARENT_SLIDE_BG } from "../core/operations/slideOperations";
-import TextElement from "./canvas/TextElement";
-import MediaElement from "./canvas/MediaElement";
+import TextElement from "./canvas/elements/TextElement";
+import MediaElement from "./canvas/elements/MediaElement";
 import SlideDecorations from "./canvas/SlideDecorations";
-import CanvasContextMenu from "./canvas/CanvasContextMenu";
+import CanvasContextMenu from "./canvas/menus/CanvasContextMenu";
 
 export default function EditorCanvas({
   slide,

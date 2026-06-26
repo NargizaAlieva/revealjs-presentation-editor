@@ -9,8 +9,8 @@ import {
 } from "react-icons/md";
 import { LAYOUTS } from "./homeTabConstants";
 import FormatBackgroundPanel from "./FormatBackgroundPanel";
-import { HyperlinkDialog } from "../canvas/CanvasContextMenu";
-import "../canvas/TextContextDialogs.css";
+import { HyperlinkDialog } from "../canvas/menus/CanvasContextMenu";
+import "../canvas/dialogs/TextContextDialogs.css";
 
 export default function InsertTab({ onImageUpload, onVideoUpload, onAddSlide, onAddTextElement, layouts: propLayouts, currentBgImage, selectedSlide, presentation, onApplySlideBackground, onApplyBgFillImage, onRemoveBgFillImage, onUpdateBgFillSettings, onApplyBackgroundToAll, isSlideMasterOpen, selectedElement, selectedHyperlinkText = "", onHyperlink, onNewComment }) {
   const layouts = (propLayouts && propLayouts.length > 0) ? propLayouts : LAYOUTS;

@@ -13,9 +13,9 @@ import {
   MdFormatPaint,
 } from "react-icons/md";
 import ColorPicker from "./ColorPicker";
-import { getAvailableFonts } from "../../core/model/fontConfig";
-import { parseFormattingForDisplay } from "../../core/text/textFormatting";
-import { MAX_LIST_INDENT_LEVEL } from "../../core/utils/listUtils";
+import { getAvailableFonts } from "../../../core/model/fontConfig";
+import { parseFormattingForDisplay } from "../../../core/text/textFormatting";
+import { MAX_LIST_INDENT_LEVEL } from "../../../core/utils/listUtils";
 import "./FormatToolbar.css";
 
 const stop = (event) => {
