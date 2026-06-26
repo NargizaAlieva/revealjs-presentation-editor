@@ -148,6 +148,21 @@ export const editorReducer = (state, event) => {
       };
 
     case EditorEventType.HISTORY.UNDO: {
+      // If there's a pending grouped edit, commit it to future and undo to pendingSnapshot
+      if (state.pendingSnapshot) {
+        return {
+          ...state,
+          presentation: state.pendingSnapshot.presentation,
+          selectedSlideIndex: state.pendingSnapshot.selectedSlideIndex,
+          selectedElementId: state.pendingSnapshot.selectedElementId,
+          selectedElementIds: state.pendingSnapshot.selectedElementIds ?? [],
+          future: [createHistorySnapshot(state), ...state.future],
+          pendingSnapshot: null,
+          lastEvent: event,
+          lastUpdated: Date.now(),
+        };
+      }
+
       if (state.past.length === 0) return state;
 
       const previousState = state.past[state.past.length - 1];
@@ -643,7 +658,10 @@ export const editorReducer = (state, event) => {
         event.payload.userModified,
       );
       const nextBase = { ...state, presentation: nextPresentation, lastEvent: event, lastUpdated: Date.now() };
-      if (event.payload.grouped && state.pendingSnapshot) return nextBase;
+      if (event.payload.grouped) {
+        if (state.pendingSnapshot) return nextBase;
+        return { ...nextBase, pendingSnapshot: createHistorySnapshot(state) };
+      }
       return withHistory(state, nextBase);
     }
 
@@ -684,7 +702,10 @@ export const editorReducer = (state, event) => {
         event.payload.paragraphs,
       );
       const nextBase = { ...state, presentation: nextPresentation, lastEvent: event, lastUpdated: Date.now() };
-      if (event.payload.grouped && state.pendingSnapshot) return nextBase;
+      if (event.payload.grouped) {
+        if (state.pendingSnapshot) return nextBase;
+        return { ...nextBase, pendingSnapshot: createHistorySnapshot(state) };
+      }
       return withHistory(state, nextBase);
     }
 

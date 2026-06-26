@@ -122,6 +122,7 @@ export default function TextElement({
   const lastSyncedParagraphsRef = useRef(null);
   const selectionFrameRef = useRef(null);
   const isDeletingRef = useRef(false);
+  const isTypingRef = useRef(false);
   const toolbarFormInputActiveRef = useRef(false);
 
 useEffect(() => {
@@ -651,6 +652,7 @@ useEffect(() => {
         isTextBoxPrompt={isTextBoxPrompt}
         onFocus={() => {
           isDeletingRef.current = false;
+          isTypingRef.current = false;
           onStartEditing?.(textElement.id);
           if (isTextBoxPrompt) {
             const emptyParagraphs = createEmptyParagraphs(textElement.paragraphs);
@@ -726,6 +728,7 @@ useEffect(() => {
               isDeletingRef.current = false;
               onCommitHistory?.();
             }
+            isTypingRef.current = true;
           }
           if (e.key !== "Tab") return;
           const el = editableRef.current;
@@ -801,7 +804,7 @@ useEffect(() => {
           if (el.innerHTML === "<br>" || el.innerHTML === "<br/>") {
             el.innerHTML = "";
           }
-          const grouped = isDeletingRef.current;
+          const grouped = isDeletingRef.current || isTypingRef.current;
           if (onChangeParagraphs) {
             const paragraphs = domToParagraphs(el, textElement.paragraphs);
             lastTypedHTMLRef.current = paragraphsToHTML(paragraphs, masterFormatting, placeholderFormatting);
@@ -865,6 +868,7 @@ useEffect(() => {
             setIsToolbarOpen(false);
             onSaveSelection?.(textElement.id, null);
             isDeletingRef.current = false;
+            isTypingRef.current = false;
             onCommitHistory?.();
             onStopEditing?.(textElement.id);
           }
