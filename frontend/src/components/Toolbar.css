@@ -19,6 +19,40 @@
   background: #eceff3;
 }
 
+.toolbar-quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px;
+  border-right: 1px solid #d0d4da;
+}
+
+.toolbar-quick-action {
+  height: 28px;
+  min-width: 58px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: #222;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+
+.toolbar-quick-action:hover {
+  border-color: #c7ccd4;
+  background: #ffffff;
+}
+
+.toolbar-quick-action svg {
+  font-size: 17px;
+}
+
 .toolbar-tab {
   height: 34px;
   padding: 0 14px;

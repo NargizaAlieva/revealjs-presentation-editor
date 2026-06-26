@@ -10,6 +10,7 @@ import DesignTab from "./toolbar/DesignTab";
 import ViewTab from "./toolbar/ViewTab";
 import { SlideMasterRibbon } from "./SlideMasterView";
 import PictureFormatTab from "./toolbar/PictureFormatTab";
+import { MdPlayArrow, MdSave } from "react-icons/md";
 
 const BASE_TABS = [
   "File",
@@ -173,6 +174,26 @@ useEffect(() => {
   return (
     <header className="toolbar">
       <nav className="toolbar-tabs">
+        <div className="toolbar-quick-actions" aria-label="Quick actions">
+          <button
+            type="button"
+            className="toolbar-quick-action"
+            onClick={onSavePresentation}
+            title="Save"
+          >
+            <MdSave />
+            <span>Save</span>
+          </button>
+          <button
+            type="button"
+            className="toolbar-quick-action"
+            onClick={onOpenPreviewFromBeginning}
+            title="Start the show from the first slide"
+          >
+            <MdPlayArrow />
+            <span>Start</span>
+          </button>
+        </div>
         {TABS.map((tab) => (
           <button
             key={tab}

@@ -13,6 +13,8 @@ export default function StatusBar({
   onToggleComments,
   commentCount = 0,
 }) {
+  const displayZoom = Math.round(Number(zoom) || 0);
+
   return (
     <footer className="status-bar">
       <div className="status-left">
@@ -47,7 +49,7 @@ export default function StatusBar({
           min="25"
           max="200"
           step="5"
-          value={zoom}
+          value={displayZoom}
           onChange={(e) => onZoomChange(Number(e.target.value))}
         />
 
@@ -55,7 +57,7 @@ export default function StatusBar({
           +
         </button>
 
-        <span className="zoom-value">{zoom}%</span>
+        <span className="zoom-value">{displayZoom}%</span>
       </div>
     </footer>
   );
