@@ -6,7 +6,7 @@ import {
   MdVisibility,
   MdVisibilityOff,
 } from "react-icons/md";
-import LayoutThumb from "./LayoutThumb";
+import LayoutThumb from "../shared/LayoutThumb";
 import "./SlidesGroup.css";
 
 function LayoutGrid({ layouts, presentation, onSelect }) {

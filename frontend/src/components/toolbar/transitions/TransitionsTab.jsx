@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { MdPreview, MdSpeed, MdSelectAll } from "react-icons/md";
 import "./TransitionsTab.css";
-import { TRANSITIONS, TRANSITION_SPEEDS, DEFAULT_TRANSITION_DURATION, PREVIEW_TRANSITION_MS } from "../../core/model/transitionDefaults";
+import { TRANSITIONS, TRANSITION_SPEEDS, DEFAULT_TRANSITION_DURATION, PREVIEW_TRANSITION_MS } from "../../../core/model/transitionDefaults";
 
 export default function TransitionsTab({
   currentTransition,

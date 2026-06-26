@@ -13,11 +13,11 @@ import {
   MdVerticalAlignCenter,
   MdVerticalAlignBottom,
 } from "react-icons/md";
-import { BULLET_STYLES, NUMBERED_STYLES } from "./homeTabConstants";
+import { BULLET_STYLES, NUMBERED_STYLES } from "../shared/homeTabConstants";
 import {
   getListMarker,
   MAX_LIST_INDENT_LEVEL,
-} from "../../core/utils/listUtils";
+} from "../../../core/utils/listUtils";
 import "./ParagraphGroup.css";
 
 const LINE_SPACING_PRESETS = ["1.0", "1.15", "1.5", "2.0", "2.5", "3.0"];

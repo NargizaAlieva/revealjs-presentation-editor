@@ -1,5 +1,5 @@
 import "./HomeTab.css";
-import { getAvailableFonts } from "../../core/model/fontConfig";
+import { getAvailableFonts } from "../../../core/model/fontConfig";
 import ClipboardGroup from "./ClipboardGroup";
 import SlidesGroup from "./SlidesGroup";
 import FontGroup from "./FontGroup";

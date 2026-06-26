@@ -1,10 +1,10 @@
 import { useRef, useState, useEffect } from "react";
-import { buildColorThemeStyle } from "../../core/render/revealRenderer";
-import { getPlaceholderFormatting } from "../../core/render/slidesetRenderUtils";
-import { buildTextElementStyle } from "../../core/render/revealRenderer";
-import { extractPlainTextFromParagraphs } from "../../core/text/textFormatting";
-import SlideDecorations from "../canvas/SlideDecorations";
-import { buildLayoutPseudoSlide } from "../../core/operations/masterOperations";
+import { buildColorThemeStyle } from "../../../core/render/revealRenderer";
+import { getPlaceholderFormatting } from "../../../core/render/slidesetRenderUtils";
+import { buildTextElementStyle } from "../../../core/render/revealRenderer";
+import { extractPlainTextFromParagraphs } from "../../../core/text/textFormatting";
+import SlideDecorations from "../../canvas/SlideDecorations";
+import { buildLayoutPseudoSlide } from "../../../core/operations/masterOperations";
 
 export default function LayoutThumb({ layout, presentation }) {
   const containerRef = useRef(null);

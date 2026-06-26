@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { useMediaSrc } from "../../hooks/useMediaSrc";
+import { useMediaSrc } from "../../../hooks/useMediaSrc";
 import {
   SHARPEN_PRESETS,
   COLOR_SATURATION,
@@ -16,7 +16,7 @@ import {
   GLOW_COLORS,
   GLOW_SIZES,
   buildGlowShadow,
-} from "../../core/model/imageEffects";
+} from "../../../core/model/imageEffects";
 import {
   MdTune,
   MdColorLens,
@@ -39,9 +39,9 @@ import {
 } from "react-icons/md";
 import { PiFrameCornersBold } from "react-icons/pi";
 import { createPortal } from "react-dom";
-import ImageStylePicker from "../canvas/media/ImageStylePicker";
+import ImageStylePicker from "../../canvas/media/ImageStylePicker";
 import AltTextPanel from "./AltTextPanel";
-import { IMAGE_STYLES } from "../../core/model/imageStyles";
+import { IMAGE_STYLES } from "../../../core/model/imageStyles";
 import "./PictureFormatTab.css";
 
 const SVG_PREVIEW = `data:image/svg+xml,${encodeURIComponent(

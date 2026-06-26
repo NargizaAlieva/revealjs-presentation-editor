@@ -1,4 +1,4 @@
-export { DEFAULT_FONTS, FONT_SIZES } from "../../core/model/fontConfig";
+export { DEFAULT_FONTS, FONT_SIZES } from "../../../core/model/fontConfig";
 
 export const BULLET_STYLES = [
   { marker: null, label: "None" },

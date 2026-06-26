@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { MdPreview, MdSpeed, MdArrowUpward, MdArrowDownward, MdExpandMore } from "react-icons/md";
 import "./AnimationsTab.css";
-import { getMaxAnimationSequence, getAnimationDurationMs, findAnimationForElement, getNextAnimationSequence } from "../../core/operations/animationOperations";
-import { ANIMATION_EFFECTS } from "../../core/model/animationConfig";
+import { getMaxAnimationSequence, getAnimationDurationMs, findAnimationForElement, getNextAnimationSequence } from "../../../core/operations/animationOperations";
+import { ANIMATION_EFFECTS } from "../../../core/model/animationConfig";
 
 export default function AnimationsTab({
   selectedElement,

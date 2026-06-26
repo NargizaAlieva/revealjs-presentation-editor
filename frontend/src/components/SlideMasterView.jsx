@@ -11,7 +11,7 @@ import { useMediaSrc } from "../hooks/useMediaSrc";
 import { REFLECTION_PRESETS } from "../core/model/imageEffects";
 import SlideDecorations from "./canvas/SlideDecorations";
 import EditorCanvas from "./EditorCanvas";
-import { ColorPalettePopup } from "./toolbar/DesignTab";
+import { ColorPalettePopup } from "./toolbar/design/DesignTab";
 import { DESIGN_THEMES, findActiveTheme } from "../core/model/designThemes";
 import { SLIDE_SIZES } from "../core/model/slideSizes";
 import { createPlaceholderPseudoElement } from "../core/operations/layoutOperations";

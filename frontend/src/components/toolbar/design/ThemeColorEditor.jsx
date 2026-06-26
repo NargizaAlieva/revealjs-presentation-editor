@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import "./ThemeColorEditor.css";
-import { toHex6 } from "../../core/utils/colorUtils";
+import { toHex6 } from "../../../core/utils/colorUtils";
 
 const COLOR_VARIABLES = [
   { id: "bg-light", label: "Background Light", description: "Light background color" },
