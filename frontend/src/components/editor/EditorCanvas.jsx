@@ -21,6 +21,7 @@ import TextElement from "../canvas/elements/TextElement";
 import MediaElement from "../canvas/elements/MediaElement";
 import SlideDecorations from "../canvas/SlideDecorations";
 import CanvasContextMenu from "../canvas/menus/CanvasContextMenu";
+import CanvasBackgroundLayer from "./canvas-layers/CanvasBackgroundLayer";
 
 export default function EditorCanvas({
   slide,
@@ -129,17 +130,6 @@ export default function EditorCanvas({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [activeBgImageSelected]);
-
-  const BG_RESIZE_HANDLES = [
-    { dir: "nw", cursor: "nwse-resize" },
-    { dir: "n",  cursor: "ns-resize"   },
-    { dir: "ne", cursor: "nesw-resize" },
-    { dir: "e",  cursor: "ew-resize"   },
-    { dir: "se", cursor: "nwse-resize" },
-    { dir: "s",  cursor: "ns-resize"   },
-    { dir: "sw", cursor: "nesw-resize" },
-    { dir: "w",  cursor: "ew-resize"   },
-  ];
 
   const startBgResize = (e, dir) => {
     e.preventDefault();
@@ -565,75 +555,21 @@ export default function EditorCanvas({
                   openContextMenu(event);
                 }}
               >
-                {bgFillImageSrc && (() => {
-                  const s = bgFillSettings;
-                  const scale = s.fitToCanvas ?? false;
-                  const ol = scale ? 0 : (s.offsetLeft ?? 0) / 100;
-                  const or = scale ? 0 : (s.offsetRight ?? 0) / 100;
-                  const ot = scale ? 0 : (s.offsetTop ?? 0) / 100;
-                  const ob = scale ? 0 : (s.offsetBottom ?? 0) / 100;
-                  return (
-                    <div style={{ position: "absolute", inset: 0, overflow: "hidden", zIndex: 0, pointerEvents: "none" }}>
-                      <img
-                        src={bgFillImageSrc}
-                        alt=""
-                        style={{
-                          position: "absolute",
-                          left: ol * width,
-                          top: ot * height,
-                          width: (1 - ol - or) * width,
-                          height: (1 - ot - ob) * height,
-                          objectFit: scale ? "fill" : "cover",
-                          opacity: 1 - (s.transparency ?? 0) / 100,
-                        }}
-                      />
-                    </div>
-                  );
-                })()}
-
-                {bgImageSrc && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      left: liveBgRect.x,
-                      top: liveBgRect.y,
-                      width: liveBgRect.w,
-                      height: liveBgRect.h,
-                      zIndex: 0,
-                      outline: activeBgImageSelected ? "2px solid #4f46e5" : "none",
-                      boxSizing: "border-box",
-                      cursor: activeBgImageSelected ? "move" : "default",
-                    }}
-                    onMouseDown={activeBgImageSelected ? startBgMove : undefined}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectElement?.(null);
-                      setBgImageSelected(true);
-                    }}
-                  >
-                    <img
-                      src={bgImageSrc}
-                      alt=""
-                      draggable={false}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "fill",
-                        display: "block",
-                        pointerEvents: "none",
-                        userSelect: "none",
-                      }}
-                    />
-                    {activeBgImageSelected && BG_RESIZE_HANDLES.map(({ dir, cursor }) => (
-                      <div
-                        key={dir}
-                        className={`resize-handle resize-handle-${dir}`}
-                        style={{ cursor, zIndex: 10 }}
-                        onMouseDown={(e) => startBgResize(e, dir)}
-                      />
-                    ))}
-                  </div>
-                )}
+                <CanvasBackgroundLayer
+                  width={width}
+                  height={height}
+                  fillImageSrc={bgFillImageSrc}
+                  fillSettings={bgFillSettings}
+                  imageSrc={bgImageSrc}
+                  imageRect={liveBgRect}
+                  isImageSelected={activeBgImageSelected}
+                  onStartImageMove={startBgMove}
+                  onStartImageResize={startBgResize}
+                  onSelectImage={() => {
+                    onSelectElement?.(null);
+                    setBgImageSelected(true);
+                  }}
+                />
 
                 <SlideDecorations
                   presentation={presentation}
