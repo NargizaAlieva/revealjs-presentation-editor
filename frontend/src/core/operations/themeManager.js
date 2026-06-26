@@ -16,26 +16,15 @@ export const cssVariablesToString = (variables) => {
 
 export const applyThemeToPresentation = (presentation, themeId) => {
   const theme = DESIGN_THEMES.find((t) => t.id === themeId);
-  if (!theme) {
-    throw new Error(`Theme with id "${themeId}" not found`);
-  }
-
+  if (!theme) throw new Error(`Theme with id "${themeId}" not found`);
   return {
     ...presentation,
     slideset: {
       ...presentation.slideset,
-      master: {
-        ...presentation.slideset.master,
-        "color-theme": [...theme.colorTheme],
-      },
+      master: { ...presentation.slideset.master, "color-theme": [...theme.colorTheme] },
     },
   };
 };
 
-export const getAvailableThemes = () => {
-  return DESIGN_THEMES.map((theme) => ({
-    id: theme.id,
-    name: theme.name,
-    preview: theme.preview,
-  }));
-};
+export const getAvailableThemes = () =>
+  DESIGN_THEMES.map((theme) => ({ id: theme.id, name: theme.name, preview: theme.preview }));

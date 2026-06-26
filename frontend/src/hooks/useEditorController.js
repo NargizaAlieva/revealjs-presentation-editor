@@ -853,40 +853,6 @@ useEffect(() => {
     [eventBus],
   );
 
-  const handleApplyBackgroundImage = useCallback(
-    async (file) => {
-      if (!file || !file.type.startsWith("image/")) return;
-      const { key } = await storeMediaFile(file);
-      eventBus.dispatch(
-        createEditorEvent(EditorEventType.SLIDE.UPDATE_BACKGROUND_IMAGE, { backgroundImage: `indexeddb://${key}` }),
-      );
-    },
-    [eventBus],
-  );
-
-  const handleRemoveBackgroundImage = useCallback(() => {
-    eventBus.dispatch(
-      createEditorEvent(EditorEventType.SLIDE.UPDATE_BACKGROUND_IMAGE, { backgroundImage: null }),
-    );
-  }, [eventBus]);
-
-  const handleUpdateBackgroundImageRect = useCallback((rect) => {
-    eventBus.dispatch(
-      createEditorEvent(EditorEventType.SLIDE.UPDATE_BACKGROUND_IMAGE_RECT, { rect }),
-    );
-  }, [eventBus]);
-
-  const handleUpdateBackgroundImagePosition = useCallback((position) => {
-    eventBus.dispatch(
-      createEditorEvent(EditorEventType.SLIDE.UPDATE_BACKGROUND_IMAGE_POSITION, { position }),
-    );
-  }, [eventBus]);
-
-  const handleUpdateBackgroundImageScale = useCallback((scale) => {
-    eventBus.dispatch(
-      createEditorEvent(EditorEventType.SLIDE.UPDATE_BACKGROUND_IMAGE_SCALE, { scale }),
-    );
-  }, [eventBus]);
 
   const handleUpdateDimensions = useCallback(
     (dimensions, aspectRatio, units) => {
@@ -1780,11 +1746,6 @@ useEffect(() => {
     handleApplyBgFillImage,
     handleRemoveBgFillImage,
     handleApplySlideBackground,
-    handleApplyBackgroundImage,
-    handleRemoveBackgroundImage,
-    handleUpdateBackgroundImageRect,
-    handleUpdateBackgroundImagePosition,
-    handleUpdateBackgroundImageScale,
     handleUpdateDimensions,
     activeImageUpload,
     activeVideoUpload,

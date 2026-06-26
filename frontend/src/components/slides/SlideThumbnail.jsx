@@ -104,9 +104,6 @@ export default function SlideThumbnail({
   const thumbH = Math.round(thumbW * slideHeight / slideWidth);
   const colorThemeStyle = buildColorThemeStyle(presentation);
   const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
-  const bgImageKey = slide?.contents?.["background-image"] ?? null;
-  const bgImageSrc = useMediaSrc(bgImageKey);
-  const bgImageRect = slide?.contents?.["background-image-rect"] ?? { x: 0, y: 0, w: slideWidth, h: slideHeight };
   const bgFillImageKey = slide?.contents?.["bg-fill-image"] ?? null;
   const bgFillImageSrc = useMediaSrc(bgFillImageKey);
   const bgFillSettings = slide?.contents?.["bg-fill-settings"] ?? {};
@@ -160,22 +157,6 @@ export default function SlideThumbnail({
             </div>
           );
         })()}
-        {bgImageSrc && (
-          <img
-            src={bgImageSrc}
-            alt=""
-            style={{
-              position: "absolute",
-              left: bgImageRect.x,
-              top: bgImageRect.y,
-              width: bgImageRect.w,
-              height: bgImageRect.h,
-              objectFit: "fill",
-              zIndex: 0,
-              pointerEvents: "none",
-            }}
-          />
-        )}
         <SlideDecorations
           presentation={presentation}
           width={slideWidth}

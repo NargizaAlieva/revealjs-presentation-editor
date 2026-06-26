@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import {
   validateSlideset,
   isSlidesetValid,
-} from "../model/slidesetValidation";
+} from "../operations/slidesetValidation";
 import { createDefaultPresentation } from "../model/presentation";
 
 describe("slidesetValidation", () => {

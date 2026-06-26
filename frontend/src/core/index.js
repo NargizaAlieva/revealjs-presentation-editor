@@ -4,7 +4,7 @@ export { createEventBus } from "./events/eventBus";
 export {
   validateSlideset,
   isSlidesetValid,
-} from "./model/slidesetValidation";
+} from "./operations/slidesetValidation";
 
 export {
   EditorEventType,
@@ -25,7 +25,6 @@ export {
   toggleSlideHidden,
   updateSlideNotes,
   updateSlideTransition,
-  updateSlideBackgroundImage,
 } from "./operations/slideOperations";
 
 export {

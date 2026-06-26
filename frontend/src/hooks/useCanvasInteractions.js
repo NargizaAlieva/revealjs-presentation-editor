@@ -1,5 +1,5 @@
 import { useCallback, useState, useRef, useEffect } from "react";
-import { snapAngle, normalizeAngle, computeResize, getElementRotationAngle } from "../core/geometry/canvasGeometry";
+import { snapAngle, normalizeAngle, computeResize, getElementRotationAngle } from "../core/utils/canvasGeometry";
 
 export function useCanvasInteractions({
   width,

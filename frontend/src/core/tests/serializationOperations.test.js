@@ -3,7 +3,7 @@ import {
   serializePresentation,
   deserializePresentation,
 } from "../persistence/serializationOperations";
-import { validateSlideset } from "../model/slidesetValidation";
+import { validateSlideset } from "../operations/slidesetValidation";
 import { createDefaultPresentation } from "../model/presentation";
 
 describe("serializationOperations", () => {

@@ -1,4 +1,4 @@
-import { validateSlideset } from "../model/slidesetValidation";
+import { validateSlideset } from "../operations/slidesetValidation";
 import { migrateParagraphFormatting } from "../render/slidesetRenderUtils";
 
 const collectUsedFonts = (presentation) => {
@@ -42,7 +42,7 @@ const collectUsedFonts = (presentation) => {
     ...[...fontNames]
       .filter((name) => !existingIds.has(name))
       .map((name) => ({ "font-id": name, "font-file": "" })),
-  ].filter((f) => fontNames.has(f["font-id"])); // remove fonts no longer in use
+  ].filter((f) => fontNames.has(f["font-id"]));
 
   return {
     ...presentation,

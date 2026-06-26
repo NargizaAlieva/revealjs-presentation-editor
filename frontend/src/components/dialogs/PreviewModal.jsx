@@ -52,25 +52,6 @@ function BgFillElement({ fileLink, width, height, settings = {} }) {
   );
 }
 
-function BgImageElement({ fileLink, rect }) {
-  const src = useMediaSrc(fileLink);
-  return src ? (
-    <img
-      src={src}
-      alt=""
-      style={{
-        position: "absolute",
-        left: rect.x,
-        top: rect.y,
-        width: rect.w,
-        height: rect.h,
-        objectFit: "fill",
-        zIndex: 0,
-        pointerEvents: "none",
-      }}
-    />
-  ) : null;
-}
 
 function PreviewMediaElement({ media, index, fragmentProps }) {
   const src = useMediaSrc(media["file-link"]);
@@ -187,8 +168,6 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
               const textElements = getSlideTextElements(slide);
               const mediaElements = getSlideMediaElements(slide);
               const animationMap = buildAdjustedAnimationMap(slide);
-              const bgImageRect = slide?.contents?.["background-image-rect"] ?? { x: 0, y: 0, w: width, h: height };
-
               return (
                 <section
                   key={`slide-${slideIndex}`}
@@ -202,9 +181,6 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
                   <div style={buildSlideContainerStyle(width, height)}>
                     {slide?.contents?.["bg-fill-image"] && (
                       <BgFillElement fileLink={slide.contents["bg-fill-image"]} width={width} height={height} settings={slide.contents["bg-fill-settings"] ?? {}} />
-                    )}
-                    {slide?.contents?.["background-image"] && (
-                      <BgImageElement fileLink={slide.contents["background-image"]} rect={bgImageRect} />
                     )}
                     <SlideDecorations
                       presentation={presentation}

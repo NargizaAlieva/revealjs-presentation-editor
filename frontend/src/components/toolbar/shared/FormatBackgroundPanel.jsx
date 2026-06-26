@@ -80,10 +80,7 @@ export default function FormatBackgroundPanel({
 
   const parsed = parseStoredColor(storedBg);
   const [fillTypeOverride, setFillTypeOverride] = useState(null);
-  const fillType =
-    !bgImage && fillTypeOverride === "picture"
-      ? "solid"
-      : (fillTypeOverride ?? (bgImage ? "picture" : "solid"));
+  const fillType = fillTypeOverride ?? (bgImage ? "picture" : "solid");
   const [solidColor, setSolidColor] = useState(parsed.hex);
   const [transparency, setTransparency] = useState(parsed.transparency);
   const [picTransparency, setPicTransparency] = useState(storedSettings.transparency ?? 0);

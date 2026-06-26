@@ -21,7 +21,30 @@ import TextElement from "../canvas/elements/TextElement";
 import MediaElement from "../canvas/elements/MediaElement";
 import SlideDecorations from "../canvas/SlideDecorations";
 import CanvasContextMenu from "../canvas/menus/CanvasContextMenu";
-import CanvasBackgroundLayer from "./canvas-layers/CanvasBackgroundLayer";
+
+function BgFillImageLayer({ src, settings, width, height }) {
+  const scale = settings.fitToCanvas ?? false;
+  const ol = scale ? 0 : (settings.offsetLeft ?? 0) / 100;
+  const or = scale ? 0 : (settings.offsetRight ?? 0) / 100;
+  const ot = scale ? 0 : (settings.offsetTop ?? 0) / 100;
+  const ob = scale ? 0 : (settings.offsetBottom ?? 0) / 100;
+  return (
+    <div style={{ position: "absolute", inset: 0, overflow: "hidden", zIndex: 0, pointerEvents: "none" }}>
+      <img
+        src={src}
+        alt=""
+        style={{
+          position: "absolute",
+          left: ol * width, top: ot * height,
+          width: (1 - ol - or) * width,
+          height: (1 - ot - ob) * height,
+          objectFit: scale ? "fill" : "cover",
+          opacity: 1 - (settings.transparency ?? 0) / 100,
+        }}
+      />
+    </div>
+  );
+}
 
 export default function EditorCanvas({
   slide,
@@ -83,7 +106,6 @@ export default function EditorCanvas({
   onSendToBack,
   onRotateRight,
   onOpenPictureFormat,
-  onUpdateBackgroundImageRect,
   cropSignal,
   previewMediaEffects,
   previewMediaStyleId,
@@ -109,89 +131,9 @@ export default function EditorCanvas({
   const { width, height } = getSlideSize(presentation);
   const colorThemeStyle = buildColorThemeStyle(presentation);
 
-  const bgImageKey = slide?.contents?.["background-image"] ?? null;
-  const bgImageSrc = useMediaSrc(bgImageKey);
   const bgFillImageKey = slide?.contents?.["bg-fill-image"] ?? null;
   const bgFillImageSrc = useMediaSrc(bgFillImageKey);
   const bgFillSettings = slide?.contents?.["bg-fill-settings"] ?? {};
-
-  const storedBgRect = slide?.contents?.["background-image-rect"] ?? null;
-  const defaultBgRect = { x: 0, y: 0, w: width, h: height };
-  const bgRect = storedBgRect ?? defaultBgRect;
-
-  const [bgImageSelected, setBgImageSelected] = useState(false);
-  const [bgDragRect, setBgDragRect] = useState(null);
-  const activeBgImageSelected = Boolean(bgImageKey && bgImageSelected);
-
-  useEffect(() => {
-    if (!activeBgImageSelected) return;
-    const handler = (e) => {
-      if (!containerRef.current?.contains(e.target)) setBgImageSelected(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [activeBgImageSelected]);
-
-  const startBgResize = (e, dir) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startRect = { ...bgRect };
-    const onMove = (me) => {
-      const dx = (me.clientX - startX) / zoomScale;
-      const dy = (me.clientY - startY) / zoomScale;
-      let { x, y, w, h } = startRect;
-      if (dir.includes("e")) w = Math.max(20, w + dx);
-      if (dir.includes("s")) h = Math.max(20, h + dy);
-      if (dir.includes("w")) { x = x + dx; w = Math.max(20, w - dx); }
-      if (dir.includes("n")) { y = y + dy; h = Math.max(20, h - dy); }
-      setBgDragRect({ x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) });
-    };
-    const onUp = (me) => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-      const dx = (me.clientX - startX) / zoomScale;
-      const dy = (me.clientY - startY) / zoomScale;
-      let { x, y, w, h } = startRect;
-      if (dir.includes("e")) w = Math.max(20, w + dx);
-      if (dir.includes("s")) h = Math.max(20, h + dy);
-      if (dir.includes("w")) { x = x + dx; w = Math.max(20, w - dx); }
-      if (dir.includes("n")) { y = y + dy; h = Math.max(20, h - dy); }
-      const newRect = { x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) };
-      setBgDragRect(null);
-      onUpdateBackgroundImageRect?.(newRect);
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-  };
-
-  const startBgMove = (e) => {
-    if (e.button !== 0) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startRect = { ...bgRect };
-    const onMove = (me) => {
-      const dx = (me.clientX - startX) / zoomScale;
-      const dy = (me.clientY - startY) / zoomScale;
-      setBgDragRect({ ...startRect, x: Math.round(startRect.x + dx), y: Math.round(startRect.y + dy) });
-    };
-    const onUp = (me) => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-      const dx = (me.clientX - startX) / zoomScale;
-      const dy = (me.clientY - startY) / zoomScale;
-      const newRect = { ...startRect, x: Math.round(startRect.x + dx), y: Math.round(startRect.y + dy) };
-      setBgDragRect(null);
-      onUpdateBackgroundImageRect?.(newRect);
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-  };
-
-  const liveBgRect = bgDragRect ?? bgRect;
 
   const zoomScale = zoom / 100;
   const scaledWidth = width * zoomScale;
@@ -545,7 +487,6 @@ export default function EditorCanvas({
                 onClick={(event) => {
                   if (event.target === event.currentTarget) {
                     onSelectElement?.(null);
-                    setBgImageSelected(false);
                   }
                 }}
                 onContextMenu={(event) => {
@@ -553,21 +494,14 @@ export default function EditorCanvas({
                   openContextMenu(event);
                 }}
               >
-                <CanvasBackgroundLayer
-                  width={width}
-                  height={height}
-                  fillImageSrc={bgFillImageSrc}
-                  fillSettings={bgFillSettings}
-                  imageSrc={bgImageSrc}
-                  imageRect={liveBgRect}
-                  isImageSelected={activeBgImageSelected}
-                  onStartImageMove={startBgMove}
-                  onStartImageResize={startBgResize}
-                  onSelectImage={() => {
-                    onSelectElement?.(null);
-                    setBgImageSelected(true);
-                  }}
-                />
+                {bgFillImageSrc && (
+                  <BgFillImageLayer
+                    src={bgFillImageSrc}
+                    settings={bgFillSettings}
+                    width={width}
+                    height={height}
+                  />
+                )}
 
                 <SlideDecorations
                   presentation={presentation}

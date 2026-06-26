@@ -221,32 +221,6 @@ export const toggleSlideHidden = (presentation, slideIndex) => {
   return setSlides(presentation, slides);
 };
 
-export const updateSlideBackgroundImage = (presentation, slideIndex, backgroundImage, position, scale) => {
-  const slides = [...getSlides(presentation)];
-  const slide = slides[slideIndex];
-  if (!slide) return presentation;
-  slides[slideIndex] = {
-    ...slide,
-    contents: {
-      ...slide.contents,
-      "background-image": backgroundImage ?? null,
-      ...(position !== undefined ? { "background-image-position": position } : {}),
-      ...(scale !== undefined ? { "background-image-scale": scale } : {}),
-    },
-  };
-  return setSlides(presentation, slides);
-};
-
-export const updateSlideBackgroundImageRect = (presentation, slideIndex, rect) => {
-  const slides = [...getSlides(presentation)];
-  const slide = slides[slideIndex];
-  if (!slide) return presentation;
-  slides[slideIndex] = {
-    ...slide,
-    contents: { ...slide.contents, "background-image-rect": rect },
-  };
-  return setSlides(presentation, slides);
-};
 
 export const applyBackgroundToAllSlides = (presentation, { background, bgFillImage, bgFillSettings }) => {
   const slides = getSlides(presentation);

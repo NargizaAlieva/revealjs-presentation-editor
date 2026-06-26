@@ -305,11 +305,6 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
   const transitionDuration = slide.contents?.transitionDuration ?? 0.75;
   const transitionSpeed = TRANSITION_SPEED_MAP[transitionDuration] ?? "default";
   const background = slide.contents?.background ?? "var(--bg-light, white)";
-  const backgroundImageKey = slide.contents?.["background-image"] ?? null;
-  const backgroundImageSrc = backgroundImageKey ? getSrc(backgroundImageKey) : null;
-  const backgroundImagePosition = slide.contents?.["background-image-position"] ?? "center center";
-  const backgroundImageScale = slide.contents?.["background-image-scale"] ?? 100;
-  const backgroundImageSize = backgroundImageScale === 100 ? "cover" : `${backgroundImageScale}%`;
   const animationMap = buildAnimationMap(slide);
   const adjustedSeqMap = buildAdjustedSequenceMap(
     slide.contents?.animations ?? [],
@@ -399,7 +394,7 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
     <section
       data-transition="${escapeHtml(transition)}"
       data-transition-speed="${transitionSpeed}"
-      ${backgroundImageSrc ? `data-background-image="${escapeHtml(backgroundImageSrc)}" data-background-size="${backgroundImageSize}" data-background-position="${escapeHtml(backgroundImagePosition)}"` : `style="background: ${background || "white"};"`}
+      style="background: ${background || "white"};"
     >
       <div style="position: relative; width: ${width}px; height: ${height}px; overflow: hidden;">
         ${buildDecorationsHtml(presentation, width, height)}

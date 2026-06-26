@@ -96,10 +96,6 @@ export default function Toolbar({
   onApplyFont,
   onApplyLayoutFont,
   onUpdateDimensions,
-  onApplyBackgroundImage,
-  onRemoveBackgroundImage,
-  onUpdateBackgroundImagePosition,
-  onUpdateBackgroundImageScale,
   selectedSlide,
   currentView,
   onChangeView,
@@ -298,13 +294,6 @@ useEffect(() => {
             onAddSlide={onAddSlide}
             onAddTextElement={onAddTextElement}
             layouts={layouts}
-            onApplyBackgroundImage={onApplyBackgroundImage}
-            onRemoveBackgroundImage={onRemoveBackgroundImage}
-            onUpdateBackgroundImagePosition={onUpdateBackgroundImagePosition}
-            onUpdateBackgroundImageScale={onUpdateBackgroundImageScale}
-            currentBgImage={selectedSlide?.contents?.["background-image"] ?? null}
-            currentBgPosition={selectedSlide?.contents?.["background-image-position"] ?? "center center"}
-            currentBgScale={selectedSlide?.contents?.["background-image-scale"] ?? 100}
             selectedSlide={selectedSlide}
             presentation={presentation}
             onApplyBackground={onApplyBackground}
@@ -327,8 +316,6 @@ useEffect(() => {
             onApplyTheme={onApplyTheme}
             onApplyFont={onApplyFont}
             onUpdateDimensions={onUpdateDimensions}
-            onApplyBackgroundImage={onApplyBackgroundImage}
-            onRemoveBackgroundImage={onRemoveBackgroundImage}
             onApplyBackground={onApplyBackground}
             onApplySlideBackground={onApplySlideBackground}
             onApplyBgFillImage={onApplyBgFillImage}

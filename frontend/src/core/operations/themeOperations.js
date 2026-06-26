@@ -1,4 +1,4 @@
-import { applyThemeToPresentation } from "../themes/themeManager.js";
+import { applyThemeToPresentation } from "./themeManager.js";
 import { updateThemeColor as designThemesUpdateColor } from "../model/designThemes.js";
 
 export const applyTheme = (presentation, themeId) => {

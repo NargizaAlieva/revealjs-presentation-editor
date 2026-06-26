@@ -65,7 +65,6 @@ export const domToParagraphs = (el, existingParagraphs) => {
     const prevFormatting =
       pIdx > 0 ? ((existingParagraphs ?? [])[pIdx - 1]?.formatting ?? {}) : {};
 
-    // New paragraph (Enter pressed): inherit list-type from the previous paragraph.
     let formatting = existing?.formatting ?? {};
     if (
       isNewParagraph &&
