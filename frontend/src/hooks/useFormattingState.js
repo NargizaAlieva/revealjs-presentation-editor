@@ -36,8 +36,7 @@ export const findMasterTextElement = (
         id: placeholder["placeholder-id"],
         paragraphs: [{
           id: `ph-para-${placeholder["placeholder-id"]}`,
-          formatting: { ...masterFormatting, ...placeholderFormatting },
-          userSetKeys: Object.keys(placeholderFormatting),
+          formatting: {},
           bullets: "none",
           runs: [{ text: "", formatting: {}, "super-sub-script": "normal", link: null }],
         }],
@@ -147,8 +146,6 @@ export const useApplyFormatting = ({
         splitFormattingUpdates(normalizedUpdates);
 
       if (hasRealSel) {
-        // Pass all updates (run + para) to updateTextRangeFormatting so paragraph-level
-        // keys (list-type, align, indent-level) apply only to selected paragraphs.
         const allUpdates = { ...runUpdates, ...paraUpdates };
         if (Object.keys(allUpdates).length > 0)
           updateTextRangeFormatting(
@@ -173,7 +170,6 @@ export const useApplyFormatting = ({
           }));
         }
         if (Object.keys(paraUpdates).length > 0) {
-          // Cursor (no selection): apply paragraph-level formatting to the current paragraph only.
           const cursorParagraphIdx =
             sel?.elementId === elementId ? sel.paragraphIdx : undefined;
           if (cursorParagraphIdx !== undefined) {

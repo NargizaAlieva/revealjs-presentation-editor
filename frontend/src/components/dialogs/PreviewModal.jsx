@@ -22,7 +22,7 @@ import {
   getFragmentProps,
   getPerLineFragments,
 } from "../../core/render/revealRenderer";
-import { getPlaceholderFormatting } from "../../core/render/slidesetRenderUtils";
+import { getPlaceholderFormatting, getSlideContentIds } from "../../core/render/slidesetRenderUtils";
 import { paragraphsToHTML } from "../../core/text/textFormatting";
 import { REFLECTION_PRESETS } from "../../core/model/imageEffects";
 
@@ -187,6 +187,7 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
                       width={width}
                       height={height}
                       layoutId={slide?.["layout-id"]}
+                      slideContentIds={getSlideContentIds(slide)}
                       interactive
                     />
                     {textElements.filter((element) => !element.hidden).map((textElement, index) => {

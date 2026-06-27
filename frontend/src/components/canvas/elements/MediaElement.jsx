@@ -9,20 +9,10 @@ import {
 } from "../../../core/render/revealRenderer";
 import { REFLECTION_PRESETS } from "../../../core/model/imageEffects";
 import { getStyleById } from "../../../core/model/imageStyles";
-import MediaElementHandles from "./media/MediaElementHandles";
+import MediaElementHandles, { RESIZE_HANDLES } from "./media/MediaElementHandles";
 import MediaElementMenus from "./media/MediaElementMenus";
+import { computeCropOrigin, computeCropResult } from "../../../core/operations/mediaOperations";
 import "./MediaElement.css";
-
-const RESIZE_HANDLES = [
-  { dir: "nw", cursor: "nwse-resize" },
-  { dir: "n",  cursor: "ns-resize"   },
-  { dir: "ne", cursor: "nesw-resize" },
-  { dir: "e",  cursor: "ew-resize"   },
-  { dir: "se", cursor: "nwse-resize" },
-  { dir: "s",  cursor: "ns-resize"   },
-  { dir: "sw", cursor: "nesw-resize" },
-  { dir: "w",  cursor: "ew-resize"   },
-];
 
 const CROP_HANDLES = [
   { id: "nw", edges: ["n","w"], cursor: "nwse-resize" },
@@ -90,7 +80,7 @@ export default function MediaElement({
           prev.top === r.top &&
           prev.width === r.width &&
           prev.height === r.height
-        ) return prev; // bail out — same position, no extra render
+        ) return prev; 
         return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
       });
     } else if (!isCropping) {
@@ -107,56 +97,29 @@ export default function MediaElement({
   const sourceHeight = media["source-height"];
 
   const enterCropMode = useCallback(() => {
-    const [ct = 0, cr = 0, cb = 0, cl = 0] =
-      mediaCrop?.length === 4 ? mediaCrop : [0, 0, 0, 0];
-    const W = mediaWidth ?? 300;
-    const H = mediaHeight ?? 200;
-    const srcW =
-      sourceWidth ?? W / Math.max(0.01, 1 - cl / 100 - cr / 100);
-    const srcH =
-      sourceHeight ?? H / Math.max(0.01, 1 - ct / 100 - cb / 100);
-    const fullX = (mediaX ?? 0) - (cl / 100) * srcW;
-    const fullY = (mediaY ?? 0) - (ct / 100) * srcH;
+    const { fullX, fullY, srcW, srcH, initialCrop } = computeCropOrigin({
+      crop: mediaCrop,
+      width: mediaWidth,
+      height: mediaHeight,
+      position: { x: mediaX, y: mediaY },
+      "source-width": sourceWidth,
+      "source-height": sourceHeight,
+    });
     setCropOrigin({ fullX, fullY, srcW, srcH });
-    setLocalCrop([ct, cr, cb, cl]);
+    setLocalCrop(initialCrop);
     setIsCropping(true);
-  }, [
-    mediaCrop,
-    mediaWidth,
-    mediaHeight,
-    mediaX,
-    mediaY,
-    sourceWidth,
-    sourceHeight,
-  ]);
+  }, [mediaCrop, mediaWidth, mediaHeight, mediaX, mediaY, sourceWidth, sourceHeight]);
 
   const handledCropSignalRef = useRef(cropSignal ?? 0);
   useEffect(() => {
-    if (cropSignal && cropSignal !== handledCropSignalRef.current && isPrimarySelected && !isCropping) {
-      handledCropSignalRef.current = cropSignal;
-      enterCropMode();
-    }
+    if (!cropSignal || cropSignal === handledCropSignalRef.current) return;
+    handledCropSignalRef.current = cropSignal;
+    if (isPrimarySelected && !isCropping) enterCropMode();
   }, [cropSignal, enterCropMode, isCropping, isPrimarySelected]);
 
   const applyCrop = useCallback(() => {
-    let [ct, cr, cb, cl] = localCropRef.current;
-    const { fullX, fullY, srcW, srcH } = cropOriginRef.current;
-    const x1n = (cl / 100) * srcW, x2n = srcW - (cr / 100) * srcW;
-    const y1n = (ct / 100) * srcH, y2n = srcH - (cb / 100) * srcH;
-    const winX1 = Math.min(x1n, x2n), winX2 = Math.max(x1n, x2n);
-    const winY1 = Math.min(y1n, y2n), winY2 = Math.max(y1n, y2n);
-    cl = winX1 / srcW * 100;
-    cr = (srcW - winX2) / srcW * 100;
-    ct = winY1 / srcH * 100;
-    cb = (srcH - winY2) / srcH * 100;
-    onUpdateMedia?.(media.id, {
-      crop: [ct, cr, cb, cl],
-      position: { x: fullX + winX1, y: fullY + winY1 },
-      width: Math.max(1, winX2 - winX1),
-      height: Math.max(1, winY2 - winY1),
-      "source-width": srcW,
-      "source-height": srcH,
-    });
+    const updates = computeCropResult(localCropRef.current, cropOriginRef.current);
+    onUpdateMedia?.(media.id, updates);
     setIsCropping(false);
   }, [media.id, onUpdateMedia]);
 
@@ -246,7 +209,6 @@ export default function MediaElement({
     const startY = e.clientY;
     const startOrigin = { ...cropOriginRef.current };
     const rect = wrapperRef.current?.getBoundingClientRect();
-    // screenScale: how many screen pixels equal one canvas pixel at current zoom
     const screenScale = (rect && startOrigin.srcW) ? rect.width / startOrigin.srcW : 1;
 
     const onMove = (mv) => {
@@ -285,7 +247,6 @@ export default function MediaElement({
     const aspectRatio = startOrigin.srcW / startOrigin.srcH;
 
     const onMove = (mv) => {
-      // Convert screen-pixel delta → canvas-pixel delta
       const dx = (mv.clientX - startX) / screenScale;
       const dy = (mv.clientY - startY) / screenScale;
       let { fullX, fullY, srcW, srcH } = startOrigin;
@@ -421,32 +382,7 @@ export default function MediaElement({
             <div style={{ position: "absolute", top: "66.66%", left: 0, right: 0, height: 1, background: "rgba(255,255,255,0.35)" }} />
           </div>
 
-          {/* Crop edge/corner handles */}
-          {CROP_HANDLES.map(({ id, edges, cursor }) => {
-            const { left, top } = getCropHandlePos(id);
-            const isCornerH = ["nw","ne","se","sw"].includes(id);
-            const hSize = isCornerH ? 12 : 10;
-            return (
-              <div
-                key={id}
-                style={{
-                  position: "fixed",
-                  left: toSX(left), top: toSY(top),
-                  width: hSize, height: hSize,
-                  background: "#ffffff",
-                  border: "1.5px solid rgba(0,0,0,0.5)",
-                  zIndex: 9910,
-                  transform: "translate(-50%, -50%)",
-                  cursor,
-                  pointerEvents: "auto",
-                  boxSizing: "border-box",
-                }}
-                onMouseDown={(e) => startCropDrag(e, edges)}
-              />
-            );
-          })}
-
-          {/* Source-image resize handles */}
+          {/* Source-image resize handles — rendered first so crop handles sit on top */}
           {RESIZE_HANDLES.map(({ dir, cursor }) => {
             const rx = dir.includes("w") ? cropPortalRect.left
                      : dir.includes("e") ? cropPortalRect.right
@@ -471,6 +407,31 @@ export default function MediaElement({
                   boxSizing: "border-box",
                 }}
                 onMouseDown={(e) => { e.stopPropagation(); startCropImageResize(e, dir); }}
+              />
+            );
+          })}
+
+          {/* Crop edge/corner handles — rendered after so they appear on top when positions overlap */}
+          {CROP_HANDLES.map(({ id, edges, cursor }) => {
+            const { left, top } = getCropHandlePos(id);
+            const isCornerH = ["nw","ne","se","sw"].includes(id);
+            const hSize = isCornerH ? 12 : 10;
+            return (
+              <div
+                key={id}
+                style={{
+                  position: "fixed",
+                  left: toSX(left), top: toSY(top),
+                  width: hSize, height: hSize,
+                  background: "#ffffff",
+                  border: "1.5px solid rgba(0,0,0,0.5)",
+                  zIndex: 9910,
+                  transform: "translate(-50%, -50%)",
+                  cursor,
+                  pointerEvents: "auto",
+                  boxSizing: "border-box",
+                }}
+                onMouseDown={(e) => startCropDrag(e, edges)}
               />
             );
           })}

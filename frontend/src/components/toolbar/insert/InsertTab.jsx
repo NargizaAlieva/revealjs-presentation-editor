@@ -7,13 +7,13 @@ import {
   MdTextFields,
   MdVideoLibrary,
 } from "react-icons/md";
-import { LAYOUTS } from "../shared/homeTabConstants";
 import FormatBackgroundPanel from "../shared/FormatBackgroundPanel";
+import LayoutThumb from "../shared/LayoutThumb";
 import { HyperlinkDialog } from "../../canvas/menus/CanvasContextMenu";
 import "../../canvas/dialogs/TextContextDialogs.css";
 
-export default function InsertTab({ onImageUpload, onVideoUpload, onAddSlide, onAddTextElement, layouts: propLayouts, currentBgImage, selectedSlide, presentation, onApplySlideBackground, onApplyBgFillImage, onRemoveBgFillImage, onUpdateBgFillSettings, onApplyBackgroundToAll, isSlideMasterOpen, selectedElement, selectedHyperlinkText = "", onHyperlink, onNewComment }) {
-  const layouts = (propLayouts && propLayouts.length > 0) ? propLayouts : LAYOUTS;
+export default function InsertTab({ onImageUpload, onVideoUpload, onAddSlide, onAddTextElement, currentBgImage, selectedSlide, presentation, onApplySlideBackground, onApplyBgFillImage, onRemoveBgFillImage, onUpdateBgFillSettings, onApplyBackgroundToAll, isSlideMasterOpen, selectedElement, selectedHyperlinkText = "", onHyperlink, onNewComment }) {
+  const layouts = presentation?.slideset?.layouts ?? [];
   const [showLayouts, setShowLayouts] = useState(false);
   const [newSlidePos, setNewSlidePos] = useState({ top: 0, left: 0 });
   const newSlideBtnRef = useRef(null);
@@ -56,20 +56,20 @@ export default function InsertTab({ onImageUpload, onVideoUpload, onAddSlide, on
           {showLayouts && (
             <div className="layout-popup" style={{ top: newSlidePos.top, left: newSlidePos.left }}>
               <h4>Layouts</h4>
-              {layouts.map((layout) => (
-                <button
-                  key={layout.id}
-                  className="layout-option"
-                  onClick={() => { onAddSlide?.(layout.id); setShowLayouts(false); }}
-                >
-                  <div className={`layout-thumb layout-thumb--${layout.id}`}>
-                    {layout.id === "title-content-media" && (
-                      <div className="layout-thumb-media" />
-                    )}
-                  </div>
-                  <span>{layout.label}</span>
-                </button>
-              ))}
+              <div className="layout-grid">
+                {layouts.map((layout) => (
+                  <button
+                    key={layout["layout-id"]}
+                    className="layout-grid-item"
+                    onClick={() => { onAddSlide?.(layout["layout-id"]); setShowLayouts(false); }}
+                  >
+                    <div className="layout-grid-thumb">
+                      <LayoutThumb layout={layout} presentation={presentation} />
+                    </div>
+                    <span className="layout-grid-label">{layout.name ?? layout["layout-id"]}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>

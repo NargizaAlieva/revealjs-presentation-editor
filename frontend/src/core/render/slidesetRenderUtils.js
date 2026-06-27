@@ -1,3 +1,10 @@
+export function getSlideContentIds(slide) {
+  const ids = new Set();
+  (slide?.contents?.text ?? []).forEach((el) => ids.add(el.id));
+  (slide?.contents?.media ?? []).forEach((el) => ids.add(el.id));
+  return ids;
+}
+
 export function getSlideSize(presentation) {
     const dimensions = presentation?.slideset?.master?.["slide-dimensions"];
 

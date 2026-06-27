@@ -9,7 +9,7 @@ import {
   buildBevelOverlayStyle,
 } from "../../core/render/revealRenderer";
 import { paragraphsToHTML } from "../../core/text/textFormatting";
-import { getPlaceholderFormatting, getPlaceholderPadding } from "../../core/render/slidesetRenderUtils";
+import { getPlaceholderFormatting, getPlaceholderPadding, getSlideContentIds } from "../../core/render/slidesetRenderUtils";
 import { REFLECTION_PRESETS } from "../../core/model/imageEffects";
 import SlideDecorations from "../canvas/SlideDecorations";
 import "./SlideThumbnail.css";
@@ -162,6 +162,7 @@ export default function SlideThumbnail({
           width={slideWidth}
           height={slideHeight}
           layoutId={slide?.["layout-id"]}
+          slideContentIds={getSlideContentIds(slide)}
         />
         {textElements.filter((element) => !element.hidden && !isEmptyPlaceholderPrompt(element)).map((textElement, index) => {
           const placeholderFormatting = getPlaceholderFormatting(presentation, slide, textElement);

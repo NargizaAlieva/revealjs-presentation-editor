@@ -85,8 +85,8 @@ export const createDefaultLayouts = ({ titleFormatting, bodyFormatting }) => {
       formatting: bodyFormatting,
     });
 
-  const makeRightColumn = () =>
-    createLayoutPlaceholder({
+  const makeRightColumn = () => ({
+    ...createLayoutPlaceholder({
       placeholderId: "right-body-placeholder",
       x: 690,
       y: 220,
@@ -96,7 +96,9 @@ export const createDefaultLayouts = ({ titleFormatting, bodyFormatting }) => {
       role: "body",
       padding: "12px",
       formatting: bodyFormatting,
-    });
+    }),
+    promptText: "Click to edit second column text",
+  });
 
   return [
     {

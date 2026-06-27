@@ -1,24 +1,16 @@
 import { useState, useRef, useEffect } from "react";
 import "./SlideMasterView.css";
-import {
-  buildColorThemeStyle,
-  buildMediaContainerStyle,
-  buildMediaInnerStyle,
-  buildMediaFilterStyle,
-  buildBevelOverlayStyle,
-} from "../../core/render/revealRenderer";
-import { useMediaSrc } from "../../hooks/useMediaSrc";
-import { REFLECTION_PRESETS } from "../../core/model/imageEffects";
+import { buildColorThemeStyle } from "../../core/render/revealRenderer";
 import SlideDecorations from "../canvas/SlideDecorations";
 import EditorCanvas from "../editor/EditorCanvas";
 import { ColorPalettePopup } from "../toolbar/design/DesignTab";
 import { DESIGN_THEMES, findActiveTheme } from "../../core/model/designThemes";
 import { SLIDE_SIZES } from "../../core/model/slideSizes";
-import { createPlaceholderPseudoElement } from "../../core/operations/layoutOperations";
 import { DEFAULT_FONTS } from "../../core/model/fontConfig";
 import { renderShapes } from "../../core/render/shapeRenderer";
 import { toHex6 } from "../../core/utils/colorUtils";
 import { hasTitle, hasFooters } from "../../core/operations/masterOperations";
+import { placeholderPromptText } from "../../core/operations/layoutOperations";
 
 
 function ThemeThumbnailMini({ theme, isActive, onClick }) {
@@ -238,42 +230,6 @@ function SlideSizeDropdown({ presentation, onUpdateDimensions }) {
   );
 }
 
-function ThumbMedia({ media, index }) {
-  const src = useMediaSrc(media["file-link"]);
-  const containerStyle = buildMediaContainerStyle(media, index);
-  const innerStyle = buildMediaInnerStyle(media);
-  const cssFilter = buildMediaFilterStyle(media);
-  const bevelStyle = buildBevelOverlayStyle(media);
-
-  const refId = media.effects?.reflectionId;
-  const rp = refId && refId !== "none" ? REFLECTION_PRESETS.find((p) => p.id === refId) : null;
-  const reflection = rp && rp.size > 0 ? {
-    position: "absolute",
-    left: `${media.position?.x ?? 0}px`,
-    top: `${(media.position?.y ?? 0) + (media.height ?? 200) + (rp.offset ?? 0)}px`,
-    width: `${media.width ?? 200}px`,
-    height: `${Math.round((rp.size / 100) * (media.height ?? 200))}px`,
-    objectFit: "cover",
-    objectPosition: "top",
-    transform: "scaleY(-1)",
-    opacity: rp.opacity,
-    ...(rp.blur > 0 ? { filter: `blur(${rp.blur}px)` } : {}),
-    WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
-    maskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
-    pointerEvents: "none",
-    zIndex: (media["z-index"] ?? index + 1),
-  } : null;
-
-  return (
-    <>
-      <div style={{ ...containerStyle, pointerEvents: "none" }}>
-        <img src={src} alt="" style={{ ...innerStyle, ...(cssFilter ? { filter: cssFilter } : {}) }} />
-        {bevelStyle && <div style={bevelStyle} />}
-      </div>
-      {reflection && <img src={src} alt="" style={reflection} />}
-    </>
-  );
-}
 
 function MasterThumb({ label, isSelected, onClick, presentation, layout, isMaster }) {
   const containerRef = useRef(null);
@@ -308,16 +264,11 @@ function MasterThumb({ label, isSelected, onClick, presentation, layout, isMaste
           background: bgColor, overflow: "hidden",
         }}>
           <SlideDecorations presentation={presentation} width={width} height={height} layoutId={layout?.["layout-id"]} />
-          {(presentation?.slideset?.master?.elements?.media ?? []).map((media, i) => (
-            <ThumbMedia key={media.id ?? i} media={media} index={i} />
-          ))}
-          {(layout?.elements?.media ?? []).map((media, i) => (
-            <ThumbMedia key={media.id ?? i} media={media} index={i} />
-          ))}
           {(layout?.placeholders ?? []).map((ph, i) => {
-            const pseudo = createPlaceholderPseudoElement(ph, presentation?.slideset?.master?.formatting ?? {});
+            const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
+            const phFmt = ph.formatting ?? {};
+            const r = (phVal, masterVal, fallback) => phVal ?? masterVal ?? fallback;
             if (ph.type === "text") {
-              const fmt = pseudo.paragraphs?.[0]?.formatting ?? {};
               return (
                 <div key={i} style={{
                   position: "absolute",
@@ -328,14 +279,14 @@ function MasterThumb({ label, isSelected, onClick, presentation, layout, isMaste
                   border: "1px dashed rgba(80,80,80,0.4)",
                   boxSizing: "border-box",
                   overflow: "hidden",
-                  fontSize: fmt.size ?? "16px",
-                  fontWeight: fmt.weight ?? "normal",
-                  fontFamily: fmt.font ?? "inherit",
-                  color: fmt.color ?? "var(--text-dark)",
-                  textAlign: fmt.align ?? "left",
+                  fontSize: r(phFmt.size, masterFormatting.size, "16px"),
+                  fontWeight: r(phFmt.weight, masterFormatting.weight, "normal"),
+                  fontFamily: r(phFmt.font, masterFormatting.font, "inherit"),
+                  color: r(phFmt.color, masterFormatting.color, "var(--text-dark)"),
+                  textAlign: r(phFmt.align, masterFormatting.align, "left"),
                   padding: "4px 8px",
                 }}>
-                  {pseudo.paragraphs?.[0]?.runs?.[0]?.text ?? ""}
+                  {placeholderPromptText(ph)}
                 </div>
               );
             }
@@ -678,6 +629,7 @@ export default function SlideMasterView({
   onMasterViewAutoFitMedia,
   onMasterViewDeleteText,
   onMasterViewDeleteMedia,
+  cropSignal,
   onBeginHistory,
   onCommitHistory,
   onCancelHistory,
@@ -789,6 +741,7 @@ export default function SlideMasterView({
           onDeleteTextElement={onMasterViewDeleteText}
           updateElement={onMasterViewAutoFitText}
           updateMedia={onMasterViewAutoFitMedia}
+          cropSignal={cropSignal}
           onBeginHistory={onBeginHistory}
           onCommitHistory={onCommitHistory}
           onCancelHistory={onCancelHistory}

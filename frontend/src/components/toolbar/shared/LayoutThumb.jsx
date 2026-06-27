@@ -1,10 +1,80 @@
 import { useRef, useState, useEffect } from "react";
 import { buildColorThemeStyle } from "../../../core/render/revealRenderer";
-import { getPlaceholderFormatting } from "../../../core/render/slidesetRenderUtils";
-import { buildTextElementStyle } from "../../../core/render/revealRenderer";
-import { extractPlainTextFromParagraphs } from "../../../core/text/textFormatting";
 import SlideDecorations from "../../canvas/SlideDecorations";
-import { buildLayoutPseudoSlide } from "../../../core/operations/masterOperations";
+
+function TextLines({ count = 4, titleStyle = false }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "8%", padding: "8% 10%", width: "100%", height: "100%", boxSizing: "border-box", justifyContent: "center" }}>
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} style={{
+          height: titleStyle ? "18%" : "10%",
+          background: "rgba(50,60,180,0.5)",
+          borderRadius: 3,
+          width: i === count - 1 && !titleStyle ? "65%" : "100%",
+          flexShrink: 0,
+        }} />
+      ))}
+    </div>
+  );
+}
+
+function ImageIcon() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="rgba(50,60,200,0.75)" strokeWidth="1.2"
+        style={{ width: "45%", height: "45%" }}>
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <circle cx="8.5" cy="8.5" r="1.5" />
+        <polyline points="21,15 16,10 5,21" />
+      </svg>
+    </div>
+  );
+}
+
+function VideoIcon() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="rgba(50,60,200,0.75)" strokeWidth="1.2"
+        style={{ width: "45%", height: "45%" }}>
+        <rect x="2" y="4" width="16" height="16" rx="2" />
+        <polygon points="22,12 16,7 16,17" fill="rgba(80,80,140,0.3)" stroke="none" />
+        <polyline points="22,8 22,16" strokeWidth="2" />
+      </svg>
+    </div>
+  );
+}
+
+function PlaceholderVisual({ ph }) {
+  const isTitle = ph.role === "title";
+  const isFooter = ph["placeholder-id"]?.startsWith("footer-");
+  const isImage = ph.type === "image";
+  const isVideo = ph.type === "video";
+
+  return (
+    <div style={{
+      position: "absolute",
+      left: ph.position?.x ?? 0,
+      top: ph.position?.y ?? 0,
+      width: ph.width,
+      height: ph.height,
+      boxSizing: "border-box",
+      border: "4px dashed rgba(60,80,210,0.85)",
+      background: "rgba(180,200,240,0.22)",
+      overflow: "hidden",
+      pointerEvents: "none",
+    }}>
+      {isImage && <ImageIcon />}
+      {isVideo && <VideoIcon />}
+      {!isImage && !isVideo && (
+        isFooter
+          ? <TextLines count={1} />
+          : isTitle
+            ? <TextLines count={1} titleStyle />
+            : <TextLines count={4} />
+      )}
+    </div>
+  );
+}
 
 export default function LayoutThumb({ layout, presentation }) {
   const containerRef = useRef(null);
@@ -23,14 +93,9 @@ export default function LayoutThumb({ layout, presentation }) {
   const slideH = dims?.height ?? 720;
   const scale = thumbW / slideW;
   const thumbH = Math.round(thumbW * slideH / slideW);
-  const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
   const colorThemeStyle = buildColorThemeStyle(presentation);
-  const bgColor = presentation?.slideset?.master?.["color-theme"]
-    ?.find((e) => e["css-variable-name"] === "bg-light")?.color ?? "#fff";
-
-  const pseudoSlide = buildLayoutPseudoSlide(layout ?? { placeholders: [], elements: {} }, masterFormatting);
-  const textElements = pseudoSlide?.contents?.text ?? [];
-  const mediaElements = pseudoSlide?.contents?.media ?? [];
+  const masterColorTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
+  const bgColor = masterColorTheme.find((e) => e["css-variable-name"] === "bg-light")?.color ?? "#fff";
 
   return (
     <div
@@ -56,29 +121,8 @@ export default function LayoutThumb({ layout, presentation }) {
           height={slideH}
           layoutId={layout?.["layout-id"]}
         />
-        {textElements.map((el, index) => {
-          const phFormatting = getPlaceholderFormatting(presentation, { "layout-id": layout?.["layout-id"] }, el);
-          const style = buildTextElementStyle(el, index, masterFormatting, phFormatting);
-          return (
-            <div key={el.id} style={{ ...style, overflow: "hidden", zIndex: 1 }}>
-              {extractPlainTextFromParagraphs(el.paragraphs, "\n")}
-            </div>
-          );
-        })}
-        {mediaElements.map((el) => (
-          <div
-            key={el.id}
-            style={{
-              position: "absolute",
-              left: el.position?.x ?? 0,
-              top: el.position?.y ?? 0,
-              width: el.width ?? 200,
-              height: el.height ?? 150,
-              border: "1px dashed rgba(80,80,80,0.4)",
-              background: "rgba(200,200,200,0.15)",
-              boxSizing: "border-box",
-            }}
-          />
+        {(layout?.placeholders ?? []).map((ph, i) => (
+          <PlaceholderVisual key={ph["placeholder-id"] ?? i} ph={ph} />
         ))}
       </div>
     </div>

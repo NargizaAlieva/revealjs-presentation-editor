@@ -45,7 +45,6 @@ const createTextFromPlaceholder = (placeholder) => ({
     {
       id: createId("paragraph"),
       formatting: {},
-      userSetKeys: [],
       bullets: "none",
       runs: [{ formatting: {}, "super-sub-script": "normal", text: getPlaceholderDefaultText(placeholder), link: null }],
     },
@@ -88,37 +87,15 @@ const updateElementFromPlaceholder = (element, placeholders, isModified) => {
     }),
   };
 
-  if (element.paragraphs) {
-    const placeholderFormatting = match.formatting ?? {};
+  if (element.paragraphs && match.promptText !== undefined) {
     updated.paragraphs = element.paragraphs.map((p, pIdx) => {
-      const userSetKeys = new Set(p.userSetKeys ?? []);
-      const current = p.formatting ?? {};
-
-      const merged = {};
-      for (const [k, v] of Object.entries(current)) {
-        if (userSetKeys.has(k)) merged[k] = v;
-      }
-      for (const [k, v] of Object.entries(placeholderFormatting)) {
-        if (!userSetKeys.has(k)) merged[k] = v;
-      }
-
-      const runs = p.runs.map((r, rIdx) => {
-        if (pIdx === 0 && rIdx === 0 && match.promptText !== undefined) {
-          return { ...r, text: match.promptText };
-        }
-
-        const cleanedFormatting = Object.fromEntries(
-          Object.entries(r.formatting ?? {}).filter(([k, v]) => {
-            const placeholderOwns = (k in placeholderFormatting) && !userSetKeys.has(k);
-            if (!placeholderOwns) return true;
-            return v !== current[k];
-          }),
-        );
-
-        return { ...r, formatting: cleanedFormatting };
-      });
-
-      return { ...p, formatting: merged, runs };
+      if (pIdx !== 0) return p;
+      return {
+        ...p,
+        runs: p.runs.map((r, rIdx) =>
+          rIdx === 0 ? { ...r, text: match.promptText } : r,
+        ),
+      };
     });
   }
 
@@ -130,10 +107,10 @@ const PLACEHOLDER_PROMPTS = {
   body: "Click to edit Master text styles",
 };
 
-const placeholderPromptText = (placeholder) =>
+export const placeholderPromptText = (placeholder) =>
   placeholder.promptText ?? PLACEHOLDER_PROMPTS[placeholder.role] ?? "Click to edit text styles";
 
-export const createPlaceholderPseudoElement = (placeholder, masterFormatting = {}) => {
+export const createPlaceholderPseudoElement = (placeholder) => {
   if (placeholder.type === "image" || placeholder.type === "video") {
     return {
       id: placeholder["placeholder-id"],
@@ -168,8 +145,7 @@ export const createPlaceholderPseudoElement = (placeholder, masterFormatting = {
     paragraphs: [
       {
         id: createId("paragraph"),
-        formatting: { ...masterFormatting, ...(placeholder.formatting ?? {}) },
-        userSetKeys: [],
+        formatting: {},
         bullets: "none",
         runs: [{
           formatting: {},
@@ -373,20 +349,6 @@ export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
         rotation: match.rotation ?? el.rotation ?? 0,
         background: match.background ?? el.background,
       };
-      if (el.paragraphs) {
-        updated.paragraphs = el.paragraphs.map((p) => {
-          const userSetKeys = new Set(p.userSetKeys ?? []);
-          const current = p.formatting ?? {};
-          const merged = {};
-          for (const [k, v] of Object.entries(current)) {
-            if (userSetKeys.has(k)) merged[k] = v;
-          }
-          for (const [k, v] of Object.entries(match.formatting ?? {})) {
-            if (!userSetKeys.has(k)) merged[k] = v;
-          }
-          return { ...p, formatting: merged };
-        });
-      }
       return { updated };
     }
     if (!pid || isModified(el)) return { kept: el };
@@ -559,7 +521,6 @@ export const resetSlideToLayout = (presentation, slideIndex) => {
     const resetParagraphs = (el.paragraphs ?? []).map((p) => ({
       ...p,
       formatting: {},
-      userSetKeys: [],
       runs: (p.runs ?? []).map((r) => ({ ...r, formatting: {} })),
     }));
     return {

@@ -20,7 +20,6 @@ const createTextElementFromPlaceholder = (placeholder, defaultText = "") => ({
     {
       id: createId("paragraph"),
       formatting: {},
-      userSetKeys: [],
       bullets: "none",
       runs: [
         {

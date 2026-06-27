@@ -54,7 +54,6 @@ export function buildTextElementStyle(textElement, index, masterFormatting = {},
   };
 }
 
-// Converts a React camelCase style object to a CSS string for HTML export.
 export function styleToString(styleObj) {
   return Object.entries(styleObj)
     .filter(([, v]) => v != null)
@@ -152,8 +151,6 @@ export function buildMediaInnerStyle(media) {
   const hasCrop = ct !== 0 || cr !== 0 || cb !== 0 || cl !== 0;
 
   if (hasCrop) {
-    // Use source-width/source-height so image is always positioned correctly,
-    // including when crop extends outside image (negative cl/cr/ct/cb).
     const srcW = media["source-width"] ?? media.width ?? 200;
     const srcH = media["source-height"] ?? media.height ?? 120;
     return {
@@ -170,7 +167,7 @@ export function buildMediaInnerStyle(media) {
   return {
     width: "100%",
     height: "100%",
-    objectFit: "fill",
+    objectFit: "contain",
     display: "block",
     ...(scale !== 1 ? { transform: `scale(${scale})`, transformOrigin: "center center" } : {}),
   };

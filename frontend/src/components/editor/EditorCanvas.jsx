@@ -114,6 +114,7 @@ export default function EditorCanvas({
   onFormatPainterCopy,
   onFormatPainterPaste,
   clearSelectionSignal = 0,
+  onPromoteLayoutElement,
 }) {
   const [playingElementId, setPlayingElementId] = useState(null);
   const [playingEffect, setPlayingEffect] = useState(null);
@@ -172,6 +173,13 @@ export default function EditorCanvas({
     () => (slide?.contents?.media ?? []).filter((element) => !element.hidden),
     [slide?.contents?.media],
   );
+
+  const slideContentIds = useMemo(() => {
+    const ids = new Set();
+    textElements.forEach((el) => ids.add(el.id));
+    mediaElements.forEach((el) => ids.add(el.id));
+    return ids;
+  }, [textElements, mediaElements]);
 
   const animationSequenceMap = useMemo(
     () => {
@@ -509,6 +517,8 @@ export default function EditorCanvas({
                   height={height}
                   hideMasterElements={hideMasterElements}
                   layoutId={slide?.["layout-id"]}
+                  slideContentIds={slideContentIds}
+                  onPromoteLayoutElement={onPromoteLayoutElement}
                 />
 
                 {textElements.map((textElement) => {
@@ -606,7 +616,7 @@ export default function EditorCanvas({
                       onUpdateMedia={updateMedia ? (id, updates) => updateMedia(id, updates) : undefined}
                       onNewComment={onNewComment}
                       onOpenPictureFormat={onOpenPictureFormat}
-                      cropSignal={media.id === selectedElementId ? cropSignal : undefined}
+                      cropSignal={cropSignal}
                       previewEffects={media.id === selectedElementId ? previewMediaEffects : undefined}
                       externalPreviewStyleId={media.id === selectedElementId ? previewMediaStyleId : undefined}
                       previewClassName={playClass}

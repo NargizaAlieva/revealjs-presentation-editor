@@ -1,5 +1,24 @@
 import { getSlides, setSlides } from "../utils/presentationUtils";
 
+export const CONTENT_PLACEHOLDER_PROMPTS = new Set([
+  "",
+  "Start editing your presentation.",
+  "Click to edit text",
+  "Click to add text",
+]);
+
+export const createEmptyParagraphs = (paragraphs = []) => {
+  const first = paragraphs[0] ?? {};
+  const firstRun = first.runs?.[0] ?? {};
+  return [{ ...first, runs: [{ ...firstRun, text: "", link: null }] }];
+};
+
+export const createPromptParagraphs = (paragraphs = [], promptText) => {
+  const first = paragraphs[0] ?? {};
+  const firstRun = first.runs?.[0] ?? {};
+  return [{ ...first, runs: [{ ...firstRun, text: promptText, link: null }] }];
+};
+
 const createParagraphId = () => `paragraph-${crypto.randomUUID()}`;
 
 const RUN_ONLY_KEYS = new Set(["super-sub-script"]);
@@ -56,24 +75,17 @@ export const updateTextElement = (
 
       const lines = newText.split("\n");
       const existingParagraphs = textElement.paragraphs ?? [];
-      const templateFormatting = existingParagraphs[0]?.formatting ?? {};
-      const templateRunFormatting =
-        existingParagraphs[0]?.runs?.[0]?.formatting ?? {};
 
       const updatedParagraphs = lines.map((line, i) => {
         const existing = existingParagraphs[i];
         return {
           id: existing?.id ?? createParagraphId(),
-          formatting: existing?.formatting ?? { ...templateFormatting },
-          userSetKeys: existing?.userSetKeys ?? [],
+          formatting: existing?.formatting ?? {},
           bullets: existing?.bullets ?? "none",
           runs: [
             {
-              formatting: existing?.runs?.[0]?.formatting ?? {
-                ...templateRunFormatting,
-              },
-              "super-sub-script":
-                existing?.runs?.[0]?.["super-sub-script"] ?? "normal",
+              formatting: existing?.runs?.[0]?.formatting ?? {},
+              "super-sub-script": existing?.runs?.[0]?.["super-sub-script"] ?? "normal",
               text: line,
               link: existing?.runs?.[0]?.link ?? null,
             },
@@ -115,12 +127,6 @@ export const updateSingleParagraphFormatting = (
       return {
         ...para,
         formatting: { ...(para.formatting ?? {}), ...formattingUpdate },
-        userSetKeys: [
-          ...new Set([
-            ...(para.userSetKeys ?? []),
-            ...Object.keys(formattingUpdate),
-          ]),
-        ],
       };
     });
     return { ...el, paragraphs: updatedParagraphs };
@@ -181,13 +187,6 @@ export const updateTextFormatting = (
           return {
             ...paragraph,
             formatting: paragraphFormatting,
-            userSetKeys: [
-              ...new Set([
-                ...(paragraph.userSetKeys ?? []),
-                ...Object.keys(paragraphUpdate),
-                ...(fontSizeDelta ? ["size"] : []),
-              ]),
-            ],
             runs: (paragraph.runs ?? []).map((run) => {
               const runFmt = { ...(run.formatting ?? {}) };
               for (const k of sharedKeysBeingSet) delete runFmt[k];
@@ -308,25 +307,11 @@ export const updateTextRangeFormatting = (
         isSelectedParagraph && Object.keys(paraFormatting).length > 0
           ? { ...(para.formatting ?? {}), ...paraFormatting }
           : para.formatting;
-          
-      const newUserSetKeys =
-        isSelectedParagraph
-          ? [
-              ...new Set([
-                ...(para.userSetKeys ?? []),
-                ...Object.keys(paraFormatting),
-                ...(Object.keys(runFormatting).length > 0 || fontSizeDelta
-                  ? Object.keys(runFormatting).filter((k) => SHARED_KEYS.has(k))
-                  : []),
-                ...(fontSizeDelta ? ["size"] : []),
-              ]),
-            ]
-          : (para.userSetKeys ?? []);
 
       if (pRangeStart >= pRangeEnd) {
-        return newParaFormatting === para.formatting && newUserSetKeys === para.userSetKeys
+        return newParaFormatting === para.formatting
           ? para
-          : { ...para, formatting: newParaFormatting, userSetKeys: newUserSetKeys };
+          : { ...para, formatting: newParaFormatting };
       }
 
       const newRuns = [];
@@ -383,7 +368,6 @@ export const updateTextRangeFormatting = (
       return {
         ...para,
         formatting: newParaFormatting,
-        userSetKeys: newUserSetKeys,
         runs: newRuns.length > 0 ? newRuns : para.runs,
       };
     });

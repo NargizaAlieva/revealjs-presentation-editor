@@ -86,7 +86,6 @@ export const domToParagraphs = (el, existingParagraphs) => {
     return {
       id: existing?.id ?? `p-${Date.now()}-${pIdx}`,
       formatting,
-      userSetKeys: existing?.userSetKeys ?? [],
       bullets: existing?.bullets ?? "none",
       runs: runs.length
         ? runs

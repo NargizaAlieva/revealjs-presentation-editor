@@ -24,56 +24,15 @@ import {
   getCollapsedCursorOffset,
   domToParagraphs,
 } from "../../../core/text/domSelectionManager";
+import {
+  CONTENT_PLACEHOLDER_PROMPTS,
+  createEmptyParagraphs,
+  createPromptParagraphs,
+} from "../../../core/operations/textOperations";
+import { extractPlainTextFromParagraphs } from "../../../core/text/textFormatting";
 
 const TOOLBAR_WIDTH = 590;
 const TEXT_BOX_PLACEHOLDER = "Click to edit text";
-const CONTENT_PLACEHOLDER_PROMPTS = new Set([
-  "",
-  "Start editing your presentation.",
-  "Click to edit text",
-  "Click to add text",
-]);
-
-const getPlainText = (paragraphs = []) =>
-  paragraphs
-    .map((paragraph) =>
-      (paragraph.runs ?? []).map((run) => run.text ?? "").join(""),
-    )
-    .join("\n");
-
-const createEmptyParagraphs = (paragraphs = []) => {
-  const first = paragraphs[0] ?? {};
-  const firstRun = first.runs?.[0] ?? {};
-  return [
-    {
-      ...first,
-      runs: [
-        {
-          ...firstRun,
-          text: "",
-          link: null,
-        },
-      ],
-    },
-  ];
-};
-
-const createPromptParagraphs = (paragraphs = [], promptText) => {
-  const first = paragraphs[0] ?? {};
-  const firstRun = first.runs?.[0] ?? {};
-  return [
-    {
-      ...first,
-      runs: [
-        {
-          ...firstRun,
-          text: promptText,
-          link: null,
-        },
-      ],
-    },
-  ];
-};
 
 export default function TextElement({
   textElement,
@@ -119,7 +78,6 @@ export default function TextElement({
   const lastTypedHTMLRef = useRef(null);
   const lastAutoFitHeightRef = useRef(null);
   const savedSelectionRef = useRef(null);
-  const lastSyncedParagraphsRef = useRef(null);
   const selectionFrameRef = useRef(null);
   const isDeletingRef = useRef(false);
   const isTypingRef = useRef(false);
@@ -228,7 +186,7 @@ useEffect(() => {
   });
   const anyListPara = paragraphListInfos.find((p) => p.listType) ?? null;
   const listType = anyListPara?.listType ?? null;
-  const plainText = getPlainText(textElement.paragraphs);
+  const plainText = extractPlainTextFromParagraphs(textElement.paragraphs);
   const isTextBoxPrompt =
     textElement["placeholder-id"] == null && plainText === TEXT_BOX_PLACEHOLDER;
   const isTextBoxEmpty = textElement["placeholder-id"] == null && plainText === "";
@@ -264,8 +222,7 @@ useEffect(() => {
   useEffect(() => {
     const el = editableRef.current;
     if (!el) return;
-    if (innerHTML === lastTypedHTMLRef.current) return; 
-    if (textElement.paragraphs === lastSyncedParagraphsRef.current) return;
+    if (innerHTML === lastTypedHTMLRef.current) return;
 
     const wasFocused = document.activeElement === el;
     const savedCaret = wasFocused ? getCaretOffset(el) : 0;
@@ -273,7 +230,7 @@ useEffect(() => {
 
     el.innerHTML = innerHTML;
     lastTypedHTMLRef.current = innerHTML;
-    lastSyncedParagraphsRef.current = textElement.paragraphs;
+
 
     if (wasFocused) {
       if (savedSel) {

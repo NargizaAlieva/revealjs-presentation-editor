@@ -1,6 +1,5 @@
 import { createPlaceholderPseudoElement } from "./layoutOperations";
 import { TITLE_PLACEHOLDER, FOOTER_PLACEHOLDERS, createMasterTextElement } from "../model/masterDefaults";
-import { migrateParagraphFormatting } from "../render/slidesetRenderUtils";
 
 export const buildMasterPseudoSlide = (masterElements) => ({
   contents: {
@@ -10,21 +9,22 @@ export const buildMasterPseudoSlide = (masterElements) => ({
   },
 });
 
-export const buildLayoutPseudoSlide = (layout, masterFormatting, masterColorTheme) => {
+export const buildLayoutPseudoSlide = (layout, masterColorTheme) => {
   const bgEntry = (masterColorTheme ?? []).find((e) => e["css-variable-name"] === "bg-light");
   const background = bgEntry?.color ?? "#FFFFFFFF";
   return {
+    "layout-id": layout["layout-id"],
     contents: {
       text: [
         ...(layout.placeholders ?? [])
           .filter((p) => p.type === "text")
-          .map((p) => createPlaceholderPseudoElement(p, masterFormatting)),
+          .map((p) => createPlaceholderPseudoElement(p)),
         ...(layout.elements?.text ?? []),
       ],
       media: [
         ...(layout.placeholders ?? [])
           .filter((p) => p.type === "image" || p.type === "video")
-          .map((p) => createPlaceholderPseudoElement(p, masterFormatting)),
+          .map((p) => createPlaceholderPseudoElement(p)),
         ...(layout.elements?.media ?? []),
       ],
       background,
@@ -120,11 +120,40 @@ export const updateMasterTheme = (presentation, colorTheme, decorations) => ({
 });
 
 const scaleElement = (el, scaleX, scaleY, newW, newH) => {
-  const w = Math.max(20, Math.min(Math.round((el.width ?? 100) * scaleX), newW));
-  const h = Math.max(10, Math.min(Math.round((el.height ?? 50) * scaleY), newH));
+  const [ct = 0, cr = 0, cb = 0, cl = 0] = el.crop ?? [];
+  const hasCrop = ct !== 0 || cr !== 0 || cb !== 0 || cl !== 0;
+  const isMedia = el["file-link"] != null || el["media-type"] != null;
+  const wFrac = 1 - cl / 100 - cr / 100;
+  const hFrac = 1 - ct / 100 - cb / 100;
+
+  let w, h, scaledSrcW, scaledSrcH;
+
+  if (hasCrop && el["source-width"] != null && el["source-height"] != null && (el["source-width"] > 0)) {
+    scaledSrcW = wFrac > 0.001
+      ? Math.round((el.width ?? 100) * scaleX / wFrac)
+      : Math.round(el["source-width"] * scaleX);
+    scaledSrcH = Math.round(scaledSrcW * (el["source-height"] / el["source-width"]));
+    w = Math.max(20, Math.min(wFrac > 0.001 ? Math.round(scaledSrcW * wFrac) : Math.round((el.width ?? 100) * scaleX), newW));
+    h = Math.max(10, Math.min(hFrac > 0.001 ? Math.round(scaledSrcH * hFrac) : Math.round((el.height ?? 50) * scaleY), newH));
+  } else if (isMedia && !hasCrop && (el.width ?? 0) > 0) {
+    w = Math.max(20, Math.min(Math.round((el.width ?? 100) * scaleX), newW));
+    h = Math.max(10, Math.min(Math.round(w * ((el.height ?? 50) / el.width)), newH));
+  } else {
+    w = Math.max(20, Math.min(Math.round((el.width ?? 100) * scaleX), newW));
+    h = Math.max(10, Math.min(Math.round((el.height ?? 50) * scaleY), newH));
+  }
+
   const x = Math.max(0, Math.min(Math.round((el.position?.x ?? 0) * scaleX), newW - w));
   const y = Math.max(0, Math.min(Math.round((el.position?.y ?? 0) * scaleY), newH - h));
-  return { ...el, position: { x, y }, width: w, height: h };
+
+  return {
+    ...el,
+    position: { x, y },
+    width: w,
+    height: h,
+    ...(scaledSrcW != null ? { "source-width": scaledSrcW } : {}),
+    ...(scaledSrcH != null ? { "source-height": scaledSrcH } : {}),
+  };
 };
 
 
@@ -202,34 +231,6 @@ export const updateMasterFormatting = (presentation, formatting) => {
   const oldMaster = presentation.slideset?.master?.formatting ?? {};
   const newMasterFormatting = { ...oldMaster, ...formatting };
 
-  const layouts = presentation.slideset?.layouts ?? [];
-  const placeholderMap = new Map();
-  for (const layout of layouts) {
-    for (const ph of layout.placeholders ?? []) {
-      placeholderMap.set(ph["placeholder-id"], ph.formatting ?? {});
-    }
-  }
-
-  const updatedSlides = (presentation.slideset?.slides ?? []).map((slide) => ({
-    ...slide,
-    contents: {
-      ...slide.contents,
-      text: (slide.contents?.text ?? []).map((el) => {
-        const phFormatting = placeholderMap.get(el["placeholder-id"]) ?? {};
-        return {
-          ...el,
-          paragraphs: migrateParagraphFormatting(el.paragraphs, phFormatting, newMasterFormatting),
-        };
-      }),
-    },
-  }));
-
-  const masterElements = presentation.slideset?.master?.elements ?? {};
-  const updatedMasterText = (masterElements.text ?? []).map((el) => ({
-    ...el,
-    paragraphs: migrateParagraphFormatting(el.paragraphs, {}, newMasterFormatting),
-  }));
-
   return {
     ...presentation,
     slideset: {
@@ -237,12 +238,7 @@ export const updateMasterFormatting = (presentation, formatting) => {
       master: {
         ...presentation.slideset.master,
         formatting: newMasterFormatting,
-        elements: {
-          ...masterElements,
-          text: updatedMasterText,
-        },
       },
-      slides: updatedSlides,
     },
   };
 };
@@ -343,17 +339,14 @@ export const updateMasterTextContent = (presentation, elementId, newText) => {
     if (el.id !== elementId) return el;
     const lines = newText.split("\n");
     const existingParagraphs = el.paragraphs ?? [];
-    const templateFormatting = existingParagraphs[0]?.formatting ?? {};
-    const templateRunFormatting = existingParagraphs[0]?.runs?.[0]?.formatting ?? {};
     const updatedParagraphs = lines.map((line, i) => {
       const existing = existingParagraphs[i];
       return {
         id: existing?.id ?? createParagraphId(),
-        formatting: existing?.formatting ?? { ...templateFormatting },
-        userSetKeys: existing?.userSetKeys ?? [],
+        formatting: existing?.formatting ?? {},
         bullets: existing?.bullets ?? "none",
         runs: [{
-          formatting: existing?.runs?.[0]?.formatting ?? { ...templateRunFormatting },
+          formatting: existing?.runs?.[0]?.formatting ?? {},
           "super-sub-script": existing?.runs?.[0]?.["super-sub-script"] ?? "normal",
           text: line,
           link: existing?.runs?.[0]?.link ?? null,

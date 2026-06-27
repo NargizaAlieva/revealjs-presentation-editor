@@ -243,7 +243,6 @@ const insertPlainTextIntoParagraphs = (
               ...endParagraph,
               id: crypto.randomUUID?.() ?? `p-${Date.now()}-${index}`,
               formatting: { ...(startParagraph.formatting ?? {}) },
-              userSetKeys: [...(startParagraph.userSetKeys ?? [])],
               runs: mergeRuns([...makeInsertedRuns(line), ...afterRuns]),
             };
           }
@@ -863,6 +862,20 @@ useEffect(() => {
     [updateMasterDimensions],
   );
 
+  const promoteLayoutElement = useCallback(
+    (el, type) => {
+      beginHistory();
+      if (type === "media") {
+        addMedia({ ...el });
+      } else {
+        addTextElement({ ...el });
+      }
+      handleElementSelect(el.id);
+      commitHistory();
+    },
+    [addMedia, addTextElement, handleElementSelect, beginHistory, commitHistory],
+  );
+
   const { handleImageUpload } = useImageUpload(addMedia, slideWidth, slideHeight);
   const { handleVideoUpload } = useVideoUpload(addMedia);
 
@@ -1061,15 +1074,20 @@ useEffect(() => {
         storeMediaFile(file),
         readImageDimensionsFromFile(file),
       ]);
+      const phW = placeholderElement.width ?? naturalSize.width;
+      const phH = placeholderElement.height ?? naturalSize.height;
+      const scale = Math.min(phW / naturalSize.width, phH / naturalSize.height);
+      const fitW = Math.round(naturalSize.width * scale);
+      const fitH = Math.round(naturalSize.height * scale);
+      const phPos = placeholderElement.position ?? { x: 60, y: 60 };
+      const fitX = Math.round(phPos.x + (phW - fitW) / 2);
+      const fitY = Math.round(phPos.y + (phH - fitH) / 2);
       addMedia({
-        ...createImageMediaElement(mediaId, key, {
-          width: placeholderElement.width ?? naturalSize.width,
-          height: placeholderElement.height ?? naturalSize.height,
-        }),
+        ...createImageMediaElement(mediaId, key, { width: fitW, height: fitH }),
         "placeholder-id": placeholderElement["placeholder-id"],
-        position: { ...(placeholderElement.position ?? { x: 60, y: 60 }) },
-        width: placeholderElement.width ?? naturalSize.width,
-        height: placeholderElement.height ?? naturalSize.height,
+        position: { x: fitX, y: fitY },
+        width: fitW,
+        height: fitH,
         "source-width": naturalSize.width,
         "source-height": naturalSize.height,
         "z-index": placeholderElement["z-index"] ?? 1,
@@ -1207,11 +1225,10 @@ useEffect(() => {
     return selectedMasterLayout
       ? buildLayoutPseudoSlide(
           selectedMasterLayout,
-          masterFormatting ?? {},
           masterColorTheme ?? [],
         )
       : buildMasterPseudoSlide(masterElements ?? {});
-  }, [selectedMasterLayout, masterElements, masterFormatting, masterColorTheme]);
+  }, [selectedMasterLayout, masterElements, masterColorTheme]);
 
   const masterViewChangeText = useCallback(
     (id, text) => {
@@ -1237,22 +1254,10 @@ useEffect(() => {
           const text = paragraphs.map((p) => p.runs.map((r) => r.text).join("")).join("\n");
           updateLayoutItem(selectedMasterLayoutId, id, { promptText: text });
         } else {
-          const paragraphsWithKeys = paragraphs.map((p) => ({
-            ...p,
-            userSetKeys: p.userSetKeys?.length
-              ? p.userSetKeys
-              : Object.keys(p.formatting ?? {}),
-          }));
-          updateLayoutItem(selectedMasterLayoutId, id, { paragraphs: paragraphsWithKeys, userModified: true });
+            updateLayoutItem(selectedMasterLayoutId, id, { paragraphs, userModified: true });
         }
       } else {
-        const paragraphsWithKeys = paragraphs.map((p) => ({
-          ...p,
-          userSetKeys: p.userSetKeys?.length
-            ? p.userSetKeys
-            : Object.keys(p.formatting ?? {}),
-        }));
-        updateMasterElement("text", id, { paragraphs: paragraphsWithKeys, userModified: true });
+        updateMasterElement("text", id, { paragraphs, userModified: true });
       }
     },
     [selectedMasterLayoutId, masterTextIds, presentation, updateLayoutItem, updateMasterElement],
@@ -1329,10 +1334,23 @@ useEffect(() => {
       if (el && "source-width" in el) {
         const hasCrop = (el.crop ?? []).some((v) => v !== 0);
         if (hasCrop) {
+          const [, cr = 0, , cl = 0] = el.crop ?? [];
+          const [ct = 0, , cb = 0] = el.crop ?? [];
+          const wFrac = 1 - cl / 100 - cr / 100;
+          const hFrac = 1 - ct / 100 - cb / 100;
           const scaleX = el.width > 0 ? w / el.width : 1;
-          const scaleY = el.height > 0 ? h / el.height : 1;
-          updates["source-width"] = (el["source-width"] ?? el.width) * scaleX;
-          updates["source-height"] = (el["source-height"] ?? el.height) * scaleY;
+          const newSrcW = wFrac > 0.001
+            ? Math.round(w / wFrac)
+            : Math.round((el["source-width"] ?? el.width) * scaleX);
+          updates["source-width"] = newSrcW;
+          if ((el["source-width"] ?? 0) > 0 && (el["source-height"] ?? 0) > 0) {
+            const newSrcH = Math.round(newSrcW * (el["source-height"] / el["source-width"]));
+            updates["source-height"] = newSrcH;
+            if (hFrac > 0.001) updates.height = Math.round(newSrcH * hFrac);
+          } else {
+            const scaleY = el.height > 0 ? h / el.height : 1;
+            updates["source-height"] = Math.round((el["source-height"] ?? el.height) * scaleY);
+          }
         } else {
           updates["source-width"] = w;
           updates["source-height"] = h;
@@ -1876,5 +1894,6 @@ useEffect(() => {
     addComment,
     deleteComment,
     setPendingFormatting,
+    promoteLayoutElement,
   };
 }

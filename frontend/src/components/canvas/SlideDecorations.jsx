@@ -1,63 +1,81 @@
 import { useMediaSrc } from "../../hooks/useMediaSrc";
 import { extractPlainTextFromParagraphs } from "../../core/text/textFormatting";
 
-function MediaDecorationElement({ el, zIndex, interactive = false }) {
+function MediaDecorationElement({ el, zIndex, interactive = false, onPromote }) {
   const resolvedSrc = useMediaSrc(el["file-link"]);
   const src = el.src ?? resolvedSrc;
   const isVideo = el["media-type"] === "video";
-  const style = {
+
+  const [ct = 0, cr = 0, cb = 0, cl = 0] = el.crop ?? [];
+  const hasCrop = ct !== 0 || cr !== 0 || cb !== 0 || cl !== 0;
+  const scale = el.scale ?? 1;
+  const scaleStyle = scale !== 1 ? { transform: `scale(${scale})`, transformOrigin: "center center" } : {};
+
+  const containerStyle = {
     position: "absolute",
     left: el.position?.x ?? 0,
     top: el.position?.y ?? 0,
     width: el.width ?? 200,
     height: el.height ?? 120,
-    objectFit: "contain",
-    pointerEvents: interactive ? "auto" : "none",
+    overflow: "hidden",
+    pointerEvents: (interactive || onPromote) ? "auto" : "none",
+    cursor: onPromote ? "pointer" : undefined,
     zIndex: zIndex ?? 5,
     transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
   };
 
+  const handleClick = onPromote ? (e) => { e.stopPropagation(); onPromote(); } : undefined;
+
   if (isVideo) {
-    if (interactive) {
-      return (
-        <div style={{ ...style, objectFit: undefined, overflow: "hidden" }}>
-          <video
-            src={src}
-            controls
-            preload="metadata"
-            style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
-          />
-        </div>
-      );
-    }
     return (
-      <div style={{ ...style, objectFit: undefined, overflow: "hidden" }}>
+      <div style={containerStyle} onClick={handleClick}>
         <video
           src={src}
           preload="metadata"
-          onLoadedMetadata={(e) => { e.target.currentTime = 0; }}
+          {...(interactive ? { controls: true } : { onLoadedMetadata: (e) => { e.target.currentTime = 0; } })}
           style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
         />
-        <div style={{
-          position: "absolute", inset: 0,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: "50%",
-            background: "rgba(0,0,0,0.45)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+        {!interactive && (
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     );
   }
 
-  return <img src={src} alt="" style={style} />;
+  if (hasCrop) {
+    const srcW = el["source-width"] ?? el.width ?? 200;
+    const srcH = el["source-height"] ?? el.height ?? 120;
+    return (
+      <div style={containerStyle} onClick={handleClick}>
+        <img
+          src={src}
+          alt=""
+          style={{
+            position: "absolute",
+            width: srcW,
+            height: srcH,
+            left: -(cl / 100) * srcW,
+            top: -(ct / 100) * srcH,
+            objectFit: "fill",
+            ...scaleStyle,
+          }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div style={containerStyle} onClick={handleClick}>
+      <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", ...scaleStyle }} />
+    </div>
+  );
 }
 
-export default function SlideDecorations({ presentation, width, height, hideMasterElements = false, layoutId, interactive = false }) {
+export default function SlideDecorations({ presentation, width, height, hideMasterElements = false, layoutId, interactive = false, slideContentIds, onPromoteLayoutElement }) {
   const master = presentation?.slideset?.master;
   const decorations = master?.decorations;
   const masterElements = hideMasterElements ? null : master?.elements;
@@ -160,13 +178,15 @@ export default function SlideDecorations({ presentation, width, height, hideMast
         <MediaDecorationElement key={el.id} el={el} zIndex={el["z-index"] ?? 5} interactive={interactive} />
       ))}
 
-      {(layoutElements?.text ?? []).filter((el) => !el.hidden).map((el) => {
+      {(layoutElements?.text ?? []).filter((el) => !el.hidden && !slideContentIds?.has(el.id)).map((el) => {
         const fmt = el.paragraphs?.[0]?.formatting ?? {};
         const mf = master?.formatting ?? {};
         const text = extractPlainTextFromParagraphs(el.paragraphs, "\n");
+        const canPromote = !!onPromoteLayoutElement;
         return (
           <div
             key={el.id}
+            onClick={canPromote ? () => onPromoteLayoutElement(el, "text") : undefined}
             style={{
               position: "absolute",
               left: el.position?.x ?? 0,
@@ -182,7 +202,8 @@ export default function SlideDecorations({ presentation, width, height, hideMast
               lineHeight: fmt["line-spacing"] ?? mf["line-spacing"] ?? "1.4",
               background: el.background ?? "transparent",
               overflow: "hidden",
-              pointerEvents: "none",
+              pointerEvents: canPromote ? "auto" : "none",
+              cursor: canPromote ? "pointer" : undefined,
               zIndex: el["z-index"] ?? 4,
               transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
               boxSizing: "border-box",
@@ -194,8 +215,14 @@ export default function SlideDecorations({ presentation, width, height, hideMast
         );
       })}
 
-      {(layoutElements?.media ?? []).filter((el) => !el.hidden).map((el) => (
-        <MediaDecorationElement key={el.id} el={el} zIndex={el["z-index"] ?? 4} interactive={interactive} />
+      {(layoutElements?.media ?? []).filter((el) => !el.hidden && !slideContentIds?.has(el.id)).map((el) => (
+        <MediaDecorationElement
+          key={el.id}
+          el={el}
+          zIndex={el["z-index"] ?? 4}
+          interactive={interactive}
+          onPromote={onPromoteLayoutElement ? () => onPromoteLayoutElement(el, "media") : undefined}
+        />
       ))}
     </>
   );

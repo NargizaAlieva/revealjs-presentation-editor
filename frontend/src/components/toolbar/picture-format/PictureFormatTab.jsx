@@ -620,7 +620,6 @@ function GlowSubPanel({ src, activeId, onApply, onHover, onHoverClear }) {
   );
 }
 
-// eslint-disable-next-line no-unused-vars
 function SectionPanel({ src, activeId, onSelect, noLabel, varLabel, variations, cols = 3 }) {
   return (
     <div className="pft-fx-preset-panel pft-fx-shadow-panel">
@@ -1027,7 +1026,6 @@ function ArtisticPopover({ src, effects, onUpdate, anchorRect }) {
   );
 }
 
-// eslint-disable-next-line no-unused-vars
 function TintGrid({ items, currentId, onSelect }) {
   return (
     <div className="pft-tint-grid">
@@ -1185,7 +1183,23 @@ export default function PictureFormatTab({ media, onUpdate, onCrop, onBringForwa
         </div>
 
         <div className="pft-row pft-row--reset">
-          <button className="toolbar-item" onClick={() => onUpdate({ effects: {}, opacity: 1, crop: [] })} title="Reset Picture">
+          <button className="toolbar-item" onClick={() => {
+            const [ct = 0, cr = 0, cb = 0, cl = 0] = media.crop ?? [];
+            const wFrac = 1 - cl / 100 - cr / 100;
+            const hFrac = 1 - ct / 100 - cb / 100;
+            const updates = { effects: {}, opacity: 1, crop: undefined, "source-width": undefined, "source-height": undefined };
+            if (wFrac > 0.001 && hFrac > 0.001 && (ct || cr || cb || cl)) {
+              const origW = Math.round((media.width ?? 0) / wFrac);
+              const origH = Math.round((media.height ?? 0) / hFrac);
+              updates.position = {
+                x: Math.round((media.position?.x ?? 0) - (cl / 100) * origW),
+                y: Math.round((media.position?.y ?? 0) - (ct / 100) * origH),
+              };
+              updates.width = origW;
+              updates.height = origH;
+            }
+            onUpdate(updates);
+          }} title="Reset Picture">
             <MdRestartAlt /><span>Reset</span>
           </button>
           <button className="toolbar-item" onClick={() => changeInputRef.current?.click()} title="Change Picture">
