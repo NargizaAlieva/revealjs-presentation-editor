@@ -64,6 +64,11 @@ export {
 } from "./persistence/serializationOperations";
 
 export {
+  addFontEntry,
+  removePresentationFont,
+} from "./operations/fontOperations";
+
+export {
   updateMasterTheme,
   updateMasterDimensions,
   updateMasterFormatting,

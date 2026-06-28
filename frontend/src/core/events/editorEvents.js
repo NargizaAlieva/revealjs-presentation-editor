@@ -88,6 +88,11 @@ export const EditorEventType = {
     DELETE: "COMMENT.DELETE",
   },
 
+  FONT: {
+    ADD: "FONT.ADD",
+    REMOVE: "FONT.REMOVE",
+  },
+
   ANIMATION: {
     ADD: "ANIMATION.ADD",
     UPDATE: "ANIMATION.UPDATE",

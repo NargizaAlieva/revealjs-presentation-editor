@@ -53,6 +53,10 @@ import {
   updateMedia,
 } from "../operations/mediaOperations";
 import {
+  addFontEntry,
+  removePresentationFont,
+} from "../operations/fontOperations";
+import {
   updateMasterTheme,
   updateMasterDimensions,
   updateMasterFormatting,
@@ -850,6 +854,22 @@ export const editorReducer = (state, event) => {
         lastEvent: event,
         lastUpdated: Date.now(),
       });
+
+    case EditorEventType.FONT.ADD:
+      return {
+        ...state,
+        presentation: addFontEntry(state.presentation, event.payload.fontEntry),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
+
+    case EditorEventType.FONT.REMOVE:
+      return {
+        ...state,
+        presentation: removePresentationFont(state.presentation, event.payload.fontId),
+        lastEvent: event,
+        lastUpdated: Date.now(),
+      };
 
     case EditorEventType.ANIMATION.ADD:
       return withHistory(state, {

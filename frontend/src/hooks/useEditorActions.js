@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { storageRemove } from "../core/persistence/persistenceFacade";
+import { storeMediaFile } from "../core/persistence/mediaStorage";
 import {
   EditorEventType,
   createEditorEvent,
@@ -350,6 +351,21 @@ export function useEditorActions(
       eventBus.dispatch(
         createEditorEvent(EditorEventType.MEDIA.ADD, { mediaElement }),
       ),
+    [eventBus],
+  );
+
+  const addFont = useCallback(
+    async (fontName, fileBlob) => {
+      const { key } = await storeMediaFile(fileBlob);
+      const fontEntry = { "font-id": fontName, "font-file": `indexeddb://${key}` };
+      eventBus.dispatch(createEditorEvent(EditorEventType.FONT.ADD, { fontEntry }));
+    },
+    [eventBus],
+  );
+
+  const removeFont = useCallback(
+    (fontId) =>
+      eventBus.dispatch(createEditorEvent(EditorEventType.FONT.REMOVE, { fontId })),
     [eventBus],
   );
 
@@ -797,6 +813,8 @@ export function useEditorActions(
     updateElementSilent,
     updateElements,
     deleteElement,
+    addFont,
+    removeFont,
     addMedia,
     updateMedia,
     deleteMedia,
