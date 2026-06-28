@@ -54,6 +54,7 @@ export default function ToolbarContent({
   currentFormatting,
   onFormatChange,
   onChangeCase,
+  onFontUpload,
   isTextSelected,
   presentation,
   onNewPresentation,
@@ -176,6 +177,7 @@ export default function ToolbarContent({
           currentFormatting={currentFormatting}
           onFormatChange={onFormatChange}
           onChangeCase={onChangeCase}
+          onFontUpload={onFontUpload}
           isTextSelected={isTextSelected}
           presentation={presentation}
           onCut={onCut}

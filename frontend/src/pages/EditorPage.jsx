@@ -54,6 +54,8 @@ export default function EditorPage() {
           onMoveSlideUp={ctrl.moveSlideUp}
           onMoveSlideDown={ctrl.moveSlideDown}
           onSavePresentation={ctrl.savePresentation}
+          autosaveEnabled={ctrl.state.autosaveEnabled}
+          onToggleAutosave={ctrl.toggleAutosave}
           onExportPresentation={ctrl.exportPresentation}
           onOpenPreviewFromBeginning={ctrl.handleOpenPreviewFromBeginning}
           onOpenPreviewFromCurrent={ctrl.handleOpenPreviewFromCurrent}
@@ -85,6 +87,7 @@ export default function EditorPage() {
           currentFormatting={ctrl.currentFormatting}
           onFormatChange={ctrl.handleFormatChange}
           onChangeCase={ctrl.handleChangeCase}
+          onFontUpload={ctrl.addFont}
           isTextSelected={
             !!(ctrl.isSlideMasterOpen
               ? ctrl.masterSelectedTextEl

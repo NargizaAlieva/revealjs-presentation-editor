@@ -24,6 +24,19 @@
   font-size: 12px;
 }
 
+.font-upload-input {
+  display: none;
+}
+
+.font-upload-command {
+  flex: 0 0 28px;
+  color: #1677c8;
+}
+
+.font-upload-command svg {
+  font-size: 18px;
+}
+
 .sz-picker {
   position: relative;
 }
