@@ -8,13 +8,13 @@ import {
   MdFormatItalic,
   MdFormatStrikethrough,
   MdFormatUnderlined,
+  MdFontDownload,
 } from "react-icons/md";
 import ColorPicker from "../../canvas/tools/ColorPicker";
 import "./FontGroup.css";
 
 const SIZES = [
-  8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 54, 60,
-  72, 96,
+  8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 54, 60, 72, 96,
 ];
 
 function SizePicker({ value, disabled, onChange }) {
@@ -169,9 +169,15 @@ export default function FontGroup({
   fonts = [],
   onFormatChange,
   onChangeCase,
+  onFontUpload,
 }) {
   const [showCaseMenu, setShowCaseMenu] = useState(false);
+  const [fontUpload, setFontUpload] = useState({
+    loading: false,
+    error: "",
+  });
   const caseRef = useRef(null);
+  const fontInputRef = useRef(null);
 
   useEffect(() => {
     if (!showCaseMenu) return;
@@ -220,8 +226,7 @@ export default function FontGroup({
     if (active) values.delete(name);
     else values.add(name);
     fmt({
-      "text-decoration":
-        values.size > 0 ? [...values].join(" ") : "none",
+      "text-decoration": values.size > 0 ? [...values].join(" ") : "none",
     });
   };
 
@@ -236,6 +241,31 @@ export default function FontGroup({
       highlight: null,
       "super-sub-script": null,
     });
+
+  const uploadFont = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || !onFontUpload) return;
+
+    const fontName = file.name
+      .replace(/\.(ttf|otf|woff2?)$/i, "")
+      .replace(/[_-]+/g, " ")
+      .trim();
+    if (!fontName) return;
+
+    setFontUpload({ loading: true, error: "" });
+    try {
+      await onFontUpload(fontName, file);
+      if (isTextSelected) fmt({ font: fontName });
+      setFontUpload({ loading: false, error: "" });
+    } catch (error) {
+      console.error("[FontGroup] Failed to upload font:", error);
+      setFontUpload({
+        loading: false,
+        error: "The selected font could not be loaded.",
+      });
+    }
+  };
 
   return (
     <div className="ribbon-group font-group">
@@ -279,6 +309,25 @@ export default function FontGroup({
         >
           A<sup>−</sup>
         </button>
+        <button
+          type="button"
+          className="font-command font-upload-command"
+          disabled={!onFontUpload || fontUpload.loading}
+          title={
+            fontUpload.error ||
+            (fontUpload.loading ? "Loading font..." : "Upload font family")
+          }
+          onClick={() => fontInputRef.current?.click()}
+        >
+          <MdFontDownload />
+        </button>
+        <input
+          ref={fontInputRef}
+          className="font-upload-input"
+          type="file"
+          accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2"
+          onChange={uploadFont}
+        />
       </div>
 
       <div className="font-row font-row-bottom">
@@ -334,15 +383,49 @@ export default function FontGroup({
           </button>
           {showCaseMenu && (
             <div className="font-case-menu">
-              <button onMouseDown={(e) => e.preventDefault()} onClick={() => { onChangeCase?.("sentence"); setShowCaseMenu(false); }}>
+              <button
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  onChangeCase?.("sentence");
+                  setShowCaseMenu(false);
+                }}
+              >
                 Sentence case
               </button>
-              <button onMouseDown={(e) => e.preventDefault()} onClick={() => { onChangeCase?.("lower"); setShowCaseMenu(false); }}>lowercase</button>
-              <button onMouseDown={(e) => e.preventDefault()} onClick={() => { onChangeCase?.("upper"); setShowCaseMenu(false); }}>UPPERCASE</button>
-              <button onMouseDown={(e) => e.preventDefault()} onClick={() => { onChangeCase?.("title"); setShowCaseMenu(false); }}>
+              <button
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  onChangeCase?.("lower");
+                  setShowCaseMenu(false);
+                }}
+              >
+                lowercase
+              </button>
+              <button
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  onChangeCase?.("upper");
+                  setShowCaseMenu(false);
+                }}
+              >
+                UPPERCASE
+              </button>
+              <button
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  onChangeCase?.("title");
+                  setShowCaseMenu(false);
+                }}
+              >
                 Capitalize Each Word
               </button>
-              <button onMouseDown={(e) => e.preventDefault()} onClick={() => { onChangeCase?.("toggle"); setShowCaseMenu(false); }}>
+              <button
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  onChangeCase?.("toggle");
+                  setShowCaseMenu(false);
+                }}
+              >
                 tOGGLE cASE
               </button>
             </div>

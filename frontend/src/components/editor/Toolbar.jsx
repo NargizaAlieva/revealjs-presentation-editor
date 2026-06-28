@@ -32,10 +32,12 @@ function getToolbarTabs(isSlideMasterOpen, hasPictureFormat) {
 export default function Toolbar(props) {
   const {
     activeTab,
+    autosaveEnabled,
     isSlideMasterOpen,
     onOpenPreviewFromBeginning,
     onSavePresentation,
     onTabChange,
+    onToggleAutosave,
     selectedMediaElement,
   } = props;
   const [localActiveTab, setLocalActiveTab] = useState("Home");
@@ -75,6 +77,8 @@ export default function Toolbar(props) {
         onTabChange={setCurrentTab}
         onSavePresentation={onSavePresentation}
         onOpenPreviewFromBeginning={onOpenPreviewFromBeginning}
+        autosaveEnabled={autosaveEnabled}
+        onToggleAutosave={onToggleAutosave}
       />
       <ToolbarContent {...props} currentTab={currentTab} />
     </header>

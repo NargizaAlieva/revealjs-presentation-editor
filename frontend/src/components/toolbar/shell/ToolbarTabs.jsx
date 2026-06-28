@@ -6,12 +6,16 @@ export default function ToolbarTabs({
   onTabChange,
   onSavePresentation,
   onOpenPreviewFromBeginning,
+  autosaveEnabled,
+  onToggleAutosave,
 }) {
   return (
     <nav className="toolbar-tabs">
       <ToolbarQuickActions
         onSavePresentation={onSavePresentation}
         onOpenPreviewFromBeginning={onOpenPreviewFromBeginning}
+        autosaveEnabled={autosaveEnabled}
+        onToggleAutosave={onToggleAutosave}
       />
       {tabs.map((tab) => (
         <button

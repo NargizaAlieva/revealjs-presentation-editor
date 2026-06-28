@@ -53,6 +53,57 @@
   font-size: 17px;
 }
 
+.toolbar-autosave {
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: #222;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+
+.toolbar-autosave:hover,
+.toolbar-autosave:focus-visible {
+  border-color: #c7ccd4;
+  background: #ffffff;
+  outline: none;
+}
+
+.toolbar-autosave-switch {
+  position: relative;
+  width: 28px;
+  height: 14px;
+  border-radius: 999px;
+  background: #9ca3af;
+  transition: background-color 0.15s ease;
+}
+
+.toolbar-autosave-switch > span {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease;
+}
+
+.toolbar-autosave-switch.is-on {
+  background: #1677c8;
+}
+
+.toolbar-autosave-switch.is-on > span {
+  transform: translateX(14px);
+}
+
 .toolbar-tab {
   height: 34px;
   padding: 0 14px;

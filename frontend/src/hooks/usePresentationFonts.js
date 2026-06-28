@@ -1,11 +1,12 @@
 import { useEffect } from "react";
 import { getMediaFile } from "../core/persistence/persistenceFacade";
 
-function fontFormat(originalPath) {
-  if (originalPath.includes(".woff2")) return "woff2";
-  if (originalPath.includes(".woff"))  return "woff";
-  if (originalPath.includes(".ttf"))   return "truetype";
-  if (originalPath.includes(".otf"))   return "opentype";
+function fontFormat(originalPath, mimeType = "") {
+  const source = `${originalPath} ${mimeType}`.toLowerCase();
+  if (source.includes("woff2")) return "woff2";
+  if (source.includes("woff")) return "woff";
+  if (source.includes("ttf") || source.includes("truetype")) return "truetype";
+  if (source.includes("otf") || source.includes("opentype")) return "opentype";
   return "woff";
 }
 
@@ -24,11 +25,13 @@ export function usePresentationFonts(presentation) {
           .filter((f) => f["font-id"] && f["font-file"])
           .map(async (f) => {
             let src = f["font-file"];
+            let mimeType = "";
 
             if (src.startsWith("indexeddb://")) {
               const key = src.replace("indexeddb://", "");
               const blob = await getMediaFile(key);
               if (cancelled || !blob) return null;
+              mimeType = blob.type;
               const url = URL.createObjectURL(blob);
               objectUrls.push(url);
               src = url;
@@ -37,7 +40,7 @@ export function usePresentationFonts(presentation) {
             return (
               `@font-face {\n` +
               `  font-family: "${f["font-id"]}";\n` +
-              `  src: url("${src}") format("${fontFormat(f["font-file"])}");\n` +
+              `  src: url("${src}") format("${fontFormat(f["font-file"], mimeType)}");\n` +
               `  font-weight: normal;\n` +
               `  font-style: normal;\n` +
               `}`

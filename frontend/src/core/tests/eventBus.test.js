@@ -2,11 +2,12 @@ import { describe, test, expect, vi, beforeEach } from "vitest";
 import { createEventBus } from "../events/eventBus";
 import { EditorEventType } from "../events/editorEvents";
 
-vi.mock("../persistence/autosaveService", () => {
+vi.mock("../persistence/autoSaveService", () => {
   return {
     createAutosaveService: vi.fn(() => ({
       scheduleAutosave: vi.fn(),
       saveImmediately: vi.fn(),
+      persistAutosaveSetting: vi.fn(),
       shouldAutosave: vi.fn((eventType) =>
         [
           EditorEventType.SLIDE.ADD,
@@ -19,7 +20,7 @@ vi.mock("../persistence/autosaveService", () => {
   };
 });
 
-import { createAutosaveService } from "../persistence/autosaveService";
+import { createAutosaveService } from "../persistence/autoSaveService";
 
 describe("createEventBus", () => {
   let reactDispatch;
@@ -96,6 +97,21 @@ describe("createEventBus", () => {
     await eventBus.dispatch(event);
 
     expect(autosave.saveImmediately).toHaveBeenCalled();
+    expect(autosave.scheduleAutosave).not.toHaveBeenCalled();
+  });
+
+  test("dispatch persists the updated autosave setting", async () => {
+    getState.mockReturnValue({
+      autosaveEnabled: false,
+      presentation: { slideset: { slides: [] } },
+    });
+
+    await eventBus.dispatch({
+      type: EditorEventType.PRESENTATION.TOGGLE_AUTOSAVE,
+      payload: {},
+    });
+
+    expect(autosave.persistAutosaveSetting).toHaveBeenCalledWith(false);
     expect(autosave.scheduleAutosave).not.toHaveBeenCalled();
   });
 

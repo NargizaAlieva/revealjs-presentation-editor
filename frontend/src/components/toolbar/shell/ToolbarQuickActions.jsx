@@ -3,6 +3,8 @@ import { MdPlayArrow, MdSave } from "react-icons/md";
 export default function ToolbarQuickActions({
   onSavePresentation,
   onOpenPreviewFromBeginning,
+  autosaveEnabled = true,
+  onToggleAutosave,
 }) {
   return (
     <div className="toolbar-quick-actions" aria-label="Quick actions">
@@ -23,6 +25,24 @@ export default function ToolbarQuickActions({
       >
         <MdPlayArrow />
         <span>Start</span>
+      </button>
+      <button
+        type="button"
+        className="toolbar-autosave"
+        role="switch"
+        aria-checked={autosaveEnabled}
+        onClick={onToggleAutosave}
+        title={`Turn AutoSave ${autosaveEnabled ? "off" : "on"}`}
+      >
+        <span>AutoSave</span>
+        <span
+          className={`toolbar-autosave-switch${
+            autosaveEnabled ? " is-on" : ""
+          }`}
+          aria-hidden="true"
+        >
+          <span />
+        </span>
       </button>
     </div>
   );
