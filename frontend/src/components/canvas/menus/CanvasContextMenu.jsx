@@ -1,56 +1,29 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  MdChevronRight,
   MdContentCopy,
   MdContentCut,
   MdContentPaste,
-  MdDeleteOutline,
   MdDescription,
-  MdExitToApp,
-  MdFlipToBack,
-  MdFlipToFront,
   MdFolder,
-  MdFontDownload,
-  MdFormatAlignLeft,
-  MdFormatListBulleted,
-  MdFormatListNumbered,
   MdImage,
   MdInsertDriveFile,
   MdMailOutline,
   MdRedo,
-  MdLink,
-  MdRotateRight,
   MdSearch,
-  MdSelectAll,
-  MdUndo,
-  MdVerticalAlignBottom,
-  MdVerticalAlignTop,
-  MdAddComment,
   MdTextFields,
+  MdUndo,
   MdWeb,
 } from "react-icons/md";
 import FontDialog from "../dialogs/FontDialog";
 import ParagraphDialog from "../dialogs/ParagraphDialog";
+import CanvasSelectionMenu from "./context-menu/CanvasSelectionMenu";
+import {
+  ContextMenuItem,
+  PasteOptionButton,
+} from "./context-menu/ContextMenuItem";
+import TextFormattingMenu from "./context-menu/TextFormattingMenu";
 import "./CanvasContextMenu.css";
-
-const BULLET_STYLES = [
-  { value: null, label: "None" },
-  { value: "\u2022", label: "• Filled circle" },
-  { value: "\u25cb", label: "○ Open circle" },
-  { value: "\u25aa", label: "▪ Square" },
-  { value: "\u2756", label: "❖ Diamond" },
-  { value: "\u2713", label: "✓ Checkmark" },
-];
-
-const NUMBER_STYLES = [
-  { value: null, label: "None" },
-  { value: "decimal", label: "1. 2. 3." },
-  { value: "lower-alpha", label: "a. b. c." },
-  { value: "upper-alpha", label: "A. B. C." },
-  { value: "lower-roman", label: "i. ii. iii." },
-  { value: "upper-roman", label: "I. II. III." },
-];
 
 const HYPERLINK_TYPES = [
   { value: "web", label: "Existing File or Web Page", icon: <MdWeb /> },
@@ -558,49 +531,6 @@ export function HyperlinkDialog({
   );
 }
 
-const MenuItem = ({
-  icon,
-  label,
-  shortcut,
-  disabled,
-  submenu,
-  onMouseEnter,
-  onClick,
-}) => (
-  <button
-    type="button"
-    className="canvas-context-menu-item"
-    disabled={disabled}
-    onMouseEnter={onMouseEnter}
-    onClick={() => {
-      if (!disabled) onClick?.();
-    }}
-  >
-    <span className="canvas-context-menu-icon">{icon}</span>
-    <span className="canvas-context-menu-label">{label}</span>
-    {shortcut && (
-      <span className="canvas-context-menu-shortcut">{shortcut}</span>
-    )}
-    {submenu && <MdChevronRight className="canvas-context-menu-chevron" />}
-  </button>
-);
-
-const PasteOptionButton = ({ icon, badge, title, disabled, onClick }) => (
-  <button
-    type="button"
-    className="canvas-context-paste-option"
-    disabled={disabled}
-    title={title}
-    aria-label={title}
-    onClick={() => {
-      if (!disabled) onClick?.();
-    }}
-  >
-    <span className="canvas-context-paste-option-icon">{icon}</span>
-    <span className="canvas-context-paste-option-badge">{badge}</span>
-  </button>
-);
-
 export default function CanvasContextMenu({
   x,
   y,
@@ -750,14 +680,14 @@ export default function CanvasContextMenu({
 
       {!isText && (
         <>
-          <MenuItem
+          <ContextMenuItem
             icon={<MdUndo />}
             label="Undo"
             shortcut="Ctrl+Z"
             disabled={!canUndo}
             onClick={() => run(onUndo)}
           />
-          <MenuItem
+          <ContextMenuItem
             icon={<MdRedo />}
             label="Redo"
             shortcut="Ctrl+Y"
@@ -769,7 +699,7 @@ export default function CanvasContextMenu({
       )}
 
       {matches("Cut") && (
-        <MenuItem
+        <ContextMenuItem
           icon={<MdContentCut />}
           label="Cut"
           shortcut="Ctrl+X"
@@ -778,7 +708,7 @@ export default function CanvasContextMenu({
         />
       )}
       {matches("Copy") && (
-        <MenuItem
+        <ContextMenuItem
           icon={<MdContentCopy />}
           label="Copy"
           shortcut="Ctrl+C"
@@ -825,7 +755,7 @@ export default function CanvasContextMenu({
               />
             </div>
           ) : (
-            <MenuItem
+            <ContextMenuItem
               icon={<MdContentPaste />}
               label="Paste"
               shortcut="Ctrl+V"
@@ -837,216 +767,33 @@ export default function CanvasContextMenu({
       )}
 
       {isText && (
-        <>
-          <div className="canvas-context-menu-separator" />
-          {matches("Exit Edit Text") && (
-            <MenuItem
-              icon={<MdExitToApp />}
-              label="Exit Edit Text"
-              onClick={() => run(() => onExitEditText?.(elementId))}
-            />
-          )}
-          {matches("Font") && (
-            <MenuItem
-              icon={<MdFontDownload />}
-              label="Font..."
-              onClick={() => setDialog("font")}
-            />
-          )}
-          {matches("Paragraph") && (
-            <MenuItem
-              icon={<MdFormatAlignLeft />}
-              label="Paragraph..."
-              onClick={() => setDialog("paragraph")}
-            />
-          )}
-          {matches("Bullets") && (
-            <div
-              className="canvas-context-submenu-owner"
-              onMouseLeave={() => setSubmenu(null)}
-            >
-              <MenuItem
-                icon={<MdFormatListBulleted />}
-                label="Bullets"
-                submenu
-                onMouseEnter={() => setSubmenu("bullets")}
-                onClick={() =>
-                  setSubmenu((current) =>
-                    current === "bullets" ? null : "bullets",
-                  )
-                }
-              />
-              {submenu === "bullets" && (
-                <div className="canvas-context-submenu">
-                  {BULLET_STYLES.map((style) => (
-                    <button
-                      type="button"
-                      key={style.label}
-                      className={
-                        formatting["list-type"] === "bullets" &&
-                        formatting["list-marker"] === style.value
-                          ? "active"
-                          : ""
-                      }
-                      onClick={() =>
-                        run(() =>
-                          applyTextFormatting(
-                            style.value === null
-                              ? {
-                                  "list-type": null,
-                                  "list-marker": null,
-                                  "indent-level": 0,
-                                }
-                              : {
-                                  "list-type": "bullets",
-                                  "list-marker": style.value,
-                                  "indent-level":
-                                    formatting["indent-level"] ?? 0,
-                                },
-                          ),
-                        )
-                      }
-                    >
-                      {style.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-          {matches("Numbering") && (
-            <div
-              className="canvas-context-submenu-owner"
-              onMouseLeave={() => setSubmenu(null)}
-            >
-              <MenuItem
-                icon={<MdFormatListNumbered />}
-                label="Numbering"
-                submenu
-                onMouseEnter={() => setSubmenu("numbering")}
-                onClick={() =>
-                  setSubmenu((current) =>
-                    current === "numbering" ? null : "numbering",
-                  )
-                }
-              />
-              {submenu === "numbering" && (
-                <div className="canvas-context-submenu">
-                  {NUMBER_STYLES.map((style) => (
-                    <button
-                      type="button"
-                      key={style.label}
-                      className={
-                        formatting["list-type"] === "numbered" &&
-                        formatting["list-numbered-style"] === style.value
-                          ? "active"
-                          : ""
-                      }
-                      onClick={() =>
-                        run(() =>
-                          applyTextFormatting(
-                            style.value === null
-                              ? {
-                                  "list-type": null,
-                                  "list-numbered-style": null,
-                                  "indent-level": 0,
-                                }
-                              : {
-                                  "list-type": "numbered",
-                                  "list-numbered-style": style.value,
-                                  "indent-level":
-                                    formatting["indent-level"] ?? 0,
-                                },
-                          ),
-                        )
-                      }
-                    >
-                      {style.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-          {matches("Hyperlink") && (
-            <>
-              <div className="canvas-context-menu-separator" />
-              <MenuItem
-                icon={<MdLink />}
-                label="Hyperlink..."
-                onClick={() => setDialog("hyperlink")}
-              />
-            </>
-          )}
-          {matches("New Comment") && (
-            <>
-              <div className="canvas-context-menu-separator" />
-              <MenuItem
-                icon={<MdAddComment />}
-                label="New Comment"
-                onClick={() => run(onNewComment)}
-              />
-            </>
-          )}
-        </>
+        <TextFormattingMenu
+          elementId={elementId}
+          formatting={formatting}
+          matches={matches}
+          submenu={submenu}
+          setSubmenu={setSubmenu}
+          setDialog={setDialog}
+          run={run}
+          onExitEditText={onExitEditText}
+          onNewComment={onNewComment}
+          applyFormatting={applyTextFormatting}
+        />
       )}
 
-      {hasSelection && !isText && (
-        <>
-          <div className="canvas-context-menu-separator" />
-
-          <MenuItem
-            icon={<MdVerticalAlignTop />}
-            label="Bring to Front"
-            onClick={() => run(onBringToFront)}
-          />
-          <MenuItem
-            icon={<MdFlipToFront />}
-            label="Bring Forward"
-            onClick={() => run(onBringForward)}
-          />
-          <MenuItem
-            icon={<MdFlipToBack />}
-            label="Send Backward"
-            onClick={() => run(onSendBackward)}
-          />
-          <MenuItem
-            icon={<MdVerticalAlignBottom />}
-            label="Send to Back"
-            onClick={() => run(onSendToBack)}
-          />
-          <MenuItem
-            icon={<MdRotateRight />}
-            label="Rotate Right 90°"
-            onClick={() => run(onRotateRight)}
-          />
-
-          <div className="canvas-context-menu-separator" />
-
-          <MenuItem
-            icon={<MdAddComment />}
-            label="New Comment"
-            onClick={() => run(onNewComment)}
-          />
-          <MenuItem
-            icon={<MdDeleteOutline />}
-            label="Delete"
-            shortcut="Del"
-            onClick={() => run(onDelete)}
-          />
-        </>
-      )}
-
-      {!hasSelection && !isText && (
-        <>
-          <div className="canvas-context-menu-separator" />
-          <MenuItem
-            icon={<MdSelectAll />}
-            label="Select All"
-            shortcut="Ctrl+A"
-            onClick={() => run(onSelectAll)}
-          />
-        </>
+      {!isText && (
+        <CanvasSelectionMenu
+          hasSelection={hasSelection}
+          run={run}
+          onBringToFront={onBringToFront}
+          onBringForward={onBringForward}
+          onSendBackward={onSendBackward}
+          onSendToBack={onSendToBack}
+          onRotateRight={onRotateRight}
+          onNewComment={onNewComment}
+          onDelete={onDelete}
+          onSelectAll={onSelectAll}
+        />
       )}
     </div>,
     document.body,
