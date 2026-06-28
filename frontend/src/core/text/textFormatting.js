@@ -157,7 +157,7 @@ export const buildRunStyles = (runFormatting = {}) => {
     );
   if (runFormatting.color) styles.push(`color:${runFormatting.color}`);
   if (runFormatting.size) styles.push(`font-size:${runFormatting.size}`);
-  if (runFormatting.font) styles.push(`font-family:${runFormatting.font}`);
+  if (runFormatting.font && runFormatting.font !== "undefined") styles.push(`font-family:${runFormatting.font}`);
   if (
     runFormatting["text-decoration"] &&
     runFormatting["text-decoration"] !== "none"
@@ -201,7 +201,7 @@ export const paragraphsToHTML = (paragraphs, masterFormatting = {}, placeholderF
   (paragraphs ?? [])
     .map((paragraph, index) => {
       const formatting = paragraph.formatting ?? {};
-      const r = (elemVal, phVal, masterVal) => elemVal ?? phVal ?? masterVal;
+      const r = (elemVal, phVal, masterVal) => validStyleValue(elemVal) ?? validStyleValue(phVal) ?? validStyleValue(masterVal);
       const styles = [
         buildRunStyles({
           weight: r(formatting.weight, placeholderFormatting.weight, masterFormatting.weight),
@@ -243,17 +243,20 @@ export const buildPendingFormattingStyles = (pendingFormatting = {}) => {
     highlight: (v) => `background-color:${v}`,
   };
   return Object.entries(pendingFormatting)
+    .filter(([, v]) => v != null)
     .map(([k, v]) => styleMap[k]?.(v))
     .filter(Boolean)
     .join(";");
 };
+
+const validStyleValue = (v) => (v != null && v !== "undefined" ? v : undefined);
 
 export const resolveTextStyle = (
   elemValue,
   placeholderValue,
   masterValue,
   fallback,
-) => elemValue ?? placeholderValue ?? masterValue ?? fallback;
+) => validStyleValue(elemValue) ?? validStyleValue(placeholderValue) ?? validStyleValue(masterValue) ?? fallback;
 
 export const extractPlainTextFromParagraphs = (
   paragraphs = [],

@@ -19,7 +19,8 @@ import { getStyleById } from "../model/imageStyles";
 export function buildTextElementStyle(textElement, index, masterFormatting = {}, placeholderFormatting = {}, placeholderPadding = null, placeholderBackground = null) {
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
   const rotation = textElement.rotation ?? 0;
-  const r = (elemVal, phVal, masterVal, fallback) => elemVal ?? phVal ?? masterVal ?? fallback;
+  const valid = (v) => (v != null && v !== "undefined" ? v : undefined);
+  const r = (elemVal, phVal, masterVal, fallback) => valid(elemVal) ?? valid(phVal) ?? valid(masterVal) ?? fallback;
 
   const textDecoration = r(formatting["text-decoration"], placeholderFormatting["text-decoration"], masterFormatting["text-decoration"], null);
   const verticalAlign = r(formatting["vertical-align"], placeholderFormatting["vertical-align"], masterFormatting["vertical-align"], "top");

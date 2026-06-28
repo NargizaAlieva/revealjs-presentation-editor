@@ -167,11 +167,26 @@ export default function SlideThumbnail({
           layoutId={slide?.["layout-id"]}
           slideContentIds={getSlideContentIds(slide)}
         />
-        {textElements.filter((element) => !element.hidden && !isEmptyPlaceholderPrompt(element)).map((textElement, index) => {
+        {textElements.filter((element) => !element.hidden).map((textElement, index) => {
           const placeholderFormatting = getPlaceholderFormatting(presentation, slide, textElement);
           const placeholderPadding = getPlaceholderPadding(presentation, slide, textElement);
           const placeholderBackground = getPlaceholderBackground(presentation, slide, textElement);
           const style = buildTextElementStyle(textElement, index, masterFormatting, placeholderFormatting, placeholderPadding, placeholderBackground);
+          if (isEmptyPlaceholderPrompt(textElement)) {
+            const bg = style.background;
+            const highlight = placeholderFormatting.highlight;
+            const visibleBg = bg && bg !== "transparent" && bg !== "#FFFFFF00" ? bg : null;
+            const visibleHighlight = highlight && highlight !== "transparent" ? highlight : null;
+            if (!visibleBg && !visibleHighlight) return null;
+            const html = paragraphsToHTML(textElement.paragraphs, masterFormatting, placeholderFormatting);
+            return (
+              <div
+                key={textElement.id}
+                style={{ ...style, color: "transparent" }}
+                dangerouslySetInnerHTML={{ __html: html }}
+              />
+            );
+          }
           const html = paragraphsToHTML(textElement.paragraphs, masterFormatting, placeholderFormatting);
           return (
             <div

@@ -1,5 +1,5 @@
 import { useMediaSrc } from "../../hooks/useMediaSrc";
-import { extractPlainTextFromParagraphs } from "../../core/text/textFormatting";
+import { paragraphsToHTML } from "../../core/text/textFormatting";
 
 function MediaDecorationElement({ el, zIndex, interactive = false, onPromote }) {
   const resolvedSrc = useMediaSrc(el["file-link"]);
@@ -78,9 +78,13 @@ export default function SlideDecorations({ presentation, width, height, hideMast
   const master = presentation?.slideset?.master;
   const decorations = master?.decorations;
   const masterElements = hideMasterElements ? null : master?.elements;
-  const layoutElements = layoutId
-    ? (presentation?.slideset?.layouts ?? []).find((l) => l["layout-id"] === layoutId)?.elements
+  const layout = layoutId
+    ? (presentation?.slideset?.layouts ?? []).find((l) => l["layout-id"] === layoutId)
     : null;
+  const layoutElements = layout?.elements ?? null;
+  const layoutPlaceholders = (layout?.placeholders ?? []).filter(
+    (p) => p.type === "text" && !slideContentIds?.has(p["placeholder-id"]),
+  );
 
   return (
     <>
@@ -142,7 +146,8 @@ export default function SlideDecorations({ presentation, width, height, hideMast
       {(masterElements?.text ?? []).filter((el) => !el.hidden).map((el) => {
         const fmt = el.paragraphs?.[0]?.formatting ?? {};
         const mf = master?.formatting ?? {};
-        const text = extractPlainTextFromParagraphs(el.paragraphs, "\n");
+        const verticalAlign = fmt["vertical-align"] ?? mf["vertical-align"] ?? "top";
+        const justifyContent = verticalAlign === "middle" ? "center" : verticalAlign === "bottom" ? "flex-end" : "flex-start";
         return (
           <div
             key={el.id}
@@ -152,24 +157,18 @@ export default function SlideDecorations({ presentation, width, height, hideMast
               top: el.position?.y ?? 0,
               width: el.width ?? 300,
               height: el.height ?? 80,
-              fontSize: fmt.size ?? mf.size ?? "16px",
-              fontWeight: fmt.weight ?? mf.weight ?? "normal",
-              fontStyle: (fmt.italics ?? mf.italics) ? "italic" : "normal",
-              fontFamily: fmt.font ?? mf.font ?? "inherit",
-              color: fmt.color ?? mf.color ?? "var(--text-dark, black)",
-              textAlign: fmt.align ?? mf.align ?? "left",
-              lineHeight: fmt["line-spacing"] ?? mf["line-spacing"] ?? "1.4",
               background: el.background ?? "transparent",
               overflow: "hidden",
               pointerEvents: "none",
               zIndex: el["z-index"] ?? 5,
               transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
               boxSizing: "border-box",
-              whiteSpace: "pre-wrap",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent,
             }}
-          >
-            {text}
-          </div>
+            dangerouslySetInnerHTML={{ __html: paragraphsToHTML(el.paragraphs, mf, {}) }}
+          />
         );
       })}
 
@@ -180,8 +179,9 @@ export default function SlideDecorations({ presentation, width, height, hideMast
       {(layoutElements?.text ?? []).filter((el) => !el.hidden && !slideContentIds?.has(el.id)).map((el) => {
         const fmt = el.paragraphs?.[0]?.formatting ?? {};
         const mf = master?.formatting ?? {};
-        const text = extractPlainTextFromParagraphs(el.paragraphs, "\n");
         const canPromote = !!onPromoteLayoutElement;
+        const verticalAlign = fmt["vertical-align"] ?? mf["vertical-align"] ?? "top";
+        const justifyContent = verticalAlign === "middle" ? "center" : verticalAlign === "bottom" ? "flex-end" : "flex-start";
         return (
           <div
             key={el.id}
@@ -192,13 +192,6 @@ export default function SlideDecorations({ presentation, width, height, hideMast
               top: el.position?.y ?? 0,
               width: el.width ?? 300,
               height: el.height ?? 80,
-              fontSize: fmt.size ?? mf.size ?? "16px",
-              fontWeight: fmt.weight ?? mf.weight ?? "normal",
-              fontStyle: (fmt.italics ?? mf.italics) ? "italic" : "normal",
-              fontFamily: fmt.font ?? mf.font ?? "inherit",
-              color: fmt.color ?? mf.color ?? "var(--text-dark, black)",
-              textAlign: fmt.align ?? mf.align ?? "left",
-              lineHeight: fmt["line-spacing"] ?? mf["line-spacing"] ?? "1.4",
               background: el.background ?? "transparent",
               overflow: "hidden",
               pointerEvents: canPromote ? "auto" : "none",
@@ -206,11 +199,12 @@ export default function SlideDecorations({ presentation, width, height, hideMast
               zIndex: el["z-index"] ?? 4,
               transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
               boxSizing: "border-box",
-              whiteSpace: "pre-wrap",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent,
             }}
-          >
-            {text}
-          </div>
+            dangerouslySetInnerHTML={{ __html: paragraphsToHTML(el.paragraphs, mf, {}) }}
+          />
         );
       })}
 
@@ -223,6 +217,29 @@ export default function SlideDecorations({ presentation, width, height, hideMast
           onPromote={onPromoteLayoutElement ? () => onPromoteLayoutElement(el, "media") : undefined}
         />
       ))}
+
+      {layoutPlaceholders.map((p) => {
+        const bg = p.background ?? null;
+        if (!bg || bg === "transparent" || bg === "#FFFFFF00") return null;
+        return (
+          <div
+            key={p["placeholder-id"]}
+            style={{
+              position: "absolute",
+              left: p.position?.x ?? 0,
+              top: p.position?.y ?? 0,
+              width: p.width ?? 300,
+              height: p.height ?? 80,
+              background: bg,
+              overflow: "hidden",
+              pointerEvents: "none",
+              zIndex: 3,
+              transform: p.rotation ? `rotate(${p.rotation}deg)` : undefined,
+              boxSizing: "border-box",
+            }}
+          />
+        );
+      })}
     </>
   );
 }

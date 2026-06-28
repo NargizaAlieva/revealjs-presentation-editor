@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import "./SlideMasterView.css";
-import { buildColorThemeStyle } from "../../core/render/revealRenderer";
+import { buildColorThemeStyle, buildTextElementStyle } from "../../core/render/revealRenderer";
 import SlideDecorations from "../canvas/SlideDecorations";
 import EditorCanvas from "../editor/EditorCanvas";
 import { ColorPalettePopup } from "../toolbar/design/DesignTab";
@@ -10,7 +10,9 @@ import { DEFAULT_FONTS } from "../../core/model/fontConfig";
 import { renderShapes } from "../../core/render/shapeRenderer";
 import { toHex6 } from "../../core/utils/colorUtils";
 import { hasTitle, hasFooters } from "../../core/operations/masterOperations";
-import { placeholderPromptText } from "../../core/operations/layoutOperations";
+import { placeholderPromptText, createPlaceholderPseudoElement } from "../../core/operations/layoutOperations";
+import { paragraphsToHTML } from "../../core/text/textFormatting";
+import { getPlaceholderBackground, getPlaceholderPadding } from "../../core/render/slidesetRenderUtils";
 
 
 function ThemeThumbnailMini({ theme, isActive, onClick }) {
@@ -267,8 +269,7 @@ function MasterThumb({ label, isSelected, onClick, presentation, layout, isMaste
           {(layout?.placeholders ?? []).map((ph, i) => {
             const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
             const phFmt = ph.formatting ?? {};
-            const r = (phVal, masterVal, fallback) => phVal ?? masterVal ?? fallback;
-            if (ph.type === "text") {
+            if (ph.type !== "text") {
               return (
                 <div key={i} style={{
                   position: "absolute",
@@ -278,29 +279,22 @@ function MasterThumb({ label, isSelected, onClick, presentation, layout, isMaste
                   height: ph.height,
                   border: "1px dashed rgba(80,80,80,0.4)",
                   boxSizing: "border-box",
-                  overflow: "hidden",
-                  fontSize: r(phFmt.size, masterFormatting.size, "16px"),
-                  fontWeight: r(phFmt.weight, masterFormatting.weight, "normal"),
-                  fontFamily: r(phFmt.font, masterFormatting.font, "inherit"),
-                  color: r(phFmt.color, masterFormatting.color, "var(--text-dark)"),
-                  textAlign: r(phFmt.align, masterFormatting.align, "left"),
-                  padding: "4px 8px",
-                }}>
-                  {placeholderPromptText(ph)}
-                </div>
+                  background: "rgba(200,200,200,0.15)",
+                }} />
               );
             }
+            const pseudoEl = createPlaceholderPseudoElement(ph);
+            const pseudoSlide = { "layout-id": layout?.["layout-id"] };
+            const placeholderBackground = getPlaceholderBackground(presentation, pseudoSlide, pseudoEl);
+            const placeholderPadding = getPlaceholderPadding(presentation, pseudoSlide, pseudoEl);
+            const elStyle = buildTextElementStyle(pseudoEl, i, masterFormatting, phFmt, placeholderPadding, placeholderBackground);
+            const html = paragraphsToHTML(pseudoEl.paragraphs, masterFormatting, phFmt);
             return (
-              <div key={i} style={{
-                position: "absolute",
-                left: ph.position?.x ?? 0,
-                top: ph.position?.y ?? 0,
-                width: ph.width,
-                height: ph.height,
-                border: "1px dashed rgba(80,80,80,0.4)",
-                boxSizing: "border-box",
-                background: "rgba(200,200,200,0.15)",
-              }} />
+              <div
+                key={i}
+                style={{ ...elStyle, outline: "1px dashed rgba(80,80,80,0.4)" }}
+                dangerouslySetInnerHTML={{ __html: html }}
+              />
             );
           })}
         </div>

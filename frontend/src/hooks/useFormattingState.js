@@ -30,13 +30,13 @@ export const findMasterTextElement = (
       (p) => p["placeholder-id"] === selectedMasterElementId && p.type === "text",
     );
     if (placeholder) {
-      const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
-      const placeholderFormatting = placeholder.formatting ?? {};
       return {
         id: placeholder["placeholder-id"],
+        "placeholder-id": placeholder["placeholder-id"],
+        isPlaceholder: true,
         paragraphs: [{
           id: `ph-para-${placeholder["placeholder-id"]}`,
-          formatting: {},
+          formatting: placeholder.formatting ?? {},
           bullets: "none",
           runs: [{ text: "", formatting: {}, "super-sub-script": "normal", link: null }],
         }],
@@ -61,7 +61,9 @@ export const computeFormattingState = ({
   const placeholderFormatting =
     activeTextEl && !isSlideMasterOpen
       ? getPlaceholderFormatting(presentation, selectedSlide, activeTextEl)
-      : {};
+      : (isSlideMasterOpen && activeTextEl?.isPlaceholder
+          ? activeTextEl.paragraphs?.[0]?.formatting ?? {}
+          : {});
   const effectiveFormatting = resolveEffectiveFormatting(
     masterFormatting,
     placeholderFormatting,
@@ -160,7 +162,7 @@ export const useApplyFormatting = ({
         if (Object.keys(runUpdates).length > 0) {
           const cursorRunBase = Object.fromEntries(
             Object.entries(currentFormatting).filter(
-              ([k, v]) => RUN_LEVEL_KEYS.has(k) && v !== "mixed",
+              ([k, v]) => RUN_LEVEL_KEYS.has(k) && v != null && v !== "mixed",
             ),
           );
           setPendingFormatting((prev) => ({

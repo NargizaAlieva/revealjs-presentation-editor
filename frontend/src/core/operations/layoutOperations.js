@@ -413,10 +413,14 @@ export const updateLayoutTextFormatting = (presentation, layoutId, elementId, fo
         paragraphs: (el.paragraphs ?? []).map((paragraph) => ({
           ...paragraph,
           formatting: { ...(paragraph.formatting ?? {}), ...paragraphUpdate },
-          runs: (paragraph.runs ?? []).map((run) => ({
-            ...run,
-            formatting: { ...(run.formatting ?? {}), ...formattingUpdate },
-          })),
+          runs: (paragraph.runs ?? []).map((run) => {
+            const rf = { ...(run.formatting ?? {}) };
+            for (const k of Object.keys(paragraphUpdate)) delete rf[k];
+            for (const [k, v] of Object.entries(formattingUpdate)) {
+              if (RUN_ONLY_KEYS.has(k)) rf[k] = v;
+            }
+            return { ...run, formatting: rf };
+          }),
         })),
       };
     });

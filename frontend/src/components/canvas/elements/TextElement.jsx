@@ -143,15 +143,13 @@ useEffect(() => {
       (p.runs ?? []).find((run) => (run.text ?? "").length > 0)?.formatting ??
       p.runs?.[0]?.formatting ??
       {};
-    const pListType =
-      pFmt["list-type"] && pFmt["list-type"] !== "none"
-        ? pFmt["list-type"]
-        : null;
+    const resolvedListType = pFmt["list-type"] || placeholderFormatting["list-type"] || null;
+    const pListType = resolvedListType && resolvedListType !== "none" ? resolvedListType : null;
     return {
       listType: pListType,
-      listLevel: pFmt["indent-level"] ?? 0,
-      listMarker: pFmt["list-marker"] ?? "•",
-      listNumberedStyle: pFmt["list-numbered-style"] ?? "decimal",
+      listLevel: pFmt["indent-level"] ?? placeholderFormatting["indent-level"] ?? 0,
+      listMarker: pFmt["list-marker"] ?? placeholderFormatting["list-marker"] ?? "•",
+      listNumberedStyle: pFmt["list-numbered-style"] ?? placeholderFormatting["list-numbered-style"] ?? "decimal",
       markerStyle: {
         fontSize: resolveTextStyle(
           firstRunFmt.size,

@@ -175,7 +175,7 @@ function buildRunHtml(run) {
   return style ? `<span style="${style}">${text}</span>` : text;
 }
 
-function buildTextElementContent(textElement, animation) {
+function buildTextElementContent(textElement, animation, placeholderFormatting = {}) {
   if (!textElement.paragraphs?.length) return "";
   const sequenceMode = animation?.["effect-options"]?.sequence ?? "as-one-object";
   const perLine = animation && sequenceMode !== "as-one-object";
@@ -184,10 +184,11 @@ function buildTextElementContent(textElement, animation) {
   return textElement.paragraphs
     .map((paragraph, pIdx) => {
       const paragraphFormatting = paragraph.formatting ?? {};
-      const listType = paragraphFormatting["list-type"];
-      const listLevel = paragraphFormatting["indent-level"] ?? 0;
-      const listMarker = paragraphFormatting["list-marker"];
-      const listNumberedStyle = paragraphFormatting["list-numbered-style"];
+      const rawListType = paragraphFormatting["list-type"] || placeholderFormatting["list-type"] || null;
+      const listType = rawListType && rawListType !== "none" ? rawListType : null;
+      const listLevel = paragraphFormatting["indent-level"] ?? placeholderFormatting["indent-level"] ?? 0;
+      const listMarker = paragraphFormatting["list-marker"] ?? placeholderFormatting["list-marker"];
+      const listNumberedStyle = paragraphFormatting["list-numbered-style"] ?? placeholderFormatting["list-numbered-style"];
 
       if (listType === "numbered") numberedCounter++;
       else if (!listType) numberedCounter = 0;
@@ -329,7 +330,7 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
       const adjustedAnim = animation && adjustedSeqMap.has(animation.id)
         ? { ...animation, sequence: adjustedSeqMap.get(animation.id) }
         : animation;
-      const content = buildTextElementContent(textElement, adjustedAnim);
+      const content = buildTextElementContent(textElement, adjustedAnim, placeholderFormatting);
       if (!animation || sequenceMode === "as-one-object") {
         return applyFragment(content, style, adjustedAnim);
       }

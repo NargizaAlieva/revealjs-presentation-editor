@@ -6,8 +6,10 @@ export const parseSpanStyle = (style) => {
   if (style.fontStyle === "italic") f.italics = true;
   if (style.color) f.color = style.color;
   if (style.fontSize) f.size = style.fontSize;
-  if (style.fontFamily)
-    f.font = style.fontFamily.replace(/^["']|["']$/g, "").trim();
+  if (style.fontFamily) {
+    const font = style.fontFamily.replace(/^["']|["']$/g, "").trim();
+    if (font && font !== "undefined") f.font = font;
+  }
   if (style.textDecoration && style.textDecoration !== "none")
     f["text-decoration"] = style.textDecoration;
   if (style.backgroundColor && style.backgroundColor !== "transparent")
