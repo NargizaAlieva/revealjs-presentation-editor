@@ -1,8 +1,9 @@
 import { escapeHtml } from "../utils/presentationUtils";
+import { getListMarker, getListIndent } from "../utils/listUtils";
 
 const validStyleValue = (v) => (v != null && v !== "undefined" ? v : undefined);
 
-export const RUN_ONLY_KEYS = new Set(["super-sub-script"]);
+export const RUN_ONLY_KEYS = new Set(["super-sub-script", "highlight"]);
 
 export const SHARED_KEYS = new Set([
   "weight",
@@ -11,10 +12,9 @@ export const SHARED_KEYS = new Set([
   "color",
   "size",
   "font",
-  "highlight",
 ]);
 
-export const RUN_LEVEL_KEYS = new Set([...SHARED_KEYS, ...RUN_ONLY_KEYS, "font-size-delta"]);
+export const RUN_LEVEL_KEYS = new Set([...SHARED_KEYS, ...RUN_ONLY_KEYS]);
 
 export const splitFormattingUpdates = (updates) => {
   const runUpdates = {};
@@ -218,11 +218,29 @@ export const runsToHTML = (runs) =>
     })
     .join("");
 
-export const paragraphsToHTML = (paragraphs, masterFormatting = {}, placeholderFormatting = {}) =>
-  (paragraphs ?? [])
+export const paragraphsToHTML = (paragraphs, masterFormatting = {}, placeholderFormatting = {}, renderBullets = false, startCounter = 0) => {
+  let numberedCounter = startCounter;
+  return (paragraphs ?? [])
     .map((paragraph, index) => {
       const formatting = paragraph.formatting ?? {};
       const r = (elemVal, phVal, masterVal) => validStyleValue(elemVal) ?? validStyleValue(phVal) ?? validStyleValue(masterVal);
+
+      const rawListType = r(formatting["list-type"], placeholderFormatting["list-type"], masterFormatting["list-type"]);
+      const listType = rawListType && rawListType !== "none" ? rawListType : null;
+      if (listType === "numbered") numberedCounter++;
+      else if (!listType) numberedCounter = 0;
+
+      const listLevel = Number(r(formatting["indent-level"], placeholderFormatting["indent-level"], masterFormatting["indent-level"]) ?? 0);
+      const listPaddingLeft = listType ? `calc(${getListIndent(listLevel, listType)} + 1.8em)` : null;
+
+      const markerHtml = renderBullets && listType
+        ? `<span style="display:inline-block;width:1.8em;margin-left:calc(-1.8em);text-align:center;">${
+            listType === "numbered"
+              ? getListMarker(numberedCounter - 1, "numbered", null, r(formatting["list-numbered-style"], placeholderFormatting["list-numbered-style"], masterFormatting["list-numbered-style"]))
+              : getListMarker(index, "bullets", r(formatting["list-marker"], placeholderFormatting["list-marker"], masterFormatting["list-marker"]), null)
+          }</span>`
+        : "";
+
       const styles = [
         buildRunStyles({
           weight: r(formatting.weight, placeholderFormatting.weight, masterFormatting.weight),
@@ -231,7 +249,6 @@ export const paragraphsToHTML = (paragraphs, masterFormatting = {}, placeholderF
           size: r(formatting.size, placeholderFormatting.size, masterFormatting.size),
           font: r(formatting.font, placeholderFormatting.font, masterFormatting.font),
           "text-decoration": r(formatting["text-decoration"], placeholderFormatting["text-decoration"], masterFormatting["text-decoration"]),
-          highlight: r(formatting.highlight, placeholderFormatting.highlight, masterFormatting.highlight),
         }),
         formatting.align || placeholderFormatting.align || masterFormatting.align
           ? `text-align:${r(formatting.align, placeholderFormatting.align, masterFormatting.align)}`
@@ -242,14 +259,17 @@ export const paragraphsToHTML = (paragraphs, masterFormatting = {}, placeholderF
         r(formatting.margin, placeholderFormatting.margin, masterFormatting.margin)
           ? `margin:${r(formatting.margin, placeholderFormatting.margin, masterFormatting.margin)}`
           : "",
+        listPaddingLeft ? `padding-left:${listPaddingLeft}` : "",
       ]
         .filter(Boolean)
         .join(";");
+
       return `<div data-paragraph-index="${index}"${
         styles ? ` style="${styles}"` : ""
-      }>${runsToHTML(paragraph.runs)}</div>`;
+      }>${markerHtml}${runsToHTML(paragraph.runs)}</div>`;
     })
     .join("");
+};
 
 export const buildPendingFormattingStyles = (pendingFormatting = {}) => {
   const styleMap = {

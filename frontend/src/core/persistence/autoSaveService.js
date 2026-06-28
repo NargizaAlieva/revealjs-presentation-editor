@@ -37,6 +37,7 @@ const AUTO_SAVE_EVENTS = new Set([
 
   EditorEventType.ELEMENT.RESIZE,
   EditorEventType.ELEMENT.UPDATE,
+  EditorEventType.ELEMENT.UPDATE_SILENT,
   EditorEventType.ELEMENT.CUT,
   EditorEventType.ELEMENT.PASTE,
   EditorEventType.ELEMENT.DELETE_SELECTION,
@@ -75,6 +76,7 @@ const AUTO_SAVE_EVENTS = new Set([
   EditorEventType.COMMENT.ADD,
   EditorEventType.COMMENT.DELETE,
 
+  EditorEventType.HISTORY.CANCEL,
   EditorEventType.HISTORY.UNDO,
   EditorEventType.HISTORY.REDO,
 ]);

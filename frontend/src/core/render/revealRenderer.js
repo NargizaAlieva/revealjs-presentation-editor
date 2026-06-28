@@ -384,14 +384,16 @@ export function getPerLineFragments(textElement, animation, lines) {
   if (sequenceMode === "as-one-object") return null;
   if (!lines || lines.length <= 1) return null;
 
-  return lines.map((line, index) => {
+  const paragraphs = textElement?.paragraphs ?? [];
+
+  return paragraphs.map((paragraph, index) => {
     const fragIndex =
       sequenceMode === "all-at-once"
         ? animation.sequence
         : animation.sequence + index;
 
     return {
-      text: line,
+      paragraph,
       fragmentProps: buildFragmentProps(animation, fragIndex),
     };
   });
