@@ -31,18 +31,25 @@ export const getMediaFile = (key) => storageAdapter.get(key);
 
 export { downloadPresentationAsJson };
 
+const localStorageSettings = {
+  get(key) {
+    try { return localStorage.getItem(key); } catch { return null; }
+  },
+  set(key, value) {
+    try { localStorage.setItem(key, String(value)); } catch { /* private-browsing / quota */ }
+  },
+};
+
+const settingsBackend = localStorageSettings;
 const SETTINGS_CACHE = new Map();
 
 export const getSetting = (key, defaultValue = null) => {
-  try {
-    const v = localStorage.getItem(key);
-    return v === null ? defaultValue : v;
-  } catch {
-    return SETTINGS_CACHE.get(key) ?? defaultValue;
-  }
+  const v = settingsBackend.get(key);
+  if (v !== null && v !== undefined) return v;
+  return SETTINGS_CACHE.get(key) ?? defaultValue;
 };
 
 export const setSetting = (key, value) => {
   SETTINGS_CACHE.set(key, String(value));
-  try { localStorage.setItem(key, String(value)); } catch { /* private-browsing / quota */ }
+  settingsBackend.set(key, value);
 };

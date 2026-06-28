@@ -21,6 +21,7 @@ import {
 import { getListMarker, getListIndent } from "../utils/listUtils";
 import { REFLECTION_PRESETS } from "../model/imageEffects";
 import { downloadHtml } from "./downloadHtml";
+import { downloadBackend } from "./downloadBackend";
 import { getMediaFile } from "../persistence/persistenceFacade";
 import JSZip from "jszip";
 
@@ -521,12 +522,5 @@ export async function exportToRevealZip(presentation) {
   }
 
   const blob = await zip.generateAsync({ type: "blob" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${filename}.zip`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  downloadBackend.saveBlob(blob, `${filename}.zip`);
 }
