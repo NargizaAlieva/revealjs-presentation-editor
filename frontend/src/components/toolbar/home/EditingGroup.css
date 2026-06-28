@@ -3,12 +3,12 @@
   flex: 0 0 142px;
   flex-direction: column;
   gap: 0;
-  padding-top: 1px;
+  padding-top: 0;
 }
 
 .editing-command {
   width: 116px;
-  height: 23px;
+  height: 20px;
   display: grid;
   grid-template-columns: 22px 1fr 14px;
   align-items: center;
@@ -104,7 +104,7 @@
 
 .editing-menu {
   position: absolute;
-  top: 23px;
+  top: 20px;
   left: 0;
   z-index: 10000;
   width: 178px;
