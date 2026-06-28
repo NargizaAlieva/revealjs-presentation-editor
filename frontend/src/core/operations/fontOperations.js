@@ -1,5 +1,6 @@
 export function addFontEntry(presentation, fontEntry) {
   const existing = presentation.slideset.fonts ?? [];
+  if (existing.some((f) => f["font-id"] === fontEntry["font-id"])) return presentation;
   return {
     ...presentation,
     slideset: {

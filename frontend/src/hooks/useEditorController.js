@@ -5,15 +5,11 @@ import { useEditorState } from "./useEditorState";
 import { useSlides } from "./useSlides";
 import { useEditorActions } from "./useEditorActions";
 import { useEditorViewState } from "./useEditorViewState";
-import { useImageUpload } from "./useImageUpload";
-import { useVideoUpload } from "./useVideoUpload";
+import { useMediaUpload } from "./useMediaUpload";
 import { usePresentationFonts } from "./usePresentationFonts";
 import { useFindReplace } from "./useFindReplace";
-import {
-  findMasterTextElement,
-  computeFormattingState,
-  useApplyFormatting,
-} from "./useFormattingState";
+import { useApplyFormatting } from "./useApplyFormatting";
+import { findMasterTextElement, computeFormattingState } from "../core/operations/formattingState";
 import { EditorEventType, createEditorEvent } from "../core/events/editorEvents";
 import { getSlideSize } from "../core/render/slidesetRenderUtils";
 import { getSlideElement } from "../core/operations/slideOperations";
@@ -22,7 +18,7 @@ import {
   createImageMediaElement,
   createVideoMediaElement,
 } from "../core/operations/mediaOperations";
-import { getPresentationTitle } from "../core/utils/presentationUtils";
+import { getPresentationTitle, createParagraphId } from "../core/utils/presentationUtils";
 import { getSlideTransition } from "../core/model/transitionDefaults";
 import { importPresentationFromJson } from "../core/persistence/importPresentation";
 import { createTextElementDefaults } from "../core/model/masterDefaults";
@@ -241,14 +237,14 @@ const insertPlainTextIntoParagraphs = (
           if (index === lines.length - 1) {
             return {
               ...endParagraph,
-              id: crypto.randomUUID?.() ?? `p-${Date.now()}-${index}`,
+              id: createParagraphId(),
               formatting: { ...(startParagraph.formatting ?? {}) },
               runs: mergeRuns([...makeInsertedRuns(line), ...afterRuns]),
             };
           }
           return {
             ...startParagraph,
-            id: crypto.randomUUID?.() ?? `p-${Date.now()}-${index}`,
+            id: createParagraphId(),
             runs: mergeRuns(makeInsertedRuns(line)),
           };
         });
@@ -366,9 +362,10 @@ export function useEditorController() {
     removeFont,
     addMedia,
     updateMedia,
-    deleteElement,
+    deleteTextElement,
     toggleSlideHidden,
     deleteMedia,
+    updateSlideBackground,
     updateSlideNotes,
     updateSlideTransition,
     updateTransitionDuration,
@@ -381,12 +378,9 @@ export function useEditorController() {
     renameLayout,
     applyLayoutFont,
     addLayoutElement,
-    updateLayoutElement,
-    updateLayoutElementTextContent,
     deleteLayoutElement,
     addLayoutPlaceholder,
     removeLayoutPlaceholder,
-    updateLayoutPlaceholder,
     updateLayoutItem,
     updateLayoutTextFormattingAction,
     updateMasterTheme,
@@ -515,13 +509,14 @@ export function useEditorController() {
 
 useEffect(() => {
   if (currentView === "reading") {
-    setTimeout(() => {
+    const id = setTimeout(() => {
       setPreviewStartSlide(selectedSlideIndex);
       openPreview();
       setCurrentView("normal");
     }, 0);
+    return () => clearTimeout(id);
   }
-}, [currentView]);
+}, [currentView, selectedSlideIndex, openPreview, setCurrentView]);
 
   const layouts = getLayoutDisplayList(presentation);
 
@@ -642,6 +637,7 @@ useEffect(() => {
       const zIndexes = elements.map((element) =>
         Number(element["z-index"] ?? 1),
       );
+      beginHistory();
       selectedElementsRaw.forEach((element, index) => {
         const currentZ = Number(element["z-index"] ?? 1);
         let nextZ = currentZ;
@@ -651,8 +647,9 @@ useEffect(() => {
         if (mode === "backward") nextZ = Math.max(1, currentZ - 1);
         updateElement(element.id, { "z-index": nextZ });
       });
+      commitHistory();
     },
-    [selectedElementsRaw, selectedSlide, updateElement],
+    [selectedElementsRaw, selectedSlide, updateElement, beginHistory, commitHistory],
   );
 
   const handleBringToFront = useCallback(
@@ -705,12 +702,15 @@ useEffect(() => {
     [selectedElementRaw, updateMedia, slideWidth, slideHeight],
   );
   const handleRotateRight = useCallback(() => {
+    if (selectedElementsRaw.length === 0) return;
+    beginHistory();
     selectedElementsRaw.forEach((element) => {
       updateElement(element.id, {
         rotation: (Number(element.rotation ?? 0) + 90) % 360,
       });
     });
-  }, [selectedElementsRaw, updateElement]);
+    commitHistory();
+  }, [selectedElementsRaw, updateElement, beginHistory, commitHistory]);
 
   const handleElementSelect = useCallback(
     (elementId, options = {}) => {
@@ -738,6 +738,7 @@ useEffect(() => {
       }
       const deltaX = x - (element.position?.x ?? 0);
       const deltaY = y - (element.position?.y ?? 0);
+      beginHistory();
       selectedElementsRaw.forEach((selected) => {
         updateElementPosition(
           selected.id,
@@ -745,12 +746,15 @@ useEffect(() => {
           (selected.position?.y ?? 0) + deltaY,
         );
       });
+      commitHistory();
     },
     [
       selectedSlide,
       selectedElementIds,
       selectedElementsRaw,
       updateElementPosition,
+      beginHistory,
+      commitHistory,
     ],
   );
 
@@ -819,15 +823,6 @@ useEffect(() => {
     [eventBus],
   );
 
-  const handleApplySlideBackground = useCallback(
-    (background) => {
-      eventBus.dispatch(
-        createEditorEvent(EditorEventType.SLIDE.UPDATE_BACKGROUND, { background }),
-      );
-    },
-    [eventBus],
-  );
-
   const handleApplyBgFillImage = useCallback(
     async (file, currentSettings) => {
       if (!file || !file.type.startsWith("image/")) return;
@@ -865,41 +860,27 @@ useEffect(() => {
     [addMedia, addTextElement, handleElementSelect, beginHistory, commitHistory],
   );
 
-  const { handleImageUpload } = useImageUpload(addMedia, slideWidth, slideHeight);
-  const { handleVideoUpload } = useVideoUpload(addMedia);
+  const { handleImageUpload, handleVideoUpload } = useMediaUpload(addMedia, slideWidth, slideHeight);
 
   const handleAddTextElement = useCallback(
     () => addTextElement(createTextElementDefaults(10, "")),
     [addTextElement],
   );
 
-  const { handleImageUpload: handleMasterImageUpload } = useImageUpload(
-    useCallback(
-      (mediaElement) => {
-        if (selectedMasterLayoutId) {
-          addLayoutElement(selectedMasterLayoutId, "media", mediaElement);
-        } else {
-          addMasterElement("media", mediaElement);
-        }
-      },
-      [selectedMasterLayoutId, addLayoutElement, addMasterElement],
-    ),
-    slideWidth,
-    slideHeight,
+  const masterAddMedia = useCallback(
+    (mediaElement) => {
+      if (selectedMasterLayoutId) {
+        addLayoutElement(selectedMasterLayoutId, "media", mediaElement);
+      } else {
+        addMasterElement("media", mediaElement);
+      }
+    },
+    [selectedMasterLayoutId, addLayoutElement, addMasterElement],
   );
-
-  const { handleVideoUpload: handleMasterVideoUpload } = useVideoUpload(
-    useCallback(
-      (mediaElement) => {
-        if (selectedMasterLayoutId) {
-          addLayoutElement(selectedMasterLayoutId, "media", mediaElement);
-        } else {
-          addMasterElement("media", mediaElement);
-        }
-      },
-      [selectedMasterLayoutId, addLayoutElement, addMasterElement],
-    ),
-  );
+  const {
+    handleImageUpload: handleMasterImageUpload,
+    handleVideoUpload: handleMasterVideoUpload,
+  } = useMediaUpload(masterAddMedia, slideWidth, slideHeight);
 
   const handleAddMasterTextElement = useCallback(() => {
     if (selectedMasterLayoutId) {
@@ -1071,6 +1052,7 @@ useEffect(() => {
       const phPos = placeholderElement.position ?? { x: 60, y: 60 };
       const fitX = Math.round(phPos.x + (phW - fitW) / 2);
       const fitY = Math.round(phPos.y + (phH - fitH) / 2);
+      beginHistory();
       addMedia({
         ...createImageMediaElement(mediaId, key, { width: fitW, height: fitH }),
         "placeholder-id": placeholderElement["placeholder-id"],
@@ -1082,14 +1064,16 @@ useEffect(() => {
         "z-index": placeholderElement["z-index"] ?? 1,
       });
       updateElement(placeholderElement.id, { hidden: true });
+      commitHistory();
     },
-    [addMedia, updateElement],
+    [addMedia, updateElement, beginHistory, commitHistory],
   );
 
   const handlePlaceholderVideoUpload = useCallback(
     async (placeholderElement, file) => {
       if (!placeholderElement || !file?.type?.startsWith("video/")) return;
       const { mediaId, key } = await storeMediaFile(file);
+      beginHistory();
       addMedia({
         ...createVideoMediaElement(mediaId, key),
         "placeholder-id": placeholderElement["placeholder-id"],
@@ -1099,8 +1083,9 @@ useEffect(() => {
         "z-index": placeholderElement["z-index"] ?? 1,
       });
       updateElement(placeholderElement.id, { hidden: true });
+      commitHistory();
     },
-    [addMedia, updateElement],
+    [addMedia, updateElement, beginHistory, commitHistory],
   );
 
   const handleDeleteSelection = useCallback(() => {
@@ -1246,7 +1231,7 @@ useEffect(() => {
             updateLayoutItem(selectedMasterLayoutId, id, { paragraphs, userModified: true });
         }
       } else {
-        updateMasterElement("text", id, { paragraphs, userModified: true });
+        updateMasterElement(id, { paragraphs, userModified: true });
       }
     },
     [selectedMasterLayoutId, masterTextIds, presentation, updateLayoutItem, updateMasterElement],
@@ -1287,7 +1272,7 @@ useEffect(() => {
       if (selectedMasterLayoutId && !masterTextIds.has(id)) {
         updateLayoutItem(selectedMasterLayoutId, id, { position: { x, y } });
       } else {
-        updateMasterElement("text", id, { position: { x, y } });
+        updateMasterElement(id, { position: { x, y } });
       }
     },
     [selectedMasterLayoutId, masterTextIds, updateLayoutItem, updateMasterElement],
@@ -1298,7 +1283,7 @@ useEffect(() => {
       if (selectedMasterLayoutId && !masterTextIds.has(id)) {
         updateLayoutItem(selectedMasterLayoutId, id, { width: w, height: h });
       } else {
-        updateMasterElement("text", id, { width: w, height: h });
+        updateMasterElement(id, { width: w, height: h });
       }
     },
     [selectedMasterLayoutId, masterTextIds, updateLayoutItem, updateMasterElement],
@@ -1309,7 +1294,7 @@ useEffect(() => {
       if (selectedMasterLayoutId && !masterMediaIds.has(id)) {
         updateLayoutItem(selectedMasterLayoutId, id, { position: { x, y } });
       } else {
-        updateMasterElement("media", id, { position: { x, y } });
+        updateMasterElement(id, { position: { x, y } });
       }
     },
     [selectedMasterLayoutId, masterMediaIds, updateLayoutItem, updateMasterElement],
@@ -1349,7 +1334,7 @@ useEffect(() => {
       if (selectedMasterLayoutId && !masterMediaIds.has(id)) {
         updateLayoutItem(selectedMasterLayoutId, id, { width: w, height: h });
       } else {
-        updateMasterElement("media", id, updates);
+        updateMasterElement(id, updates);
       }
     },
     [selectedMasterLayoutId, masterMediaIds, updateLayoutItem, updateMasterElement, presentation],
@@ -1360,7 +1345,7 @@ useEffect(() => {
       if (selectedMasterLayoutId && !masterTextIds.has(id)) {
         updateLayoutItem(selectedMasterLayoutId, id, updates);
       } else {
-        updateMasterElement("text", id, updates);
+        updateMasterElement(id, updates);
       }
     },
     [selectedMasterLayoutId, masterTextIds, updateLayoutItem, updateMasterElement],
@@ -1371,7 +1356,7 @@ useEffect(() => {
       if (selectedMasterLayoutId && !masterMediaIds.has(id)) {
         updateLayoutItem(selectedMasterLayoutId, id, updates);
       } else {
-        updateMasterElement("media", id, updates);
+        updateMasterElement(id, updates);
       }
     },
     [selectedMasterLayoutId, masterMediaIds, updateLayoutItem, updateMasterElement],
@@ -1408,27 +1393,18 @@ useEffect(() => {
 
   const handleFormatChange = useCallback(
     (updates) => {
-      if (!activeElementId || !activeTextEl) return;
+      if (!activeElementId) return;
       if (isSlideMasterOpen) {
-        const delta = Number(updates["font-size-delta"] ?? 0);
-        const resolved = delta
-          ? {
-              ...updates,
-              "font-size-delta": undefined,
-              size: `${Math.max(6, Math.min(120, (parseFloat(currentFormatting.size) || 24) + delta))}px`,
-            }
-          : updates;
-        if (resolved["font-size-delta"] === undefined) delete resolved["font-size-delta"];
-        masterViewFormatText(activeElementId, resolved);
+        masterViewFormatText(activeElementId, updates);
         return;
       }
+      if (!activeTextEl) return;
       applyFormatting(selectedElementId, updates);
     },
     [
       activeElementId,
       activeTextEl,
       isSlideMasterOpen,
-      currentFormatting,
       masterViewFormatText,
       applyFormatting,
       selectedElementId,
@@ -1637,6 +1613,11 @@ useEffect(() => {
     [updateTextElementParagraphs, selectedSlideIndex],
   );
 
+  const handleAddLayout = useCallback(
+    () => addLayout(selectedMasterLayoutId),
+    [addLayout, selectedMasterLayoutId],
+  );
+
   const handleCloseSlideMasterView = useCallback(() => {
     setIsSlideMasterOpen(false);
     setSelectedMasterLayoutId(null);
@@ -1644,16 +1625,14 @@ useEffect(() => {
 
   const handleUpdateMasterElementPosition = useCallback(
     (id, x, y) => {
-      updateMasterElement("text", id, { position: { x, y } });
-      updateMasterElement("media", id, { position: { x, y } });
+      updateMasterElement(id, { position: { x, y } });
     },
     [updateMasterElement],
   );
 
   const handleUpdateMasterElementSize = useCallback(
     (id, w, h) => {
-      updateMasterElement("text", id, { width: w, height: h });
-      updateMasterElement("media", id, { width: w, height: h });
+      updateMasterElement(id, { width: w, height: h });
     },
     [updateMasterElement],
   );
@@ -1699,7 +1678,7 @@ useEffect(() => {
     selectedMediaElement: selectedElementRaw?.paragraphs ? null : selectedElementRaw ?? null,
     handleChangePicture,
     cropSignal: ctrl_cropSignal,
-    triggerCrop: () => setCtrlCropSignal((n) => n + 1),
+    triggerCrop: useCallback(() => setCtrlCropSignal((n) => n + 1), []),
     previewMediaEffects,
     setPreviewMediaEffects,
     previewMediaStyleId,
@@ -1750,7 +1729,7 @@ useEffect(() => {
     handleApplyBackground,
     handleApplyBackgroundToAll,
     handleApplyBgFillImage,
-    handleApplySlideBackground,
+    handleApplySlideBackground: updateSlideBackground,
     handleUpdateDimensions,
     activeImageUpload,
     activeVideoUpload,
@@ -1837,25 +1816,22 @@ useEffect(() => {
     removeFont,
     addMedia,
     updateMedia,
-    deleteElement,
+    deleteTextElement,
     deleteMedia,
     updateSlideNotes,
     updateSlideTransition,
     updateTransitionDuration,
     applyLayout,
     resetLayout,
-    addLayout: () => addLayout(selectedMasterLayoutId),
+    addLayout: handleAddLayout,
     updateLayout,
     deleteLayout,
     renameLayout,
     applyLayoutFont,
     addLayoutElement,
-    updateLayoutElement,
-    updateLayoutElementTextContent,
     deleteLayoutElement,
     addLayoutPlaceholder,
     removeLayoutPlaceholder,
-    updateLayoutPlaceholder,
     updateLayoutItem,
     updateLayoutTextFormattingAction,
     updateMasterTheme,

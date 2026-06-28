@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { storeMediaFile } from "../core/persistence/persistenceFacade";
-import { createImageMediaElement } from "../core/operations/mediaOperations";
+import { createImageMediaElement, createVideoMediaElement } from "../core/operations/mediaOperations";
 
 function readImageDimensions(file) {
   return new Promise((resolve) => {
@@ -26,7 +26,7 @@ function fitToSlide(width, height, slideWidth, slideHeight) {
   return { width: Math.round(width * scale), height: Math.round(height * scale) };
 }
 
-export function useImageUpload(addMedia, slideWidth = 960, slideHeight = 700) {
+export function useMediaUpload(addMedia, slideWidth = 1280, slideHeight = 720) {
   const handleImageUpload = useCallback(
     async (event) => {
       const file = event.target.files?.[0];
@@ -43,5 +43,17 @@ export function useImageUpload(addMedia, slideWidth = 960, slideHeight = 700) {
     [addMedia, slideWidth, slideHeight],
   );
 
-  return { handleImageUpload };
+  const handleVideoUpload = useCallback(
+    async (event) => {
+      const file = event.target.files?.[0];
+      if (!file || !file.type.startsWith("video/")) return;
+
+      const { mediaId, key } = await storeMediaFile(file);
+      addMedia(createVideoMediaElement(mediaId, key));
+      event.target.value = "";
+    },
+    [addMedia],
+  );
+
+  return { handleImageUpload, handleVideoUpload };
 }

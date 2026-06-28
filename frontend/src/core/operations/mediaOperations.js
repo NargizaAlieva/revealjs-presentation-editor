@@ -44,6 +44,7 @@ export const createImageMediaElement = (mediaId, key, { width = 300, height = 20
   scale: 1,
   crop: [],
   effects: {},
+  opacity: 1,
   playback: {},
 });
 
@@ -59,6 +60,7 @@ export const createVideoMediaElement = (mediaId, key) => ({
   scale: 1,
   crop: [],
   effects: {},
+  opacity: 1,
   playback: { autoplay: false, loop: false, muted: false },
 });
 
@@ -103,11 +105,15 @@ export const deleteMedia = (presentation, slideIndex, mediaId) => {
 
   if (!slide) return presentation;
 
+  const remaining = (slide.contents?.media ?? []).filter((media) => media.id !== mediaId);
   slides[slideIndex] = {
     ...slide,
     contents: {
       ...slide.contents,
-      media: (slide.contents?.media ?? []).filter((media) => media.id !== mediaId),
+      media: remaining,
+      animations: (slide.contents?.animations ?? [])
+        .filter((a) => a.id !== mediaId)
+        .map((a, index) => ({ ...a, sequence: index + 1 })),
     },
   };
 

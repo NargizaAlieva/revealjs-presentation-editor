@@ -1,7 +1,7 @@
 import { createDefaultLayouts } from "./defaultLayouts";
 import { DESIGN_THEMES } from "./designThemes";
-
-const createId = (prefix = "id") => `${prefix}-${crypto.randomUUID()}`;
+import { createId, createParagraphId } from "../utils/presentationUtils";
+import { DEFAULT_TRANSITION } from "./transitionDefaults";
 
 const createTextFormatting = ({
   size = "28px",
@@ -51,7 +51,7 @@ const createTextElement = ({
   userModified: false,
   paragraphs: [
     {
-      id: createId("paragraph"),
+      id: createParagraphId(),
       formatting,
       bullets: "none",
       runs: [
@@ -70,7 +70,7 @@ const createDefaultSlideContents = ({
   text = [],
   media = [],
   background = "var(--bg-light)",
-  transition = "slide",
+  transition = DEFAULT_TRANSITION,
   notes = "",
   comments = [],
 } = {}) => ({
@@ -110,13 +110,7 @@ export const createDefaultPresentation = () => {
     lineSpacing: "1.2em",
   });
 
-  const bodyFormatting = createTextFormatting({
-    size: "28px",
-    weight: "normal",
-    align: "left",
-    verticalAlign: "top",
-    lineSpacing: "1.4em",
-  });
+  const bodyFormatting = createTextFormatting();
 
   const layouts = createDefaultLayouts({
     titleFormatting,
@@ -136,14 +130,16 @@ export const createDefaultPresentation = () => {
   const titlePlaceholder = defaultLayout.placeholders.find(
     (p) => p["placeholder-id"] === "title-placeholder",
   );
-
   const bodyPlaceholder = defaultLayout.placeholders.find(
     (p) => p["placeholder-id"] === "body-placeholder",
   );
-
   const mediaPlaceholder = defaultLayout.placeholders.find(
     (p) => p["placeholder-id"] === "media-placeholder",
   );
+
+  if (!titlePlaceholder || !bodyPlaceholder || !mediaPlaceholder) {
+    throw new Error("Required placeholders missing from default layout 'title-content-media'");
+  }
 
   return {
     slideset: {
@@ -172,7 +168,7 @@ export const createDefaultPresentation = () => {
           height: 720,
         },
         "dimension-units": "px",
-        "color-theme": DESIGN_THEMES.find((t) => t.id === "default").colorTheme,
+        "color-theme": (DESIGN_THEMES.find((t) => t.id === "default") ?? DESIGN_THEMES[0]).colorTheme,
         elements: {
           text: [],
           shapes: [],

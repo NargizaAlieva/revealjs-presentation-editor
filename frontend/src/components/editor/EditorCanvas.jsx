@@ -198,7 +198,6 @@ export default function EditorCanvas({
   );
 
   const {
-    handleMouseMove,
     stopInteraction,
     startDraggingText,
     startDraggingMedia,

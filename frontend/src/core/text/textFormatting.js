@@ -1,14 +1,20 @@
-export const RUN_LEVEL_KEYS = new Set([
+import { escapeHtml } from "../utils/presentationUtils";
+
+const validStyleValue = (v) => (v != null && v !== "undefined" ? v : undefined);
+
+export const RUN_ONLY_KEYS = new Set(["super-sub-script"]);
+
+export const SHARED_KEYS = new Set([
   "weight",
   "italics",
   "text-decoration",
   "color",
   "size",
   "font",
-  "super-sub-script",
   "highlight",
-  "font-size-delta",
 ]);
+
+export const RUN_LEVEL_KEYS = new Set([...SHARED_KEYS, ...RUN_ONLY_KEYS, "font-size-delta"]);
 
 export const splitFormattingUpdates = (updates) => {
   const runUpdates = {};
@@ -18,6 +24,27 @@ export const splitFormattingUpdates = (updates) => {
     else paraUpdates[k] = v;
   }
   return { runUpdates, paraUpdates };
+};
+
+export const applyFormattingToParagraphs = (paragraphs, formattingUpdate) => {
+  const paragraphUpdate = Object.fromEntries(
+    Object.entries(formattingUpdate).filter(([k]) => !RUN_ONLY_KEYS.has(k)),
+  );
+  const runOnlyUpdate = Object.fromEntries(
+    Object.entries(formattingUpdate).filter(([k]) => RUN_ONLY_KEYS.has(k)),
+  );
+  const sharedKeysBeingSet = Object.keys(paragraphUpdate).filter((k) => SHARED_KEYS.has(k));
+
+  return (paragraphs ?? []).map((paragraph) => ({
+    ...paragraph,
+    formatting: { ...(paragraph.formatting ?? {}), ...paragraphUpdate },
+    runs: (paragraph.runs ?? []).map((run) => {
+      const rf = { ...(run.formatting ?? {}) };
+      for (const k of sharedKeysBeingSet) delete rf[k];
+      Object.assign(rf, runOnlyUpdate);
+      return { ...run, formatting: rf };
+    }),
+  }));
 };
 
 export const getFormattingAtCursor = (textElement, selection) => {
@@ -117,12 +144,6 @@ export const computeCurrentFormatting = ({
   return { ...effectiveFormatting, ...pendingFormatting };
 };
 
-export const escapeHTML = (str) =>
-  (str ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-
 export const resolveWeight = (elemValue, phValue, masterValue) => {
   const v = elemValue ?? phValue ?? masterValue;
   if (v === true || v === "bold") return "bold";
@@ -188,10 +209,10 @@ export const runsToHTML = (runs) =>
           ].filter(Boolean).join(";")
         : "";
       const allStyles = [styles, superSubStyle, linkStyle].filter(Boolean).join(";");
-      const text = escapeHTML(run.text ?? "");
+      const text = escapeHtml(run.text ?? "");
       if (run.link?.href) {
-        const title = `title="🔗 ${escapeHTML(run.link.href)}&#10;Ctrl+Click to follow link"`;
-        return `<span style="${allStyles}" ${title} data-link="${escapeHTML(run.link.href)}">${text}</span>`;
+        const title = `title="🔗 ${escapeHtml(run.link.href)}&#10;Ctrl+Click to follow link"`;
+        return `<span style="${allStyles}" ${title} data-link="${escapeHtml(run.link.href)}">${text}</span>`;
       }
       return allStyles ? `<span style="${allStyles}">${text}</span>` : text;
     })
@@ -248,8 +269,6 @@ export const buildPendingFormattingStyles = (pendingFormatting = {}) => {
     .filter(Boolean)
     .join(";");
 };
-
-const validStyleValue = (v) => (v != null && v !== "undefined" ? v : undefined);
 
 export const resolveTextStyle = (
   elemValue,
@@ -310,6 +329,36 @@ export const getSelectionFormatting = (textElement, selection) => {
   }
   return result;
 };
+
+export function migrateParagraphFormatting(paragraphs, placeholderFormatting, masterFormatting = {}) {
+  if (!paragraphs) return paragraphs;
+  return paragraphs.map((p) => {
+    const userSetKeys = new Set(p.userSetKeys ?? []);
+
+    const f = { ...(p.formatting ?? {}) };
+    for (const key of Object.keys(f)) {
+      if (userSetKeys.has(key)) continue;
+      if (key in placeholderFormatting) delete f[key];
+      else if (key in masterFormatting) delete f[key];
+    }
+
+    const runs = (p.runs ?? []).map((run) => {
+      const rf = Object.fromEntries(
+        Object.entries(run.formatting ?? {}).filter(([k, v]) => {
+          if (RUN_ONLY_KEYS.has(k)) return true;
+          return v !== f[k];
+        }),
+      );
+      return { ...run, formatting: rf };
+    });
+
+    if (!f["list-type"] && p.bullets && p.bullets !== "none") {
+      f["list-type"] = p.bullets === "number" ? "numbered" : "bullets";
+    }
+
+    return { ...p, formatting: f, runs };
+  });
+}
 
 export const parseFormattingForDisplay = (
   formatting = {},

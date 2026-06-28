@@ -1,3 +1,5 @@
+import { createId, createParagraphId } from "../utils/presentationUtils";
+
 export const TITLE_PLACEHOLDER = {
   "placeholder-id": "title-placeholder",
   position: { x: 120, y: 80 },
@@ -15,7 +17,6 @@ export const TITLE_PLACEHOLDER = {
     "text-decoration": "none",
     "line-spacing": "1.2em",
     "list-type": "none",
-    "list-style": {},
     "indent-level": 0,
     margin: "0",
     align: "center",
@@ -48,8 +49,8 @@ export const createMasterTextElement = (id, position, width, height, text, forma
   }],
 });
 
-export const createTextElementDefaults = (zIndex = 4, labelText = "Text") => ({
-  id: crypto.randomUUID(),
+export const createTextElementDefaults = (zIndex, labelText) => ({
+  id: createId("text"),
   "placeholder-id": null,
   position: { x: 100, y: 100 },
   width: 300,
@@ -59,7 +60,7 @@ export const createTextElementDefaults = (zIndex = 4, labelText = "Text") => ({
   background: "transparent",
   userModified: true,
   paragraphs: [{
-    id: crypto.randomUUID(),
+    id: createParagraphId(),
     formatting: { size: "24px", color: "var(--text-dark)", align: "left" },
     bullets: "none",
     runs: [{ formatting: {}, "super-sub-script": "normal", text: labelText, link: null }],

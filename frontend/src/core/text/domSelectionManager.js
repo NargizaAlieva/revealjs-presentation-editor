@@ -1,8 +1,12 @@
+import { createParagraphId } from "../utils/presentationUtils";
+
 export const parseSpanStyle = (style) => {
   const f = {};
 
-  if (style.fontWeight)
-    f.weight = style.fontWeight === "400" ? "normal" : style.fontWeight;
+  if (style.fontWeight) {
+    const w = style.fontWeight;
+    f.weight = w === "400" ? "normal" : w === "700" ? "bold" : w;
+  }
   if (style.fontStyle === "italic") f.italics = true;
   if (style.color) f.color = style.color;
   if (style.fontSize) f.size = style.fontSize;
@@ -86,7 +90,7 @@ export const domToParagraphs = (el, existingParagraphs) => {
     }
 
     return {
-      id: existing?.id ?? `p-${Date.now()}-${pIdx}`,
+      id: existing?.id ?? createParagraphId(),
       formatting,
       bullets: existing?.bullets ?? "none",
       runs: runs.length

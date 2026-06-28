@@ -56,7 +56,7 @@ export const findAnimationForElement = (animations, elementId) =>
   (animations ?? []).find((a) => a.id === elementId) ?? null;
 
 export const getNextAnimationSequence = (animations) =>
-  (animations ?? []).length + 1;
+  getMaxAnimationSequence(animations) + 1;
 
 export const getAnimationDurationMs = (speed) =>
   speed === 0.5 ? 200 : speed === 2 ? 2200 : 800;
@@ -67,6 +67,8 @@ export const reorderAnimation = (animations, animationId, direction) => {
   if (!item) return [];
   const currentSeq = item.sequence ?? 1;
   const targetSeq = currentSeq + direction;
+  const maxSeq = getMaxAnimationSequence(list);
+  if (targetSeq < 1 || targetSeq > maxSeq) return [];
   const neighbor = list.find((a) => (a.sequence ?? 1) === targetSeq);
   const updates = [{ id: animationId, sequence: targetSeq }];
   if (neighbor) updates.push({ id: neighbor.id, sequence: currentSeq });

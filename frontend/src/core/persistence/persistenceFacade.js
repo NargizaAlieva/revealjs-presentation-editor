@@ -8,13 +8,12 @@ import {
   savePresentation,
   presentationKey,
 } from "./presentationsLibrary";
-import { storeMediaFile } from "./mediaStorage";
+import { storeMediaFile, getMediaFile } from "./mediaStorage";
 import { downloadPresentationAsJson } from "./serializationOperations";
 
 export const storageGet    = (key)        => storageAdapter.get(key);
 export const storageSet    = (key, value) => storageAdapter.set(key, value);
 export const storageRemove = (key)        => storageAdapter.remove(key);
-export const storageGetAllKeys = ()       => storageAdapter.getAllKeys();
 
 export {
   getIndex,
@@ -26,8 +25,7 @@ export {
   presentationKey,
 };
 
-export { storeMediaFile };
-export const getMediaFile = (key) => storageAdapter.get(key);
+export { storeMediaFile, getMediaFile };
 
 export { downloadPresentationAsJson };
 

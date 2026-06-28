@@ -106,6 +106,7 @@ export const toggleList = (
     return {
       "list-type": "bullets",
       "list-marker": defaultStyle ?? currentFormatting["list-marker"] ?? "•",
+      "list-numbered-style": null,
       "indent-level": currentFormatting["indent-level"] ?? 0,
     };
   }
@@ -114,6 +115,7 @@ export const toggleList = (
     "list-type": "numbered",
     "list-numbered-style":
       defaultStyle ?? currentFormatting["list-numbered-style"] ?? "decimal",
+    "list-marker": null,
     "indent-level": currentFormatting["indent-level"] ?? 0,
   };
 };

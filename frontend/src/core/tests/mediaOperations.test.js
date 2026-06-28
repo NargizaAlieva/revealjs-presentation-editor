@@ -1,3 +1,4 @@
+import { describe, test, expect } from "vitest";
 import {
   addMedia,
   deleteMedia,
@@ -5,8 +6,8 @@ import {
 } from "../operations/mediaOperations";
 
 import {
-  moveElement,
   resizeElement,
+  updateElement,
 } from "../operations/elementOperations";
 
 describe("mediaOperations", () => {
@@ -87,7 +88,7 @@ describe("mediaOperations", () => {
     ).toBe(90);
   });
 
-  test("moveElement moves media element", () => {
+  test("updateElement moves media element position", () => {
     const presentation = addMedia(
       createPresentation(),
       0,
@@ -98,11 +99,11 @@ describe("mediaOperations", () => {
       }
     );
 
-    const updated = moveElement(
+    const updated = updateElement(
       presentation,
       0,
       "media-1",
-      { x: 100, y: 200 }
+      { position: { x: 100, y: 200 } }
     );
 
     expect(

@@ -13,9 +13,6 @@ export function useMediaSrc(fileLink) {
     let objectUrl = null;
 
     async function load() {
-      await Promise.resolve();
-      if (cancelled) return;
-
       if (!fileLink) {
         setSrc(null);
         return;

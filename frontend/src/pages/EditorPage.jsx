@@ -237,7 +237,7 @@ export default function EditorPage() {
                   onSaveSelection={ctrl.handleSaveSelection}
                   onMoveMediaElement={ctrl.handleMoveElement}
                   onResizeMediaElement={ctrl.updateElementSize}
-                  onDeleteTextElement={ctrl.deleteElement}
+                  onDeleteTextElement={ctrl.deleteTextElement}
                   onDeleteMedia={ctrl.deleteMedia}
                   slideNotes={ctrl.selectedSlide?.contents?.notes ?? ""}
                   onUpdateSlideNotes={ctrl.updateSlideNotes}

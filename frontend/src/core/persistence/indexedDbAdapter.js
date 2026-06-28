@@ -29,6 +29,7 @@ export const indexedDbAdapter = {
       tx.objectStore(STORE_NAME).put(value, key);
       tx.oncomplete = () => resolve();
       tx.onerror = (e) => reject(e.target.error);
+      tx.onabort = (e) => reject(e.target.error);
     });
   },
 
@@ -49,6 +50,7 @@ export const indexedDbAdapter = {
       tx.objectStore(STORE_NAME).delete(key);
       tx.oncomplete = () => resolve();
       tx.onerror = (e) => reject(e.target.error);
+      tx.onabort = (e) => reject(e.target.error);
     });
   },
 
@@ -66,6 +68,6 @@ export const indexedDbAdapter = {
     const keys = await this.getAllKeys();
     return keys
       .filter((k) => k.startsWith("presentation-"))
-      .map((k) => k.replace("presentation-", ""));
+      .map((k) => k.slice("presentation-".length));
   },
 };

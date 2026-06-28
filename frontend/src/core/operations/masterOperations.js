@@ -1,5 +1,9 @@
 import { createPlaceholderPseudoElement } from "./layoutOperations";
 import { TITLE_PLACEHOLDER, FOOTER_PLACEHOLDERS, createMasterTextElement } from "../model/masterDefaults";
+import { applyFormattingToParagraphs } from "../text/textFormatting";
+import { createParagraphId } from "../utils/presentationUtils";
+
+const MASTER_FOOTER_IDS = ["master-footer-date", "master-footer-center", "master-footer-page"];
 
 export const buildMasterPseudoSlide = (masterElements, masterColorTheme) => {
   const bgEntry = (masterColorTheme ?? []).find((e) => e["css-variable-name"] === "bg-light");
@@ -90,12 +94,11 @@ export const toggleMasterFooters = (presentation, layoutId) => {
       },
     };
   }
-  const FOOTER_IDS = ["master-footer-date", "master-footer-center", "master-footer-page"];
   const elements = presentation?.slideset?.master?.elements ?? {};
-  const hasFooters = (elements.text ?? []).some((el) => FOOTER_IDS.includes(el.id));
+  const hasFooters = (elements.text ?? []).some((el) => MASTER_FOOTER_IDS.includes(el.id));
   const fmt = { size: "20px", align: "center" };
   const newText = hasFooters
-    ? (elements.text ?? []).filter((el) => !FOOTER_IDS.includes(el.id))
+    ? (elements.text ?? []).filter((el) => !MASTER_FOOTER_IDS.includes(el.id))
     : [
         ...(elements.text ?? []),
         createMasterTextElement("master-footer-date",   { x: 60,  y: 640 }, 260, 40, "Date",   fmt),
@@ -200,8 +203,8 @@ export const updateMasterDimensions = (
   dimensionUnits,
 ) => {
   const oldDim = presentation?.slideset?.master?.["slide-dimensions"];
-  const oldW = oldDim?.width || 960;
-  const oldH = oldDim?.height || 540;
+  const oldW = oldDim?.width ?? 1280;
+  const oldH = oldDim?.height ?? 720;
   const newW = slideDimensions.width;
   const newH = slideDimensions.height;
 
@@ -323,34 +326,13 @@ export const deleteMasterElement = (presentation, type, elementId) => ({
   },
 });
 
-const createParagraphId = () => crypto.randomUUID();
-
-const RUN_ONLY_KEYS = new Set(["super-sub-script"]);
 
 export const updateMasterTextFormatting = (presentation, elementId, formattingUpdate) => {
   const elements = presentation?.slideset?.master?.elements?.text ?? [];
 
-  const paragraphUpdate = Object.fromEntries(
-    Object.entries(formattingUpdate).filter(([k]) => !RUN_ONLY_KEYS.has(k)),
-  );
-
   const updatedText = elements.map((el) => {
     if (el.id !== elementId) return el;
-    return {
-      ...el,
-      paragraphs: (el.paragraphs ?? []).map((paragraph) => ({
-        ...paragraph,
-        formatting: { ...(paragraph.formatting ?? {}), ...paragraphUpdate },
-        runs: (paragraph.runs ?? []).map((run) => {
-          const rf = { ...(run.formatting ?? {}) };
-          for (const k of Object.keys(paragraphUpdate)) delete rf[k];
-          for (const [k, v] of Object.entries(formattingUpdate)) {
-            if (RUN_ONLY_KEYS.has(k)) rf[k] = v;
-          }
-          return { ...run, formatting: rf };
-        }),
-      })),
-    };
+    return { ...el, paragraphs: applyFormattingToParagraphs(el.paragraphs, formattingUpdate) };
   });
 
   return {
@@ -405,6 +387,22 @@ export const updateMasterTextContent = (presentation, elementId, newText) => {
   };
 };
 
+export const updateMasterItem = (presentation, elementId, updates) => {
+  const elements = presentation?.slideset?.master?.elements ?? {};
+  const { text, formatting, ...rest } = updates;
+
+  const isText = (elements.text ?? []).some((el) => el.id === elementId);
+  const isMedia = (elements.media ?? []).some((el) => el.id === elementId);
+  if (!isText && !isMedia) return presentation;
+  const elementType = isText ? "text" : "media";
+
+  let result = presentation;
+  if (Object.keys(rest).length) result = updateMasterElement(result, elementType, elementId, rest);
+  if (formatting) result = updateMasterTextFormatting(result, elementId, formatting);
+  if (text !== undefined) result = updateMasterTextContent(result, elementId, text);
+  return result;
+};
+
 export const hasTitle = (presentation, layoutId = null) => {
   if (layoutId) {
     const layout = (presentation?.slideset?.layouts ?? []).find((l) => l["layout-id"] === layoutId);
@@ -418,5 +416,5 @@ export const hasFooters = (presentation, layoutId = null) => {
     const layout = (presentation?.slideset?.layouts ?? []).find((l) => l["layout-id"] === layoutId);
     return (layout?.placeholders ?? []).some((p) => p["placeholder-id"]?.startsWith("footer-"));
   }
-  return (presentation?.slideset?.master?.elements?.text ?? []).some((el) => el.id?.startsWith("master-footer-"));
+  return (presentation?.slideset?.master?.elements?.text ?? []).some((el) => MASTER_FOOTER_IDS.includes(el.id));
 };

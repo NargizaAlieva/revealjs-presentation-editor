@@ -4,7 +4,7 @@ import {
   deserializePresentation,
 } from "../persistence/serializationOperations";
 import { validateSlideset } from "../operations/slidesetValidation";
-import { createDefaultPresentation } from "../model/presentation";
+import { createDefaultPresentation } from "../model/defaultPresentation";
 
 describe("serializationOperations", () => {
   test("serializes presentation to JSON string", () => {

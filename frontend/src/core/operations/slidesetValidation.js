@@ -45,6 +45,10 @@ export const validateSlideset = (presentation) => {
   if (!Array.isArray(slideset.layouts)) {
     errors.push("slideset.layouts must be an array");
   } else {
+    if (slideset.layouts.length === 0) {
+      errors.push("Presentation must contain at least one layout");
+    }
+
     slideset.layouts.forEach((layout, index) => {
       const layoutNum = index + 1;
 
@@ -133,6 +137,14 @@ export const validateSlideset = (presentation) => {
             errors.push(`Slide ${num} contents.${key} must be an array`);
           }
         });
+
+        if (typeof slide.contents.notes !== "string") {
+          errors.push(`Slide ${num} contents.notes must be a string`);
+        }
+
+        if (typeof slide.contents.transition !== "string") {
+          errors.push(`Slide ${num} contents.transition must be a string`);
+        }
       }
     });
   }

@@ -46,9 +46,10 @@ const SPEED_MAP = { 0.5: "fast", 1: undefined, 2: "slow" };
 const TRANSITION_SPEED_MAP = { 0.3: "fast", 0.75: "default", 1.5: "slow" };
 
 function blobToDataUrl(blob) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
     reader.readAsDataURL(blob);
   });
 }
@@ -224,6 +225,34 @@ function buildTextElementContent(textElement, animation, placeholderFormatting =
     .join("");
 }
 
+function buildReflectionHtml(media, src, index) {
+  const refId = media.effects?.reflectionId;
+  const rp = refId && refId !== "none" ? REFLECTION_PRESETS.find((p) => p.id === refId) : null;
+  if (!rp || rp.size <= 0) return "";
+  const elH = media.height ?? 200;
+  const elW = media.width ?? 200;
+  const refH = Math.round((rp.size / 100) * elH);
+  const x = media.position?.x ?? 0;
+  const y = (media.position?.y ?? 0) + elH + (rp.offset ?? 0);
+  const refStyle = [
+    `position:absolute`,
+    `left:${x}px`,
+    `top:${y}px`,
+    `width:${elW}px`,
+    `height:${refH}px`,
+    `object-fit:cover`,
+    `object-position:top`,
+    `transform:scaleY(-1)`,
+    `opacity:${rp.opacity}`,
+    rp.blur > 0 ? `filter:blur(${rp.blur}px)` : "",
+    `-webkit-mask-image:linear-gradient(to bottom,black 0%,transparent 100%)`,
+    `mask-image:linear-gradient(to bottom,black 0%,transparent 100%)`,
+    `pointer-events:none`,
+    `z-index:${media["z-index"] ?? index + 1}`,
+  ].filter(Boolean).join(";");
+  return `<img src="${escapeHtml(src)}" alt="" style="${refStyle}" />`;
+}
+
 function buildMasterElementsHtml(presentation, masterFormatting, getSrc) {
   const masterElements = presentation?.slideset?.master?.elements ?? {};
   const textElements = masterElements.text ?? [];
@@ -252,33 +281,7 @@ function buildMasterElementsHtml(presentation, masterFormatting, getSrc) {
 
     const bevelStyle = buildBevelOverlayStyle(media);
     const bevelHtml = bevelStyle ? `<div style="${styleToString(bevelStyle)}"></div>` : "";
-
-    const refId = media.effects?.reflectionId;
-    const rp = refId && refId !== "none" ? REFLECTION_PRESETS.find((p) => p.id === refId) : null;
-    const reflectionHtml = rp && rp.size > 0 ? (() => {
-      const elH = media.height ?? 200;
-      const elW = media.width ?? 200;
-      const refH = Math.round((rp.size / 100) * elH);
-      const x = media.position?.x ?? 0;
-      const y = (media.position?.y ?? 0) + elH + (rp.offset ?? 0);
-      const refStyle = [
-        `position:absolute`,
-        `left:${x}px`,
-        `top:${y}px`,
-        `width:${elW}px`,
-        `height:${refH}px`,
-        `object-fit:cover`,
-        `object-position:top`,
-        `transform:scaleY(-1)`,
-        `opacity:${rp.opacity}`,
-        rp.blur > 0 ? `filter:blur(${rp.blur}px)` : "",
-        `-webkit-mask-image:linear-gradient(to bottom,black 0%,transparent 100%)`,
-        `mask-image:linear-gradient(to bottom,black 0%,transparent 100%)`,
-        `pointer-events:none`,
-        `z-index:${(media["z-index"] ?? index + 1)}`,
-      ].filter(Boolean).join(";");
-      return `<img src="${escapeHtml(src)}" alt="" style="${refStyle}" />`;
-    })() : "";
+    const reflectionHtml = buildReflectionHtml(media, src, index);
 
     return `<div style="${wrapperStyle}">${inner}${bevelHtml}${reflectionHtml}</div>`;
   }).join("");
@@ -360,33 +363,7 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
 
       const bevelStyle = buildBevelOverlayStyle(media);
       const bevelHtml = bevelStyle ? `<div style="${styleToString(bevelStyle)}"></div>` : "";
-
-      const refId = media.effects?.reflectionId;
-      const rp = refId && refId !== "none" ? REFLECTION_PRESETS.find((p) => p.id === refId) : null;
-      const reflectionHtml = rp && rp.size > 0 ? (() => {
-        const elH = media.height ?? 200;
-        const elW = media.width ?? 200;
-        const refH = Math.round((rp.size / 100) * elH);
-        const x = media.position?.x ?? 0;
-        const y = (media.position?.y ?? 0) + elH + (rp.offset ?? 0);
-        const refStyle = [
-          `position:absolute`,
-          `left:${x}px`,
-          `top:${y}px`,
-          `width:${elW}px`,
-          `height:${refH}px`,
-          `object-fit:cover`,
-          `object-position:top`,
-          `transform:scaleY(-1)`,
-          `opacity:${rp.opacity}`,
-          rp.blur > 0 ? `filter:blur(${rp.blur}px)` : "",
-          `-webkit-mask-image:linear-gradient(to bottom,black 0%,transparent 100%)`,
-          `mask-image:linear-gradient(to bottom,black 0%,transparent 100%)`,
-          `pointer-events:none`,
-          `z-index:${(media["z-index"] ?? index + 1)}`,
-        ].filter(Boolean).join(";");
-        return `<img src="${escapeHtml(src)}" alt="" style="${refStyle}" />`;
-      })() : "";
+      const reflectionHtml = buildReflectionHtml(media, src, index);
 
       const innerHtml = `${mediaHtml}${bevelHtml}${reflectionHtml}`;
       const adjustedMediaAnim = animation && adjustedSeqMap.has(animation.id)

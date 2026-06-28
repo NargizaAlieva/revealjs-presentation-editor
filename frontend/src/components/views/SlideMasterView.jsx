@@ -6,7 +6,7 @@ import EditorCanvas from "../editor/EditorCanvas";
 import { ColorPalettePopup } from "../toolbar/design/DesignTab";
 import { DESIGN_THEMES, findActiveTheme } from "../../core/model/designThemes";
 import { SLIDE_SIZES } from "../../core/model/slideSizes";
-import { DEFAULT_FONTS } from "../../core/model/fontConfig";
+import { getAvailableFonts } from "../../core/model/fontConfig";
 import { renderShapes } from "../../core/render/shapeRenderer";
 import { toHex6 } from "../../core/utils/colorUtils";
 import { hasTitle, hasFooters } from "../../core/operations/masterOperations";
@@ -546,7 +546,7 @@ export function SlideMasterRibbon({
                 }}
                 style={{ fontSize: 12, padding: "2px 4px", border: "1px solid #ccc", borderRadius: 3, width: 120 }}
               >
-                {DEFAULT_FONTS.map((f) => (
+                {getAvailableFonts(presentation).map((f) => (
                   <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>
                 ))}
               </select>

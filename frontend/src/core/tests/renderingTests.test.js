@@ -8,10 +8,10 @@ import {
 } from "../render/slidesetRenderUtils";
 import {
   buildTextElementStyle,
-  buildMediaElementStyle,
+  buildMediaContainerStyle,
   buildSlideContainerStyle,
   getTextContent,
-  getSlideTransition,
+  getRevealTransition,
 } from "../render/revealRenderer";
 
 
@@ -75,8 +75,8 @@ describe("getSlideSize", () => {
 
   it("returns fallback when no dimensions in master", () => {
     const { width, height } = getSlideSize(null);
-    expect(width).toBe(960);
-    expect(height).toBe(540);
+    expect(width).toBe(1280);
+    expect(height).toBe(720);
   });
 });
 
@@ -178,18 +178,18 @@ describe("buildTextElementStyle", () => {
 });
 
 
-describe("buildMediaElementStyle", () => {
+describe("buildMediaContainerStyle", () => {
   it("uses coordinates from media element", () => {
     const media = { position: { x: 50, y: 60 }, width: 300, height: 200,
       rotation: 0, "z-index": 1 };
-    const style = buildMediaElementStyle(media, 0);
+    const style = buildMediaContainerStyle(media, 0);
     expect(style.left).toBe("50px");
     expect(style.top).toBe("60px");
   });
 
   it("position is absolute", () => {
     const media = { position: { x: 0, y: 0 }, width: 100, height: 100 };
-    const style = buildMediaElementStyle(media, 0);
+    const style = buildMediaContainerStyle(media, 0);
     expect(style.position).toBe("absolute");
   });
 });
@@ -231,20 +231,20 @@ describe("getTextContent", () => {
 });
 
 
-describe("getSlideTransition", () => {
+describe("getRevealTransition", () => {
   it("returns transition from slide", () => {
     const slide = makeSlide({ contents: { transition: "fade" } });
-    expect(getSlideTransition(slide)).toBe("fade");
+    expect(getRevealTransition(slide)).toBe("fade");
   });
 
   it("returns default when no transition set", () => {
     const slide = makeSlide({ contents: {} });
-    expect(getSlideTransition(slide)).toBe("slide");
+    expect(getRevealTransition(slide)).toBe("none");
   });
 
   it("returns default for invalid transition value", () => {
     const slide = makeSlide({ contents: { transition: "invalid-value" } });
-    expect(getSlideTransition(slide)).toBe("slide");
+    expect(getRevealTransition(slide)).toBe("none");
   });
 });
 

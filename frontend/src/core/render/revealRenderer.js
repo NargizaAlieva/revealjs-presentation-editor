@@ -7,14 +7,15 @@ import {
   BEVEL_PRESETS,
   ROTATION3D_PRESETS,
 } from "../model/imageEffects";
-
-function findById(list, id) { return id ? list.find((p) => p.id === id) : null; }
+import { TRANSITIONS, DEFAULT_TRANSITION } from "../model/transitionDefaults";
 import {
   getSlideSize,
   getTextElements,
   getMediaElements,
 } from "../render/slidesetRenderUtils";
 import { getStyleById } from "../model/imageStyles";
+
+function findById(list, id) { return id ? list.find((p) => p.id === id) : null; }
 
 export function buildTextElementStyle(textElement, index, masterFormatting = {}, placeholderFormatting = {}, placeholderPadding = null, placeholderBackground = null) {
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
@@ -78,7 +79,6 @@ export function buildMediaContainerStyle(media, index) {
   const shadowPreset  = findById(SHADOW_PRESETS,  fx.shadowId);
   const glowPreset    = findById(GLOW_PRESETS, fx.glowId);
   const glowShadow    = fx._glowShadow ?? glowPreset?.shadow ?? null;
-  const bevelPreset   = findById(BEVEL_PRESETS,   fx.bevelId);
   const softPreset    = findById(SOFT_EDGES_PRESETS, fx.softEdgesId);
   const rot3d         = findById(ROTATION3D_PRESETS, fx.rotation3dId);
 
@@ -111,7 +111,6 @@ export function buildMediaContainerStyle(media, index) {
       ? {
           transform: [transforms, rot3d?.transform?.replace("perspective(none) ", "")].filter(Boolean).join(" "),
           transformOrigin: "center center",
-          ...(rot3d?.transform && !rot3d.transform.includes("perspective(none)") ? { perspective: undefined } : {}),
         }
       : {}),
   };
@@ -271,20 +270,12 @@ export function buildColorThemeStyle(presentation) {
   return cssVars;
 }
 
-export function getSlideTransition(slide, defaultTransition = "slide") {
+const VALID_TRANSITIONS = new Set(TRANSITIONS.map((t) => t.value));
+
+export function getRevealTransition(slide) {
   const transition = slide?.contents?.transition;
-  const validTransitions = [
-    "fade",
-    "slide",
-    "convex",
-    "concave",
-    "zoom",
-    "none",
-  ];
-  if (transition && validTransitions.includes(transition)) {
-    return transition;
-  }
-  return defaultTransition;
+  if (transition && VALID_TRANSITIONS.has(transition)) return transition;
+  return DEFAULT_TRANSITION;
 }
 
 const FRAGMENT_EFFECT_CLASSES = new Set([

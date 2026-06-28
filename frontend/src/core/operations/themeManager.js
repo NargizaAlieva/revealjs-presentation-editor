@@ -16,7 +16,7 @@ export const cssVariablesToString = (variables) => {
 
 export const applyThemeToPresentation = (presentation, themeId) => {
   const theme = DESIGN_THEMES.find((t) => t.id === themeId);
-  if (!theme) throw new Error(`Theme with id "${themeId}" not found`);
+  if (!theme) return presentation;
   return {
     ...presentation,
     slideset: {

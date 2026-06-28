@@ -1,6 +1,14 @@
 import { useEffect } from "react";
 import { getMediaFile } from "../core/persistence/persistenceFacade";
 
+function fontFormat(originalPath) {
+  if (originalPath.includes(".woff2")) return "woff2";
+  if (originalPath.includes(".woff"))  return "woff";
+  if (originalPath.includes(".ttf"))   return "truetype";
+  if (originalPath.includes(".otf"))   return "opentype";
+  return "woff";
+}
+
 export function usePresentationFonts(presentation) {
   useEffect(() => {
     const fonts = presentation?.slideset?.fonts ?? [];
@@ -29,7 +37,7 @@ export function usePresentationFonts(presentation) {
             return (
               `@font-face {\n` +
               `  font-family: "${f["font-id"]}";\n` +
-              `  src: url("${src}") format("woff");\n` +
+              `  src: url("${src}") format("${fontFormat(f["font-file"])}");\n` +
               `  font-weight: normal;\n` +
               `  font-style: normal;\n` +
               `}`

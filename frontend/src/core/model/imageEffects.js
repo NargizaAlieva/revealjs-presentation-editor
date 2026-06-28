@@ -69,32 +69,28 @@ export const ARTISTIC_EFFECTS = [
   { id: "cutout",         label: "Cutout",          filter: "contrast(5) saturate(2) brightness(0.85)" },
 ];
 
-// ── Picture Presets (combinations of shadow + bevel + 3D) ─────────
-
 export const PICTURE_PRESETS = [
   { id: "none", label: "No Preset", effects: {} },
-  // Row 1 — flat bevel presets
+  
   { id: "p1",  label: "Preset 1",  effects: { bevelId: "relaxed" } },
   { id: "p2",  label: "Preset 2",  effects: { bevelId: "relaxed",   shadowId: "out-br" } },
   { id: "p3",  label: "Preset 3",  effects: { bevelId: "circle",    shadowId: "out-b"  } },
   { id: "p4",  label: "Preset 4",  effects: { bevelId: "cross",     shadowId: "out-bl" } },
-  // Row 2 — inset / hard bevel
+
   { id: "p5",  label: "Preset 5",  effects: { bevelId: "hard-edge", shadowId: "in-c"  } },
   { id: "p6",  label: "Preset 6",  effects: { bevelId: "cool-slant",shadowId: "out-br" } },
   { id: "p7",  label: "Preset 7",  effects: { bevelId: "convex",    shadowId: "in-c"  } },
   { id: "p8",  label: "Preset 8",  effects: { bevelId: "art-deco",  shadowId: "out-br" } },
-  // Row 3 — 3D / perspective
-  { id: "p9",  label: "Preset 9",  effects: { rotation3dId: "iso-left-up",  shadowId: "persp-b" } },
-  { id: "p10", label: "Preset 10", effects: { rotation3dId: "iso-right-up", shadowId: "persp-b" } },
-  { id: "p11", label: "Preset 11", effects: { rotation3dId: "flat-left",    shadowId: "out-b"   } },
-  { id: "p12", label: "Preset 12", effects: { rotation3dId: "flat-right",   shadowId: "out-b"   } },
-];
 
-// ── Picture Effects ────────────────────────────────────────────────
+  { id: "p9",  label: "Preset 9",  effects: { rotation3dId: "par-iso-lu",  shadowId: "persp-b" } },
+  { id: "p10", label: "Preset 10", effects: { rotation3dId: "par-iso-ru", shadowId: "persp-b" } },
+  { id: "p11", label: "Preset 11", effects: { rotation3dId: "per-mod-l",    shadowId: "out-b"   } },
+  { id: "p12", label: "Preset 12", effects: { rotation3dId: "per-mod-r",   shadowId: "out-b"   } },
+];
 
 export const SHADOW_PRESETS = [
   { id: "none",     label: "No Shadow",                   section: "none",        shadow: null },
-  // Outer — 3×3
+
   { id: "out-br",   label: "Offset Diagonal Bottom Right",section: "outer",       shadow: "4px 4px 8px 0 rgba(0,0,0,0.45)" },
   { id: "out-b",    label: "Offset Bottom",               section: "outer",       shadow: "0 6px 8px 0 rgba(0,0,0,0.4)" },
   { id: "out-bl",   label: "Offset Diagonal Bottom Left", section: "outer",       shadow: "-4px 4px 8px 0 rgba(0,0,0,0.45)" },
@@ -104,7 +100,7 @@ export const SHADOW_PRESETS = [
   { id: "out-tr",   label: "Offset Diagonal Top Right",   section: "outer",       shadow: "4px -4px 8px 0 rgba(0,0,0,0.4)" },
   { id: "out-t",    label: "Offset Top",                  section: "outer",       shadow: "0 -6px 8px 0 rgba(0,0,0,0.4)" },
   { id: "out-tl",   label: "Offset Diagonal Top Left",    section: "outer",       shadow: "-4px -4px 8px 0 rgba(0,0,0,0.4)" },
-  // Inner — 3×3
+
   { id: "in-tl",   label: "Inside Top Left",              section: "inner",       shadow: "inset 4px 4px 8px rgba(0,0,0,0.5)" },
   { id: "in-t",    label: "Inside Top",                   section: "inner",       shadow: "inset 0 6px 8px rgba(0,0,0,0.5)" },
   { id: "in-tr",   label: "Inside Top Right",             section: "inner",       shadow: "inset -4px 4px 8px rgba(0,0,0,0.5)" },
@@ -114,7 +110,7 @@ export const SHADOW_PRESETS = [
   { id: "in-bl",   label: "Inside Bottom Left",           section: "inner",       shadow: "inset 4px -4px 8px rgba(0,0,0,0.5)" },
   { id: "in-b",    label: "Inside Bottom",                section: "inner",       shadow: "inset 0 -6px 8px rgba(0,0,0,0.5)" },
   { id: "in-br",   label: "Inside Bottom Right",          section: "inner",       shadow: "inset -4px -4px 8px rgba(0,0,0,0.5)" },
-  // Perspective — 3+2
+
   { id: "persp-b",  label: "Perspective Below",           section: "perspective", shadow: "0 24px 20px -8px rgba(0,0,0,0.5)" },
   { id: "persp-bl", label: "Perspective Lower Left",      section: "perspective", shadow: "-12px 20px 16px -4px rgba(0,0,0,0.45)" },
   { id: "persp-br", label: "Perspective Lower Right",     section: "perspective", shadow: "12px 20px 16px -4px rgba(0,0,0,0.45)" },
@@ -122,31 +118,29 @@ export const SHADOW_PRESETS = [
   { id: "persp-ur", label: "Perspective Upper Right",     section: "perspective", shadow: "8px -8px 16px rgba(0,0,0,0.4)" },
 ];
 
-// opacity: reflected image opacity  blur: px blur on reflection  size: % of original height shown  offset: gap px
 export const REFLECTION_PRESETS = [
   { id: "none",       label: "No Reflection",          section: "none",      opacity: 0,    blur: 0, size: 0,   offset: 0 },
-  // Row 1 — no offset
+
   { id: "tight",      label: "Tight Reflection, touching", section: "variations", opacity: 0.5, blur: 0,   size: 30,  offset: 0 },
   { id: "half",       label: "Half Reflection, touching",  section: "variations", opacity: 0.45,blur: 1.5, size: 50,  offset: 0 },
   { id: "full",       label: "Full Reflection, touching",  section: "variations", opacity: 0.4, blur: 3,   size: 100, offset: 0 },
-  // Row 2 — 4pt offset
+
   { id: "tight-4",    label: "Tight Reflection, 4pt",  section: "variations", opacity: 0.45, blur: 0,   size: 30,  offset: 4 },
   { id: "half-4",     label: "Half Reflection, 4pt",   section: "variations", opacity: 0.4,  blur: 1.5, size: 50,  offset: 4 },
   { id: "full-4",     label: "Full Reflection, 4pt",   section: "variations", opacity: 0.35, blur: 3,   size: 100, offset: 4 },
-  // Row 3 — 8pt offset
+
   { id: "tight-8",    label: "Tight Reflection, 8pt",  section: "variations", opacity: 0.4,  blur: 0,   size: 30,  offset: 8 },
   { id: "half-8",     label: "Half Reflection, 8pt",   section: "variations", opacity: 0.35, blur: 1.5, size: 50,  offset: 8 },
   { id: "full-8",     label: "Full Reflection, 8pt",   section: "variations", opacity: 0.3,  blur: 3,   size: 100, offset: 8 },
 ];
 
-// 6 colors × 4 sizes — stored as { color, spread } so we can build shadow dynamically
 export const GLOW_COLORS = [
-  { key: "blue",   hex: "#4472C4", rgb: "68,114,196"  },
-  { key: "orange", hex: "#ED7D31", rgb: "237,125,49"  },
-  { key: "ltblue", hex: "#5B9BD5", rgb: "91,155,213"  },
-  { key: "yellow", hex: "#FFC000", rgb: "255,192,0"   },
-  { key: "red",    hex: "#FF0000", rgb: "255,0,0"     },
-  { key: "green",  hex: "#70AD47", rgb: "112,173,71"  },
+  { key: "blue",   hex: "#4472C4" },
+  { key: "orange", hex: "#ED7D31" },
+  { key: "ltblue", hex: "#5B9BD5" },
+  { key: "yellow", hex: "#FFC000" },
+  { key: "red",    hex: "#FF0000" },
+  { key: "green",  hex: "#70AD47" },
 ];
 export const GLOW_SIZES = [
   { pt: 5,  blur: 8,  spread: 3,  opacity: 0.85 },
@@ -162,7 +156,6 @@ export function buildGlowShadow(hex, sizeIndex = 0) {
 
 export const GLOW_PRESETS = [
   { id: "none", label: "No Glow", shadow: null },
-  // generated: colorKey-sizeIndex
   ...GLOW_COLORS.flatMap((c) =>
     GLOW_SIZES.map((s, si) => ({
       id:     `${c.key}-${si}`,
@@ -185,17 +178,17 @@ export const SOFT_EDGES_PRESETS = [
 
 export const BEVEL_PRESETS = [
   { id: "none",        label: "No Bevel",       bevel: null },
-  // Row 1 — classic raised/inset
+
   { id: "circle",      label: "Circle",         bevel: "inset 3px 3px 6px rgba(255,255,255,0.55), inset -3px -3px 6px rgba(0,0,0,0.35)" },
   { id: "relaxed",     label: "Relaxed Inset",  bevel: "inset 2px 2px 4px rgba(255,255,255,0.4), inset -2px -2px 4px rgba(0,0,0,0.25)" },
   { id: "cross",       label: "Cross",          bevel: "inset 4px 4px 0 rgba(255,255,255,0.5), inset -4px -4px 0 rgba(0,0,0,0.3)" },
   { id: "cool-slant",  label: "Cool Slant",     bevel: "inset 6px 6px 8px rgba(255,255,255,0.4), inset -2px -2px 4px rgba(0,0,0,0.4)" },
-  // Row 2 — convex / hard
+
   { id: "convex",      label: "Convex",         bevel: "inset 0 0 16px rgba(255,255,255,0.45), inset 0 0 4px rgba(0,0,0,0.2)" },
   { id: "hard-edge",   label: "Hard Edge",      bevel: "inset 4px 4px 0 rgba(255,255,255,0.6), inset -4px -4px 0 rgba(0,0,0,0.5)" },
   { id: "art-deco",    label: "Art Deco",       bevel: "inset 2px 2px 0 rgba(255,255,255,0.8), inset -2px -2px 0 rgba(0,0,0,0.6), inset 5px 5px 0 rgba(255,255,255,0.3)" },
   { id: "angle",       label: "Angle",          bevel: "inset 8px 8px 0 rgba(255,255,255,0.35), inset -8px -8px 0 rgba(0,0,0,0.35)" },
-  // Row 3 — soft / decorative
+
   { id: "soft-round",  label: "Soft Round",     bevel: "inset 0 0 10px rgba(255,255,255,0.6), inset 0 0 3px rgba(0,0,0,0.15)" },
   { id: "slope",       label: "Slope",          bevel: "inset 3px 3px 0 rgba(255,255,255,0.5), inset -3px -3px 0 rgba(0,0,0,0.4), inset 6px 6px 6px rgba(255,255,255,0.15)" },
   { id: "divot",       label: "Divot",          bevel: "inset 0 0 3px 2px rgba(0,0,0,0.4), inset 0 0 1px 1px rgba(255,255,255,0.3)" },
@@ -204,7 +197,7 @@ export const BEVEL_PRESETS = [
 
 export const ROTATION3D_PRESETS = [
   { id: "none",         label: "No Rotation",              section: "none",        transform: null },
-  // Parallel — 10
+
   { id: "par-iso-lu",   label: "Isometric Left Up",        section: "parallel",    transform: "perspective(none) rotateY(-35deg) rotateX(20deg)" },
   { id: "par-iso-ru",   label: "Isometric Right Up",       section: "parallel",    transform: "perspective(none) rotateY(35deg) rotateX(20deg)" },
   { id: "par-iso-ld",   label: "Isometric Left Down",      section: "parallel",    transform: "perspective(none) rotateY(-35deg) rotateX(-20deg)" },
@@ -215,7 +208,7 @@ export const ROTATION3D_PRESETS = [
   { id: "par-off-l2",   label: "Off Axis 2 Left",          section: "parallel",    transform: "perspective(none) rotateX(-20deg) rotateY(-10deg)" },
   { id: "par-off-r2",   label: "Off Axis 2 Right",         section: "parallel",    transform: "perspective(none) rotateX(-20deg) rotateY(10deg)" },
   { id: "par-off-t2",   label: "Off Axis 2 Top",           section: "parallel",    transform: "perspective(none) rotateX(-10deg) rotateY(20deg)" },
-  // Perspective — 12
+
   { id: "per-front",    label: "Perspective Front",        section: "perspective", transform: "perspective(600px) rotateX(6deg)" },
   { id: "per-heroic",   label: "Perspective Heroic Ext.",  section: "perspective", transform: "perspective(400px) rotateX(12deg)" },
   { id: "per-l-above",  label: "Perspective Left Facing",  section: "perspective", transform: "perspective(500px) rotateY(-20deg) rotateX(4deg)" },
@@ -228,7 +221,7 @@ export const ROTATION3D_PRESETS = [
   { id: "per-mod-r",    label: "Moderate Right",           section: "perspective", transform: "perspective(700px) rotateY(15deg) rotateX(5deg)" },
   { id: "per-relax-l",  label: "Relaxed Moderate Left",    section: "perspective", transform: "perspective(900px) rotateY(-10deg) rotateX(3deg)" },
   { id: "per-relax-r",  label: "Relaxed Moderate Right",   section: "perspective", transform: "perspective(900px) rotateY(10deg) rotateX(3deg)" },
-  // Oblique — 4
+
   { id: "obl-tl",       label: "Oblique Top Left",         section: "oblique",     transform: "rotateX(-10deg) rotateY(15deg) skewX(-3deg)" },
   { id: "obl-tr",       label: "Oblique Top Right",        section: "oblique",     transform: "rotateX(-10deg) rotateY(-15deg) skewX(3deg)" },
   { id: "obl-bl",       label: "Oblique Bottom Left",      section: "oblique",     transform: "rotateX(10deg) rotateY(15deg) skewX(-3deg)" },
@@ -241,7 +234,7 @@ const ALL_PRESETS = [
   ...COLOR_TONE,
   ...RECOLOR_PRESETS,
   ...ARTISTIC_EFFECTS,
-];
+].filter((p) => p.id !== "none");
 
 const PRESET_MAP = new Map(ALL_PRESETS.map((p) => [p.id, p.filter]));
 

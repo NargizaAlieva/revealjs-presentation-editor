@@ -1,4 +1,5 @@
-import { getSlides, setSlides } from "../utils/presentationUtils";
+import { createId, createParagraphId, getSlides, setSlides } from "../utils/presentationUtils";
+import { applyFormattingToParagraphs, RUN_ONLY_KEYS, SHARED_KEYS } from "../text/textFormatting";
 
 export const CONTENT_PLACEHOLDER_PROMPTS = new Set([
   "",
@@ -19,18 +20,7 @@ export const createPromptParagraphs = (paragraphs = [], promptText) => {
   return [{ ...first, runs: [{ ...firstRun, text: promptText, link: null }] }];
 };
 
-const createParagraphId = () => `paragraph-${crypto.randomUUID()}`;
 
-const RUN_ONLY_KEYS = new Set(["super-sub-script"]);
-const SHARED_KEYS = new Set([
-  "weight",
-  "italics",
-  "text-decoration",
-  "color",
-  "size",
-  "font",
-  "highlight",
-]);
 const FONT_SIZE_DELTA_KEY = "font-size-delta";
 
 const adjustFontSize = (size, delta, fallback = 24) => {
@@ -155,59 +145,32 @@ export const updateTextFormatting = (
     ),
   );
 
-  const paragraphUpdate = Object.fromEntries(
-    Object.entries(directFormatting).filter(([k]) => !RUN_ONLY_KEYS.has(k)),
-  );
+  const updatedTextElements = (slide.contents?.text ?? []).map((textElement) => {
+    if (textElement.id !== textElementId) return textElement;
 
-  const updatedTextElements = (slide.contents?.text ?? []).map(
-    (textElement) => {
-      if (textElement.id !== textElementId) return textElement;
+    let paragraphs = applyFormattingToParagraphs(textElement.paragraphs, directFormatting);
 
-      const runUpdate = Object.fromEntries(
-        Object.entries(directFormatting).filter(([k]) => RUN_ONLY_KEYS.has(k)),
-      );
+    if (fontSizeDelta) {
+      paragraphs = paragraphs.map((paragraph) => {
+        const pSize = paragraph.formatting?.size;
+        return {
+          ...paragraph,
+          formatting: pSize != null
+            ? { ...paragraph.formatting, size: adjustFontSize(pSize, fontSizeDelta) }
+            : paragraph.formatting,
+          runs: paragraph.runs.map((run) => ({
+            ...run,
+            formatting: {
+              ...run.formatting,
+              size: adjustFontSize(run.formatting?.size, fontSizeDelta, parseFloat(paragraph.formatting?.size) || 24),
+            },
+          })),
+        };
+      });
+    }
 
-      const sharedKeysBeingSet = Object.keys(paragraphUpdate).filter((k) =>
-        SHARED_KEYS.has(k),
-      );
-
-      const updatedParagraphs = (textElement.paragraphs ?? []).map(
-        (paragraph) => {
-          const paragraphFormatting = {
-            ...(paragraph.formatting ?? {}),
-            ...paragraphUpdate,
-          };
-          if (fontSizeDelta && paragraphFormatting.size != null) {
-            paragraphFormatting.size = adjustFontSize(
-              paragraphFormatting.size,
-              fontSizeDelta,
-            );
-          }
-
-          return {
-            ...paragraph,
-            formatting: paragraphFormatting,
-            runs: (paragraph.runs ?? []).map((run) => {
-              const runFmt = { ...(run.formatting ?? {}) };
-              for (const k of sharedKeysBeingSet) delete runFmt[k];
-              if (Object.keys(runUpdate).length)
-                Object.assign(runFmt, runUpdate);
-              if (fontSizeDelta) {
-                runFmt.size = adjustFontSize(
-                  runFmt.size,
-                  fontSizeDelta,
-                  parseFloat(paragraph.formatting?.size) || 24,
-                );
-              }
-              return { ...run, formatting: runFmt };
-            }),
-          };
-        },
-      );
-
-      return { ...textElement, paragraphs: updatedParagraphs };
-    },
-  );
+    return { ...textElement, paragraphs };
+  });
 
   slides[slideIndex] = {
     ...slide,
@@ -227,6 +190,9 @@ export const deleteTextElement = (presentation, slideIndex, elementId) => {
     contents: {
       ...slide.contents,
       text: (slide.contents?.text ?? []).filter((el) => el.id !== elementId),
+      animations: (slide.contents?.animations ?? [])
+        .filter((a) => a.id !== elementId)
+        .map((a, index) => ({ ...a, sequence: index + 1 })),
     },
   };
 
@@ -291,10 +257,10 @@ export const updateTextRangeFormatting = (
   const updatedText = (slide.contents?.text ?? []).map((el) => {
     if (el.id !== elementId) return el;
 
-    const updatedParagraphs = el.paragraphs.map((para, pIdx) => {
+    const updatedParagraphs = (el.paragraphs ?? []).map((para, pIdx) => {
       if (pIdx < startParagraphIdx || pIdx > endParagraphIdx) return para;
 
-      const paraLen = para.runs.reduce((a, r) => a + r.text.length, 0);
+      const paraLen = (para.runs ?? []).reduce((a, r) => a + r.text.length, 0);
       const pRangeStart = pIdx === startParagraphIdx ? rangeStart : 0;
       const pRangeEnd = pIdx === endParagraphIdx ? rangeEnd : paraLen;
       const isTrailingBoundary =
@@ -317,7 +283,7 @@ export const updateTextRangeFormatting = (
       const newRuns = [];
       let charOffset = 0;
 
-      for (const run of para.runs) {
+      for (const run of (para.runs ?? [])) {
         const runStart = charOffset;
         const runEnd = charOffset + run.text.length;
 
@@ -399,13 +365,13 @@ export const updateRunLink = (
   const updatedText = (slide.contents?.text ?? []).map((el) => {
     if (el.id !== elementId) return el;
 
-    const updatedParagraphs = el.paragraphs.map((para, pIdx) => {
+    const updatedParagraphs = (el.paragraphs ?? []).map((para, pIdx) => {
       if (pIdx !== paragraphIdx) return para;
 
       const newRuns = [];
       let charOffset = 0;
 
-      for (const run of para.runs) {
+      for (const run of (para.runs ?? [])) {
         const runStart = charOffset;
         const runEnd = charOffset + run.text.length;
 

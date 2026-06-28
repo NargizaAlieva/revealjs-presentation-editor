@@ -3,7 +3,7 @@ import {
   validateSlideset,
   isSlidesetValid,
 } from "../operations/slidesetValidation";
-import { createDefaultPresentation } from "../model/presentation";
+import { createDefaultPresentation } from "../model/defaultPresentation";
 
 describe("slidesetValidation", () => {
   test("valid default presentation passes validation", () => {

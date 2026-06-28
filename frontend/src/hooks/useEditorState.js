@@ -2,11 +2,11 @@ import { useReducer, useEffect, useLayoutEffect, useState, useRef } from "react"
 import { createInitialEditorState, editorReducer } from "../core/store/editorStore";
 import { createEventBus } from "../core/events/eventBus";
 import { EditorEventType, createEditorEvent } from "../core/events/editorEvents";
-import { storageGet, storageRemove, updateIndexEntry, getSetting } from "../core/persistence/persistenceFacade";
+import { storageGet, updateIndexEntry, getSetting } from "../core/persistence/persistenceFacade";
 
 const AUTOSAVE_SETTING_KEY = "autosaveEnabled";
 
-export function useEditorState(presentationId) {
+export function useEditorState(presentationId, { onSaveError } = {}) {
   const storageKey = presentationId
     ? `presentation-${presentationId}`
     : "presentation";
@@ -24,13 +24,17 @@ export function useEditorState(presentationId) {
   });
 
   const [eventBus] = useState(() =>
-    createEventBus(reactDispatch, () => stateRef.current, { storageKey }),
+    createEventBus(reactDispatch, () => stateRef.current, {
+      storageKey,
+      onSaveError: onSaveError ?? ((err) => console.error("[EditorState] Autosave failed:", err)),
+    }),
   );
 
   useEffect(() => {
+    let cancelled = false;
     storageGet(storageKey)
       .then((saved) => {
-        if (!saved) return;
+        if (cancelled || !saved) return;
         const raw = getSetting(AUTOSAVE_SETTING_KEY);
         const autosaveEnabled = raw === null ? true : raw === "true";
         reactDispatch(
@@ -41,9 +45,12 @@ export function useEditorState(presentationId) {
         );
       })
       .catch((error) => {
-        console.error("[EditorState] Failed to load presentation from IndexedDB:", error);
+        if (!cancelled) {
+          console.error("[EditorState] Failed to load presentation from IndexedDB:", error);
+        }
       })
-      .finally(() => setIsLoading(false));
+      .finally(() => { if (!cancelled) setIsLoading(false); });
+    return () => { cancelled = true; };
   }, [storageKey]);
 
   useEffect(() => {

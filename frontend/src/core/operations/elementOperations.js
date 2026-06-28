@@ -13,29 +13,7 @@ export const getElementLabel = (element) => {
   if (element.paragraphs) {
     return element.paragraphs?.[0]?.runs?.[0]?.text || "Text";
   }
-  return "Image";
-};
-
-export const moveElement = (presentation, slideIndex, elementId, newPosition) => {
-  const slides = [...getSlides(presentation)];
-  const slide = slides[slideIndex];
-  if (!slide) return presentation;
-
-  const updatePosition = (element) =>
-    element.id === elementId
-      ? { ...element, position: { x: newPosition.x, y: newPosition.y } }
-      : element;
-
-  slides[slideIndex] = {
-    ...slide,
-    contents: {
-      ...slide.contents,
-      text: (slide.contents?.text ?? []).map(updatePosition),
-      media: (slide.contents?.media ?? []).map(updatePosition),
-    },
-  };
-
-  return setSlides(presentation, slides);
+  return element["media-type"] === "video" ? "Video" : "Image";
 };
 
 export const resizeElement = (presentation, slideIndex, elementId, newSize) => {
@@ -71,6 +49,26 @@ export const resizeElement = (presentation, slideIndex, elementId, newSize) => {
     },
   };
 
+  return setSlides(presentation, slides);
+};
+
+export const deleteElementsByIds = (presentation, slideIndex, elementIds) => {
+  const ids = new Set(elementIds ?? []);
+  if (ids.size === 0) return presentation;
+  const slides = [...getSlides(presentation)];
+  const slide = slides[slideIndex];
+  if (!slide) return presentation;
+  slides[slideIndex] = {
+    ...slide,
+    contents: {
+      ...slide.contents,
+      text: (slide.contents?.text ?? []).filter((el) => !ids.has(el.id)),
+      media: (slide.contents?.media ?? []).filter((el) => !ids.has(el.id)),
+      animations: (slide.contents?.animations ?? [])
+        .filter((a) => !ids.has(a.id))
+        .map((a, index) => ({ ...a, sequence: index + 1 })),
+    },
+  };
   return setSlides(presentation, slides);
 };
 

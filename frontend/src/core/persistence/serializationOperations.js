@@ -1,5 +1,5 @@
 import { validateSlideset } from "../operations/slidesetValidation";
-import { migrateParagraphFormatting } from "../render/slidesetRenderUtils";
+import { migrateParagraphFormatting } from "../text/textFormatting";
 import { downloadBackend } from "../export/downloadBackend";
 
 const collectUsedFonts = (presentation) => {
@@ -17,6 +17,12 @@ const collectUsedFonts = (presentation) => {
   for (const layout of slideset.layouts ?? []) {
     for (const ph of layout.placeholders ?? []) {
       scanFormatting(ph.formatting);
+    }
+    for (const el of layout.elements?.text ?? []) {
+      for (const para of el.paragraphs ?? []) {
+        scanFormatting(para.formatting);
+        for (const run of para.runs ?? []) scanFormatting(run.formatting);
+      }
     }
   }
 
@@ -81,11 +87,20 @@ const computeParagraphBullets = (presentation) => {
     },
   }));
 
+  const layouts = (slideset.layouts ?? []).map((layout) => ({
+    ...layout,
+    elements: {
+      ...layout.elements,
+      text: transformTextElements(layout.elements?.text),
+    },
+  }));
+
   return {
     ...presentation,
     slideset: {
       ...slideset,
       slides,
+      layouts,
       master: {
         ...slideset.master,
         elements: {

@@ -1,4 +1,5 @@
-import { createId, getSlides, setSlides } from "../utils/presentationUtils";
+import { createId, getSlides, setSlides, createTextElementFromPlaceholder, createMediaElementFromPlaceholder } from "../utils/presentationUtils";
+import { applyFormattingToParagraphs } from "../text/textFormatting";
 
 const getLayouts = (presentation) =>
   presentation?.slideset?.layouts ?? [];
@@ -30,41 +31,8 @@ const getPlaceholderDefaultText = (placeholder) => {
 };
 
 const createTextFromPlaceholder = (placeholder) => ({
-  id: createId("text"),
-  "placeholder-id": placeholder["placeholder-id"],
-  position: { ...placeholder.position },
-  "pos-type": "relative-to-placeholder",
-  width: placeholder.width,
-  height: placeholder.height,
-  rotation: 0,
-  overflow: "auto-fit",
-  "z-index": 1,
-  background: placeholder.background ?? "#FFFFFF00",
+  ...createTextElementFromPlaceholder(placeholder, getPlaceholderDefaultText(placeholder)),
   userModified: false,
-  paragraphs: [
-    {
-      id: createId("paragraph"),
-      formatting: {},
-      bullets: "none",
-      runs: [{ formatting: {}, "super-sub-script": "normal", text: getPlaceholderDefaultText(placeholder), link: null }],
-    },
-  ],
-});
-
-const createMediaFromPlaceholder = (placeholder) => ({
-  id: createId("media"),
-  "placeholder-id": placeholder["placeholder-id"],
-  "file-link": "",
-  "media-type": placeholder.type === "video" ? "video" : "image",
-  position: { ...placeholder.position },
-  width: placeholder.width,
-  height: placeholder.height,
-  rotation: 0,
-  "z-index": 1,
-  scale: 1,
-  crop: [],
-  effects: {},
-  playback: {},
 });
 
 const updateElementFromPlaceholder = (element, placeholders, isModified) => {
@@ -87,7 +55,7 @@ const updateElementFromPlaceholder = (element, placeholders, isModified) => {
     }),
   };
 
-  if (element.paragraphs && match.promptText !== undefined) {
+  if (element.paragraphs && match.promptText !== undefined && !geometryModified) {
     updated.paragraphs = element.paragraphs.map((p, pIdx) => {
       if (pIdx !== 0) return p;
       return {
@@ -160,7 +128,7 @@ export const createPlaceholderPseudoElement = (placeholder) => {
 
 export const addLayout = (presentation, afterLayoutId = null) => {
   const layouts = getLayouts(presentation);
-  const id = `custom-layout-${Date.now()}`;
+  const id = createId("custom-layout");
   const customCount = layouts.filter((l) => l["layout-id"].startsWith("custom-layout-")).length + 1;
   const newLayout = {
     "layout-id": id,
@@ -178,7 +146,9 @@ export const addLayout = (presentation, afterLayoutId = null) => {
 };
 
 export const deleteLayout = (presentation, layoutId) => {
-  const layouts = getLayouts(presentation).filter((l) => l["layout-id"] !== layoutId);
+  const allLayouts = getLayouts(presentation);
+  if (allLayouts.length <= 1) return presentation;
+  const layouts = allLayouts.filter((l) => l["layout-id"] !== layoutId);
   const slides = getSlides(presentation).map((slide) =>
     slide["layout-id"] === layoutId ? { ...slide, "layout-id": layouts[0]?.["layout-id"] ?? null } : slide,
   );
@@ -381,7 +351,7 @@ export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
     const pid = placeholder["placeholder-id"];
     if (!pid || handledPids.has(pid)) continue;
     if (placeholder.type === "text") newText.push(createTextFromPlaceholder(placeholder));
-    else if (placeholder.type === "image" || placeholder.type === "video") newMedia.push(createMediaFromPlaceholder(placeholder));
+    else if (placeholder.type === "image" || placeholder.type === "video") newMedia.push(createMediaElementFromPlaceholder(placeholder));
   }
 
   slides[slideIndex] = {
@@ -397,32 +367,13 @@ export const applyLayoutToSlide = (presentation, slideIndex, layoutId) => {
   return setSlides(presentation, slides);
 };
 
-const RUN_ONLY_KEYS = new Set(["super-sub-script"]);
-
 export const updateLayoutTextFormatting = (presentation, layoutId, elementId, formattingUpdate) => {
-  const paragraphUpdate = Object.fromEntries(
-    Object.entries(formattingUpdate).filter(([k]) => !RUN_ONLY_KEYS.has(k)),
-  );
   const layouts = getLayouts(presentation);
   const updatedLayouts = layouts.map((l) => {
     if (l["layout-id"] !== layoutId) return l;
     const textElements = (l.elements?.text ?? []).map((el) => {
       if (el.id !== elementId) return el;
-      return {
-        ...el,
-        paragraphs: (el.paragraphs ?? []).map((paragraph) => ({
-          ...paragraph,
-          formatting: { ...(paragraph.formatting ?? {}), ...paragraphUpdate },
-          runs: (paragraph.runs ?? []).map((run) => {
-            const rf = { ...(run.formatting ?? {}) };
-            for (const k of Object.keys(paragraphUpdate)) delete rf[k];
-            for (const [k, v] of Object.entries(formattingUpdate)) {
-              if (RUN_ONLY_KEYS.has(k)) rf[k] = v;
-            }
-            return { ...run, formatting: rf };
-          }),
-        })),
-      };
+      return { ...el, paragraphs: applyFormattingToParagraphs(el.paragraphs, formattingUpdate) };
     });
     return { ...l, elements: { ...(l.elements ?? {}), text: textElements } };
   });
@@ -443,6 +394,8 @@ export const updateLayoutItem = (presentation, layoutId, itemId, updates) => {
 
   const { formatting, promptText, ...rest } = updates;
   const isTextEl = (layout.elements?.text ?? []).some((el) => el.id === itemId);
+  const isMediaEl = (layout.elements?.media ?? []).some((el) => el.id === itemId);
+  if (!isTextEl && !isMediaEl) return presentation;
   const elementType = isTextEl ? "text" : "media";
   let result = presentation;
   if (Object.keys(rest).length) result = updateLayoutElement(result, layoutId, elementType, itemId, rest);
@@ -480,7 +433,7 @@ export const propagateLayoutChanges = (
       if (placeholder.type === "text") {
         newText.push(createTextFromPlaceholder(placeholder));
       } else if (placeholder.type === "image" || placeholder.type === "video") {
-        newMedia.push(createMediaFromPlaceholder(placeholder));
+        newMedia.push(createMediaElementFromPlaceholder(placeholder));
       }
     }
 
@@ -563,7 +516,7 @@ export const resetSlideToLayout = (presentation, slideIndex) => {
     const pid = placeholder["placeholder-id"];
     if (!pid || handledPids.has(pid)) continue;
     if (placeholder.type === "text") newText.push(createTextFromPlaceholder(placeholder));
-    else if (placeholder.type === "image" || placeholder.type === "video") newMedia.push(createMediaFromPlaceholder(placeholder));
+    else if (placeholder.type === "image" || placeholder.type === "video") newMedia.push(createMediaElementFromPlaceholder(placeholder));
   }
 
   slides[slideIndex] = {

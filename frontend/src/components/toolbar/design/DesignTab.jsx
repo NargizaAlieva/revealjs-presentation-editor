@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import "./DesignTab.css";
-import { DEFAULT_FONTS } from "../shared/homeTabConstants";
+import { getAvailableFonts } from "../../../core/model/fontConfig";
 import { toHex6, toHex9 } from "../../../core/utils/colorUtils";
 import { DESIGN_THEMES, findActiveTheme, updateThemeBackground, THEME_PALETTE_COLUMNS, STANDARD_COLORS } from "../../../core/model/designThemes";
 import { SLIDE_SIZES, clampSlideDimension } from "../../../core/model/slideSizes";
@@ -170,7 +170,7 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
                         value={currentFont}
                         onChange={(e) => { e.stopPropagation(); onApplyFont({ font: e.target.value }); }}
                     >
-                        {DEFAULT_FONTS.map(f => (
+                        {getAvailableFonts(presentation).map(f => (
                             <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>
                         ))}
                     </select>

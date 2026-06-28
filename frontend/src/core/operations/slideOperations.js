@@ -1,53 +1,11 @@
-import { createId, getSlides, setSlides } from "../utils/presentationUtils";
+import { createId, getSlides, setSlides, createTextElementFromPlaceholder, createMediaElementFromPlaceholder } from "../utils/presentationUtils";
+import { DEFAULT_TRANSITION } from "../model/transitionDefaults";
 
 export const TRANSPARENT_SLIDE_BG = "#FFFFFFFF";
 
 const getLayouts = (presentation) =>
   presentation?.slideset?.layouts ?? [];
 
-const createTextElementFromPlaceholder = (placeholder, defaultText = "") => ({
-  id: createId("text"),
-  "placeholder-id": placeholder["placeholder-id"],
-  position: { ...placeholder.position },
-  "pos-type": "relative-to-placeholder",
-  width: placeholder.width,
-  height: placeholder.height,
-  rotation: 0,
-  overflow: "auto-fit",
-  "z-index": 1,
-  background: placeholder.background ?? "#FFFFFF00",
-  paragraphs: [
-    {
-      id: createId("paragraph"),
-      formatting: {},
-      bullets: "none",
-      runs: [
-        {
-          formatting: {},
-          "super-sub-script": "normal",
-          text: defaultText,
-          link: null,
-        },
-      ],
-    },
-  ],
-});
-
-const createMediaElementFromPlaceholder = (placeholder) => ({
-  id: createId("media"),
-  "placeholder-id": placeholder["placeholder-id"],
-  "file-link": "",
-  "media-type": placeholder.type === "video" ? "video" : "image",
-  position: { ...placeholder.position },
-  width: placeholder.width,
-  height: placeholder.height,
-  rotation: 0,
-  "z-index": 1,
-  scale: 1,
-  crop: [],
-  effects: {},
-  playback: {},
-});
 
 export const createSlideFromLayout = (layout, slideNumber) => {
   const placeholders = layout.placeholders ?? [];
@@ -73,8 +31,8 @@ export const createSlideFromLayout = (layout, slideNumber) => {
       tables: [],
       groups: [],
       animations: [],
-      background: "#FFFFFFFF",
-      transition: "none",
+      background: TRANSPARENT_SLIDE_BG,
+      transition: DEFAULT_TRANSITION,
       notes: "",
     },
   };
@@ -86,9 +44,7 @@ export const addSlide = (presentation, layoutId = "title-content") => {
 
   const layout = layouts.find((l) => l["layout-id"] === layoutId);
 
-  if (!layout) {
-    throw new Error(`Layout not found: ${layoutId}`);
-  }
+  if (!layout) return presentation;
 
   const newSlide = createSlideFromLayout(layout, slides.length + 1);
 
@@ -134,7 +90,7 @@ export const duplicateSlide = (presentation, slideIndex) => {
   });
 
   const duplicated = {
-    ...structuredClone(source),
+    ...source,
     title: { content: `${source.title?.content ?? "Slide"} Copy` },
     contents: {
       ...structuredClone(source.contents),
@@ -240,20 +196,6 @@ export const updateSlideBackground = (presentation, slideIndex, background) => {
     ...slide,
     contents: { ...slide.contents, background },
   };
-  return setSlides(presentation, slides);
-};
-
-export const updateSlideTransition = (presentation, slideIndex, transition) => {
-  const slides = [...getSlides(presentation)];
-  const slide = slides[slideIndex];
-
-  if (!slide) return presentation;
-
-  slides[slideIndex] = {
-    ...slide,
-    contents: { ...slide.contents, transition },
-  };
-
   return setSlides(presentation, slides);
 };
 

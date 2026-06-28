@@ -35,6 +35,17 @@ export const computeResize = (dir, initial, mouse, canvasWidth, canvasHeight) =>
     newH = minH;
   }
 
+  if (newX < 0) {
+    if (dir === "nw" || dir === "w" || dir === "sw") newW = Math.max(minW, newW + newX);
+    newX = 0;
+  }
+  if (newY < 0) {
+    if (dir === "nw" || dir === "n" || dir === "ne") newH = Math.max(minH, newH + newY);
+    newY = 0;
+  }
+  if (canvasWidth != null && newX + newW > canvasWidth) newW = canvasWidth - newX;
+  if (canvasHeight != null && newY + newH > canvasHeight) newH = canvasHeight - newY;
+
   return { newX, newY, newW, newH };
 };
 

@@ -160,14 +160,14 @@ export const DESIGN_THEMES = [
   },
 ];
 
-export const updateThemeColor = (colorTheme, cssVariableName, newHex6) => {
+export const updateThemeColor = (colorTheme, cssVariableName, newHex7) => {
   return (colorTheme ?? []).map((entry) => {
     if (entry["css-variable-name"] !== cssVariableName) return entry;
     const alpha =
       typeof entry.color === "string" && entry.color.length === 9
         ? entry.color.slice(7)
         : "FF";
-    return { ...entry, color: `${newHex6}${alpha}` };
+    return { ...entry, color: `${newHex7}${alpha}` };
   });
 };
 
@@ -176,14 +176,7 @@ export const updateThemeBackground = (colorTheme, hex9Color) =>
     e["css-variable-name"] === "bg-light" ? { ...e, color: hex9Color } : e,
   );
 
-export const DEFAULT_COLOR_THEME = [
-  { "css-variable-name": "bg-light",   color: "#ffffff" },
-  { "css-variable-name": "bg-dark",    color: "#191919" },
-  { "css-variable-name": "text-dark",  color: "#000000" },
-  { "css-variable-name": "text-light", color: "#ffffff" },
-  { "css-variable-name": "accent1",    color: "#4f46e5" },
-  { "css-variable-name": "accent2",    color: "#7c3aed" },
-];
+export const DEFAULT_COLOR_THEME = DESIGN_THEMES.find((t) => t.id === "default")?.colorTheme ?? [];
 
 export const THEME_PALETTE_COLUMNS = [
   ["#FFFFFF", "#F2F2F2", "#D9D9D9", "#BFBFBF", "#A6A6A6", "#808080"],

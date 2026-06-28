@@ -17,7 +17,7 @@ import {
   getSlideTextElements,
   getSlideMediaElements,
   getSlideDimensions,
-  getSlideTransition,
+  getRevealTransition,
   buildAdjustedAnimationMap,
   getFragmentProps,
   getPerLineFragments,
@@ -171,7 +171,7 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
               return (
                 <section
                   key={`slide-${slideIndex}`}
-                  data-transition={getSlideTransition(slide)}
+                  data-transition={getRevealTransition(slide)}
                   style={{
                     background: (() => {
                       const bg = slide?.contents?.background ?? null;

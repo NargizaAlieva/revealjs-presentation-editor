@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createDefaultPresentation } from "../model/presentation";
+import { createDefaultPresentation } from "../model/defaultPresentation";
 import {
   addSlide,
   deleteSlide,

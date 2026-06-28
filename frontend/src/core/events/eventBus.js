@@ -1,8 +1,11 @@
-import { EditorEventType } from "../events/editorEvents";
+import { EditorEventType } from "./editorEvents";
 import { createAutosaveService } from "../persistence/autoSaveService";
 
-export const createEventBus = (reactDispatch, getState, { storageKey } = {}) => {
-  const autosave = createAutosaveService(getState, { storageKey });
+export const createEventBus = (reactDispatch, getState, { storageKey, onSaveError } = {}) => {
+  const autosave = createAutosaveService(getState, {
+    storageKey,
+    onError: onSaveError,
+  });
 
   return {
     async dispatch(event) {
@@ -16,9 +19,10 @@ export const createEventBus = (reactDispatch, getState, { storageKey } = {}) => 
         await new Promise((resolve) => queueMicrotask(resolve));
 
         if (event.type === EditorEventType.PRESENTATION.TOGGLE_AUTOSAVE) {
-          autosave.persistAutosaveSetting(getState()?.autosaveEnabled);
+          const state = getState();
+          if (state) autosave.persistAutosaveSetting(state.autosaveEnabled);
         } else if (event.type === EditorEventType.PRESENTATION.SAVE) {
-          autosave.saveImmediately();
+          await autosave.saveImmediately();
         } else {
           const state = getState();
           if (!state) return;

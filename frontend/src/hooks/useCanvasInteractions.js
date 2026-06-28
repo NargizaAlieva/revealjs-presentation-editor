@@ -304,7 +304,6 @@ export function useCanvasInteractions({
   );
 
   return {
-    handleMouseMove: () => {},
     stopInteraction,
     cancelInteraction,
     startDraggingText,
