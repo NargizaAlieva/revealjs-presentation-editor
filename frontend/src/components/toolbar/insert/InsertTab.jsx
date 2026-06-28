@@ -12,7 +12,7 @@ import LayoutThumb from "../shared/LayoutThumb";
 import { HyperlinkDialog } from "../../canvas/menus/CanvasContextMenu";
 import "../../canvas/dialogs/TextContextDialogs.css";
 
-export default function InsertTab({ onImageUpload, onVideoUpload, onAddSlide, onAddTextElement, currentBgImage, selectedSlide, presentation, onApplySlideBackground, onApplyBgFillImage, onRemoveBgFillImage, onUpdateBgFillSettings, onApplyBackgroundToAll, isSlideMasterOpen, selectedElement, selectedHyperlinkText = "", onHyperlink, onNewComment }) {
+export default function InsertTab({ onImageUpload, onVideoUpload, onAddSlide, onAddTextElement, currentBgImage, selectedSlide, presentation, onApplySlideBackground, onApplyBgFillImage, onApplyBackgroundToAll, isSlideMasterOpen, selectedElement, selectedHyperlinkText = "", onHyperlink, onNewComment }) {
   const layouts = presentation?.slideset?.layouts ?? [];
   const [showLayouts, setShowLayouts] = useState(false);
   const [newSlidePos, setNewSlidePos] = useState({ top: 0, left: 0 });
@@ -153,8 +153,6 @@ export default function InsertTab({ onImageUpload, onVideoUpload, onAddSlide, on
             presentation={presentation}
             onApplySlideBackground={onApplySlideBackground}
             onApplyBgFillImage={onApplyBgFillImage}
-            onRemoveBgFillImage={onRemoveBgFillImage}
-            onUpdateBgFillSettings={onUpdateBgFillSettings}
             onApplyBackgroundToAll={onApplyBackgroundToAll}
             onClose={() => setShowFormatBg(false)}
           />

@@ -112,8 +112,6 @@ export default function EditorPage() {
           onApplyBackground={ctrl.handleApplyBackground}
           onApplySlideBackground={ctrl.handleApplySlideBackground}
           onApplyBgFillImage={ctrl.handleApplyBgFillImage}
-          onRemoveBgFillImage={ctrl.handleRemoveBgFillImage}
-          onUpdateBgFillSettings={ctrl.handleUpdateBgFillSettings}
           onApplyBackgroundToAll={ctrl.handleApplyBackgroundToAll}
           selectedSlide={ctrl.selectedSlide}
           layouts={ctrl.layouts}

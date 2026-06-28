@@ -334,15 +334,15 @@ export default function FontGroup({
           </button>
           {showCaseMenu && (
             <div className="font-case-menu">
-              <button onClick={() => onChangeCase?.("sentence")}>
+              <button onMouseDown={(e) => e.preventDefault()} onClick={() => { onChangeCase?.("sentence"); setShowCaseMenu(false); }}>
                 Sentence case
               </button>
-              <button onClick={() => onChangeCase?.("lower")}>lowercase</button>
-              <button onClick={() => onChangeCase?.("upper")}>UPPERCASE</button>
-              <button onClick={() => onChangeCase?.("title")}>
+              <button onMouseDown={(e) => e.preventDefault()} onClick={() => { onChangeCase?.("lower"); setShowCaseMenu(false); }}>lowercase</button>
+              <button onMouseDown={(e) => e.preventDefault()} onClick={() => { onChangeCase?.("upper"); setShowCaseMenu(false); }}>UPPERCASE</button>
+              <button onMouseDown={(e) => e.preventDefault()} onClick={() => { onChangeCase?.("title"); setShowCaseMenu(false); }}>
                 Capitalize Each Word
               </button>
-              <button onClick={() => onChangeCase?.("toggle")}>
+              <button onMouseDown={(e) => e.preventDefault()} onClick={() => { onChangeCase?.("toggle"); setShowCaseMenu(false); }}>
                 tOGGLE cASE
               </button>
             </div>

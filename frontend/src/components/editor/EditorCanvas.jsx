@@ -132,9 +132,11 @@ export default function EditorCanvas({
   const { width, height } = getSlideSize(presentation);
   const colorThemeStyle = buildColorThemeStyle(presentation);
 
-  const bgFillImageKey = slide?.contents?.["bg-fill-image"] ?? null;
+  const slideBg = slide?.contents?.background ?? null;
+  const isImageBg = slideBg && typeof slideBg === "object" && slideBg.type === "image";
+  const bgFillImageKey = isImageBg ? slideBg["file-link"] : null;
   const bgFillImageSrc = useMediaSrc(bgFillImageKey);
-  const bgFillSettings = slide?.contents?.["bg-fill-settings"] ?? {};
+  const bgFillSettings = isImageBg ? slideBg : {};
 
   const zoomScale = zoom / 100;
   const scaledWidth = width * zoomScale;
@@ -176,8 +178,14 @@ export default function EditorCanvas({
 
   const slideContentIds = useMemo(() => {
     const ids = new Set();
-    textElements.forEach((el) => ids.add(el.id));
-    mediaElements.forEach((el) => ids.add(el.id));
+    textElements.forEach((el) => {
+      ids.add(el.id);
+      if (el["placeholder-id"]) ids.add(el["placeholder-id"]);
+    });
+    mediaElements.forEach((el) => {
+      ids.add(el.id);
+      if (el["placeholder-id"]) ids.add(el["placeholder-id"]);
+    });
     return ids;
   }, [textElements, mediaElements]);
 
@@ -485,10 +493,9 @@ export default function EditorCanvas({
                   width: `${width}px`,
                   height: `${height}px`,
                   backgroundColor:
-                    !slide?.contents?.background ||
-                    slide.contents.background === TRANSPARENT_SLIDE_BG
+                    !slideBg || isImageBg || slideBg === TRANSPARENT_SLIDE_BG
                       ? "var(--bg-light, white)"
-                      : slide.contents.background,
+                      : slideBg,
                   color: "var(--text-dark, black)",
                   overflow: "hidden",
                 }}

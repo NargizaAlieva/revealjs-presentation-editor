@@ -1,3 +1,6 @@
+.reveal .slides section .fragment[data-fragment-speed="fast"] { transition-duration: 200ms; }
+.reveal .slides section .fragment[data-fragment-speed="slow"] { transition-duration: 2200ms; }
+
 .preview-overlay {
   position: fixed;
   inset: 0;

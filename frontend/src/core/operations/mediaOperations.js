@@ -3,10 +3,11 @@ import { createId, getSlides, setSlides } from "../utils/presentationUtils";
 export const computeCropOrigin = (media) => {
   const [ct = 0, cr = 0, cb = 0, cl = 0] =
     media.crop?.length === 4 ? media.crop : [0, 0, 0, 0];
+  const scale = media.scale ?? 1;
   const W = media.width ?? 300;
   const H = media.height ?? 200;
-  const srcW = media["source-width"] ?? W / Math.max(0.01, 1 - cl / 100 - cr / 100);
-  const srcH = media["source-height"] ?? H / Math.max(0.01, 1 - ct / 100 - cb / 100);
+  const srcW = (media["source-width"] ?? W / Math.max(0.01, 1 - cl / 100 - cr / 100)) * scale;
+  const srcH = (media["source-height"] ?? H / Math.max(0.01, 1 - ct / 100 - cb / 100)) * scale;
   const fullX = (media.position?.x ?? 0) - (cl / 100) * srcW;
   const fullY = (media.position?.y ?? 0) - (ct / 100) * srcH;
   return { fullX, fullY, srcW, srcH, initialCrop: [ct, cr, cb, cl] };

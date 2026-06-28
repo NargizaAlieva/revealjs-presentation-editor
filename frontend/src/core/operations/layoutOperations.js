@@ -530,7 +530,6 @@ export const resetSlideToLayout = (presentation, slideIndex) => {
       height: match.height,
       background: match.background ?? el.background,
       rotation: 0,
-      userModified: false,
       paragraphs: resetParagraphs,
     };
   });

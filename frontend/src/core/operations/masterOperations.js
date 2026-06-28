@@ -1,13 +1,17 @@
 import { createPlaceholderPseudoElement } from "./layoutOperations";
 import { TITLE_PLACEHOLDER, FOOTER_PLACEHOLDERS, createMasterTextElement } from "../model/masterDefaults";
 
-export const buildMasterPseudoSlide = (masterElements) => ({
-  contents: {
-    text: masterElements.text ?? [],
-    media: masterElements.media ?? [],
-    background: "#FFFFFFFF",
-  },
-});
+export const buildMasterPseudoSlide = (masterElements, masterColorTheme) => {
+  const bgEntry = (masterColorTheme ?? []).find((e) => e["css-variable-name"] === "bg-light");
+  const background = bgEntry?.color ?? "#FFFFFFFF";
+  return {
+    contents: {
+      text: masterElements.text ?? [],
+      media: masterElements.media ?? [],
+      background,
+    },
+  };
+};
 
 export const buildLayoutPseudoSlide = (layout, masterColorTheme) => {
   const bgEntry = (masterColorTheme ?? []).find((e) => e["css-variable-name"] === "bg-light");
@@ -107,17 +111,44 @@ export const toggleMasterFooters = (presentation, layoutId) => {
   };
 };
 
-export const updateMasterTheme = (presentation, colorTheme, decorations) => ({
-  ...presentation,
-  slideset: {
-    ...presentation.slideset,
-    master: {
-      ...presentation.slideset.master,
-      "color-theme": colorTheme,
-      ...(decorations !== undefined ? { decorations } : {}),
+function bgToHex6(bg) {
+  if (!bg || typeof bg !== "string") return null;
+  if (bg.startsWith("rgba")) {
+    const m = bg.match(/rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    if (!m) return null;
+    return "#" + [m[1], m[2], m[3]].map(n => parseInt(n).toString(16).padStart(2, "0")).join("");
+  }
+  if (bg.startsWith("#")) return "#" + bg.replace("#", "").slice(0, 6).toLowerCase();
+  return null;
+}
+
+export const updateMasterTheme = (presentation, colorTheme, decorations) => {
+  const oldBgLight = (presentation?.slideset?.master?.["color-theme"] ?? [])
+    .find(e => e["css-variable-name"] === "bg-light")?.color;
+  const oldBgHex6 = oldBgLight ? bgToHex6(oldBgLight) : null;
+
+  const slides = (presentation?.slideset?.slides ?? []).map(slide => {
+    const bg = slide?.contents?.background;
+    if (!bg || bg === "#FFFFFFFF" || (typeof bg === "object" && bg.type === "image")) return slide;
+    if (oldBgHex6 && typeof bg === "string" && bgToHex6(bg) === oldBgHex6) {
+      return { ...slide, contents: { ...slide.contents, background: null } };
+    }
+    return slide;
+  });
+
+  return {
+    ...presentation,
+    slideset: {
+      ...presentation.slideset,
+      slides,
+      master: {
+        ...presentation.slideset.master,
+        "color-theme": colorTheme,
+        ...(decorations !== undefined ? { decorations } : {}),
+      },
     },
-  },
-});
+  };
+};
 
 const scaleElement = (el, scaleX, scaleY, newW, newH) => {
   const [ct = 0, cr = 0, cb = 0, cl = 0] = el.crop ?? [];

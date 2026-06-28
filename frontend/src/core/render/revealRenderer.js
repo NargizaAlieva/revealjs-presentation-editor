@@ -16,7 +16,7 @@ import {
 } from "../render/slidesetRenderUtils";
 import { getStyleById } from "../model/imageStyles";
 
-export function buildTextElementStyle(textElement, index, masterFormatting = {}, placeholderFormatting = {}, placeholderPadding = null) {
+export function buildTextElementStyle(textElement, index, masterFormatting = {}, placeholderFormatting = {}, placeholderPadding = null, placeholderBackground = null) {
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
   const rotation = textElement.rotation ?? 0;
   const r = (elemVal, phVal, masterVal, fallback) => elemVal ?? phVal ?? masterVal ?? fallback;
@@ -31,7 +31,7 @@ export function buildTextElementStyle(textElement, index, masterFormatting = {},
     top: `${textElement.position?.y ?? 0}px`,
     width: `${textElement.width ?? 300}px`,
     height: `${textElement.height ?? 80}px`,
-    background: textElement.background ?? "transparent",
+    background: textElement.background ?? placeholderBackground ?? "transparent",
     zIndex: textElement["z-index"] ?? index + 1,
     ...(rotation ? { transform: `rotate(${rotation}deg)` } : {}),
     display: "flex",
@@ -151,8 +151,8 @@ export function buildMediaInnerStyle(media) {
   const hasCrop = ct !== 0 || cr !== 0 || cb !== 0 || cl !== 0;
 
   if (hasCrop) {
-    const srcW = media["source-width"] ?? media.width ?? 200;
-    const srcH = media["source-height"] ?? media.height ?? 120;
+    const srcW = (media["source-width"] ?? media.width ?? 200) * scale;
+    const srcH = (media["source-height"] ?? media.height ?? 120) * scale;
     return {
       position: "absolute",
       width: `${srcW}px`,
@@ -160,7 +160,6 @@ export function buildMediaInnerStyle(media) {
       left: `${-(cl / 100) * srcW}px`,
       top: `${-(ct / 100) * srcH}px`,
       objectFit: "fill",
-      ...(scale !== 1 ? { transform: `scale(${scale})`, transformOrigin: "center center" } : {}),
     };
   }
 
@@ -372,7 +371,7 @@ function buildFragmentProps(animation, sequenceOverride) {
 
   const effect = animation.effect ?? "fade-in";
   const sequence = sequenceOverride ?? animation.sequence;
-  const rawSpeed = animation["effect-options"]?.speed ?? animation.speed;
+  const rawSpeed = animation.speed;
   const speed = SPEED_MAP[rawSpeed];
 
   return {

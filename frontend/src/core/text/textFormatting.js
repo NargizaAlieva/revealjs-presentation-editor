@@ -50,7 +50,8 @@ export const getFormattingAtCursor = (textElement, selection) => {
     const start = offset;
     const end = offset + run.text.length;
     if (lookupPos >= start && lookupPos < end) {
-      return { ...paraFmt, ...(run.formatting ?? {}) };
+      const runFmt = { ...(run.link?.href ? { "text-decoration": "underline" } : {}), ...(run.formatting ?? {}) };
+      return { ...paraFmt, ...runFmt };
     }
     offset = end;
   }
@@ -178,13 +179,18 @@ export const runsToHTML = (runs) =>
           : superSub === "sub"
             ? "vertical-align:sub;font-size:0.75em"
             : "";
+      const fmt = run.formatting ?? {};
       const linkStyle = run.link?.href
-        ? "color:var(--link,#2563eb);text-decoration:underline;cursor:pointer"
+        ? [
+            !fmt.color ? "color:var(--link,#2563eb)" : "",
+            !fmt["text-decoration"] ? "text-decoration:underline" : "",
+            "cursor:pointer",
+          ].filter(Boolean).join(";")
         : "";
       const allStyles = [styles, superSubStyle, linkStyle].filter(Boolean).join(";");
       const text = escapeHTML(run.text ?? "");
       if (run.link?.href) {
-        const title = `title="🔗 ${escapeHTML(run.link.href)}"`;
+        const title = `title="🔗 ${escapeHTML(run.link.href)}&#10;Ctrl+Click to follow link"`;
         return `<span style="${allStyles}" ${title} data-link="${escapeHTML(run.link.href)}">${text}</span>`;
       }
       return allStyles ? `<span style="${allStyles}">${text}</span>` : text;
@@ -277,7 +283,7 @@ export const getSelectionFormatting = (textElement, selection) => {
       const end = offset + run.text.length;
       if (end > pStart && start < pEnd)
         overlapping.push({
-          runFmt: run.formatting ?? {},
+          runFmt: { ...(run.link?.href ? { "text-decoration": "underline" } : {}), ...(run.formatting ?? {}) },
           paraFmt: thisParaFmt,
         });
       offset = end;

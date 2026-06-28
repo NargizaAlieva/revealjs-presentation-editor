@@ -9,7 +9,7 @@ import {
   buildBevelOverlayStyle,
 } from "../../core/render/revealRenderer";
 import { paragraphsToHTML } from "../../core/text/textFormatting";
-import { getPlaceholderFormatting, getPlaceholderPadding, getSlideContentIds } from "../../core/render/slidesetRenderUtils";
+import { getPlaceholderFormatting, getPlaceholderPadding, getPlaceholderBackground, getSlideContentIds } from "../../core/render/slidesetRenderUtils";
 import { REFLECTION_PRESETS } from "../../core/model/imageEffects";
 import SlideDecorations from "../canvas/SlideDecorations";
 import "./SlideThumbnail.css";
@@ -63,17 +63,18 @@ function ThumbnailMedia({ media, index }) {
     };
   })() : null;
 
+  const isVideo = media["media-type"] === "video";
+  const mediaEl = isVideo
+    ? <video src={src} style={{ ...innerStyle, ...(cssFilter ? { filter: cssFilter } : {}) }} preload="metadata" muted onLoadedMetadata={(e) => { e.target.currentTime = 0; }} />
+    : <img src={src} alt="" style={{ ...innerStyle, ...(cssFilter ? { filter: cssFilter } : {}) }} />;
+
   return (
     <>
       <div style={{ ...containerStyle, pointerEvents: "none" }}>
-        <img
-          src={src}
-          alt=""
-          style={{ ...innerStyle, ...(cssFilter ? { filter: cssFilter } : {}) }}
-        />
+        {mediaEl}
         {bevelStyle && <div style={bevelStyle} />}
       </div>
-      {reflection && <img src={src} alt="" style={reflection} />}
+      {reflection && !isVideo && <img src={src} alt="" style={reflection} />}
     </>
   );
 }
@@ -104,9 +105,11 @@ export default function SlideThumbnail({
   const thumbH = Math.round(thumbW * slideHeight / slideWidth);
   const colorThemeStyle = buildColorThemeStyle(presentation);
   const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
-  const bgFillImageKey = slide?.contents?.["bg-fill-image"] ?? null;
+  const slideBg = slide?.contents?.background ?? null;
+  const isImageBg = slideBg && typeof slideBg === "object" && slideBg.type === "image";
+  const bgFillImageKey = isImageBg ? slideBg["file-link"] : null;
   const bgFillImageSrc = useMediaSrc(bgFillImageKey);
-  const bgFillSettings = slide?.contents?.["bg-fill-settings"] ?? {};
+  const bgFillSettings = isImageBg ? slideBg : {};
 
   return (
     <div
@@ -130,9 +133,9 @@ export default function SlideThumbnail({
           transform: `scale(${scale})`,
           transformOrigin: "top left",
           background:
-            !slide?.contents?.background || slide.contents.background === "#FFFFFFFF"
+            !slideBg || isImageBg || slideBg === "#FFFFFFFF"
               ? "var(--bg-light, white)"
-              : slide.contents.background,
+              : slideBg,
           position: "relative",
           overflow: "hidden",
         }}
@@ -167,7 +170,8 @@ export default function SlideThumbnail({
         {textElements.filter((element) => !element.hidden && !isEmptyPlaceholderPrompt(element)).map((textElement, index) => {
           const placeholderFormatting = getPlaceholderFormatting(presentation, slide, textElement);
           const placeholderPadding = getPlaceholderPadding(presentation, slide, textElement);
-          const style = buildTextElementStyle(textElement, index, masterFormatting, placeholderFormatting, placeholderPadding);
+          const placeholderBackground = getPlaceholderBackground(presentation, slide, textElement);
+          const style = buildTextElementStyle(textElement, index, masterFormatting, placeholderFormatting, placeholderPadding, placeholderBackground);
           const html = paragraphsToHTML(textElement.paragraphs, masterFormatting, placeholderFormatting);
           return (
             <div
@@ -177,9 +181,22 @@ export default function SlideThumbnail({
             />
           );
         })}
-        {mediaElements.filter((element) => !element.hidden).map((media, index) => (
-          <ThumbnailMedia key={media.id} media={media} index={index} />
-        ))}
+        {mediaElements.filter((element) => !element.hidden).map((media, index) => {
+          if (!media["file-link"]) {
+            return (
+              <div
+                key={media.id}
+                style={{
+                  ...buildMediaContainerStyle(media, index),
+                  border: "1px dashed rgba(100,100,100,0.35)",
+                  background: "rgba(180,180,180,0.1)",
+                  boxSizing: "border-box",
+                }}
+              />
+            );
+          }
+          return <ThumbnailMedia key={media.id} media={media} index={index} />;
+        })}
       </div>
     </div>
   );

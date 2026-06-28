@@ -62,8 +62,6 @@ export default function Toolbar({
   onApplyBackground,
   onApplySlideBackground,
   onApplyBgFillImage,
-  onRemoveBgFillImage,
-  onUpdateBgFillSettings,
   onApplyBackgroundToAll,
   activeTab,
   onTabChange,
@@ -299,8 +297,6 @@ useEffect(() => {
             onApplyBackground={onApplyBackground}
             onApplySlideBackground={onApplySlideBackground}
             onApplyBgFillImage={onApplyBgFillImage}
-            onRemoveBgFillImage={onRemoveBgFillImage}
-            onUpdateBgFillSettings={onUpdateBgFillSettings}
             onApplyBackgroundToAll={onApplyBackgroundToAll}
             isSlideMasterOpen={isSlideMasterOpen}
             selectedElement={selectedElement}
@@ -319,8 +315,6 @@ useEffect(() => {
             onApplyBackground={onApplyBackground}
             onApplySlideBackground={onApplySlideBackground}
             onApplyBgFillImage={onApplyBgFillImage}
-            onRemoveBgFillImage={onRemoveBgFillImage}
-            onUpdateBgFillSettings={onUpdateBgFillSettings}
             onApplyBackgroundToAll={onApplyBackgroundToAll}
             selectedSlide={selectedSlide}
           />

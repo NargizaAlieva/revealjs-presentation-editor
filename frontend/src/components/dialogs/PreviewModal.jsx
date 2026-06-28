@@ -173,15 +173,18 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
                   key={`slide-${slideIndex}`}
                   data-transition={getSlideTransition(slide)}
                   style={{
-                    background:
-                      !slide?.contents?.background || slide.contents.background === "#FFFFFFFF"
-                        ? "var(--bg-light, white)"
-                        : slide.contents.background,
+                    background: (() => {
+                      const bg = slide?.contents?.background ?? null;
+                      const isImg = bg && typeof bg === "object" && bg.type === "image";
+                      return !bg || isImg || bg === "#FFFFFFFF" ? "var(--bg-light, white)" : bg;
+                    })(),
                   }}>
                   <div style={buildSlideContainerStyle(width, height)}>
-                    {slide?.contents?.["bg-fill-image"] && (
-                      <BgFillElement fileLink={slide.contents["bg-fill-image"]} width={width} height={height} settings={slide.contents["bg-fill-settings"] ?? {}} />
-                    )}
+                    {(() => {
+                      const bg = slide?.contents?.background ?? null;
+                      const isImg = bg && typeof bg === "object" && bg.type === "image";
+                      return isImg ? <BgFillElement fileLink={bg["file-link"]} width={width} height={height} settings={bg} /> : null;
+                    })()}
                     <SlideDecorations
                       presentation={presentation}
                       width={width}

@@ -6,6 +6,7 @@ import {
   getMediaElements,
   getPlaceholderFormatting,
   getPlaceholderPadding,
+  getPlaceholderBackground,
 } from "../render/slidesetRenderUtils";
 import {
   buildTextElementStyle,
@@ -51,41 +52,45 @@ function blobToDataUrl(blob) {
   });
 }
 
-async function resolveMediaLinks(slides) {
+async function resolveMediaLinks(slides, masterElements = {}) {
   const resolvedMap = new Map();
-  for (const slide of slides) {
-    for (const media of getMediaElements(slide)) {
-      const fileLink = media["file-link"];
-      if (fileLink?.startsWith("indexeddb://")) {
-        const key = fileLink.replace("indexeddb://", "");
-        const blob = await getMediaFile(key);
-        if (blob) {
-          resolvedMap.set(fileLink, await blobToDataUrl(blob));
-        }
+  const allMedia = [
+    ...(masterElements.media ?? []),
+    ...slides.flatMap((slide) => getMediaElements(slide)),
+  ];
+  for (const media of allMedia) {
+    const fileLink = media["file-link"];
+    if (fileLink?.startsWith("indexeddb://") && !resolvedMap.has(fileLink)) {
+      const key = fileLink.replace("indexeddb://", "");
+      const blob = await getMediaFile(key);
+      if (blob) {
+        resolvedMap.set(fileLink, await blobToDataUrl(blob));
       }
     }
   }
   return resolvedMap;
 }
 
-async function resolveMediaForZip(slides) {
+async function resolveMediaForZip(slides, masterElements = {}) {
   const resolvedMap = new Map();
   let counter = 1;
-  for (const slide of slides) {
-    for (const media of getMediaElements(slide)) {
-      const fileLink = media["file-link"];
-      if (!fileLink || resolvedMap.has(fileLink)) continue;
-      if (fileLink.startsWith("indexeddb://")) {
-        const key = fileLink.replace("indexeddb://", "");
-        const blob = await getMediaFile(key);
-        if (blob) {
-          const ext = blob.type.split("/")[1] ?? "jpg";
-          const filename = `media/image_${counter++}.${ext}`;
-          resolvedMap.set(fileLink, { src: filename, blob });
-        }
-      } else {
-        resolvedMap.set(fileLink, { src: fileLink, blob: null });
+  const allMedia = [
+    ...(masterElements.media ?? []),
+    ...slides.flatMap((slide) => getMediaElements(slide)),
+  ];
+  for (const media of allMedia) {
+    const fileLink = media["file-link"];
+    if (!fileLink || resolvedMap.has(fileLink)) continue;
+    if (fileLink.startsWith("indexeddb://")) {
+      const key = fileLink.replace("indexeddb://", "");
+      const blob = await getMediaFile(key);
+      if (blob) {
+        const ext = blob.type.split("/")[1] ?? "jpg";
+        const filename = `media/image_${counter++}.${ext}`;
+        resolvedMap.set(fileLink, { src: filename, blob });
       }
+    } else {
+      resolvedMap.set(fileLink, { src: fileLink, blob: null });
     }
   }
   return resolvedMap;
@@ -94,7 +99,7 @@ async function resolveMediaForZip(slides) {
 function buildAdjustedSequenceMap(animations, textElements) {
   if (!animations?.length) return new Map();
   const sorted = [...animations].sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0));
-  const result = new Map(); // elementId -> adjusted start index
+  const result = new Map();
   let next = 1;
   for (const anim of sorted) {
     result.set(anim.id, next);
@@ -129,7 +134,7 @@ function applyFragment(innerHtml, wrapperStyle, animation) {
   if (!animation) return `<div style="${wrapperStyle}">${innerHtml}</div>`;
   const effect = animation.effect ?? "fade-in";
   const sequence = animation.sequence;
-  const speedRaw = animation["effect-options"]?.speed ?? animation.speed;
+  const speedRaw = animation.speed;
   const classes = fragmentClassesFor(effect);
   const dataAttrs = fragmentDataAttrs(sequence, speedRaw);
   return `<div class="${classes}" ${dataAttrs} style="${wrapperStyle}">${innerHtml}</div>`;
@@ -210,7 +215,7 @@ function buildTextElementContent(textElement, animation) {
       const classes = fragmentClassesFor(animation.effect ?? "fade-in");
       const dataAttrs = fragmentDataAttrs(
         fragIndex,
-        animation["effect-options"]?.speed ?? animation.speed,
+        animation.speed,
       );
       return `<p class="${classes}" ${dataAttrs} style="${pStyle}">${markerHtml}${runsHtml}</p>`;
     })
@@ -228,7 +233,7 @@ function buildMasterElementsHtml(presentation, masterFormatting, getSrc) {
     return `<div style="${style}">${content}</div>`;
   }).join("");
 
-  const mediaHtml = mediaElements.filter((element) => !element.hidden).map((media, index) => {
+  const mediaHtml = mediaElements.filter((element) => !element.hidden && !!element["file-link"]).map((media, index) => {
     const src = getSrc(media["file-link"] ?? "");
     const isVideo = media["media-type"] === "video";
     const wrapperStyle = styleToString(buildMediaContainerStyle(media, index));
@@ -238,8 +243,9 @@ function buildMasterElementsHtml(presentation, masterFormatting, getSrc) {
       ...(cssFilter ? { filter: cssFilter } : {}),
     });
     const { autoPlay, loop, muted } = buildVideoAttributes(media);
+    const showControls = media.playback?.controls !== false;
     const inner = isVideo
-      ? `<video src="${escapeHtml(src)}" style="${innerStyle}" preload="metadata"${autoPlay ? " autoplay" : ""}${loop ? " loop" : ""}${muted ? " muted" : ""}></video>`
+      ? `<video src="${escapeHtml(src)}" style="${innerStyle}" preload="metadata"${autoPlay ? " autoplay" : ""}${loop ? " loop" : ""}${muted ? " muted" : ""}${showControls ? " controls" : ""}></video>`
       : `<img src="${escapeHtml(src)}" alt="${escapeHtml(media.decorative ? "" : (media.alt ?? ""))}" style="${innerStyle}" />`;
 
     const bevelStyle = buildBevelOverlayStyle(media);
@@ -318,7 +324,8 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
       const sequenceMode = animation?.["effect-options"]?.sequence ?? "as-one-object";
       const placeholderFormatting = getPlaceholderFormatting(presentation, slide, textElement);
       const placeholderPadding = getPlaceholderPadding(presentation, slide, textElement);
-      const style = styleToString(buildTextElementStyle(textElement, index, masterFormatting, placeholderFormatting, placeholderPadding));
+      const placeholderBackground = getPlaceholderBackground(presentation, slide, textElement);
+      const style = styleToString(buildTextElementStyle(textElement, index, masterFormatting, placeholderFormatting, placeholderPadding, placeholderBackground));
       const adjustedAnim = animation && adjustedSeqMap.has(animation.id)
         ? { ...animation, sequence: adjustedSeqMap.get(animation.id) }
         : animation;
@@ -465,7 +472,8 @@ export async function exportToReveal(presentation) {
   const filename = (presentation?.slideset?.filename ?? "presentation")
     .replace(/\.json$/, "");
 
-  const resolvedMap = await resolveMediaLinks(slides);
+  const masterElements = presentation?.slideset?.master?.elements ?? {};
+  const resolvedMap = await resolveMediaLinks(slides, masterElements);
   const getSrc = (fileLink) => resolvedMap.get(fileLink) ?? fileLink;
   const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
   const masterElementsHtml = buildMasterElementsHtml(presentation, masterFormatting, getSrc);
@@ -486,7 +494,8 @@ export async function exportToRevealZip(presentation) {
   const filename = (presentation?.slideset?.filename ?? "presentation")
     .replace(/\.json$/, "");
 
-  const resolvedMap = await resolveMediaForZip(slides);
+  const masterElements = presentation?.slideset?.master?.elements ?? {};
+  const resolvedMap = await resolveMediaForZip(slides, masterElements);
   const getSrc = (fileLink) => resolvedMap.get(fileLink)?.src ?? fileLink;
   const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
   const masterElementsHtml = buildMasterElementsHtml(presentation, masterFormatting, getSrc);

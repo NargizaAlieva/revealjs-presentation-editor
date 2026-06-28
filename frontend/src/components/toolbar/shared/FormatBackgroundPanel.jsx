@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { MdClose } from "react-icons/md";
 import { useMediaSrc } from "../../../hooks/useMediaSrc";
@@ -42,12 +42,19 @@ function BgImagePreview({ fileLink }) {
   ) : null;
 }
 
+function getThemeBgLight(presentation) {
+  const colorTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
+  const entry = colorTheme.find((e) => e["css-variable-name"] === "bg-light");
+  if (!entry?.color) return "#ffffff";
+  const c = entry.color.replace("#", "");
+  return `#${c.slice(0, 6)}`;
+}
+
 export default function FormatBackgroundPanel({
   slide,
+  presentation,
   onApplySlideBackground,
   onApplyBgFillImage,
-  onRemoveBgFillImage,
-  onUpdateBgFillSettings,
   onApplyBackgroundToAll,
   onClose,
 }) {
@@ -75,10 +82,13 @@ export default function FormatBackgroundPanel({
   }, [width]);
 
   const storedBg = slide?.contents?.background ?? null;
-  const bgImage = slide?.contents?.["bg-fill-image"] ?? null;
-  const storedSettings = slide?.contents?.["bg-fill-settings"] ?? {};
+  const isImageBg = storedBg && typeof storedBg === "object" && storedBg.type === "image";
+  const bgImage = isImageBg ? storedBg["file-link"] : null;
+  const storedSettings = isImageBg ? storedBg : {};
 
-  const parsed = parseStoredColor(storedBg);
+  const themeBgLight = getThemeBgLight(presentation);
+  const effectiveBg = isImageBg ? null : (!storedBg || storedBg === "#FFFFFFFF" ? themeBgLight : storedBg);
+  const parsed = parseStoredColor(effectiveBg);
   const [fillTypeOverride, setFillTypeOverride] = useState(null);
   const fillType = fillTypeOverride ?? (bgImage ? "picture" : "solid");
   const [solidColor, setSolidColor] = useState(parsed.hex);
@@ -90,47 +100,70 @@ export default function FormatBackgroundPanel({
   const [offsetBottom, setOffsetBottom] = useState(storedSettings.offsetBottom ?? 0);
   const [fitToCanvas, setScaleToCanvas] = useState(storedSettings.fitToCanvas ?? false);
 
+  const slideId = slide?.id;
+  useEffect(() => {
+    const bg = slide?.contents?.background ?? null;
+    const isImg = bg && typeof bg === "object" && bg.type === "image";
+    const settings = isImg ? bg : {};
+    const effective = isImg ? null : (!bg || bg === "#FFFFFFFF" ? getThemeBgLight(presentation) : bg);
+    const p = parseStoredColor(effective);
+    setFillTypeOverride(null);
+    setSolidColor(p.hex);
+    setTransparency(p.transparency);
+    setPicTransparency(settings.transparency ?? 0);
+    setOffsetLeft(settings.offsetLeft ?? 0);
+    setOffsetRight(settings.offsetRight ?? 0);
+    setOffsetTop(settings.offsetTop ?? 0);
+    setOffsetBottom(settings.offsetBottom ?? 0);
+    setScaleToCanvas(settings.fitToCanvas ?? false);
+  }, [slideId, slide?.contents?.background]);
+
+  useEffect(() => {
+    const bg = slide?.contents?.background ?? null;
+    const isImg = bg && typeof bg === "object" && bg.type === "image";
+    if (!isImg && (!bg || bg === "#FFFFFFFF")) {
+      setSolidColor(themeBgLight);
+    }
+  }, [themeBgLight]);
+
   const fileInputRef = useRef(null);
-
-  const applyColor = (hex, transPct) => {
-    onApplySlideBackground?.(colorWithAlpha(hex, transPct));
-  };
-
-  const applyPicSettings = (settings) => {
-    onUpdateBgFillSettings?.(settings);
-  };
-
-  const handleColorChange = (hex) => {
-    setSolidColor(hex);
-    applyColor(hex, transparency);
-  };
-
-  const handleTransparencyChange = (val) => {
-    setTransparency(val);
-    applyColor(solidColor, val);
-  };
 
   const currentSettings = () => ({
     transparency: picTransparency, offsetLeft, offsetRight, offsetTop, offsetBottom, fitToCanvas,
   });
 
+  const applyImageBackground = (settings) => {
+    if (!bgImage) return;
+    onApplySlideBackground?.({ type: "image", "file-link": bgImage, ...settings });
+  };
+
+  const handleColorChange = (hex) => {
+    setSolidColor(hex);
+    onApplySlideBackground?.(colorWithAlpha(hex, transparency));
+  };
+
+  const handleTransparencyChange = (val) => {
+    setTransparency(val);
+    onApplySlideBackground?.(colorWithAlpha(solidColor, val));
+  };
+
   const handlePicTransparencyChange = (val) => {
     setPicTransparency(val);
-    applyPicSettings({ ...currentSettings(), transparency: val });
+    applyImageBackground({ ...currentSettings(), transparency: val });
   };
 
   const handleOffsetChange = (field, val, setter) => {
     setter(val);
-    applyPicSettings({ ...currentSettings(), [field]: val });
+    applyImageBackground({ ...currentSettings(), [field]: val });
   };
 
   const handleScaleToCanvas = (checked) => {
     setScaleToCanvas(checked);
     if (checked) {
       setOffsetLeft(0); setOffsetRight(0); setOffsetTop(0); setOffsetBottom(0);
-      applyPicSettings({ transparency: picTransparency, offsetLeft: 0, offsetRight: 0, offsetTop: 0, offsetBottom: 0, fitToCanvas: true });
+      applyImageBackground({ transparency: picTransparency, offsetLeft: 0, offsetRight: 0, offsetTop: 0, offsetBottom: 0, fitToCanvas: true });
     } else {
-      applyPicSettings({ ...currentSettings(), fitToCanvas: false });
+      applyImageBackground({ ...currentSettings(), fitToCanvas: false });
     }
   };
 
@@ -138,40 +171,31 @@ export default function FormatBackgroundPanel({
     const file = e.target.files?.[0];
     if (file) {
       setFillTypeOverride("picture");
-      onApplyBgFillImage?.(file);
+      onApplyBgFillImage?.(file, currentSettings());
     }
     e.target.value = "";
   };
 
   const handleRemovePicture = () => {
-    onRemoveBgFillImage?.();
+    onApplySlideBackground?.(null);
     setFillTypeOverride("solid");
   };
 
   const handleReset = () => {
-    onRemoveBgFillImage?.();
-    setSolidColor("#ffffff");
+    setSolidColor(themeBgLight);
     setTransparency(0);
     setPicTransparency(0);
     setOffsetLeft(0); setOffsetRight(0); setOffsetTop(0); setOffsetBottom(0);
     setScaleToCanvas(false);
     setFillTypeOverride("solid");
     onApplySlideBackground?.(null);
-    onUpdateBgFillSettings?.(null);
   };
 
   const handleApplyToAll = () => {
     if (fillType === "solid") {
-      onApplyBackgroundToAll?.({
-        background: colorWithAlpha(solidColor, transparency),
-        bgFillImage: null,
-        bgFillSettings: null,
-      });
+      onApplyBackgroundToAll?.(colorWithAlpha(solidColor, transparency));
     } else if (fillType === "picture") {
-      onApplyBackgroundToAll?.({
-        bgFillImage: bgImage,
-        bgFillSettings: currentSettings(),
-      });
+      onApplyBackgroundToAll?.({ type: "image", "file-link": bgImage, ...currentSettings() });
     }
   };
 

@@ -50,6 +50,52 @@ const collectUsedFonts = (presentation) => {
   };
 };
 
+const listTypeToBullets = (listType) => {
+  if (listType === "numbered") return "number";
+  if (listType === "bullets") return "points";
+  return "none";
+};
+
+const computeParagraphBullets = (presentation) => {
+  const slideset = presentation?.slideset;
+  if (!slideset) return presentation;
+
+  const transformParagraphs = (paragraphs) =>
+    (paragraphs ?? []).map((para) => ({
+      ...para,
+      bullets: listTypeToBullets(para.formatting?.["list-type"]),
+    }));
+
+  const transformTextElements = (elements) =>
+    (elements ?? []).map((el) => ({
+      ...el,
+      paragraphs: transformParagraphs(el.paragraphs),
+    }));
+
+  const slides = (slideset.slides ?? []).map((slide) => ({
+    ...slide,
+    contents: {
+      ...slide.contents,
+      text: transformTextElements(slide.contents?.text),
+    },
+  }));
+
+  return {
+    ...presentation,
+    slideset: {
+      ...slideset,
+      slides,
+      master: {
+        ...slideset.master,
+        elements: {
+          ...slideset.master?.elements,
+          text: transformTextElements(slideset.master?.elements?.text),
+        },
+      },
+    },
+  };
+};
+
 const INTERNAL_FIELDS = new Set(["userSetKeys", "userModified", "isPlaceholder"]);
 
 const stripInternalFields = (obj) => {
@@ -93,7 +139,8 @@ const migratePresentation = (presentation) => {
 
 export const serializePresentation = (presentation) => {
   const withFonts = collectUsedFonts(presentation);
-  return JSON.stringify(stripInternalFields(withFonts), null, 2);
+  const withBullets = computeParagraphBullets(withFonts);
+  return JSON.stringify(stripInternalFields(withBullets), null, 2);
 };
 
 export const deserializePresentation = (jsonString) => {

@@ -5,7 +5,7 @@ import PlaceholderActionButtons from "./text/PlaceholderActionButtons";
 import TextEditableSurface from "./text/TextEditableSurface";
 import TextElementHandles, { TextSelectionBorders } from "./text/TextElementHandles";
 import "./TextElement.css";
-import { getPlaceholderFormatting, getPlaceholderPadding } from "../../../core/render/slidesetRenderUtils";
+import { getPlaceholderFormatting, getPlaceholderPadding, getPlaceholderBackground } from "../../../core/render/slidesetRenderUtils";
 import {
   resolveWeight,
   paragraphsToHTML,
@@ -100,6 +100,7 @@ useEffect(() => {
     textElement,
   );
   const placeholderPadding = getPlaceholderPadding(presentation, slide, textElement);
+  const placeholderBackground = getPlaceholderBackground(presentation, slide, textElement);
 
   const verticalAlign = formatting["vertical-align"]
     ?? placeholderFormatting["vertical-align"]
@@ -420,7 +421,7 @@ useEffect(() => {
 
   const syncSelectionToolbar = () => {
     const el = editableRef.current;
-    if (!el) return;
+    if (!el || document.activeElement !== el) return;
     const activeEl = document.activeElement;
     if (activeEl && activeEl.closest?.(".format-toolbar")) return;
     const selection = window.getSelection();
@@ -478,7 +479,7 @@ useEffect(() => {
         top: `${textElement.position?.y ?? 0}px`,
         width: `${textElement.width ?? 300}px`,
         minHeight: `${textElement.height ?? 80}px`,
-        background: textElement.background ?? "transparent",
+        background: textElement.background ?? placeholderBackground ?? "transparent",
         zIndex: textElement["z-index"] ?? 1,
         transform: `rotate(${textElement.rotation ?? 0}deg)`,
         transformOrigin: "center center",
@@ -638,9 +639,14 @@ useEffect(() => {
           savedSelectionRef.current = null;
           setSavedSelState(null);
         }}
-        onMouseUp={() => {
+        onMouseUp={(e) => {
           saveCurrentSelection();
           syncSelectionToolbar();
+          if (e.ctrlKey || e.metaKey) {
+            const linkEl = e.target.closest?.("[data-link]");
+            const href = linkEl?.dataset?.link;
+            if (href) window.open(href, "_blank", "noopener,noreferrer");
+          }
         }}
         onTouchEnd={() => {
           window.setTimeout(syncSelectionToolbar, 0);

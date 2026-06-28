@@ -809,44 +809,31 @@ useEffect(() => {
   );
 
   const handleApplyBackgroundToAll = useCallback(
-    (payload) => {
+    (background) => {
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.SLIDE.APPLY_BACKGROUND_TO_ALL, payload),
+        createEditorEvent(EditorEventType.SLIDE.APPLY_BACKGROUND_TO_ALL, { background }),
       );
     },
     [eventBus],
   );
 
-  const handleUpdateBgFillSettings = useCallback(
-    (settings) => {
+  const handleApplySlideBackground = useCallback(
+    (background) => {
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.SLIDE.UPDATE_BG_FILL_SETTINGS, { settings }),
+        createEditorEvent(EditorEventType.SLIDE.UPDATE_BACKGROUND, { background }),
       );
     },
     [eventBus],
   );
 
   const handleApplyBgFillImage = useCallback(
-    async (file) => {
+    async (file, currentSettings) => {
       if (!file || !file.type.startsWith("image/")) return;
       const { key } = await storeMediaFile(file);
       eventBus.dispatch(
-        createEditorEvent(EditorEventType.SLIDE.UPDATE_BG_FILL_IMAGE, { fileLink: `indexeddb://${key}` }),
-      );
-    },
-    [eventBus],
-  );
-
-  const handleRemoveBgFillImage = useCallback(() => {
-    eventBus.dispatch(
-      createEditorEvent(EditorEventType.SLIDE.UPDATE_BG_FILL_IMAGE, { fileLink: null }),
-    );
-  }, [eventBus]);
-
-  const handleApplySlideBackground = useCallback(
-    (color) => {
-      eventBus.dispatch(
-        createEditorEvent(EditorEventType.SLIDE.UPDATE_BACKGROUND, { color }),
+        createEditorEvent(EditorEventType.SLIDE.UPDATE_BACKGROUND, {
+          background: { type: "image", "file-link": `indexeddb://${key}`, ...(currentSettings ?? {}) },
+        }),
       );
     },
     [eventBus],
@@ -1088,8 +1075,8 @@ useEffect(() => {
         position: { x: fitX, y: fitY },
         width: fitW,
         height: fitH,
-        "source-width": naturalSize.width,
-        "source-height": naturalSize.height,
+        "source-width": fitW,
+        "source-height": fitH,
         "z-index": placeholderElement["z-index"] ?? 1,
       });
       updateElement(placeholderElement.id, { hidden: true });
@@ -1227,7 +1214,7 @@ useEffect(() => {
           selectedMasterLayout,
           masterColorTheme ?? [],
         )
-      : buildMasterPseudoSlide(masterElements ?? {});
+      : buildMasterPseudoSlide(masterElements ?? {}, masterColorTheme ?? []);
   }, [selectedMasterLayout, masterElements, masterColorTheme]);
 
   const masterViewChangeText = useCallback(
@@ -1760,9 +1747,7 @@ useEffect(() => {
 
     handleApplyBackground,
     handleApplyBackgroundToAll,
-    handleUpdateBgFillSettings,
     handleApplyBgFillImage,
-    handleRemoveBgFillImage,
     handleApplySlideBackground,
     handleUpdateDimensions,
     activeImageUpload,

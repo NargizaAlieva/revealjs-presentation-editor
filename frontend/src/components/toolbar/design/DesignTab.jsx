@@ -86,7 +86,7 @@ function ThemeThumbnail({ theme, isActive, onClick }) {
     );
 }
 
-function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onUpdateThemeColor, onApplySlideBackground, onApplyBgFillImage, onRemoveBgFillImage, onUpdateBgFillSettings, onApplyBackgroundToAll, selectedSlide }) {
+function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onUpdateThemeColor, onApplySlideBackground, onApplyBgFillImage, onApplyBackgroundToAll, selectedSlide }) {
     const [showPalette, setShowPalette] = useState(false);
     const [showSizeMenu, setShowSizeMenu] = useState(false);
     const [showCustomSize, setShowCustomSize] = useState(false);
@@ -115,8 +115,9 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
         return () => document.removeEventListener("mousedown", fn, true);
     }, []);
 
-    const applyBg = (hex6) =>
+    const applyBg = (hex6) => {
         onApplyTheme(updateThemeBackground(colorTheme, toHex9(hex6)), presentation?.slideset?.master?.decorations);
+    };
 
     const applyPreset = (size) => {
         onUpdateDimensions({ width: size.width, height: size.height }, size.aspectRatio, "px");
@@ -287,8 +288,6 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
                 presentation={presentation}
                 onApplySlideBackground={onApplySlideBackground}
                 onApplyBgFillImage={onApplyBgFillImage}
-                onRemoveBgFillImage={onRemoveBgFillImage}
-                onUpdateBgFillSettings={onUpdateBgFillSettings}
                 onApplyBackgroundToAll={onApplyBackgroundToAll}
                 onClose={() => setShowFormatBg(false)}
             />
@@ -297,7 +296,7 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
     );
 }
 
-export default function DesignTab({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onUpdateThemeColor, onApplySlideBackground, onApplyBgFillImage, onRemoveBgFillImage, onUpdateBgFillSettings, onApplyBackgroundToAll, selectedSlide }) {
+export default function DesignTab({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onUpdateThemeColor, onApplySlideBackground, onApplyBgFillImage, onApplyBackgroundToAll, selectedSlide }) {
     const currentTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
     const activeTheme = findActiveTheme(currentTheme);
 
@@ -327,8 +326,6 @@ export default function DesignTab({ presentation, onApplyTheme, onApplyFont, onU
                 onUpdateThemeColor={onUpdateThemeColor}
                 onApplySlideBackground={onApplySlideBackground}
                 onApplyBgFillImage={onApplyBgFillImage}
-                onRemoveBgFillImage={onRemoveBgFillImage}
-                onUpdateBgFillSettings={onUpdateBgFillSettings}
                 onApplyBackgroundToAll={onApplyBackgroundToAll}
                 selectedSlide={selectedSlide}
             />

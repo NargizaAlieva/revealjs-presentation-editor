@@ -1,7 +1,13 @@
 export function getSlideContentIds(slide) {
   const ids = new Set();
-  (slide?.contents?.text ?? []).forEach((el) => ids.add(el.id));
-  (slide?.contents?.media ?? []).forEach((el) => ids.add(el.id));
+  (slide?.contents?.text ?? []).forEach((el) => {
+    ids.add(el.id);
+    if (el["placeholder-id"]) ids.add(el["placeholder-id"]);
+  });
+  (slide?.contents?.media ?? []).forEach((el) => {
+    ids.add(el.id);
+    if (el["placeholder-id"]) ids.add(el["placeholder-id"]);
+  });
   return ids;
 }
 
@@ -86,7 +92,7 @@ export function getTextElements(slide) {
 }
 
 export function getMediaElements(slide) {
-    return slide?.contents?.media || [];
+    return (slide?.contents?.media || []).filter((m) => !!m["file-link"]);
 }
 
 export function getTextFromTextElement(textElement) {
@@ -125,6 +131,19 @@ export function getPlaceholderPadding(presentation, slide, textElement) {
   return placeholder?.padding?.css ?? null;
 }
 
+export function getPlaceholderBackground(presentation, slide, textElement) {
+  const layoutId = slide?.["layout-id"];
+  const placeholderId = textElement?.["placeholder-id"];
+  if (!layoutId || !placeholderId) return null;
+  const layout = (presentation?.slideset?.layouts ?? []).find(
+    (l) => l["layout-id"] === layoutId,
+  );
+  const placeholder = (layout?.placeholders ?? []).find(
+    (ph) => ph["placeholder-id"] === placeholderId,
+  );
+  return placeholder?.background ?? null;
+}
+
 const RUN_LEVEL_KEYS = new Set(["super-sub-script"]);
 
 export function migrateParagraphFormatting(paragraphs, placeholderFormatting, masterFormatting = {}) {
@@ -148,6 +167,10 @@ export function migrateParagraphFormatting(paragraphs, placeholderFormatting, ma
       );
       return { ...run, formatting: rf };
     });
+
+    if (!f["list-type"] && p.bullets && p.bullets !== "none") {
+      f["list-type"] = p.bullets === "number" ? "numbered" : "bullets";
+    }
 
     return { ...p, formatting: f, runs };
   });

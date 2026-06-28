@@ -27,8 +27,6 @@ import {
   toggleSlideHidden,
   updateSlideNotes,
   updateSlideBackground,
-  updateSlideBgFillImage,
-  updateSlideBgFillSettings,
   applyBackgroundToAllSlides,
 } from "../operations/slideOperations";
 import {
@@ -547,31 +545,7 @@ export const editorReducer = (state, event) => {
     case EditorEventType.SLIDE.APPLY_BACKGROUND_TO_ALL:
       return {
         ...state,
-        presentation: applyBackgroundToAllSlides(state.presentation, event.payload),
-        lastEvent: event,
-        lastUpdated: Date.now(),
-      };
-
-    case EditorEventType.SLIDE.UPDATE_BG_FILL_SETTINGS:
-      return {
-        ...state,
-        presentation: updateSlideBgFillSettings(
-          state.presentation,
-          event.payload.slideIndex ?? state.selectedSlideIndex,
-          event.payload.settings,
-        ),
-        lastEvent: event,
-        lastUpdated: Date.now(),
-      };
-
-    case EditorEventType.SLIDE.UPDATE_BG_FILL_IMAGE:
-      return {
-        ...state,
-        presentation: updateSlideBgFillImage(
-          state.presentation,
-          event.payload.slideIndex ?? state.selectedSlideIndex,
-          event.payload.fileLink,
-        ),
+        presentation: applyBackgroundToAllSlides(state.presentation, event.payload.background),
         lastEvent: event,
         lastUpdated: Date.now(),
       };
@@ -582,7 +556,7 @@ export const editorReducer = (state, event) => {
         presentation: updateSlideBackground(
           state.presentation,
           event.payload.slideIndex ?? state.selectedSlideIndex,
-          event.payload.color,
+          event.payload.background,
         ),
         lastEvent: event,
         lastUpdated: Date.now(),

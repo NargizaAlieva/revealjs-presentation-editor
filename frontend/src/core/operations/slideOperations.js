@@ -221,49 +221,24 @@ export const toggleSlideHidden = (presentation, slideIndex) => {
 };
 
 
-export const applyBackgroundToAllSlides = (presentation, { background, bgFillImage, bgFillSettings }) => {
+export const applyBackgroundToAllSlides = (presentation, background) => {
   const slides = getSlides(presentation);
-  const updated = slides.map(slide => ({
-    ...slide,
-    contents: {
-      ...slide.contents,
-      ...(background !== undefined ? { background } : {}),
-      ...(bgFillImage !== undefined ? { "bg-fill-image": bgFillImage } : {}),
-      ...(bgFillSettings !== undefined ? { "bg-fill-settings": bgFillSettings } : {}),
-    },
-  }));
+  const updated = slides.map(slide => {
+    const existing = slide.contents?.background;
+    const existingIsImage = existing && typeof existing === "object" && existing.type === "image";
+    if (background === null && existingIsImage) return slide;
+    return { ...slide, contents: { ...slide.contents, background } };
+  });
   return setSlides(presentation, updated);
 };
 
-export const updateSlideBgFillSettings = (presentation, slideIndex, settings) => {
+export const updateSlideBackground = (presentation, slideIndex, background) => {
   const slides = [...getSlides(presentation)];
   const slide = slides[slideIndex];
   if (!slide) return presentation;
   slides[slideIndex] = {
     ...slide,
-    contents: { ...slide.contents, "bg-fill-settings": settings },
-  };
-  return setSlides(presentation, slides);
-};
-
-export const updateSlideBgFillImage = (presentation, slideIndex, fileLink) => {
-  const slides = [...getSlides(presentation)];
-  const slide = slides[slideIndex];
-  if (!slide) return presentation;
-  slides[slideIndex] = {
-    ...slide,
-    contents: { ...slide.contents, "bg-fill-image": fileLink ?? null },
-  };
-  return setSlides(presentation, slides);
-};
-
-export const updateSlideBackground = (presentation, slideIndex, color) => {
-  const slides = [...getSlides(presentation)];
-  const slide = slides[slideIndex];
-  if (!slide) return presentation;
-  slides[slideIndex] = {
-    ...slide,
-    contents: { ...slide.contents, background: color },
+    contents: { ...slide.contents, background },
   };
   return setSlides(presentation, slides);
 };

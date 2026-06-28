@@ -49,6 +49,7 @@ export default function MediaElement({
     : media;
   const isVideo = media["media-type"] === "video";
 
+  const [isPlayingVideo, setIsPlayingVideo] = useState(false);
   const [contextMenu, setContextMenu] = useState(null);
   const [stylePicker, setStylePicker] = useState(null);
   const [previewStyleId, setPreviewStyleId] = useState(null);
@@ -464,6 +465,39 @@ export default function MediaElement({
       )
     : null;
 
+  // ── Empty placeholder render ─────────────────────────────────────────────
+
+  if (!resolvedSrc && !isVideo) {
+    return (
+      <div
+        ref={wrapperRef}
+        data-element-id={media.id}
+        className={["canvas-media-wrapper", isSelected ? "selected" : "", previewClassName].filter(Boolean).join(" ")}
+        style={{
+          ...containerStyle,
+          border: "1.5px dashed rgba(100,100,100,0.4)",
+          background: "rgba(180,180,180,0.08)",
+          boxSizing: "border-box",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "default",
+        }}
+        onMouseDown={(e) => {
+          onSelect?.(media.id, { nativeEvent: e });
+          if (!e.ctrlKey && !e.metaKey && !e.shiftKey) onStartDrag?.(e, media.id);
+        }}
+      >
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.3 }}>
+          <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+          <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
+          <path d="M21 15l-5-5L5 21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        {isPrimarySelected && <MediaElementHandles mediaId={media.id} onStartResize={onStartResize} onStartRotate={onStartRotate} />}
+      </div>
+    );
+  }
+
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
@@ -535,18 +569,26 @@ export default function MediaElement({
               <video
                 src={resolvedSrc} className="canvas-media" style={innerStyle}
                 preload="metadata"
+                controls={isPlayingVideo}
                 onLoadedMetadata={(e) => { e.target.currentTime = 0; }}
+                onEnded={() => setIsPlayingVideo(false)}
               />
-              <div style={{ position: "absolute", inset: 0, cursor: "move", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <div style={{
-                  width: 40, height: 40, borderRadius: "50%",
-                  background: "rgba(0,0,0,0.45)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  pointerEvents: "none",
-                }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+              {!isPlayingVideo && (
+                <div style={{ position: "absolute", inset: 0, cursor: "move", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div
+                    style={{
+                      width: 40, height: 40, borderRadius: "50%",
+                      background: "rgba(0,0,0,0.45)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      cursor: "pointer", pointerEvents: "auto",
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => { e.stopPropagation(); setIsPlayingVideo(true); }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+                  </div>
                 </div>
-              </div>
+              )}
             </>
           ) : (
             <img src={resolvedSrc} alt={media.decorative ? "" : (media.alt ?? "")} className="canvas-media" style={filteredInnerStyle} />

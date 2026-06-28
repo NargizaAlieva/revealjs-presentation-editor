@@ -47,8 +47,8 @@ function MediaDecorationElement({ el, zIndex, interactive = false, onPromote }) 
   }
 
   if (hasCrop) {
-    const srcW = el["source-width"] ?? el.width ?? 200;
-    const srcH = el["source-height"] ?? el.height ?? 120;
+    const srcW = (el["source-width"] ?? el.width ?? 200) * scale;
+    const srcH = (el["source-height"] ?? el.height ?? 120) * scale;
     return (
       <div style={containerStyle} onClick={handleClick}>
         <img
@@ -61,7 +61,6 @@ function MediaDecorationElement({ el, zIndex, interactive = false, onPromote }) 
             left: -(cl / 100) * srcW,
             top: -(ct / 100) * srcH,
             objectFit: "fill",
-            ...scaleStyle,
           }}
         />
       </div>
