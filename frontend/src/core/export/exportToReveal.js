@@ -143,7 +143,7 @@ function applyFragment(innerHtml, wrapperStyle, animation) {
   return `<div class="${classes}" ${dataAttrs} style="${wrapperStyle}">${innerHtml}</div>`;
 }
 
-function buildPStyle(paragraphFormatting, listPaddingLeft = null) {
+export function buildPStyle(paragraphFormatting, listPaddingLeft = null) {
   const indent = paragraphFormatting["indent-level"] ?? 0;
   const paddingLeft = listPaddingLeft
     ?? (indent > 0 ? getListIndent(indent - 1, "indent") : null);

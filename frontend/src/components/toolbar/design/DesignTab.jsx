@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import "./DesignTab.css";
 import { getAvailableFonts } from "../../../core/model/fontConfig";
 import { toHex6, toHex9 } from "../../../core/utils/colorUtils";
-import { DESIGN_THEMES, findActiveTheme, updateThemeBackground, THEME_PALETTE_COLUMNS, STANDARD_COLORS } from "../../../core/model/designThemes";
+import { DESIGN_THEMES, COLOR_SCHEMES, findActiveTheme, updateThemeBackground, applyColorSchemeToDesign, updateThemeBackgroundFromScheme, THEME_PALETTE_COLUMNS, STANDARD_COLORS } from "../../../core/model/designThemes";
 import { SLIDE_SIZES, clampSlideDimension } from "../../../core/model/slideSizes";
 import { renderShapes } from "../../../core/render/shapeRenderer";
-import { ThemeColorEditor } from "./ThemeColorEditor";
+import { ColorsDropdown } from "./ColorsDropdown";
 import FormatBackgroundPanel from "../shared/FormatBackgroundPanel";
 
 
@@ -86,11 +86,10 @@ function ThemeThumbnail({ theme, isActive, onClick }) {
     );
 }
 
-function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onUpdateThemeColor, onApplySlideBackground, onApplyBgFillImage, onApplyBackgroundToAll, selectedSlide }) {
+function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onUpdateThemeColor, onApplySlideBackground, onApplyBgFillImage, onApplyBackgroundToAll, selectedSlide, activeTheme, currentColorSchemeId, onColorSchemeChange, onColorSchemeHover, onColorSchemeLeave }) {
     const [showPalette, setShowPalette] = useState(false);
     const [showSizeMenu, setShowSizeMenu] = useState(false);
     const [showCustomSize, setShowCustomSize] = useState(false);
-    const [showColorEditor, setShowColorEditor] = useState(false);
     const [showFormatBg, setShowFormatBg] = useState(false);
     const sizeRef = useRef(null);
 
@@ -139,28 +138,15 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
         <>
         <div className="design-right-panel">
 
-            {/* ── Customize ── */}
             <div className="design-right-section">
-                <div className="design-section-title">Customize</div>
-
                 <div className="design-customize-row">
-                    <span className="design-customize-label">Background</span>
-                    <div className="design-bg-wrapper">
-                        <button className="design-bg-swatch-btn" onClick={() => setShowPalette(v => !v)}>
-                            <span className="design-bg-swatch" style={{ background: bgColor }} />
-                            <span className="design-bg-arrow">▾</span>
-                        </button>
-                        {showPalette && (
-                            <ColorPalettePopup currentColor={bgColor} onSelect={applyBg} onClose={() => setShowPalette(false)} />
-                        )}
-                    </div>
-                    <button
-                        className="design-format-bg-btn"
-                        title="Format Background"
-                        onClick={() => setShowFormatBg(v => !v)}
-                    >
-                        Format Background
-                    </button>
+                    <span className="design-customize-label">Colors</span>
+                    <ColorsDropdown
+                        currentSchemeId={currentColorSchemeId}
+                        onColorSchemeSelect={onColorSchemeChange}
+                        onColorSchemeHover={onColorSchemeHover}
+                        onColorSchemeLeave={onColorSchemeLeave}
+                    />
                 </div>
 
                 <div className="design-customize-row">
@@ -176,14 +162,12 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
                     </select>
                 </div>
 
+                <div className="ribbon-group-title">Customize</div>
             </div>
 
             <div className="design-right-divider" />
 
-            {/* ── Slide Size ── */}
             <div className="design-right-section">
-                <div className="design-section-title">Slide Size</div>
-
                 <div className="design-customize-row">
                     <span className="design-customize-label">Size</span>
                     <div className="design-slide-size-wrap" ref={sizeRef}>
@@ -197,7 +181,7 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
                             </svg>
                             <span>{sizeLabel}</span>
                             <span className="design-slide-size-dim">{currentW}×{currentH}</span>
-                            <span className="design-slide-size-arrow">▾</span>
+                            <span className="design-slide-size-arrow">▼</span>
                         </button>
 
                         {showSizeMenu && (
@@ -255,29 +239,7 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
                     </div>
                 </div>
 
-            </div>
-
-            <div className="design-right-divider" />
-
-            <div className="design-right-section">
-                <button
-                    className="design-advanced-colors-btn"
-                    onClick={() => setShowColorEditor(v => !v)}
-                >
-                    <span>⚙ Advanced Theme Colors</span>
-                    <span className="design-advanced-colors-arrow">{showColorEditor ? "▲" : "▾"}</span>
-                </button>
-
-                {showColorEditor && onUpdateThemeColor && (
-                    <div style={{ marginTop: 12 }}>
-                        <ThemeColorEditor
-                            colorTheme={colorTheme}
-                            onColorChange={(variable, color) => {
-                                onUpdateThemeColor(variable, color);
-                            }}
-                        />
-                    </div>
-                )}
+                <div className="ribbon-group-title">Slide Size</div>
             </div>
 
         </div>
@@ -298,7 +260,57 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
 
 export default function DesignTab({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onUpdateThemeColor, onApplySlideBackground, onApplyBgFillImage, onApplyBackgroundToAll, selectedSlide }) {
     const currentTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
+    const savedColorSchemeId = presentation?.slideset?.master?.["current-color-scheme-id"];
     const activeTheme = findActiveTheme(currentTheme);
+
+    const lastAppliedDesignId = presentation?.slideset?.master?.["last-applied-design-id"];
+
+    const currentColorSchemeId = savedColorSchemeId;
+    const savedColorScheme = COLOR_SCHEMES.find(s => s.id === currentColorSchemeId);
+
+    useEffect(() => {
+        if (activeTheme?.id && activeTheme.id !== lastAppliedDesignId) {
+            const defaultScheme = COLOR_SCHEMES.find(s => s.id === activeTheme.defaultColorSchemeId);
+            if (defaultScheme && presentation?.slideset?.master) {
+                const decorations = applyColorSchemeToDesign(activeTheme, defaultScheme);
+                const updatedColorTheme = updateThemeBackgroundFromScheme(currentTheme, defaultScheme);
+                onApplyTheme(updatedColorTheme, decorations?.decorations);
+                presentation.slideset.master["current-color-scheme-id"] = defaultScheme.id;
+                presentation.slideset.master["last-applied-design-id"] = activeTheme.id;
+            }
+        }
+    }, [activeTheme?.id, lastAppliedDesignId]);
+
+    const applyAndSaveColorScheme = (colorScheme) => {
+        if (activeTheme) {
+            const decorations = applyColorSchemeToDesign(activeTheme, colorScheme);
+            const updatedColorTheme = updateThemeBackgroundFromScheme(currentTheme, colorScheme);
+            onApplyTheme(updatedColorTheme, decorations?.decorations);
+            if (presentation?.slideset?.master) {
+                presentation.slideset.master["current-color-scheme-id"] = colorScheme.id;
+            }
+        }
+    };
+
+    const handleColorSchemeHover = (colorScheme) => {
+        if (activeTheme) {
+            const decorations = applyColorSchemeToDesign(activeTheme, colorScheme);
+            const updatedColorTheme = updateThemeBackgroundFromScheme(currentTheme, colorScheme);
+            onApplyTheme(updatedColorTheme, decorations?.decorations);
+        }
+    };
+
+    const handleColorSchemeLeave = () => {
+        if (savedColorScheme && activeTheme) {
+            const decorations = applyColorSchemeToDesign(activeTheme, savedColorScheme);
+            const updatedColorTheme = updateThemeBackgroundFromScheme(currentTheme, savedColorScheme);
+            onApplyTheme(updatedColorTheme, decorations?.decorations);
+        }
+    };
+
+    const handleColorSchemeSelect = (colorScheme) => {
+        applyAndSaveColorScheme(colorScheme);
+    };
 
     return (
         <div className="design-tab-wrapper">
@@ -327,6 +339,11 @@ export default function DesignTab({ presentation, onApplyTheme, onApplyFont, onU
                 onApplySlideBackground={onApplySlideBackground}
                 onApplyBgFillImage={onApplyBgFillImage}
                 onApplyBackgroundToAll={onApplyBackgroundToAll}
+                activeTheme={activeTheme}
+                currentColorSchemeId={currentColorSchemeId}
+                onColorSchemeChange={handleColorSchemeSelect}
+                onColorSchemeHover={handleColorSchemeHover}
+                onColorSchemeLeave={handleColorSchemeLeave}
                 selectedSlide={selectedSlide}
             />
         </div>

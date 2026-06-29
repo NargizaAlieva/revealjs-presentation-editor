@@ -23,6 +23,7 @@ import { getSlideTransition } from "../core/model/transitionDefaults";
 import { importPresentationFromJson } from "../core/persistence/importPresentation";
 import { createTextElementDefaults } from "../core/model/masterDefaults";
 import { updateThemeBackground } from "../core/model/designThemes";
+import { updateMasterThemeColor } from "../core/operations/themeOperations";
 import { clampSlideDimension } from "../core/model/slideSizes";
 import { toHex9 } from "../core/utils/colorUtils";
 import { getLayoutDisplayList } from "../core/operations/layoutOperations";
@@ -837,6 +838,23 @@ useEffect(() => {
       );
     },
     [presentation, updateMasterTheme],
+  );
+
+  const handleUpdateThemeColor = useCallback(
+    (colorVariable, hexColor) => {
+      const updatedPresentation = updateMasterThemeColor(
+        presentation,
+        colorVariable,
+        hexColor
+      );
+      eventBus.dispatch(
+        createEditorEvent(EditorEventType.MASTER.UPDATE_THEME, {
+          colorTheme: updatedPresentation.slideset.master["color-theme"],
+          decorations: presentation?.slideset?.master?.decorations,
+        }),
+      );
+    },
+    [presentation, eventBus],
   );
 
   const handleApplyBackgroundToAll = useCallback(
@@ -1805,6 +1823,7 @@ useEffect(() => {
     handleApplyBgFillImage,
     handleApplySlideBackground: updateSlideBackground,
     handleUpdateDimensions,
+    handleUpdateThemeColor,
     activeImageUpload,
     activeVideoUpload,
     activeAddTextElement,

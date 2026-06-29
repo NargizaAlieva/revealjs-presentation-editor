@@ -1,0 +1,127 @@
+.colors-dropdown-wrapper {
+  position: relative;
+}
+
+.colors-dropdown-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 24px;
+  padding: 0 8px;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #333;
+  transition: all 0.2s ease;
+  width: 160px;
+  flex-shrink: 0;
+  font-family: inherit;
+  gap: 8px;
+}
+
+.colors-dropdown-btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.colors-dropdown-btn:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+}
+
+.colors-dropdown-btn:active {
+  background: #f3f4f6;
+}
+
+.colors-dropdown-label {
+  font-size: 12px;
+  font-weight: 400;
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.colors-dropdown-arrow {
+  font-size: 10px;
+  color: #9ca3af;
+  margin-left: 4px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.colors-dropdown-btn:hover .colors-dropdown-arrow {
+  color: #6b7280;
+}
+
+.colors-dropdown-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: 1000;
+  min-width: 220px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.colors-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.colors-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  text-align: left;
+  font-size: 12px;
+  color: #333;
+  font-family: inherit;
+}
+
+.colors-item:hover {
+  background-color: #f3f4f6;
+}
+
+.colors-item.active {
+  background-color: #ede9fe;
+  color: #4f46e5;
+  font-weight: 500;
+}
+
+.colors-palette-preview {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.colors-palette-swatch {
+  display: block;
+  width: 18px;
+  height: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.colors-item-name {
+  font-size: 12px;
+  color: #333;
+  font-weight: 500;
+  flex: 1;
+}

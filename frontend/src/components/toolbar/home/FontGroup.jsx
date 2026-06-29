@@ -253,27 +253,27 @@ export default function FontGroup({
     });
 
   const uploadFont = async (event) => {
-    const file = event.target.files?.[0];
+    const files = Array.from(event.target.files ?? []);
     event.target.value = "";
-    if (!file || !onFontUpload) return;
-
-    const fontName = file.name
-      .replace(/\.(ttf|otf|woff2?)$/i, "")
-      .replace(/[_-]+/g, " ")
-      .trim();
-    if (!fontName) return;
+    if (!files.length || !onFontUpload) return;
 
     setFontUpload({ loading: true, error: "" });
+    let lastName = null;
     try {
-      await onFontUpload(fontName, file);
-      if (isTextSelected) fmt({ font: fontName });
+      for (const file of files) {
+        const fontName = file.name
+          .replace(/\.(ttf|otf|woff2?)$/i, "")
+          .replace(/[_-]+/g, " ")
+          .trim();
+        if (!fontName) continue;
+        await onFontUpload(fontName, file);
+        lastName = fontName;
+      }
+      if (isTextSelected && lastName) fmt({ font: lastName });
       setFontUpload({ loading: false, error: "" });
     } catch (error) {
       console.error("[FontGroup] Failed to upload font:", error);
-      setFontUpload({
-        loading: false,
-        error: "The selected font could not be loaded.",
-      });
+      setFontUpload({ loading: false, error: "One or more fonts could not be loaded." });
     }
   };
 
@@ -361,6 +361,7 @@ export default function FontGroup({
           className="font-upload-input"
           type="file"
           accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2"
+          multiple
           onChange={uploadFont}
         />
       </div>

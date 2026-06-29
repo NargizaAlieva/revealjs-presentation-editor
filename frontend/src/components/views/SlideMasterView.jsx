@@ -4,7 +4,8 @@ import { buildColorThemeStyle, buildTextElementStyle } from "../../core/render/r
 import SlideDecorations from "../canvas/SlideDecorations";
 import EditorCanvas from "../editor/EditorCanvas";
 import { ColorPalettePopup } from "../toolbar/design/DesignTab";
-import { DESIGN_THEMES, findActiveTheme } from "../../core/model/designThemes";
+import { ColorsDropdown } from "../toolbar/design/ColorsDropdown";
+import { DESIGN_THEMES, COLOR_SCHEMES, findActiveTheme, applyColorSchemeToDesign, updateThemeBackgroundFromScheme } from "../../core/model/designThemes";
 import { SLIDE_SIZES } from "../../core/model/slideSizes";
 import { getAvailableFonts } from "../../core/model/fontConfig";
 import { renderShapes } from "../../core/render/shapeRenderer";
@@ -318,16 +319,11 @@ export function SlideMasterRibbon({
   const [renaming, setRenaming] = useState(false);
   const [showPlaceholderMenu, setShowPlaceholderMenu] = useState(false);
   const [placeholderMenuPosition, setPlaceholderMenuPosition] = useState({ top: 80, left: 0 });
-  const [showBgPalette, setShowBgPalette] = useState(false);
   const placeholderBtnRef = useRef(null);
   const placeholderMenuRef = useRef(null);
 
   const colorTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
   const currentFont = presentation?.slideset?.master?.formatting?.font ?? "Arial";
-  const bgEntry = colorTheme.find((e) => e["css-variable-name"] === "bg-light");
-  const bgColor = toHex6(bgEntry?.color ?? "#ffffff");
-
-  const applyBg = (hex) => onApplyBackground?.(hex);
   const isRenamingLayout = !!selectedMasterLayoutId;
   const selectedLayout = selectedMasterLayoutId
     ? (presentation?.slideset?.layouts ?? []).find((l) => l["layout-id"] === selectedMasterLayoutId)
@@ -506,45 +502,54 @@ export function SlideMasterRibbon({
         </div>
 
         <div className="ribbon-group master-ribbon-group">
-          <div className="master-ribbon-row" style={{ flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
+          <div className="master-ribbon-row" style={{ flexDirection: "column", gap: 6, alignItems: "flex-start" }}>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 12, color: "#555", width: 80 }}>Background</span>
-              <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
-                <button
-                  onClick={() => setShowBgPalette((v) => !v)}
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 3,
-                    padding: "2px 5px", border: "1px solid #ccc", borderRadius: 3,
-                    background: "#fff", cursor: "pointer", fontSize: 12,
-                  }}
-                >
-                  <span style={{
-                    display: "inline-block", width: 24, height: 14, borderRadius: 2,
-                    background: bgColor, border: "1px solid #aaa",
-                  }} />
-                  <span style={{ color: "#555" }}>▾</span>
-                </button>
-                {showBgPalette && (
-                  <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 1000 }}>
-                    <ColorPalettePopup
-                      currentColor={bgColor}
-                      onSelect={(hex) => { applyBg(hex); setShowBgPalette(false); }}
-                      onClose={() => setShowBgPalette(false)}
-                    />
-                  </div>
-                )}
-              </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 12, color: "#555", width: 50, fontWeight: 500 }}>Colors</span>
+              <ColorsDropdown
+                currentSchemeId={presentation?.slideset?.master?.["current-color-scheme-id"]}
+                onColorSchemeSelect={(colorScheme) => {
+                  const activeTheme = findActiveTheme(colorTheme);
+                  if (activeTheme) {
+                    const decorations = applyColorSchemeToDesign(activeTheme, colorScheme);
+                    const updatedColorTheme = updateThemeBackgroundFromScheme(colorTheme, colorScheme);
+                    onApplyTheme?.(updatedColorTheme, decorations?.decorations);
+                    if (presentation?.slideset?.master) {
+                      presentation.slideset.master["current-color-scheme-id"] = colorScheme.id;
+                    }
+                  }
+                }}
+                onColorSchemeHover={(colorScheme) => {
+                  const activeTheme = findActiveTheme(colorTheme);
+                  if (activeTheme) {
+                    const decorations = applyColorSchemeToDesign(activeTheme, colorScheme);
+                    const updatedColorTheme = updateThemeBackgroundFromScheme(colorTheme, colorScheme);
+                    onApplyTheme?.(updatedColorTheme, decorations?.decorations);
+                  }
+                }}
+                onColorSchemeLeave={() => {
+                  const activeTheme = findActiveTheme(colorTheme);
+                  const currentSchemeId = presentation?.slideset?.master?.["current-color-scheme-id"];
+                  if (activeTheme && currentSchemeId) {
+                    const savedScheme = COLOR_SCHEMES.find(s => s.id === currentSchemeId);
+                    if (savedScheme) {
+                      const decorations = applyColorSchemeToDesign(activeTheme, savedScheme);
+                      const updatedColorTheme = updateThemeBackgroundFromScheme(colorTheme, savedScheme);
+                      onApplyTheme?.(updatedColorTheme, decorations?.decorations);
+                    }
+                  }
+                }}
+              />
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 12, color: "#555", width: 80 }}>Fonts</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 12, color: "#555", width: 50, fontWeight: 500 }}>Fonts</span>
               <select
                 value={currentFont}
                 onChange={(e) => {
                   onApplyFont?.({ font: e.target.value });
                 }}
-                style={{ fontSize: 12, padding: "2px 4px", border: "1px solid #ccc", borderRadius: 3, width: 120 }}
+                style={{ fontSize: 12, padding: "4px 8px", border: "1px solid #d1d5db", borderRadius: 3, width: 160, height: 24, cursor: "pointer", lineHeight: "16px", verticalAlign: "middle" }}
               >
                 {getAvailableFonts(presentation).map((f) => (
                   <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>
@@ -553,7 +558,7 @@ export function SlideMasterRibbon({
             </div>
 
           </div>
-          <span className="ribbon-group-title">Background</span>
+          <span className="ribbon-group-title">Customize</span>
         </div>
 
         <div className="ribbon-group master-ribbon-group sm-edit-theme-group">

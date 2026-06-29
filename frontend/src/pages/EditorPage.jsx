@@ -113,6 +113,7 @@ export default function EditorPage() {
           onApplyFont={ctrl.updateMasterFormatting}
           onApplyLayoutFont={ctrl.applyLayoutFont}
           onUpdateDimensions={ctrl.handleUpdateDimensions}
+          onUpdateThemeColor={ctrl.handleUpdateThemeColor}
           onApplyBackground={ctrl.handleApplyBackground}
           onApplySlideBackground={ctrl.handleApplySlideBackground}
           onApplyBgFillImage={ctrl.handleApplyBgFillImage}
