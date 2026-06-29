@@ -1,23 +1,23 @@
 import { useState, useRef, useEffect } from "react";
 import "./ColorsDropdown.css";
-import { DESIGN_THEMES } from "../../../core/model/designThemes";
+import { COLOR_SCHEMES } from "../../../core/model/designThemes";
 
-function ColorPalettePreview({ colorTheme }) {
+function ColorPalettePreview({ colors }) {
   return (
     <div className="colors-palette-preview">
-      {colorTheme.slice(0, 6).map((entry, idx) => (
+      {colors.slice(0, 5).map((color, idx) => (
         <span
           key={idx}
           className="colors-palette-swatch"
-          style={{ backgroundColor: entry.color }}
-          title={entry["css-variable-name"]}
+          style={{ backgroundColor: color }}
+          title={color}
         />
       ))}
     </div>
   );
 }
 
-export function ColorsDropdown({ onThemeSelect, currentThemeId }) {
+export function ColorsDropdown({ onColorSchemeSelect, onColorSchemeHover, onColorSchemeLeave, currentSchemeId }) {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef(null);
 
@@ -25,11 +25,25 @@ export function ColorsDropdown({ onThemeSelect, currentThemeId }) {
     const handleClickOutside = (e) => {
       if (ref.current && !ref.current.contains(e.target)) {
         setIsOpen(false);
+        onColorSchemeLeave?.();
       }
     };
     document.addEventListener("mousedown", handleClickOutside, true);
     return () => document.removeEventListener("mousedown", handleClickOutside, true);
-  }, []);
+  }, [onColorSchemeLeave]);
+
+  const handleItemMouseEnter = (scheme) => {
+    onColorSchemeHover?.(scheme);
+  };
+
+  const handleItemMouseLeave = () => {
+    onColorSchemeLeave?.();
+  };
+
+  const handleItemClick = (scheme) => {
+    onColorSchemeSelect(scheme);
+    setIsOpen(false);
+  };
 
   return (
     <div className="colors-dropdown-wrapper" ref={ref}>
@@ -44,20 +58,19 @@ export function ColorsDropdown({ onThemeSelect, currentThemeId }) {
       {isOpen && (
         <div className="colors-dropdown-panel">
           <div className="colors-list">
-            {DESIGN_THEMES.map((theme) => (
+            {COLOR_SCHEMES.map((scheme) => (
               <button
-                key={theme.id}
+                key={scheme.id}
                 className={`colors-item ${
-                  currentThemeId === theme.id ? "active" : ""
+                  currentSchemeId === scheme.id ? "active" : ""
                 }`}
-                onClick={() => {
-                  onThemeSelect(theme.id);
-                  setIsOpen(false);
-                }}
-                title={theme.name}
+                onMouseEnter={() => handleItemMouseEnter(scheme)}
+                onMouseLeave={handleItemMouseLeave}
+                onClick={() => handleItemClick(scheme)}
+                title={scheme.name}
               >
-                <ColorPalettePreview colorTheme={theme.colorTheme} />
-                <span className="colors-item-name">{theme.name}</span>
+                <ColorPalettePreview colors={scheme.colors} />
+                <span className="colors-item-name">{scheme.name}</span>
               </button>
             ))}
           </div>
