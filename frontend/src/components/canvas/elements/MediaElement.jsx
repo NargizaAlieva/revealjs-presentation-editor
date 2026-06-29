@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useLayoutEffect } from "react";
+import { useRef } from "react";
 import { createPortal } from "react-dom";
 import { useMediaSrc } from "../../../hooks/useMediaSrc";
 import {
@@ -11,7 +11,8 @@ import { REFLECTION_PRESETS } from "../../../core/model/imageEffects";
 import { getStyleById } from "../../../core/model/imageStyles";
 import MediaElementHandles, { RESIZE_HANDLES } from "./media/MediaElementHandles";
 import MediaElementMenus from "./media/MediaElementMenus";
-import { computeCropOrigin, computeCropResult } from "../../../core/operations/mediaOperations";
+import useMediaCrop from "./media/hooks/useMediaCrop";
+import useMediaInteractions from "./media/hooks/useMediaInteractions";
 import "./MediaElement.css";
 
 const CROP_HANDLES = [
@@ -48,232 +49,53 @@ export default function MediaElement({
     ? { ...media, effects: { ...(media.effects ?? {}), ...previewEffects } }
     : media;
   const isVideo = media["media-type"] === "video";
-
-  const [isPlayingVideo, setIsPlayingVideo] = useState(false);
-  const [contextMenu, setContextMenu] = useState(null);
-  const [stylePicker, setStylePicker] = useState(null);
-  const [previewStyleId, setPreviewStyleId] = useState(null);
-  const [isCropping, setIsCropping] = useState(false);
-  const [localCrop, setLocalCrop] = useState([0, 0, 0, 0]);
-  const [cropOrigin, setCropOrigin] = useState(null);
-  const [cropPortalRect, setCropPortalRect] = useState(null);
-
   const wrapperRef = useRef(null);
-  const cropDragRef = useRef(null);
-  const localCropRef = useRef(localCrop);
-  const cropOriginRef = useRef(cropOrigin);
-
-  useEffect(() => {
-    localCropRef.current = localCrop;
-  }, [localCrop]);
-
-  useEffect(() => {
-    cropOriginRef.current = cropOrigin;
-  }, [cropOrigin]);
-
-  useLayoutEffect(() => {
-    if (isCropping && cropOrigin && wrapperRef.current) {
-      const r = wrapperRef.current.getBoundingClientRect();
-      setCropPortalRect((prev) => {
-        if (
-          prev &&
-          prev.left === r.left &&
-          prev.top === r.top &&
-          prev.width === r.width &&
-          prev.height === r.height
-        ) return prev; 
-        return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
-      });
-    } else if (!isCropping) {
-      setCropPortalRect(null);
-    }
-  }, [isCropping, cropOrigin]);
-
-  const mediaCrop = media.crop;
-  const mediaWidth = media.width;
-  const mediaHeight = media.height;
-  const mediaX = media.position?.x;
-  const mediaY = media.position?.y;
-  const sourceWidth = media["source-width"];
-  const sourceHeight = media["source-height"];
-
-  const enterCropMode = useCallback(() => {
-    const { fullX, fullY, srcW, srcH, initialCrop } = computeCropOrigin({
-      crop: mediaCrop,
-      width: mediaWidth,
-      height: mediaHeight,
-      position: { x: mediaX, y: mediaY },
-      "source-width": sourceWidth,
-      "source-height": sourceHeight,
-    });
-    setCropOrigin({ fullX, fullY, srcW, srcH });
-    setLocalCrop(initialCrop);
-    setIsCropping(true);
-  }, [mediaCrop, mediaWidth, mediaHeight, mediaX, mediaY, sourceWidth, sourceHeight]);
-
-  const handledCropSignalRef = useRef(cropSignal ?? 0);
-  useEffect(() => {
-    if (!cropSignal || cropSignal === handledCropSignalRef.current) return;
-    handledCropSignalRef.current = cropSignal;
-    if (isPrimarySelected && !isCropping) enterCropMode();
-  }, [cropSignal, enterCropMode, isCropping, isPrimarySelected]);
-
-  const applyCrop = useCallback(() => {
-    const updates = computeCropResult(localCropRef.current, cropOriginRef.current);
-    onUpdateMedia?.(media.id, updates);
-    setIsCropping(false);
-  }, [media.id, onUpdateMedia]);
-
-  const cancelCrop = useCallback(() => setIsCropping(false), []);
-
-  useEffect(() => {
-    if (!isCropping) return;
-    const onKey = (e) => {
-      if (e.key === "Escape") cancelCrop();
-      if (e.key === "Enter") applyCrop();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [isCropping, applyCrop, cancelCrop]);
-
-  const startCropDrag = useCallback((e, edges) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const rect = wrapperRef.current?.getBoundingClientRect();
-    const { srcW, srcH } = cropOriginRef.current ?? {};
-    cropDragRef.current = {
-      edges,
-      startX: e.clientX,
-      startY: e.clientY,
-      startCrop: [...localCropRef.current],
-      screenW: rect?.width  ?? srcW ?? 200,
-      screenH: rect?.height ?? srcH ?? 120,
-    };
-
-    const onMove = (mv) => {
-      const { edges: ed, startX, startY, startCrop, screenW, screenH } = cropDragRef.current;
-      const dx = mv.clientX - startX;
-      const dy = mv.clientY - startY;
-      const next = [...startCrop];
-      if (ed.includes("n")) next[0] = startCrop[0] + (dy / screenH) * 100;
-      if (ed.includes("e")) next[1] = startCrop[1] - (dx / screenW) * 100;
-      if (ed.includes("s")) next[2] = startCrop[2] - (dy / screenH) * 100;
-      if (ed.includes("w")) next[3] = startCrop[3] + (dx / screenW) * 100;
-      setLocalCrop(next);
-    };
-    const onUp = () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-  }, []);
-
-  const startImagePan = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startCrop = [...localCropRef.current];
-    const startOrigin = { ...cropOriginRef.current };
-    const rect = wrapperRef.current?.getBoundingClientRect();
-    const screenW = rect?.width  ?? startOrigin.srcW;
-    const screenH = rect?.height ?? startOrigin.srcH;
-
-    const onMove = (mv) => {
-      const dx = mv.clientX - startX;
-      const dy = mv.clientY - startY;
-      const [ct, cr, cb, cl] = startCrop;
-      const dxPct = (dx / screenW) * 100;
-      const dyPct = (dy / screenH) * 100;
-      const newCl = cl - dxPct;
-      const newCr = cr + dxPct;
-      const newCt = ct - dyPct;
-      const newCb = cb + dyPct;
-      const actualDx = (cl - newCl) / 100 * startOrigin.srcW;
-      const actualDy = (ct - newCt) / 100 * startOrigin.srcH;
-      setCropOrigin({ ...startOrigin, fullX: startOrigin.fullX + actualDx, fullY: startOrigin.fullY + actualDy });
-      setLocalCrop([newCt, newCr, newCb, newCl]);
-    };
-    const onUp = () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-  }, []);
-
-  const startCropElementDrag = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startOrigin = { ...cropOriginRef.current };
-    const rect = wrapperRef.current?.getBoundingClientRect();
-    const screenScale = (rect && startOrigin.srcW) ? rect.width / startOrigin.srcW : 1;
-
-    const onMove = (mv) => {
-      const dx = (mv.clientX - startX) / screenScale;
-      const dy = (mv.clientY - startY) / screenScale;
-      setCropOrigin({ ...startOrigin, fullX: startOrigin.fullX + dx, fullY: startOrigin.fullY + dy });
-    };
-    const onUp = () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-  }, []);
-
-  const startCropImageResize = useCallback((e, dir) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startOrigin = { ...cropOriginRef.current };
-    const [ct0, cr0, cb0, cl0] = localCropRef.current;
-    const { srcW: sw0, srcH: sh0 } = startOrigin;
-    const rect = wrapperRef.current?.getBoundingClientRect();
-    const screenScale = (rect && sw0) ? rect.width / sw0 : 1;
-
-    const wx1 = Math.min((cl0 / 100) * sw0, sw0 - (cr0 / 100) * sw0);
-    const wx2 = Math.max((cl0 / 100) * sw0, sw0 - (cr0 / 100) * sw0);
-    const wy1 = Math.min((ct0 / 100) * sh0, sh0 - (cb0 / 100) * sh0);
-    const wy2 = Math.max((ct0 / 100) * sh0, sh0 - (cb0 / 100) * sh0);
-    const winX = startOrigin.fullX + wx1;
-    const winY = startOrigin.fullY + wy1;
-    const winW = wx2 - wx1;
-    const winH = wy2 - wy1;
-    const isCorner = (dir.includes("n") || dir.includes("s")) && (dir.includes("e") || dir.includes("w"));
-    const aspectRatio = startOrigin.srcW / startOrigin.srcH;
-
-    const onMove = (mv) => {
-      const dx = (mv.clientX - startX) / screenScale;
-      const dy = (mv.clientY - startY) / screenScale;
-      let { fullX, fullY, srcW, srcH } = startOrigin;
-      if (dir.includes("e")) srcW = Math.max(10, srcW + dx);
-      if (dir.includes("s")) srcH = Math.max(10, srcH + dy);
-      if (dir.includes("w")) { srcW = Math.max(10, srcW - dx); fullX = startOrigin.fullX + startOrigin.srcW - srcW; }
-      if (dir.includes("n")) { srcH = Math.max(10, srcH - dy); fullY = startOrigin.fullY + startOrigin.srcH - srcH; }
-      if (isCorner) {
-        if (srcW / aspectRatio > srcH) { srcH = srcW / aspectRatio; } else { srcW = srcH * aspectRatio; }
-        if (dir.includes("w")) fullX = startOrigin.fullX + startOrigin.srcW - srcW;
-        if (dir.includes("n")) fullY = startOrigin.fullY + startOrigin.srcH - srcH;
-      }
-      const newCl = (winX - fullX) / srcW * 100;
-      const newCt = (winY - fullY) / srcH * 100;
-      const newCr = (fullX + srcW - winX - winW) / srcW * 100;
-      const newCb = (fullY + srcH - winY - winH) / srcH * 100;
-      setCropOrigin({ fullX, fullY, srcW, srcH });
-      setLocalCrop([newCt, newCr, newCb, newCl]);
-    };
-    const onUp = () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-  }, []);
+  const {
+    isCropping,
+    cropOrigin,
+    cropPortalRect,
+    cropGeometry,
+    enterCropMode,
+    applyCrop,
+    cancelCrop,
+    startCropDrag,
+    startImagePan,
+    startCropElementDrag,
+    startCropImageResize,
+  } = useMediaCrop({
+    media,
+    cropSignal,
+    isPrimarySelected,
+    onUpdateMedia,
+    wrapperRef,
+  });
+  const {
+    isPlayingVideo,
+    contextMenu,
+    stylePicker,
+    previewStyleId,
+    setPreviewStyleId,
+    closeContextMenu,
+    openStylePicker,
+    selectStyle,
+    closeStylePicker,
+    startVideoPlayback,
+    stopVideoPlayback,
+    handlePlaceholderMouseDown,
+    handleDoubleClick,
+    handleMouseDown,
+    handleContextMenu,
+  } = useMediaInteractions({
+    media,
+    isSelected,
+    isCropping,
+    onSelect,
+    onStartDrag,
+    onOpenPictureFormat,
+    onContextMenu,
+    onUpdateMedia,
+    startCropElementDrag,
+  });
 
   // ── Styles ──────────────────────────────────────────────────────────────
 
@@ -318,21 +140,18 @@ export default function MediaElement({
 
   // ── Crop geometry (canvas-space) ─────────────────────────────────────────
 
-  const W = isCropping && cropOrigin ? cropOrigin.srcW : (media.width ?? 300);
-  const H = isCropping && cropOrigin ? cropOrigin.srcH : (media.height ?? 200);
-  const [ct, cr, cb, cl] = localCrop;
-  const x1raw = (cl / 100) * W;
-  const x2raw = W - (cr / 100) * W;
-  const y1raw = (ct / 100) * H;
-  const y2raw = H - (cb / 100) * H;
-  const x1 = Math.min(x1raw, x2raw);
-  const x2 = Math.max(x1raw, x2raw);
-  const y1 = Math.min(y1raw, y2raw);
-  const y2 = Math.max(y1raw, y2raw);
-  const tPx = Math.max(0, y1);
-  const bPx = Math.max(0, H - y2);
-  const lPx = Math.max(0, x1);
-  const rPx = Math.max(0, W - x2);
+  const {
+    width: W,
+    height: H,
+    left: x1,
+    right: x2,
+    top: y1,
+    bottom: y2,
+    shadeTop: tPx,
+    shadeBottom: bPx,
+    shadeLeft: lPx,
+    shadeRight: rPx,
+  } = cropGeometry;
 
   const getCropHandlePos = (id) => {
     const midX = (x1 + x2) / 2;
@@ -483,10 +302,7 @@ export default function MediaElement({
           justifyContent: "center",
           cursor: "default",
         }}
-        onMouseDown={(e) => {
-          onSelect?.(media.id, { nativeEvent: e });
-          if (!e.ctrlKey && !e.metaKey && !e.shiftKey) onStartDrag?.(e, media.id);
-        }}
+        onMouseDown={handlePlaceholderMouseDown}
       >
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.3 }}>
           <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5"/>
@@ -511,31 +327,9 @@ export default function MediaElement({
         previewClassName,
       ].filter(Boolean).join(" ")}
       style={containerStyle}
-      onDoubleClick={(event) => {
-        if (isCropping) return;
-        event.stopPropagation();
-        onOpenPictureFormat?.(media.id);
-      }}
-      onMouseDown={(event) => {
-        if (isCropping) { startCropElementDrag(event); return; }
-        onSelect(media.id, {
-          nativeEvent: event,
-          preserveIfSelected: isSelected && !event.ctrlKey && !event.metaKey && !event.shiftKey,
-        });
-        if (!event.ctrlKey && !event.metaKey && !event.shiftKey) {
-          onStartDrag(event, media.id);
-        }
-      }}
-      onContextMenu={(event) => {
-        if (isCropping) return;
-        event.preventDefault();
-        event.stopPropagation();
-        if (onContextMenu) {
-          onContextMenu(event, media.id, "media");
-        } else {
-          setContextMenu({ x: event.clientX, y: event.clientY });
-        }
-      }}
+      onDoubleClick={handleDoubleClick}
+      onMouseDown={handleMouseDown}
+      onContextMenu={handleContextMenu}
     >
       {animationOrder != null && !isCropping && (
         <span className="animation-order-badge">{animationOrder}</span>
@@ -571,7 +365,7 @@ export default function MediaElement({
                 preload="metadata"
                 controls={isPlayingVideo}
                 onLoadedMetadata={(e) => { e.target.currentTime = 0; }}
-                onEnded={() => setIsPlayingVideo(false)}
+                onEnded={stopVideoPlayback}
               />
               {!isPlayingVideo && (
                 <div style={{ position: "absolute", inset: 0, cursor: "move", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -583,7 +377,7 @@ export default function MediaElement({
                       cursor: "pointer", pointerEvents: "auto",
                     }}
                     onMouseDown={(e) => e.stopPropagation()}
-                    onClick={(e) => { e.stopPropagation(); setIsPlayingVideo(true); }}
+                    onClick={startVideoPlayback}
                   >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
                   </div>
@@ -645,20 +439,11 @@ export default function MediaElement({
         stylePicker={stylePicker}
         onEnterCropMode={enterCropMode}
         onNewComment={onNewComment}
-        onCloseContextMenu={() => setContextMenu(null)}
-        onOpenStylePicker={() => {
-          setStylePicker(contextMenu);
-          setContextMenu(null);
-        }}
+        onCloseContextMenu={closeContextMenu}
+        onOpenStylePicker={openStylePicker}
         onPreviewStyle={setPreviewStyleId}
-        onSelectStyle={(styleId) => {
-          setPreviewStyleId(null);
-          onUpdateMedia?.(media.id, { effects: { ...media.effects, "style-id": styleId } });
-        }}
-        onCloseStylePicker={() => {
-          setPreviewStyleId(null);
-          setStylePicker(null);
-        }}
+        onSelectStyle={selectStyle}
+        onCloseStylePicker={closeStylePicker}
       />
 
       {/* Crop overlay portal — rendered to document.body, position:fixed */}
