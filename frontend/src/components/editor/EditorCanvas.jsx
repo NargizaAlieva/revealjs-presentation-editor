@@ -1,26 +1,19 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useMemo, useRef } from "react";
 import "./EditorCanvas.css";
 import { getSlideSize } from "../../core/render/slidesetRenderUtils";
-import { getAnimationDurationMs } from "../../core/operations/animationOperations";
 import { buildColorThemeStyle, buildAdjustedAnimationMap } from "../../core/render/revealRenderer";
-import {
-  isEditableTarget,
-  isUndoShortcut,
-  isRedoShortcut,
-  isCopyShortcut,
-  isPasteShortcut,
-  isCutShortcut,
-  isDeleteShortcut,
-  isSelectAllShortcut,
-} from "../../core/events/keyboardShortcuts";
 import { useCanvasInteractions } from "../../hooks/useCanvasInteractions";
 import { useMediaSrc } from "../../hooks/useMediaSrc";
-import { findElementInSlide } from "../../core/operations/elementOperations";
 import { TRANSPARENT_SLIDE_BG } from "../../core/operations/slideOperations";
 import TextElement from "../canvas/elements/TextElement";
 import MediaElement from "../canvas/elements/MediaElement";
 import SlideDecorations from "../canvas/SlideDecorations";
 import CanvasContextMenu from "../canvas/menus/CanvasContextMenu";
+import useCanvasContextMenu from "./hooks/useCanvasContextMenu";
+import useCanvasKeyboardShortcuts from "./hooks/useCanvasKeyboardShortcuts";
+import useCanvasPreviewPlayback from "./hooks/useCanvasPreviewPlayback";
+import useCanvasZoomWheel from "./hooks/useCanvasZoomWheel";
+import usePlaceholderUploads from "./hooks/usePlaceholderUploads";
 
 function BgFillImageLayer({ src, settings, width, height }) {
   const scale = settings.fitToCanvas ?? false;
@@ -118,18 +111,8 @@ export default function EditorCanvas({
   clearSelectionSignal = 0,
   onPromoteLayoutElement,
 }) {
-  const [playingElementId, setPlayingElementId] = useState(null);
-  const [playingEffect, setPlayingEffect] = useState(null);
-  const [playingParagraphIndex, setPlayingParagraphIndex] = useState(null);
-  const [playingByParagraph, setPlayingByParagraph] = useState(false);
-  const [playingTransition, setPlayingTransition] = useState(null);
-  const [contextMenu, setContextMenu] = useState(null);
-
   const workspaceRef = useRef(null);
   const containerRef = useRef(null);
-  const placeholderImageInputRef = useRef(null);
-  const placeholderVideoInputRef = useRef(null);
-  const placeholderUploadTargetRef = useRef(null);
 
   const { width, height } = getSlideSize(presentation);
   const colorThemeStyle = buildColorThemeStyle(presentation);
@@ -143,28 +126,26 @@ export default function EditorCanvas({
   const zoomScale = zoom / 100;
   const scaledWidth = width * zoomScale;
   const scaledHeight = height * zoomScale;
-
-  const closeContextMenu = () => setContextMenu(null);
-
-  const openContextMenu = (
-    event,
-    elementId = null,
-    contextType = "canvas",
-    textSelection = null,
-  ) => {
-    event.preventDefault();
-    if (elementId && !selectedElementIds.includes(elementId)) {
-      onSelectElement?.(elementId);
-    }
-    setContextMenu({
-      x: event.clientX,
-      y: event.clientY,
-      hasSelection: Boolean(elementId),
-      elementId,
-      contextType,
-      textSelection,
-    });
-  };
+  const { contextMenu, openContextMenu, closeContextMenu } =
+    useCanvasContextMenu({ selectedElementIds, onSelectElement });
+  const {
+    imageInputRef: placeholderImageInputRef,
+    videoInputRef: placeholderVideoInputRef,
+    requestImageUpload,
+    requestVideoUpload,
+    handleImageChange,
+    handleVideoChange,
+  } = usePlaceholderUploads({
+    onImageUpload: onPlaceholderImageUpload,
+    onVideoUpload: onPlaceholderVideoUpload,
+  });
+  const {
+    playingElementId,
+    playingEffect,
+    playingParagraphIndex,
+    playingByParagraph,
+    playingTransition,
+  } = useCanvasPreviewPlayback(previewEffect);
 
   const exitTextEditing = (elementId) => {
     const editable = containerRef.current?.querySelector(
@@ -236,209 +217,25 @@ export default function EditorCanvas({
     onCancelHistory,
   });
 
-  useEffect(() => {
-    if (!previewEffect) return;
-
-    let cancelled = false;
-    let rafId = null;
-    let timerId = null;
-
-    Promise.resolve().then(() => {
-      if (cancelled) return;
-
-      if (previewEffect.type === "animation") {
-        const duration = getAnimationDurationMs(previewEffect.speed);
-
-        if (previewEffect.byParagraph && previewEffect.paragraphCount > 1) {
-          setPlayingByParagraph(true);
-          setPlayingElementId(previewEffect.elementId);
-          setPlayingEffect(previewEffect.effect);
-          setPlayingParagraphIndex(null);
-
-          const N = previewEffect.paragraphCount;
-          const timers = [];
-          for (let i = 0; i < N; i++) {
-            timers.push(
-              setTimeout(
-                () => {
-                  if (!cancelled) setPlayingParagraphIndex(i);
-                },
-                30 + i * (duration + 50),
-              ),
-            );
-          }
-          timers.push(
-            setTimeout(
-              () => {
-                if (!cancelled) {
-                  setPlayingByParagraph(false);
-                  setPlayingElementId(null);
-                  setPlayingEffect(null);
-                  setPlayingParagraphIndex(null);
-                }
-              },
-              30 + N * (duration + 50) + 100,
-            ),
-          );
-
-          timerId = { cancel: () => timers.forEach(clearTimeout) };
-        } else {
-          setPlayingByParagraph(false);
-          setPlayingElementId(null);
-          setPlayingEffect(null);
-          setPlayingParagraphIndex(null);
-
-          rafId = requestAnimationFrame(() => {
-            if (!cancelled) {
-              setPlayingElementId(previewEffect.elementId);
-              setPlayingEffect(previewEffect.effect);
-            }
-          });
-
-          timerId = setTimeout(
-            () => {
-              setPlayingElementId(null);
-              setPlayingEffect(null);
-            },
-            getAnimationDurationMs(previewEffect.speed) + 100,
-          );
-        }
-      }
-
-      if (previewEffect.type === "transition") {
-        setPlayingTransition(null);
-
-        rafId = requestAnimationFrame(() => {
-          if (!cancelled) {
-            setPlayingTransition(previewEffect.effect);
-          }
-        });
-
-        timerId = setTimeout(() => {
-          setPlayingTransition(null);
-        }, 900);
-      }
-    });
-
-    return () => {
-      cancelled = true;
-      if (rafId) cancelAnimationFrame(rafId);
-      if (timerId?.cancel) {
-        timerId.cancel();
-        setPlayingByParagraph(false);
-        setPlayingParagraphIndex(null);
-      } else if (timerId) clearTimeout(timerId);
-    };
-  }, [previewEffect]);
-
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      const target = event.target;
-      const inCanvas = containerRef.current?.contains(target);
-      const onBody =
-        target === document.body || target === document.documentElement;
-      if (!inCanvas && !onBody) return;
-
-      const editable = isEditableTarget(target);
-
-      if (event.key === "Escape") {
-        setContextMenu(null);
-      }
-
-      if (isSelectAllShortcut(event) && !editable) {
-        event.preventDefault();
-        onSelectAll?.();
-        return;
-      }
-
-      if (isUndoShortcut(event) && !editable) {
-        event.preventDefault();
-        onUndo?.();
-        return;
-      }
-
-      if (isRedoShortcut(event) && !editable) {
-        event.preventDefault();
-        onRedo?.();
-        return;
-      }
-
-      if (isCopyShortcut(event) && !editable && selectedElementId) {
-        onCopy?.();
-        return;
-      }
-
-      if (isPasteShortcut(event) && !editable) {
-        onPaste?.();
-        return;
-      }
-
-      if (isCutShortcut(event) && !editable && selectedElementId) {
-        onCut?.();
-        return;
-      }
-
-      if (!isDeleteShortcut(event)) return;
-      if (editable) return;
-      if (!selectedElementId) return;
-
-      if (selectedElementIds.length > 1) {
-        onDeleteSelection?.();
-        return;
-      }
-
-      const found = findElementInSlide(
-        textElements,
-        mediaElements,
-        selectedElementId,
-      );
-      if (!found) return;
-
-      if (found.type === "text") {
-        onDeleteTextElement(selectedElementId);
-        onSelectElement?.(null);
-      } else {
-        onDeleteMedia(selectedElementId);
-        onSelectElement?.(null);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [
+  useCanvasKeyboardShortcuts({
+    containerRef,
     selectedElementId,
     selectedElementIds,
     textElements,
     mediaElements,
+    closeContextMenu,
     onDeleteTextElement,
     onDeleteMedia,
+    onDeleteSelection,
     onSelectElement,
+    onSelectAll,
     onUndo,
     onRedo,
     onCopy,
     onPaste,
     onCut,
-    onDeleteSelection,
-    onSelectAll,
-  ]);
-
-  useEffect(() => {
-    const element = workspaceRef.current;
-    if (!element) return;
-
-    const handleWheel = (event) => {
-      if (!event.ctrlKey) return;
-      event.preventDefault();
-      const delta = -(event.deltaY * 0.3);
-      onCanvasZoom?.(delta);
-    };
-
-    element.addEventListener("wheel", handleWheel, { passive: false });
-    return () => element.removeEventListener("wheel", handleWheel);
-  }, [onCanvasZoom]);
+  });
+  useCanvasZoomWheel({ workspaceRef, onCanvasZoom });
 
   if (!slide) {
     return (
@@ -585,16 +382,10 @@ export default function EditorCanvas({
                       onAutoFit={updateElementSilent}
                       onContextMenu={openContextMenu}
                       onPlaceholderImageClick={() =>
-                        {
-                          placeholderUploadTargetRef.current = textElement;
-                          placeholderImageInputRef.current?.click();
-                        }
+                        requestImageUpload(textElement)
                       }
                       onPlaceholderVideoClick={() =>
-                        {
-                          placeholderUploadTargetRef.current = textElement;
-                          placeholderVideoInputRef.current?.click();
-                        }
+                        requestVideoUpload(textElement)
                       }
                       animationOrder={
                         showAnimationBadges
@@ -763,32 +554,14 @@ export default function EditorCanvas({
         type="file"
         accept="image/*"
         hidden
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file)
-            onPlaceholderImageUpload?.(
-              placeholderUploadTargetRef.current,
-              file,
-            );
-          placeholderUploadTargetRef.current = null;
-          event.target.value = "";
-        }}
+        onChange={handleImageChange}
       />
       <input
         ref={placeholderVideoInputRef}
         type="file"
         accept="video/*"
         hidden
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file)
-            onPlaceholderVideoUpload?.(
-              placeholderUploadTargetRef.current,
-              file,
-            );
-          placeholderUploadTargetRef.current = null;
-          event.target.value = "";
-        }}
+        onChange={handleVideoChange}
       />
 
       {contextMenu && (
