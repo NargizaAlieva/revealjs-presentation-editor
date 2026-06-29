@@ -34,7 +34,7 @@ export function buildTextElementStyle(textElement, index, masterFormatting = {},
     width: `${textElement.width ?? 300}px`,
     height: `${textElement.height ?? 80}px`,
     background: textElement.background ?? placeholderBackground ?? "transparent",
-    zIndex: textElement["z-index"] ?? index + 1,
+    zIndex: textElement["z-index"] ?? 1,
     ...(rotation ? { transform: `rotate(${rotation}deg)` } : {}),
     display: "flex",
     flexDirection: "column",
@@ -66,7 +66,7 @@ export function styleToString(styleObj) {
     .join("; ");
 }
 
-export function buildMediaContainerStyle(media, index) {
+export function buildMediaContainerStyle(media) {
   const rotation = media.rotation ?? 0;
   const styleId = media.effects?.["style-id"];
   const styleCss = styleId ? getStyleById(styleId).css : {};
@@ -100,7 +100,7 @@ export function buildMediaContainerStyle(media, index) {
     top: `${media.position?.y ?? 0}px`,
     width: `${media.width ?? 200}px`,
     height: `${media.height ?? 120}px`,
-    zIndex: media["z-index"] ?? index + 1,
+    zIndex: media["z-index"] ?? 1,
     overflow: "hidden",
     ...(media.opacity != null && media.opacity < 1 ? { opacity: media.opacity } : {}),
     ...styleCss,

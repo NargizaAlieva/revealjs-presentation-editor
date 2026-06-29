@@ -972,7 +972,11 @@ export const editorReducer = (state, event) => {
         event.payload.updates,
       );
       const updates = event.payload.updates ?? {};
-      const isDragUpdate = "position" in updates || "width" in updates || "height" in updates;
+      const isDragUpdate =
+        "position" in updates ||
+        "width" in updates ||
+        "height" in updates ||
+        "z-index" in updates;
       if (state.pendingSnapshot && isDragUpdate) {
         return {
           ...state,
@@ -1069,7 +1073,11 @@ export const editorReducer = (state, event) => {
         event.payload.updates,
       );
       const masterUpdates = event.payload.updates ?? {};
-      const isMasterDragUpdate = "position" in masterUpdates || "width" in masterUpdates || "height" in masterUpdates;
+      const isMasterDragUpdate =
+        "position" in masterUpdates ||
+        "width" in masterUpdates ||
+        "height" in masterUpdates ||
+        "z-index" in masterUpdates;
       if (state.pendingSnapshot && isMasterDragUpdate) {
         return {
           ...state,

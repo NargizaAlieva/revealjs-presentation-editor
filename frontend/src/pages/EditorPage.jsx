@@ -153,8 +153,16 @@ export default function EditorPage() {
               : ctrl.updateMedia(ctrl.selectedMediaElement.id, updates))
           }
           onCropSelectedMedia={ctrl.triggerCrop}
-          onBringForward={ctrl.handleBringForward}
-          onSendBackward={ctrl.handleSendBackward}
+          onBringForward={
+            ctrl.isSlideMasterOpen
+              ? ctrl.handleMasterBringForward
+              : ctrl.handleBringForward
+          }
+          onSendBackward={
+            ctrl.isSlideMasterOpen
+              ? ctrl.handleMasterSendBackward
+              : ctrl.handleSendBackward
+          }
           onChangePicture={ctrl.handleChangePicture}
           onPreviewMediaEffects={ctrl.setPreviewMediaEffects}
           onPreviewMediaStyle={ctrl.setPreviewMediaStyleId}
@@ -189,6 +197,10 @@ export default function EditorPage() {
             onCancelHistory={ctrl.cancelHistory}
             onUndo={ctrl.undo}
             onRedo={ctrl.redo}
+            onBringToFront={ctrl.handleMasterBringToFront}
+            onBringForward={ctrl.handleMasterBringForward}
+            onSendBackward={ctrl.handleMasterSendBackward}
+            onSendToBack={ctrl.handleMasterSendToBack}
           />
         ) : ctrl.currentView === "slide-sorter" ? (
           <SlideSorterView

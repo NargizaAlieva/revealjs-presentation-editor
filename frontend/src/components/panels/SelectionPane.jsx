@@ -7,6 +7,7 @@ import {
   MdVisibilityOff,
 } from "react-icons/md";
 import { getElementLabel } from "../../core/operations/elementOperations";
+import { getElementsInZOrder } from "../../core/operations/zOrderOperations";
 import "./SelectionPane.css";
 
 const getSelectionLabel = (element, index) => {
@@ -34,11 +35,8 @@ export default function SelectionPane({
   onSetVisibility,
   onMoveLayer,
 }) {
-  const elements = [
-    ...(slide?.contents?.text ?? []),
-    ...(slide?.contents?.media ?? []),
-  ]
-    .sort((a, b) => Number(b["z-index"] ?? 1) - Number(a["z-index"] ?? 1))
+  const elements = getElementsInZOrder(slide)
+    .reverse()
     .map((element, index) => ({
       ...element,
       selectionLabel: getSelectionLabel(element, index),

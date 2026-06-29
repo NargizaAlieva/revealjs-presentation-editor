@@ -234,7 +234,7 @@ function buildTextElementContent(textElement, animation, placeholderFormatting =
     .join("");
 }
 
-function buildReflectionHtml(media, src, index) {
+function buildReflectionHtml(media, src) {
   const refId = media.effects?.reflectionId;
   const rp = refId && refId !== "none" ? REFLECTION_PRESETS.find((p) => p.id === refId) : null;
   if (!rp || rp.size <= 0) return "";
@@ -257,7 +257,7 @@ function buildReflectionHtml(media, src, index) {
     `-webkit-mask-image:linear-gradient(to bottom,black 0%,transparent 100%)`,
     `mask-image:linear-gradient(to bottom,black 0%,transparent 100%)`,
     `pointer-events:none`,
-    `z-index:${media["z-index"] ?? index + 1}`,
+    `z-index:${media["z-index"] ?? 1}`,
   ].filter(Boolean).join(";");
   return `<img src="${escapeHtml(src)}" alt="" style="${refStyle}" />`;
 }
@@ -372,7 +372,7 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
 
       const bevelStyle = buildBevelOverlayStyle(media);
       const bevelHtml = bevelStyle ? `<div style="${styleToString(bevelStyle)}"></div>` : "";
-      const reflectionHtml = buildReflectionHtml(media, src, index);
+      const reflectionHtml = buildReflectionHtml(media, src);
 
       const innerHtml = `${mediaHtml}${bevelHtml}${reflectionHtml}`;
       const adjustedMediaAnim = animation && adjustedSeqMap.has(animation.id)
@@ -392,8 +392,10 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
       style="background: ${background || "white"};"
     >
       <div style="position: relative; width: ${width}px; height: ${height}px; overflow: hidden;">
-        ${buildDecorationsHtml(presentation, width, height)}
-        ${masterElementsHtml}
+        <div style="position:absolute;inset:0;z-index:0;pointer-events:none;">
+          ${buildDecorationsHtml(presentation, width, height)}
+          ${masterElementsHtml}
+        </div>
         ${textElementsHtml}
         ${mediaElementsHtml}
       </div>

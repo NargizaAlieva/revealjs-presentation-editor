@@ -59,7 +59,7 @@ function ThumbnailMedia({ media, index }) {
       WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
       maskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
       pointerEvents: "none",
-      zIndex: (media["z-index"] ?? index + 1),
+      zIndex: media["z-index"] ?? 1,
     };
   })() : null;
 

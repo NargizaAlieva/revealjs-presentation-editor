@@ -614,6 +614,10 @@ export default function SlideMasterView({
   onCancelHistory,
   onUndo,
   onRedo,
+  onBringToFront,
+  onBringForward,
+  onSendBackward,
+  onSendToBack,
 }) {
   const [canvasZoom, setCanvasZoom] = useState(75);
   const canvasAreaRef = useRef(null);
@@ -727,6 +731,10 @@ export default function SlideMasterView({
           onCancelHistory={onCancelHistory}
           onUndo={onUndo}
           onRedo={onRedo}
+          onBringToFront={onBringToFront}
+          onBringForward={onBringForward}
+          onSendBackward={onSendBackward}
+          onSendToBack={onSendToBack}
         />
         <div className="master-canvas-label">
           {selectedMasterLayoutId === null

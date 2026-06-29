@@ -235,4 +235,67 @@ describe("editorReducer", () => {
       redone.presentation.slideset.master["current-color-scheme-id"],
     ).toBe("scheme-test");
   });
+
+  test("groups master z-order updates into one undo entry", () => {
+    const initial = createInitialEditorState();
+    const state = {
+      ...initial,
+      presentation: {
+        ...initial.presentation,
+        slideset: {
+          ...initial.presentation.slideset,
+          master: {
+            ...initial.presentation.slideset.master,
+            elements: {
+              ...initial.presentation.slideset.master.elements,
+              text: [
+                { id: "master-a", "z-index": 1 },
+                { id: "master-b", "z-index": 2 },
+              ],
+            },
+          },
+        },
+      },
+    };
+
+    const begun = editorReducer(state, {
+      type: EditorEventType.HISTORY.BEGIN,
+      payload: {},
+    });
+    const firstUpdate = editorReducer(begun, {
+      type: EditorEventType.MASTER.UPDATE_ITEM,
+      payload: {
+        elementId: "master-a",
+        updates: { "z-index": 2 },
+      },
+    });
+    const secondUpdate = editorReducer(firstUpdate, {
+      type: EditorEventType.MASTER.UPDATE_ITEM,
+      payload: {
+        elementId: "master-b",
+        updates: { "z-index": 1 },
+      },
+    });
+    const committed = editorReducer(secondUpdate, {
+      type: EditorEventType.HISTORY.COMMIT,
+      payload: {},
+    });
+
+    expect(committed.past).toHaveLength(1);
+    expect(
+      committed.presentation.slideset.master.elements.text.map(
+        (item) => item["z-index"],
+      ),
+    ).toEqual([2, 1]);
+
+    const undone = editorReducer(committed, {
+      type: EditorEventType.HISTORY.UNDO,
+      payload: {},
+    });
+    expect(
+      undone.presentation.slideset.master.elements.text.map(
+        (item) => item["z-index"],
+      ),
+    ).toEqual([1, 2]);
+  });
 });

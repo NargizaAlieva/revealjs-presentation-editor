@@ -14,6 +14,7 @@ import { EditorEventType, createEditorEvent } from "../core/events/editorEvents"
 import { getSlideSize } from "../core/render/slidesetRenderUtils";
 import { getSlideElement } from "../core/operations/slideOperations";
 import { getElementLabel } from "../core/operations/elementOperations";
+import { createZOrderUpdates } from "../core/operations/zOrderOperations";
 import {
   createImageMediaElement,
   createVideoMediaElement,
@@ -655,27 +656,15 @@ useEffect(() => {
 
   const arrangeSelectedElement = useCallback(
     (mode) => {
-      if (selectedElementsRaw.length === 0 || !selectedSlide) return;
-      const elements = [
-        ...(selectedSlide.contents?.text ?? []),
-        ...(selectedSlide.contents?.media ?? []),
-      ];
-      const zIndexes = elements.map((element) =>
-        Number(element["z-index"] ?? 1),
+      if (selectedElementIds.length === 0 || !selectedSlide) return;
+      const updates = createZOrderUpdates(
+        selectedSlide,
+        selectedElementIds,
+        mode,
       );
-      beginHistory();
-      selectedElementsRaw.forEach((element, index) => {
-        const currentZ = Number(element["z-index"] ?? 1);
-        let nextZ = currentZ;
-        if (mode === "front") nextZ = Math.max(...zIndexes, currentZ) + 1 + index;
-        if (mode === "back") nextZ = Math.max(1, Math.min(...zIndexes, currentZ) - selectedElementsRaw.length + index);
-        if (mode === "forward") nextZ = currentZ + 1;
-        if (mode === "backward") nextZ = Math.max(1, currentZ - 1);
-        updateElement(element.id, { "z-index": nextZ });
-      });
-      commitHistory();
+      if (updates.length > 0) updateElements(updates);
     },
-    [selectedElementsRaw, selectedSlide, updateElement, beginHistory, commitHistory],
+    [selectedElementIds, selectedSlide, updateElements],
   );
 
   const handleBringToFront = useCallback(
@@ -798,31 +787,9 @@ useEffect(() => {
 
   const handleMoveSelectionLayer = useCallback(
     (direction) => {
-      if (selectedElementIds.length === 0) return;
-      const allElements = [
-        ...(selectedSlide?.contents?.text ?? []),
-        ...(selectedSlide?.contents?.media ?? []),
-      ].sort(
-        (a, b) => Number(b["z-index"] ?? 1) - Number(a["z-index"] ?? 1),
-      );
-      const selectedSet = new Set(selectedElementIds);
-      const index = allElements.findIndex((element) => selectedSet.has(element.id));
-      const swapIndex = index + direction;
-      if (index < 0 || swapIndex < 0 || swapIndex >= allElements.length) return;
-      const current = allElements[index];
-      const target = allElements[swapIndex];
-      updateElements([
-        {
-          elementId: current.id,
-          updates: { "z-index": Number(target["z-index"] ?? 1) },
-        },
-        {
-          elementId: target.id,
-          updates: { "z-index": Number(current["z-index"] ?? 1) },
-        },
-      ]);
+      arrangeSelectedElement(direction < 0 ? "forward" : "backward");
     },
-    [selectedElementIds, selectedSlide, updateElements],
+    [arrangeSelectedElement],
   );
 
   const activePendingFormatting =
@@ -933,7 +900,6 @@ useEffect(() => {
   const handleDeleteTextElement = useCallback(
     (id) => {
       if (layoutTextIds.has(id)) {
-        // Element is from the layout — hide it so slideContentIds suppresses the decoration
         updateElement(id, { hidden: true });
       } else {
         deleteTextElement(id);
@@ -1091,7 +1057,6 @@ useEffect(() => {
       ? ((selectedSlide?.contents?.text ?? []).find((el) => el.id === targetElementId) ?? selectedTextEl)
       : selectedTextEl;
 
-    // Find a layout text element that overlaps targetEl so we can suppress it via placeholder-id
     const findOverlappingLayoutTextId = (el) => {
       if (!el) return null;
       const existingPlaceholderId = el["placeholder-id"];
@@ -1434,6 +1399,58 @@ useEffect(() => {
         )
       : buildMasterPseudoSlide(masterElements ?? {}, masterColorTheme ?? []);
   }, [selectedMasterLayout, masterElements, masterColorTheme]);
+
+  const arrangeMasterViewElement = useCallback(
+    (mode) => {
+      if (!selectedMasterElementId) return;
+      const updates = createZOrderUpdates(
+        activeMasterSlide,
+        [selectedMasterElementId],
+        mode,
+      );
+      if (updates.length === 0) return;
+
+      beginHistory();
+      updates.forEach(({ elementId, updates: elementUpdates }) => {
+        if (selectedMasterLayoutId) {
+          updateLayoutItem(
+            selectedMasterLayoutId,
+            elementId,
+            elementUpdates,
+          );
+        } else {
+          updateMasterElement(elementId, elementUpdates);
+        }
+      });
+      commitHistory();
+    },
+    [
+      activeMasterSlide,
+      beginHistory,
+      commitHistory,
+      selectedMasterElementId,
+      selectedMasterLayoutId,
+      updateLayoutItem,
+      updateMasterElement,
+    ],
+  );
+
+  const handleMasterBringToFront = useCallback(
+    () => arrangeMasterViewElement("front"),
+    [arrangeMasterViewElement],
+  );
+  const handleMasterBringForward = useCallback(
+    () => arrangeMasterViewElement("forward"),
+    [arrangeMasterViewElement],
+  );
+  const handleMasterSendBackward = useCallback(
+    () => arrangeMasterViewElement("backward"),
+    [arrangeMasterViewElement],
+  );
+  const handleMasterSendToBack = useCallback(
+    () => arrangeMasterViewElement("back"),
+    [arrangeMasterViewElement],
+  );
 
   const masterViewChangeText = useCallback(
     (id, text) => {
@@ -2026,6 +2043,10 @@ useEffect(() => {
     handleUpdateMasterElementPosition,
     handleUpdateMasterElementSize,
     activeMasterSlide,
+    handleMasterBringToFront,
+    handleMasterBringForward,
+    handleMasterSendBackward,
+    handleMasterSendToBack,
     masterViewChangeText,
     masterViewChangeParagraphs,
     masterViewFormatText,
