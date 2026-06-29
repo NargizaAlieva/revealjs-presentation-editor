@@ -1,32 +1,50 @@
 import { createId, getSlides, setSlides } from "../utils/presentationUtils";
+import {
+  clampCrop,
+  clampCropEdges,
+  clampCropPan,
+  getCroppedMediaGeometry,
+} from "../model/mediaCrop";
+
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+export { clampCrop, clampCropEdges, clampCropPan };
 
 export const computeCropOrigin = (media) => {
-  const [ct = 0, cr = 0, cb = 0, cl = 0] =
-    media.crop?.length === 4 ? media.crop : [0, 0, 0, 0];
-  const scale = media.scale ?? 1;
-  const W = media.width ?? 300;
-  const H = media.height ?? 200;
-  const srcW = (media["source-width"] ?? W / Math.max(0.01, 1 - cl / 100 - cr / 100)) * scale;
-  const srcH = (media["source-height"] ?? H / Math.max(0.01, 1 - ct / 100 - cb / 100)) * scale;
+  const {
+    crop: [ct, cr, cb, cl],
+    scale,
+    sourceWidth,
+    sourceHeight,
+    renderedSourceWidth: srcW,
+    renderedSourceHeight: srcH,
+  } = getCroppedMediaGeometry(media);
   const fullX = (media.position?.x ?? 0) - (cl / 100) * srcW;
   const fullY = (media.position?.y ?? 0) - (ct / 100) * srcH;
-  return { fullX, fullY, srcW, srcH, initialCrop: [ct, cr, cb, cl] };
+  return { fullX, fullY, srcW, srcH, sourceWidth, sourceHeight, scale, initialCrop: [ct, cr, cb, cl] };
 };
 
 export const computeCropResult = (crop, cropOrigin) => {
-  const [ct, cr, cb, cl] = crop;
+  const [ct, cr, cb, cl] = clampCrop(crop);
   const { fullX, fullY, srcW, srcH } = cropOrigin;
+  const scale = cropOrigin.scale ?? 1;
   const x1n = (cl / 100) * srcW, x2n = srcW - (cr / 100) * srcW;
   const y1n = (ct / 100) * srcH, y2n = srcH - (cb / 100) * srcH;
-  const winX1 = Math.min(x1n, x2n), winX2 = Math.max(x1n, x2n);
-  const winY1 = Math.min(y1n, y2n), winY2 = Math.max(y1n, y2n);
+  let winX1 = clamp(Math.min(x1n, x2n), 0, srcW);
+  let winX2 = clamp(Math.max(x1n, x2n), 0, srcW);
+  let winY1 = clamp(Math.min(y1n, y2n), 0, srcH);
+  let winY2 = clamp(Math.max(y1n, y2n), 0, srcH);
+  const minWidth = Math.min(1, srcW);
+  const minHeight = Math.min(1, srcH);
+  if (winX2 - winX1 < minWidth) winX1 = Math.max(0, winX2 - minWidth);
+  if (winY2 - winY1 < minHeight) winY1 = Math.max(0, winY2 - minHeight);
   return {
     crop: [winY1 / srcH * 100, (srcW - winX2) / srcW * 100, (srcH - winY2) / srcH * 100, winX1 / srcW * 100],
     position: { x: fullX + winX1, y: fullY + winY1 },
     width: Math.max(1, winX2 - winX1),
     height: Math.max(1, winY2 - winY1),
-    "source-width": srcW,
-    "source-height": srcH,
+    "source-width": cropOrigin.sourceWidth ?? srcW / scale,
+    "source-height": cropOrigin.sourceHeight ?? srcH / scale,
   };
 };
 

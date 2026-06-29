@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useMediaSrc } from "../../../hooks/useMediaSrc";
 import {
   SHARPEN_PRESETS,
@@ -620,36 +620,6 @@ function GlowSubPanel({ src, activeId, onApply, onHover, onHoverClear }) {
   );
 }
 
-function SectionPanel({ src, activeId, onSelect, noLabel, varLabel, variations, cols = 3 }) {
-  return (
-    <div className="pft-fx-preset-panel pft-fx-shadow-panel">
-      <div>
-        <div className="pft-fx-preset-section-title">{noLabel}</div>
-        <div className="pft-fx-preset-grid" style={{ gridTemplateColumns: "repeat(1,1fr)" }}>
-          {/* rendered by caller via noneSlot prop */}
-        </div>
-      </div>
-      <div>
-        <div className="pft-fx-preset-section-title">{varLabel}</div>
-        <div className="pft-fx-preset-grid" style={{ gridTemplateColumns: `repeat(${cols},1fr)` }}>
-          {variations.map((p) => (
-            <button
-              key={p.id}
-              className={`pft-fx-sub-item${activeId === p.id ? " pft-fx-sub-item--active" : ""}`}
-              title={p.label}
-              onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onSelect(p); }}
-            >
-              <div className="pft-fx-thumb" style={p._thumbStyle ?? {}}>
-                {src ? <img src={src} alt="" style={p._imgStyle ?? {}} /> : <div className="pft-corr-placeholder" />}
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function SoftEdgesSubPanel({ src, activeId, onSelect, onHover, onHoverClear }) {
   const none = SOFT_EDGES_PRESETS[0];
   const variations = SOFT_EDGES_PRESETS.slice(1).map((p) => ({
@@ -854,6 +824,7 @@ function PictureEffectsPopover({ src, effects, onUpdate, anchorRect, onPreviewEf
 
   const preview = (partialEffects) => onPreviewEffects?.(partialEffects);
   const clearPreview = () => onPreviewEffects?.(null);
+  useEffect(() => () => onPreviewEffects?.(null), [onPreviewEffects]);
 
   const applyGlow = (preset) => {
     clearPreview();
@@ -882,7 +853,12 @@ function PictureEffectsPopover({ src, effects, onUpdate, anchorRect, onPreviewEf
 
   const previewKey = (key, preset) => {
     if (key === "presetId") {
-      preview({ ...preset.effects });
+      preview({
+        shadowId: undefined,
+        bevelId: undefined,
+        rotation3dId: undefined,
+        ...preset.effects,
+      });
     } else {
       preview({ [key]: preset.id });
     }
@@ -1023,24 +999,6 @@ function ArtisticPopover({ src, effects, onUpdate, anchorRect }) {
         </button>
       </div>
     </Popover>
-  );
-}
-
-function TintGrid({ items, currentId, onSelect }) {
-  return (
-    <div className="pft-tint-grid">
-      {items.map((t) => (
-        <button
-          key={t.id}
-          className={`pft-tint-cell${currentId === t.id ? " pft-tint-cell--active" : ""}`}
-          title={t.label}
-          onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); onSelect(t); }}
-        >
-          <div className="pft-tint-preview" style={t.filter ? { filter: t.filter } : undefined} />
-          <span className="pft-tint-name">{t.label}</span>
-        </button>
-      ))}
-    </div>
   );
 }
 
@@ -1343,7 +1301,12 @@ export default function PictureFormatTab({ media, onUpdate, onCrop, onBringForwa
 
       {/* ── Size ────────────────────────────────────────── */}
       <div className="ribbon-group">
-        <button className="toolbar-item" onClick={onCrop} title="Crop">
+        <button className="toolbar-item" onClick={() => {
+          setOpenPopover(null);
+          onPreviewEffects?.(null);
+          onPreviewStyle?.(null);
+          onCrop?.();
+        }} title="Crop">
           <MdCrop /><span>Crop</span>
         </button>
         <div className="pft-size-block">

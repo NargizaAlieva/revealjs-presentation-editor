@@ -9,6 +9,10 @@ import {
 import {
   buildTextElementStyle,
   buildMediaContainerStyle,
+  buildMediaInnerStyle,
+  buildMediaFilterStyle,
+  buildMediaReflectionStyle,
+  buildMediaReflectionContentStyle,
   buildSlideContainerStyle,
   getTextContent,
   getRevealTransition,
@@ -174,6 +178,92 @@ describe("buildTextElementStyle", () => {
   it("position is absolute", () => {
     const style = buildTextElementStyle(makeTextElement(), 0);
     expect(style.position).toBe("absolute");
+  });
+
+  it("applies a picture style transform exactly once", () => {
+    const media = {
+      position: { x: 0, y: 0 },
+      width: 100,
+      height: 100,
+      effects: { "style-id": "tilted-right" },
+    };
+    expect(buildMediaContainerStyle(media).transform).toBe("rotate(3deg)");
+  });
+});
+
+describe("media effects and reflection styles", () => {
+  const media = {
+    position: { x: 30, y: 40 },
+    width: 200,
+    height: 100,
+    crop: [10, 20, 30, 5],
+    "source-width": 300,
+    "source-height": 200,
+    effects: {
+      brightness: 0.2,
+      contrast: -0.1,
+      reflectionId: "tight",
+    },
+  };
+
+  it("combines correction filters", () => {
+    expect(buildMediaFilterStyle(media)).toBe("brightness(1.200) contrast(0.900)");
+  });
+
+  it("uses crop offsets for the reflected image content", () => {
+    const inner = buildMediaInnerStyle(media);
+    expect(inner.left).toBe("-15px");
+    expect(inner.top).toBe("-20px");
+    expect(inner.maxWidth).toBe("none");
+    expect(inner.maxHeight).toBe("none");
+    expect(inner.margin).toBe(0);
+    expect(buildMediaReflectionContentStyle(media).transform).toBe("scaleY(-1)");
+  });
+
+  it("covers the frame for legacy negative crop values after presentation scaling", () => {
+    const inner = buildMediaInnerStyle({
+      width: 526,
+      height: 374,
+      "source-width": 410,
+      "source-height": 346,
+      crop: [-8, -28, 0, 0],
+    });
+
+    expect(parseFloat(inner.width)).toBeGreaterThanOrEqual(526);
+    expect(parseFloat(inner.height)).toBeGreaterThanOrEqual(374);
+    expect(inner.left).toBe("0px");
+    expect(inner.top).toBe("0px");
+  });
+
+  it("positions reflection outside the original media wrapper", () => {
+    const reflection = buildMediaReflectionStyle(media);
+    expect(reflection?.left).toBe(30);
+    expect(reflection?.top).toBeGreaterThanOrEqual(140);
+    expect(reflection?.overflow).toBe("hidden");
+  });
+
+  it("aligns a reflection with the picture's outer border edges", () => {
+    const framedMedia = {
+      position: { x: 15, y: 28 },
+      width: 320,
+      height: 240,
+      effects: {
+        "style-id": "thick-black",
+        reflectionId: "full",
+      },
+    };
+    const globalReflection = buildMediaReflectionStyle(framedMedia);
+    const relativeReflection = buildMediaReflectionStyle(framedMedia, { relative: true });
+    const reflectedFrame = buildMediaReflectionContentStyle(framedMedia);
+
+    expect(globalReflection?.left).toBe(15);
+    expect(globalReflection?.top).toBe(268);
+    expect(globalReflection?.width).toBe(320);
+    expect(globalReflection?.height).toBe(240);
+    expect(relativeReflection?.left).toBe(0);
+    expect(relativeReflection?.top).toBe(240);
+    expect(reflectedFrame.border).toBe("10px solid #111827");
+    expect(reflectedFrame.boxSizing).toBe("border-box");
   });
 });
 

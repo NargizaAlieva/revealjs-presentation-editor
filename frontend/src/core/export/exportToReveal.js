@@ -14,13 +14,14 @@ import {
   buildMediaInnerStyle,
   buildMediaFilterStyle,
   buildBevelOverlayStyle,
+  buildMediaReflectionStyle,
+  buildMediaReflectionContentStyle,
   buildVideoAttributes,
   buildAnimationMap,
   styleToString,
 } from "../render/revealRenderer";
 import { resolveParagraphIndentStyles } from "../text/textFormatting";
 import { getListMarker, getListIndent } from "../utils/listUtils";
-import { REFLECTION_PRESETS } from "../model/imageEffects";
 import { downloadHtml } from "./downloadHtml";
 import { downloadBackend } from "./downloadBackend";
 import { getMediaFile } from "../persistence/persistenceFacade";
@@ -235,31 +236,17 @@ function buildTextElementContent(textElement, animation, placeholderFormatting =
 }
 
 function buildReflectionHtml(media, src) {
-  const refId = media.effects?.reflectionId;
-  const rp = refId && refId !== "none" ? REFLECTION_PRESETS.find((p) => p.id === refId) : null;
-  if (!rp || rp.size <= 0) return "";
-  const elH = media.height ?? 200;
-  const elW = media.width ?? 200;
-  const refH = Math.round((rp.size / 100) * elH);
-  const x = media.position?.x ?? 0;
-  const y = (media.position?.y ?? 0) + elH + (rp.offset ?? 0);
-  const refStyle = [
-    `position:absolute`,
-    `left:${x}px`,
-    `top:${y}px`,
-    `width:${elW}px`,
-    `height:${refH}px`,
-    `object-fit:cover`,
-    `object-position:top`,
-    `transform:scaleY(-1)`,
-    `opacity:${rp.opacity}`,
-    rp.blur > 0 ? `filter:blur(${rp.blur}px)` : "",
-    `-webkit-mask-image:linear-gradient(to bottom,black 0%,transparent 100%)`,
-    `mask-image:linear-gradient(to bottom,black 0%,transparent 100%)`,
-    `pointer-events:none`,
-    `z-index:${media["z-index"] ?? 1}`,
-  ].filter(Boolean).join(";");
-  return `<img src="${escapeHtml(src)}" alt="" style="${refStyle}" />`;
+  const reflectionStyle = buildMediaReflectionStyle(media);
+  if (!reflectionStyle) return "";
+  const contentStyle = buildMediaReflectionContentStyle(media);
+  const cssFilter = buildMediaFilterStyle(media);
+  const imageStyle = {
+    ...buildMediaInnerStyle(media),
+    ...(cssFilter ? { filter: cssFilter } : {}),
+  };
+  const bevelStyle = buildBevelOverlayStyle(media);
+  const bevelHtml = bevelStyle ? `<div style="${styleToString(bevelStyle)}"></div>` : "";
+  return `<div aria-hidden="true" style="${styleToString(reflectionStyle)}"><div style="${styleToString(contentStyle)}"><img src="${escapeHtml(src)}" alt="" style="${styleToString(imageStyle)}" />${bevelHtml}</div></div>`;
 }
 
 function buildMasterElementsHtml(presentation, masterFormatting, getSrc) {
@@ -290,9 +277,9 @@ function buildMasterElementsHtml(presentation, masterFormatting, getSrc) {
 
     const bevelStyle = buildBevelOverlayStyle(media);
     const bevelHtml = bevelStyle ? `<div style="${styleToString(bevelStyle)}"></div>` : "";
-    const reflectionHtml = buildReflectionHtml(media, src, index);
+    const reflectionHtml = isVideo ? "" : buildReflectionHtml(media, src);
 
-    return `<div style="${wrapperStyle}">${inner}${bevelHtml}${reflectionHtml}</div>`;
+    return `<div style="${wrapperStyle}">${inner}${bevelHtml}</div>${reflectionHtml}`;
   }).join("");
 
   return textsHtml + mediaHtml;
@@ -372,13 +359,13 @@ function buildSlideSection(slide, width, height, getSrc, masterFormatting, prese
 
       const bevelStyle = buildBevelOverlayStyle(media);
       const bevelHtml = bevelStyle ? `<div style="${styleToString(bevelStyle)}"></div>` : "";
-      const reflectionHtml = buildReflectionHtml(media, src);
+      const reflectionHtml = isVideo ? "" : buildReflectionHtml(media, src);
 
-      const innerHtml = `${mediaHtml}${bevelHtml}${reflectionHtml}`;
+      const innerHtml = `${mediaHtml}${bevelHtml}`;
       const adjustedMediaAnim = animation && adjustedSeqMap.has(animation.id)
         ? { ...animation, sequence: adjustedSeqMap.get(animation.id) }
         : animation;
-      return applyFragment(innerHtml, wrapperStyle, adjustedMediaAnim);
+      return `${applyFragment(innerHtml, wrapperStyle, adjustedMediaAnim)}${reflectionHtml}`;
     })
     .join("");
 

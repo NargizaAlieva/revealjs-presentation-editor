@@ -7,10 +7,11 @@ import {
   buildMediaInnerStyle,
   buildMediaFilterStyle,
   buildBevelOverlayStyle,
+  buildMediaReflectionStyle,
+  buildMediaReflectionContentStyle,
 } from "../../core/render/revealRenderer";
 import { paragraphsToHTML } from "../../core/text/textFormatting";
 import { getPlaceholderFormatting, getPlaceholderPadding, getPlaceholderBackground, getSlideContentIds } from "../../core/render/slidesetRenderUtils";
-import { REFLECTION_PRESETS } from "../../core/model/imageEffects";
 import SlideDecorations from "../canvas/SlideDecorations";
 import "./SlideThumbnail.css";
 
@@ -39,29 +40,8 @@ function ThumbnailMedia({ media, index }) {
   const cssFilter = buildMediaFilterStyle(media);
   const bevelStyle = buildBevelOverlayStyle(media);
 
-  const refId = media.effects?.reflectionId;
-  const rp = refId && refId !== "none" ? REFLECTION_PRESETS.find((p) => p.id === refId) : null;
-  const reflection = rp && rp.size > 0 ? (() => {
-    const elH = media.height ?? 200;
-    const elW = media.width ?? 200;
-    const refH = Math.round((rp.size / 100) * elH);
-    return {
-      position: "absolute",
-      left: `${media.position?.x ?? 0}px`,
-      top: `${(media.position?.y ?? 0) + elH + (rp.offset ?? 0)}px`,
-      width: `${elW}px`,
-      height: `${refH}px`,
-      objectFit: "cover",
-      objectPosition: "top",
-      transform: "scaleY(-1)",
-      opacity: rp.opacity,
-      ...(rp.blur > 0 ? { filter: `blur(${rp.blur}px)` } : {}),
-      WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
-      maskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
-      pointerEvents: "none",
-      zIndex: media["z-index"] ?? 1,
-    };
-  })() : null;
+  const reflectionStyle = buildMediaReflectionStyle(media);
+  const reflectionContentStyle = buildMediaReflectionContentStyle(media);
 
   const isVideo = media["media-type"] === "video";
   const mediaEl = isVideo
@@ -74,7 +54,14 @@ function ThumbnailMedia({ media, index }) {
         {mediaEl}
         {bevelStyle && <div style={bevelStyle} />}
       </div>
-      {reflection && !isVideo && <img src={src} alt="" style={reflection} />}
+      {reflectionStyle && !isVideo && (
+        <div style={reflectionStyle} aria-hidden="true">
+          <div style={reflectionContentStyle}>
+            <img src={src} alt="" style={{ ...innerStyle, ...(cssFilter ? { filter: cssFilter } : {}) }} />
+            {bevelStyle && <div style={bevelStyle} />}
+          </div>
+        </div>
+      )}
     </>
   );
 }

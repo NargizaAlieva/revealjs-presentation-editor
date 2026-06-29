@@ -6,9 +6,9 @@ import {
   buildMediaInnerStyle,
   buildMediaFilterStyle,
   buildBevelOverlayStyle,
+  buildMediaReflectionStyle,
+  buildMediaReflectionContentStyle,
 } from "../../../core/render/revealRenderer";
-import { REFLECTION_PRESETS } from "../../../core/model/imageEffects";
-import { getStyleById } from "../../../core/model/imageStyles";
 import MediaElementHandles, { RESIZE_HANDLES } from "./media/MediaElementHandles";
 import MediaElementMenus from "./media/MediaElementMenus";
 import useMediaCrop from "./media/hooks/useMediaCrop";
@@ -97,15 +97,11 @@ export default function MediaElement({
     startCropElementDrag,
   });
 
-  // ── Styles ──────────────────────────────────────────────────────────────
-
-  const activeStyleId = previewStyleId ?? externalPreviewStyleId ?? media.effects?.["style-id"];
-  const activeStyleCss = activeStyleId ? getStyleById(activeStyleId).css : {};
-  const baseContainerStyle = buildMediaContainerStyle(effectiveMedia, 0);
-  const combinedTransform = [
-    baseContainerStyle.transform ?? null,
-    activeStyleCss.transform ?? null,
-  ].filter(Boolean).join(" ");
+  const activeStyleId = previewStyleId ?? externalPreviewStyleId ?? effectiveMedia.effects?.["style-id"];
+  const styledMedia = activeStyleId === effectiveMedia.effects?.["style-id"]
+    ? effectiveMedia
+    : { ...effectiveMedia, effects: { ...(effectiveMedia.effects ?? {}), "style-id": activeStyleId } };
+  const baseContainerStyle = buildMediaContainerStyle(styledMedia);
 
   const { maskImage, WebkitMaskImage, ...baseContainerWithoutMask } = baseContainerStyle;
   const softEdgeMaskStyle = maskImage ? { maskImage, WebkitMaskImage } : {};
@@ -124,8 +120,6 @@ export default function MediaElement({
       }
     : {
         ...baseContainerWithoutMask,
-        ...activeStyleCss,
-        ...(combinedTransform ? { transform: combinedTransform } : {}),
         overflow: "visible",
         willChange: "transform",
       };
@@ -134,11 +128,11 @@ export default function MediaElement({
     ? { width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "auto" }
     : buildMediaInnerStyle(media);
 
-  const mediaFilter = buildMediaFilterStyle(effectiveMedia);
+  const mediaFilter = buildMediaFilterStyle(styledMedia);
   const filteredInnerStyle = mediaFilter ? { ...innerStyle, filter: mediaFilter } : innerStyle;
-  const bevelOverlayStyle = buildBevelOverlayStyle(effectiveMedia);
-
-  // ── Crop geometry (canvas-space) ─────────────────────────────────────────
+  const bevelOverlayStyle = buildBevelOverlayStyle(styledMedia);
+  const reflectionStyle = buildMediaReflectionStyle(styledMedia, { relative: true });
+  const reflectionContentStyle = buildMediaReflectionContentStyle(styledMedia);
 
   const {
     width: W,
@@ -163,8 +157,6 @@ export default function MediaElement({
       w:  { left: x1, top: midY },
     }[id];
   };
-
-  // ── Portal crop overlay ──────────────────────────────────────────────────
 
   const pScale = cropPortalRect ? cropPortalRect.width / W : 1;
   const pL = cropPortalRect?.left ?? 0;
@@ -284,8 +276,6 @@ export default function MediaElement({
       )
     : null;
 
-  // ── Empty placeholder render ─────────────────────────────────────────────
-
   if (!resolvedSrc && !isVideo) {
     return (
       <div
@@ -313,8 +303,6 @@ export default function MediaElement({
       </div>
     );
   }
-
-  // ── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div
@@ -361,7 +349,7 @@ export default function MediaElement({
           {isVideo ? (
             <>
               <video
-                src={resolvedSrc} className="canvas-media" style={innerStyle}
+                src={resolvedSrc} className="canvas-media" style={filteredInnerStyle}
                 preload="metadata"
                 controls={isPlayingVideo}
                 onLoadedMetadata={(e) => { e.target.currentTime = 0; }}
@@ -395,35 +383,14 @@ export default function MediaElement({
         <div style={bevelOverlayStyle} />
       )}
 
-      {/* Reflection overlay — positioned below the element, outside overflow:hidden */}
-      {(() => {
-        const refId = effectiveMedia.effects?.reflectionId;
-        if (!refId || refId === "none") return null;
-        const rp = REFLECTION_PRESETS.find((p) => p.id === refId);
-        if (!rp || rp.size === 0) return null;
-        const elH = media.height ?? 200;
-        const refH = Math.round((rp.size / 100) * elH);
-        return (
-          <img
-            src={resolvedSrc} alt="" aria-hidden="true"
-            style={{
-              position: "absolute",
-              left: 0,
-              top: elH + (rp.offset ?? 0),
-              width: "100%",
-              height: refH,
-              objectFit: "cover",
-              objectPosition: "top",
-              transform: "scaleY(-1)",
-              opacity: rp.opacity,
-              filter: rp.blur > 0 ? `blur(${rp.blur}px)` : undefined,
-              WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
-              maskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
-              pointerEvents: "none",
-            }}
-          />
-        );
-      })()}
+      {!isCropping && !isVideo && reflectionStyle && (
+        <div style={reflectionStyle} aria-hidden="true">
+          <div style={reflectionContentStyle}>
+            <img src={resolvedSrc} alt="" className="canvas-media" style={filteredInnerStyle} />
+            {bevelOverlayStyle && <div style={bevelOverlayStyle} />}
+          </div>
+        </div>
+      )}
 
       {isPrimarySelected && !isCropping && (
         <MediaElementHandles

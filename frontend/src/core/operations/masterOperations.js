@@ -2,6 +2,7 @@ import { createPlaceholderPseudoElement } from "./layoutOperations";
 import { TITLE_PLACEHOLDER, FOOTER_PLACEHOLDERS, createMasterTextElement } from "../model/masterDefaults";
 import { applyFormattingToParagraphs } from "../text/textFormatting";
 import { createParagraphId } from "../utils/presentationUtils";
+import { clampCrop } from "../model/mediaCrop";
 
 const MASTER_FOOTER_IDS = ["master-footer-date", "master-footer-center", "master-footer-page"];
 
@@ -165,8 +166,10 @@ export const updateMasterTheme = (
 };
 
 const scaleElement = (el, scaleX, scaleY, newW, newH) => {
-  const [ct = 0, cr = 0, cb = 0, cl = 0] = el.crop ?? [];
+  const rawCrop = Array.isArray(el.crop) ? el.crop : [];
+  const [ct, cr, cb, cl] = clampCrop(el.crop);
   const hasCrop = ct !== 0 || cr !== 0 || cb !== 0 || cl !== 0;
+  const hadStoredCrop = rawCrop.some((value) => Number(value) !== 0);
   const isMedia = el["file-link"] != null || el["media-type"] != null;
   const wFrac = 1 - cl / 100 - cr / 100;
   const hFrac = 1 - ct / 100 - cb / 100;
@@ -196,6 +199,7 @@ const scaleElement = (el, scaleX, scaleY, newW, newH) => {
     position: { x, y },
     width: w,
     height: h,
+    ...(hadStoredCrop ? { crop: [ct, cr, cb, cl] } : {}),
     ...(scaledSrcW != null ? { "source-width": scaledSrcW } : {}),
     ...(scaledSrcH != null ? { "source-height": scaledSrcH } : {}),
   };

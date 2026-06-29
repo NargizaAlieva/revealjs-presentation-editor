@@ -6,6 +6,7 @@ import {
   SOFT_EDGES_PRESETS,
   BEVEL_PRESETS,
   ROTATION3D_PRESETS,
+  REFLECTION_PRESETS,
 } from "../model/imageEffects";
 import { TRANSITIONS, DEFAULT_TRANSITION } from "../model/transitionDefaults";
 import {
@@ -14,6 +15,7 @@ import {
   getMediaElements,
 } from "../render/slidesetRenderUtils";
 import { getStyleById } from "../model/imageStyles";
+import { clampCrop, getCroppedMediaGeometry } from "../model/mediaCrop";
 
 function findById(list, id) { return id ? list.find((p) => p.id === id) : null; }
 
@@ -145,14 +147,75 @@ export function buildMediaFilterStyle(media) {
   return parts.length > 0 ? parts.join(" ") : undefined;
 }
 
+export function getMediaReflectionPreset(media) {
+  const reflectionId = media.effects?.reflectionId;
+  if (!reflectionId || reflectionId === "none") return null;
+  const preset = findById(REFLECTION_PRESETS, reflectionId);
+  return preset?.size > 0 ? preset : null;
+}
+
+export function buildMediaReflectionStyle(media, { relative = false } = {}) {
+  const preset = getMediaReflectionPreset(media);
+  if (!preset) return null;
+  const width = media.width ?? 200;
+  const height = media.height ?? 120;
+  return {
+    position: "absolute",
+    left: relative ? 0 : (media.position?.x ?? 0),
+    top: (
+      relative
+        ? height
+        : (media.position?.y ?? 0) + height
+    ) + (preset.offset ?? 0),
+    width,
+    height: Math.max(1, Math.round((preset.size / 100) * height)),
+    overflow: "hidden",
+    opacity: preset.opacity,
+    ...(preset.blur > 0 ? { filter: `blur(${preset.blur}px)` } : {}),
+    WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
+    maskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
+    pointerEvents: "none",
+    zIndex: media["z-index"] ?? 1,
+  };
+}
+
+export function buildMediaReflectionContentStyle(media) {
+  const containerStyle = buildMediaContainerStyle(media);
+  const {
+    border,
+    borderWidth,
+    borderStyle,
+    borderColor,
+    borderRadius,
+  } = containerStyle;
+  return {
+    position: "absolute",
+    inset: 0,
+    width: media.width ?? 200,
+    height: media.height ?? 120,
+    overflow: "hidden",
+    boxSizing: "border-box",
+    ...(border ? { border } : {}),
+    ...(borderWidth ? { borderWidth } : {}),
+    ...(borderStyle ? { borderStyle } : {}),
+    ...(borderColor ? { borderColor } : {}),
+    ...(borderRadius ? { borderRadius } : {}),
+    transform: "scaleY(-1)",
+    transformOrigin: "center center",
+  };
+}
+
 export function buildMediaInnerStyle(media) {
   const scale = media.scale ?? 1;
-  const [ct = 0, cr = 0, cb = 0, cl = 0] = media.crop ?? [];
-  const hasCrop = ct !== 0 || cr !== 0 || cb !== 0 || cl !== 0;
+  const rawCrop = Array.isArray(media.crop) ? media.crop : [];
+  const [ct, , , cl] = clampCrop(media.crop);
+  const hasCrop = rawCrop.some((value) => Number(value) !== 0);
 
   if (hasCrop) {
-    const srcW = (media["source-width"] ?? media.width ?? 200) * scale;
-    const srcH = (media["source-height"] ?? media.height ?? 120) * scale;
+    const {
+      renderedSourceWidth: srcW,
+      renderedSourceHeight: srcH,
+    } = getCroppedMediaGeometry(media);
     return {
       position: "absolute",
       width: `${srcW}px`,
@@ -160,6 +223,9 @@ export function buildMediaInnerStyle(media) {
       left: `${-(cl / 100) * srcW}px`,
       top: `${-(ct / 100) * srcH}px`,
       objectFit: "fill",
+      maxWidth: "none",
+      maxHeight: "none",
+      margin: 0,
     };
   }
 
@@ -168,6 +234,9 @@ export function buildMediaInnerStyle(media) {
     height: "100%",
     objectFit: "contain",
     display: "block",
+    maxWidth: "none",
+    maxHeight: "none",
+    margin: 0,
     ...(scale !== 1 ? { transform: `scale(${scale})`, transformOrigin: "center center" } : {}),
   };
 }

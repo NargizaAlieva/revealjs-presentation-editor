@@ -7,6 +7,9 @@ import {
   useState,
 } from "react";
 import {
+  clampCrop,
+  clampCropEdges,
+  clampCropPan,
   computeCropOrigin,
   computeCropResult,
 } from "../../../../../core/operations/mediaOperations";
@@ -167,7 +170,7 @@ export default function useMediaCrop({
         if (activeEdges.includes("w")) {
           nextCrop[3] = startCrop[3] + (deltaX / screenW) * 100;
         }
-        setLocalCrop(nextCrop);
+        setLocalCrop(clampCropEdges(nextCrop, activeEdges));
       };
       const handleMouseUp = () => {
         window.removeEventListener("mousemove", handleMouseMove);
@@ -201,16 +204,22 @@ export default function useMediaCrop({
         const nextRight = cropRight + deltaXPct;
         const nextTop = cropTop - deltaYPct;
         const nextBottom = cropBottom + deltaYPct;
+        const nextCrop = clampCropPan([
+          nextTop,
+          nextRight,
+          nextBottom,
+          nextLeft,
+        ]);
         const actualDeltaX =
-          ((cropLeft - nextLeft) / 100) * startOrigin.srcW;
+          ((cropLeft - nextCrop[3]) / 100) * startOrigin.srcW;
         const actualDeltaY =
-          ((cropTop - nextTop) / 100) * startOrigin.srcH;
+          ((cropTop - nextCrop[0]) / 100) * startOrigin.srcH;
         setCropOrigin({
           ...startOrigin,
           fullX: startOrigin.fullX + actualDeltaX,
           fullY: startOrigin.fullY + actualDeltaY,
         });
-        setLocalCrop([nextTop, nextRight, nextBottom, nextLeft]);
+        setLocalCrop(nextCrop);
       };
       const handleMouseUp = () => {
         window.removeEventListener("mousemove", handleMouseMove);
@@ -326,8 +335,17 @@ export default function useMediaCrop({
           ((fullX + srcW - cropWindowX - cropWindowWidth) / srcW) * 100;
         const nextBottom =
           ((fullY + srcH - cropWindowY - cropWindowHeight) / srcH) * 100;
-        setCropOrigin({ fullX, fullY, srcW, srcH });
-        setLocalCrop([nextTop, nextRight, nextBottom, nextLeft]);
+        const scale = startOrigin.scale ?? 1;
+        setCropOrigin({
+          ...startOrigin,
+          fullX,
+          fullY,
+          srcW,
+          srcH,
+          sourceWidth: srcW / scale,
+          sourceHeight: srcH / scale,
+        });
+        setLocalCrop(clampCrop([nextTop, nextRight, nextBottom, nextLeft]));
       };
       const handleMouseUp = () => {
         window.removeEventListener("mousemove", handleMouseMove);
