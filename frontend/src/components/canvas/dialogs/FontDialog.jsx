@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { getAvailableFonts } from "../../../core/model/fontConfig";
-import "./TextContextDialogs.css";
+import "./dialogs.css";
 
 export default function FontDialog({
   formatting = {},

@@ -8,7 +8,7 @@ import EmailLinkPanel from "./hyperlink/EmailLinkPanel";
 import NewDocumentPanel from "./hyperlink/NewDocumentPanel";
 import PlaceLinkPanel from "./hyperlink/PlaceLinkPanel";
 import WebLinkPanel from "./hyperlink/WebLinkPanel";
-import "./TextContextDialogs.css";
+import "./dialogs.css";
 
 const LINK_TYPES = [
   { value: "web", label: "Existing File or Web Page", icon: <MdWeb /> },

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import "./TextContextDialogs.css";
+import "./dialogs.css";
 
 const numberFrom = (value, fallback = 0) => {
   const parsed = Number.parseFloat(value);
