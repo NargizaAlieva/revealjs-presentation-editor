@@ -4,6 +4,8 @@ import FormatToolbar from "../tools/FormatToolbar";
 import PlaceholderActionButtons from "./text/PlaceholderActionButtons";
 import TextEditableSurface from "./text/TextEditableSurface";
 import TextElementHandles, { TextSelectionBorders } from "./text/TextElementHandles";
+import useTextSelection from "./text/hooks/useTextSelection";
+import useTextToolbar from "./text/hooks/useTextToolbar";
 import "./TextElement.css";
 import { getPlaceholderFormatting, getPlaceholderPadding, getPlaceholderBackground } from "../../../core/render/slidesetRenderUtils";
 import {
@@ -31,7 +33,6 @@ import {
 } from "../../../core/operations/textOperations";
 import { extractPlainTextFromParagraphs } from "../../../core/text/textFormatting";
 
-const TOOLBAR_WIDTH = 590;
 const TEXT_BOX_PLACEHOLDER = "Click to edit text";
 
 export default function TextElement({
@@ -68,30 +69,45 @@ export default function TextElement({
   onPlaceholderImageClick,
   onPlaceholderVideoClick,
 }) {
-  const [toolbarPos, setToolbarPos] = useState({ top: 0, left: 0 });
-  const [isToolbarOpen, setIsToolbarOpen] = useState(false);
   const [paragraphTops, setParagraphTops] = useState([]);
   const [editableOffsetTop, setEditableOffsetTop] = useState(0);
-  const [savedSelState, setSavedSelState] = useState(null);
   const editableRef = useRef(null);
   const elementRef = useRef(null);
   const lastTypedHTMLRef = useRef(null);
   const lastAutoFitHeightRef = useRef(null);
-  const savedSelectionRef = useRef(null);
-  const contextSelectionRef = useRef(null);
-  const selectionFrameRef = useRef(null);
   const isDeletingRef = useRef(false);
   const isTypingRef = useRef(false);
   const toolbarFormInputActiveRef = useRef(false);
-
-useEffect(() => {
-  if (clearSelectionSignal === 0) return;
-  savedSelectionRef.current = null;
-  setTimeout(() => {
-    setSavedSelState(null);
-    setIsToolbarOpen(false);
-  }, 0);
-}, [clearSelectionSignal]);
+  const {
+    savedSelection: savedSelState,
+    savedSelectionRef,
+    rememberSelection,
+    clearSavedSelection,
+    saveCurrentSelection,
+    captureContextSelection,
+    getContextMenuSelection,
+  } = useTextSelection({
+    editableRef,
+    textElementId: textElement.id,
+    clearSelectionSignal,
+    onSaveSelection,
+  });
+  const {
+    position: toolbarPos,
+    isOpen: isToolbarOpen,
+    setIsOpen: setIsToolbarOpen,
+    open: openToolbar,
+    updatePosition: updateToolbarPosition,
+    syncWithSelection: syncSelectionToolbar,
+  } = useTextToolbar({
+    editableRef,
+    elementRef,
+    textElementId: textElement.id,
+    isPrimarySelected,
+    clearSelectionSignal,
+    onSelect,
+    rememberSelection,
+  });
 
   const formatting = textElement.paragraphs?.[0]?.formatting ?? {};
   const masterFormatting = presentation?.slideset?.master?.formatting ?? {};
@@ -199,53 +215,6 @@ useEffect(() => {
     isContentPlaceholderPrompt &&
     (onPlaceholderImageClick || onPlaceholderVideoClick);
 
-  const saveCurrentSelection = () => {
-    const el = editableRef.current;
-    if (!el) return null;
-    const sel = window.getSelection();
-    if (!sel?.rangeCount) {
-      savedSelectionRef.current = null;
-      setSavedSelState(null);
-      onSaveSelection?.(textElement.id, null);
-      return null;
-    }
-    const offsets = sel.isCollapsed
-      ? getCollapsedCursorOffset(el)
-      : getSelectionOffsets(el);
-    savedSelectionRef.current = offsets;
-    setSavedSelState(offsets);
-    onSaveSelection?.(textElement.id, offsets);
-    return offsets;
-  };
-
-  const isExpandedSelection = (selection) =>
-    Boolean(
-      selection &&
-        (selection.paragraphIdx !==
-          (selection.endParagraphIdx ?? selection.paragraphIdx) ||
-          selection.rangeStart !== selection.rangeEnd),
-    );
-
-  const getContextMenuSelection = () => {
-    const el = editableRef.current;
-    if (!el) return null;
-
-    const liveSelection = getSelectionOffsets(el);
-    const savedSelection = savedSelectionRef.current;
-    const selection =
-      (isExpandedSelection(liveSelection) ? liveSelection : null) ??
-      contextSelectionRef.current ??
-      (isExpandedSelection(savedSelection) ? savedSelection : null) ??
-      liveSelection;
-
-    if (selection) {
-      savedSelectionRef.current = selection;
-      setSavedSelState(selection);
-      onSaveSelection?.(textElement.id, selection);
-    }
-    return selection;
-  };
-
   const innerHTML = paragraphsToHTML(textElement.paragraphs, masterFormatting, placeholderFormatting);
 
   useEffect(() => {
@@ -268,7 +237,7 @@ useEffect(() => {
         setCaretOffset(el, savedCaret);
       }
     }
-  }, [innerHTML, textElement.paragraphs]);
+  }, [innerHTML, savedSelectionRef, textElement.paragraphs]);
 
   useLayoutEffect(() => {
     const editable = editableRef.current;
@@ -395,40 +364,6 @@ useEffect(() => {
     };
   }, [innerHTML, overflowMode, textElement.height, textElement.width]);
 
-  const updateToolbarPosition = (anchorPoint = null) => {
-    setTimeout(() => {
-      const editableEl = editableRef.current;
-      const wrapperEl = elementRef.current;
-      const selection = window.getSelection();
-      let rect = null;
-      if (anchorPoint) {
-        rect = {
-          top: anchorPoint.y,
-          bottom: anchorPoint.y,
-          left: anchorPoint.x,
-        };
-      }
-      if (editableEl && selection && selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        if (!rect && editableEl.contains(range.startContainer)) {
-          const r = range.getBoundingClientRect();
-          if (r && !(r.top === 0 && r.left === 0)) rect = r;
-        }
-      }
-      if (!rect && wrapperEl) rect = wrapperEl.getBoundingClientRect();
-      if (!rect) return;
-      const toolbarHeight = 80;
-      const topAbove = rect.top - toolbarHeight - 8;
-      const topBelow = rect.bottom + 8;
-      const top = topAbove > 0 ? topAbove : topBelow;
-      const left = Math.max(
-        8,
-        Math.min(rect.left, window.innerWidth - TOOLBAR_WIDTH - 8),
-      );
-      setToolbarPos({ top, left });
-    }, 0);
-  };
-
   const handleFormat = (id, updates) => {
     const el = editableRef.current;
     const liveOffsets =
@@ -440,60 +375,6 @@ useEffect(() => {
     }
     onFormatTextElement(id, updates);
   };
-
-  const openToolbar = (anchorPoint = null) => {
-    onSelect(textElement.id);
-    setIsToolbarOpen(true);
-    updateToolbarPosition(anchorPoint);
-  };
-
-  const syncSelectionToolbar = () => {
-    const el = editableRef.current;
-    if (!el || document.activeElement !== el) return;
-    const activeEl = document.activeElement;
-    if (activeEl && activeEl.closest?.(".format-toolbar")) return;
-    const selection = window.getSelection();
-    const hasTextSelection =
-      selection &&
-      !selection.isCollapsed &&
-      selection.rangeCount > 0 &&
-      el.contains(selection.getRangeAt(0).startContainer) &&
-      el.contains(selection.getRangeAt(0).endContainer);
-
-    if (!hasTextSelection) {
-      setIsToolbarOpen(false);
-      return;
-    }
-
-    const offsets = getSelectionOffsets(el);
-    if (!offsets) return;
-    savedSelectionRef.current = offsets;
-    setSavedSelState(offsets);
-    onSaveSelection?.(textElement.id, offsets);
-    openToolbar();
-  };
-
-  useEffect(() => {
-    if (isPrimarySelected && isToolbarOpen) updateToolbarPosition();
-  }, [isPrimarySelected, isToolbarOpen]);
-
-  useEffect(() => {
-    const handleSelectionChange = () => {
-      if (selectionFrameRef.current)
-        cancelAnimationFrame(selectionFrameRef.current);
-      selectionFrameRef.current = requestAnimationFrame(() => {
-        selectionFrameRef.current = null;
-        syncSelectionToolbar();
-      });
-    };
-
-    document.addEventListener("selectionchange", handleSelectionChange);
-    return () => {
-      document.removeEventListener("selectionchange", handleSelectionChange);
-      if (selectionFrameRef.current)
-        cancelAnimationFrame(selectionFrameRef.current);
-    };
-  });
 
   return (
     <div
@@ -517,18 +398,7 @@ useEffect(() => {
         ...(placeholderPadding ? { padding: placeholderPadding } : {}),
       }}
       onMouseDown={(event) => {
-        if (event.button === 2) {
-          const liveSelection = editableRef.current
-            ? getSelectionOffsets(editableRef.current)
-            : null;
-          const savedExpanded = isExpandedSelection(savedSelectionRef.current)
-            ? savedSelectionRef.current
-            : null;
-          contextSelectionRef.current =
-            (isExpandedSelection(liveSelection) ? liveSelection : null) ??
-            savedExpanded ??
-            liveSelection;
-        }
+        if (event.button === 2) captureContextSelection();
         if (
           event.button === 0 &&
           (!isSelected ||
@@ -676,8 +546,7 @@ useEffect(() => {
             lastTypedHTMLRef.current = emptyHTML;
             onChangeParagraphs?.(textElement.id, emptyParagraphs, true);
           }
-          savedSelectionRef.current = null;
-          setSavedSelState(null);
+          clearSavedSelection(false);
         }}
         onMouseUp={(e) => {
           if (e.button !== 2) saveCurrentSelection();
@@ -871,10 +740,8 @@ useEffect(() => {
               lastTypedHTMLRef.current = promptHTML;
               onChangeParagraphs?.(textElement.id, promptParagraphs, true);
             }
-            savedSelectionRef.current = null;
-            setSavedSelState(null);
+            clearSavedSelection();
             setIsToolbarOpen(false);
-            onSaveSelection?.(textElement.id, null);
             isDeletingRef.current = false;
             isTypingRef.current = false;
             onCommitHistory?.();
