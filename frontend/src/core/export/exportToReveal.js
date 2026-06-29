@@ -18,6 +18,7 @@ import {
   buildAnimationMap,
   styleToString,
 } from "../render/revealRenderer";
+import { resolveParagraphIndentStyles } from "../text/textFormatting";
 import { getListMarker, getListIndent } from "../utils/listUtils";
 import { REFLECTION_PRESETS } from "../model/imageEffects";
 import { downloadHtml } from "./downloadHtml";
@@ -146,6 +147,12 @@ function buildPStyle(paragraphFormatting, listPaddingLeft = null) {
   const indent = paragraphFormatting["indent-level"] ?? 0;
   const paddingLeft = listPaddingLeft
     ?? (indent > 0 ? getListIndent(indent - 1, "indent") : null);
+  const indentStyles = resolveParagraphIndentStyles(
+    paragraphFormatting,
+    {},
+    {},
+    paddingLeft,
+  );
   return [
     paragraphFormatting.size ? `font-size: ${paragraphFormatting.size}` : "",
     paragraphFormatting.align ? `text-align: ${paragraphFormatting.align}` : "",
@@ -153,7 +160,8 @@ function buildPStyle(paragraphFormatting, listPaddingLeft = null) {
       ? `margin: ${paragraphFormatting.margin}`
       : "margin: 0 0 4px 0",
     paragraphFormatting["line-spacing"] ? `line-height: ${paragraphFormatting["line-spacing"]}` : "",
-    paddingLeft ? `padding-left: ${paddingLeft}` : "",
+    indentStyles.paddingLeft ? `padding-left: ${indentStyles.paddingLeft}` : "",
+    indentStyles.textIndent ? `text-indent: ${indentStyles.textIndent}` : "",
   ].filter(Boolean).join("; ");
 }
 

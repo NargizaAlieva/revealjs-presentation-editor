@@ -161,6 +161,58 @@ export const resolveEffectiveFormatting = (
   ...paragraphFormatting,
 });
 
+const parseIndentValue = (value) => {
+  if (value == null || value === "") return null;
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+export const resolveParagraphIndentStyles = (
+  formatting = {},
+  placeholderFormatting = {},
+  masterFormatting = {},
+  basePaddingLeft = null,
+) => {
+  const resolveValue = (key) =>
+    validStyleValue(formatting[key]) ??
+    validStyleValue(placeholderFormatting[key]) ??
+    validStyleValue(masterFormatting[key]);
+
+  const specialIndent = resolveValue("special-indent");
+  const specialIndentBy = parseIndentValue(resolveValue("special-indent-by"));
+  const legacyTextIndent = parseIndentValue(resolveValue("text-indent"));
+
+  let paddingLeft = basePaddingLeft;
+  let textIndent = null;
+
+  if (
+    (specialIndent === "first-line" || specialIndent === "hanging") &&
+    specialIndentBy != null &&
+    specialIndentBy > 0
+  ) {
+    if (specialIndent === "first-line") {
+      textIndent = `${specialIndentBy}px`;
+    } else {
+      textIndent = `-${specialIndentBy}px`;
+      paddingLeft = basePaddingLeft
+        ? `calc(${basePaddingLeft} + ${specialIndentBy}px)`
+        : `${specialIndentBy}px`;
+    }
+  } else if (legacyTextIndent != null && legacyTextIndent !== 0) {
+    if (legacyTextIndent > 0) {
+      textIndent = `${legacyTextIndent}px`;
+    } else {
+      const hangingBy = Math.abs(legacyTextIndent);
+      textIndent = `-${hangingBy}px`;
+      paddingLeft = basePaddingLeft
+        ? `calc(${basePaddingLeft} + ${hangingBy}px)`
+        : `${hangingBy}px`;
+    }
+  }
+
+  return { paddingLeft, textIndent };
+};
+
 export const buildRunStyles = (runFormatting = {}) => {
   const styles = [];
   if (runFormatting.weight != null) {
@@ -232,6 +284,12 @@ export const paragraphsToHTML = (paragraphs, masterFormatting = {}, placeholderF
 
       const listLevel = Number(r(formatting["indent-level"], placeholderFormatting["indent-level"], masterFormatting["indent-level"]) ?? 0);
       const listPaddingLeft = listType ? `calc(${getListIndent(listLevel, listType)} + 1.8em)` : null;
+      const { paddingLeft, textIndent } = resolveParagraphIndentStyles(
+        formatting,
+        placeholderFormatting,
+        masterFormatting,
+        listPaddingLeft,
+      );
 
       const markerHtml = renderBullets && listType
         ? `<span style="display:inline-block;width:1.8em;margin-left:calc(-1.8em);text-align:center;">${
@@ -259,7 +317,8 @@ export const paragraphsToHTML = (paragraphs, masterFormatting = {}, placeholderF
         r(formatting.margin, placeholderFormatting.margin, masterFormatting.margin)
           ? `margin:${r(formatting.margin, placeholderFormatting.margin, masterFormatting.margin)}`
           : "",
-        listPaddingLeft ? `padding-left:${listPaddingLeft}` : "",
+        paddingLeft ? `padding-left:${paddingLeft}` : "",
+        textIndent ? `text-indent:${textIndent}` : "",
       ]
         .filter(Boolean)
         .join(";");

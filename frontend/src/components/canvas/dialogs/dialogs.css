@@ -19,6 +19,10 @@
   font: 14px "Segoe UI", Arial, sans-serif;
 }
 
+.paragraph-dialog {
+  width: min(720px, calc(100vw - 32px));
+}
+
 .text-context-dialog-header {
   height: 42px;
   display: flex;
@@ -81,23 +85,44 @@
 .paragraph-dialog-grid {
   display: grid;
   gap: 8px 12px;
+  min-width: 0;
 }
 
 .paragraph-dialog-grid label {
   display: grid;
-  grid-template-columns: 92px 106px;
+  grid-template-columns: minmax(88px, max-content) minmax(0, 1fr);
+  min-width: 0;
+  align-items: center;
+}
+
+.paragraph-dialog-grid label > span,
+.paragraph-dialog-grid label > input,
+.paragraph-dialog-grid label > select {
+  min-width: 0;
+}
+
+.paragraph-dialog-grid input,
+.paragraph-dialog-grid select {
+  width: 100%;
 }
 
 .paragraph-dialog-grid--indent {
-  grid-template-columns: 1fr 1fr 0.75fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .paragraph-dialog-grid--spacing {
-  grid-template-columns: 1fr 1.4fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .paragraph-dialog-disabled {
   color: #999;
+}
+
+@media (max-width: 760px) {
+  .paragraph-dialog-grid--indent,
+  .paragraph-dialog-grid--spacing {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .text-context-dialog-actions {

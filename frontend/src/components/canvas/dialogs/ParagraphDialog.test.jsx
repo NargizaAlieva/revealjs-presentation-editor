@@ -57,7 +57,7 @@ describe("ParagraphDialog", () => {
   test("onApply receives margin string from Before/After inputs", () => {
     const onApply = vi.fn();
     renderDialog({ onApply });
-    // spinbuttons order: [0] indent "Before text", [1] disabled "By", [2] spacing "Before", [3] "After", [4] "At"
+    // spinbuttons order: [0] indent "Before text", [1] "By", [2] spacing "Before", [3] "After", [4] "At"
     const beforeInput = screen.getAllByRole("spinbutton")[2];
     fireEvent.change(beforeInput, { target: { value: "12" } });
     fireEvent.click(screen.getByRole("button", { name: "OK" }));
@@ -72,6 +72,79 @@ describe("ParagraphDialog", () => {
     fireEvent.click(screen.getByRole("button", { name: "OK" }));
     expect(onApply).toHaveBeenCalledWith(
       expect.objectContaining({ "line-spacing": "1.5" }),
+    );
+  });
+
+  test("pre-fills line spacing mode from formatting.line-spacing", () => {
+    renderDialog({ formatting: { "line-spacing": "2" } });
+    expect(screen.getByLabelText(/line spacing/i).value).toBe("double");
+  });
+
+  test("Line Spacing preset controls At field like Word", () => {
+    renderDialog();
+    const lineSpacingSelect = screen.getByLabelText(/line spacing/i);
+    const atInput = screen.getByLabelText(/^at:/i);
+
+    expect(atInput).not.toBeDisabled();
+
+    fireEvent.change(lineSpacingSelect, { target: { value: "single" } });
+    expect(atInput).toBeDisabled();
+    expect(atInput.value).toBe("1");
+
+    fireEvent.change(lineSpacingSelect, { target: { value: "double" } });
+    expect(atInput).toBeDisabled();
+    expect(atInput.value).toBe("2");
+
+    fireEvent.change(lineSpacingSelect, { target: { value: "multiple" } });
+    expect(atInput).not.toBeDisabled();
+  });
+
+  test("onApply uses selected line spacing preset", () => {
+    const onApply = vi.fn();
+    renderDialog({ onApply });
+
+    fireEvent.change(screen.getByLabelText(/line spacing/i), {
+      target: { value: "single" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "OK" }));
+
+    expect(onApply).toHaveBeenCalledWith(
+      expect.objectContaining({ "line-spacing": "1" }),
+    );
+  });
+
+  test("Special controls whether By is enabled", () => {
+    renderDialog();
+    const specialSelect = screen.getByLabelText(/special/i);
+    const byInput = screen.getByLabelText(/by/i);
+
+    expect(byInput).toBeDisabled();
+
+    fireEvent.change(specialSelect, { target: { value: "first-line" } });
+    expect(byInput).not.toBeDisabled();
+
+    fireEvent.change(specialSelect, { target: { value: "none" } });
+    expect(byInput).toBeDisabled();
+  });
+
+  test("onApply includes special indent settings", () => {
+    const onApply = vi.fn();
+    renderDialog({ onApply });
+
+    fireEvent.change(screen.getByLabelText(/special/i), {
+      target: { value: "hanging" },
+    });
+    fireEvent.change(screen.getByLabelText(/by/i), {
+      target: { value: "18" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "OK" }));
+
+    expect(onApply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        "special-indent": "hanging",
+        "special-indent-by": 18,
+        "text-indent": "-18px",
+      }),
     );
   });
 });

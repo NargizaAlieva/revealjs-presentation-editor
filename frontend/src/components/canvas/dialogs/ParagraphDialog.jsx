@@ -16,8 +16,45 @@ const parseVerticalMargin = (margin) => {
   return { before: values[0] ?? 0, after: values[2] ?? values[0] ?? 0 };
 };
 
+const parseSpecialIndent = (formatting = {}) => {
+  const special = formatting["special-indent"];
+  const by = numberFrom(formatting["special-indent-by"], 0);
+
+  if (special === "first-line" || special === "hanging") {
+    return { special, by: Math.max(0, by) };
+  }
+
+  const legacyIndent = numberFrom(formatting["text-indent"], 0);
+  if (legacyIndent > 0) {
+    return { special: "first-line", by: legacyIndent };
+  }
+  if (legacyIndent < 0) {
+    return { special: "hanging", by: Math.abs(legacyIndent) };
+  }
+
+  return { special: "none", by: 0 };
+};
+
+const getLineSpacingMode = (value) => {
+  const numericValue = numberFrom(value, 1.15);
+  if (Math.abs(numericValue - 1) < 0.001) return "single";
+  if (Math.abs(numericValue - 1.5) < 0.001) return "one-and-half";
+  if (Math.abs(numericValue - 2) < 0.001) return "double";
+  return "multiple";
+};
+
+const getLineSpacingValueForMode = (mode, fallbackValue) => {
+  if (mode === "single") return 1;
+  if (mode === "one-and-half") return 1.5;
+  if (mode === "double") return 2;
+  return numberFrom(fallbackValue, 1.15);
+};
+
 export default function ParagraphDialog({ formatting = {}, onApply, onClose }) {
   const spacing = parseVerticalMargin(formatting.margin);
+  const specialIndent = parseSpecialIndent(formatting);
+  const initialLineSpacing = numberFrom(formatting["line-spacing"], 1.15);
+  const initialLineSpacingMode = getLineSpacingMode(initialLineSpacing);
   const [alignment, setAlignment] = useState(
     formatting.align === "mixed" ? "left" : (formatting.align ?? "left"),
   );
@@ -26,11 +63,25 @@ export default function ParagraphDialog({ formatting = {}, onApply, onClose }) {
   );
   const [before, setBefore] = useState(spacing.before);
   const [after, setAfter] = useState(spacing.after);
-  const [lineSpacing, setLineSpacing] = useState(
-    numberFrom(formatting["line-spacing"], 1.15),
-  );
+  const [lineSpacingMode, setLineSpacingMode] = useState(initialLineSpacingMode);
+  const [lineSpacing, setLineSpacing] = useState(initialLineSpacing);
+  const [special, setSpecial] = useState(specialIndent.special);
+  const [specialBy, setSpecialBy] = useState(specialIndent.by);
+
+  const specialIndentEnabled = special !== "none";
+  const isCustomLineSpacing = lineSpacingMode === "multiple";
+
+  const handleLineSpacingModeChange = (nextMode) => {
+    setLineSpacingMode(nextMode);
+    setLineSpacing(getLineSpacingValueForMode(nextMode, lineSpacing));
+  };
 
   const apply = () => {
+    const safeSpecialBy = Math.max(0, Number(specialBy) || 0);
+    const safeLineSpacing = Math.max(
+      0.5,
+      Number(getLineSpacingValueForMode(lineSpacingMode, lineSpacing)) || 1.15,
+    );
     onApply?.({
       align: alignment,
       "indent-level": Math.max(0, Math.min(4, Number(indentLevel) || 0)),
@@ -38,7 +89,15 @@ export default function ParagraphDialog({ formatting = {}, onApply, onClose }) {
         0,
         Number(after) || 0,
       )}px 0`,
-      "line-spacing": String(Math.max(0.5, Number(lineSpacing) || 1.15)),
+      "line-spacing": String(safeLineSpacing),
+      "special-indent": specialIndentEnabled ? special : null,
+      "special-indent-by": specialIndentEnabled ? safeSpecialBy : null,
+      "text-indent":
+        special === "first-line"
+          ? `${safeSpecialBy}px`
+          : special === "hanging"
+            ? `-${safeSpecialBy}px`
+            : null,
     });
     onClose?.();
   };
@@ -95,13 +154,27 @@ export default function ParagraphDialog({ formatting = {}, onApply, onClose }) {
             </label>
             <label>
               <span>Special:</span>
-              <select disabled value="none">
+              <select
+                value={special}
+                onChange={(event) => setSpecial(event.target.value)}
+              >
                 <option value="none">(none)</option>
+                <option value="first-line">First line</option>
+                <option value="hanging">Hanging</option>
               </select>
             </label>
-            <label className="paragraph-dialog-disabled">
+            <label
+              className={specialIndentEnabled ? undefined : "paragraph-dialog-disabled"}
+            >
               <span>By:</span>
-              <input disabled type="number" value="0" readOnly />
+              <input
+                disabled={!specialIndentEnabled}
+                type="number"
+                min="0"
+                step="1"
+                value={specialBy}
+                onChange={(event) => setSpecialBy(event.target.value)}
+              />
             </label>
           </div>
         </fieldset>
@@ -121,7 +194,13 @@ export default function ParagraphDialog({ formatting = {}, onApply, onClose }) {
             </label>
             <label>
               <span>Line Spacing:</span>
-              <select value="multiple" disabled>
+              <select
+                value={lineSpacingMode}
+                onChange={(event) => handleLineSpacingModeChange(event.target.value)}
+              >
+                <option value="single">Single</option>
+                <option value="one-and-half">1.5 lines</option>
+                <option value="double">Double</option>
                 <option value="multiple">Multiple</option>
               </select>
             </label>
@@ -138,6 +217,7 @@ export default function ParagraphDialog({ formatting = {}, onApply, onClose }) {
             <label>
               <span>At:</span>
               <input
+                disabled={!isCustomLineSpacing}
                 type="number"
                 min="0.5"
                 max="5"
