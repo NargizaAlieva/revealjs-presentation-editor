@@ -74,7 +74,7 @@ function MediaDecorationElement({ el, zIndex, interactive = false, onPromote }) 
   );
 }
 
-export default function SlideDecorations({ presentation, width, height, hideMasterElements = false, layoutId, interactive = false, slideContentIds, onPromoteLayoutElement }) {
+export default function SlideDecorations({ presentation, width, height, hideMasterElements = false, layoutId, interactive = false, slideContentIds, onPromoteLayoutElement, onContextMenuLayoutText }) {
   const master = presentation?.slideset?.master;
   const decorations = master?.decorations;
   const masterElements = hideMasterElements ? null : master?.elements;
@@ -186,6 +186,7 @@ export default function SlideDecorations({ presentation, width, height, hideMast
           <div
             key={el.id}
             onClick={canPromote ? () => onPromoteLayoutElement(el, "text") : undefined}
+            onContextMenu={onContextMenuLayoutText ? (e) => { e.stopPropagation(); onContextMenuLayoutText(el, e); } : undefined}
             style={{
               position: "absolute",
               left: el.position?.x ?? 0,

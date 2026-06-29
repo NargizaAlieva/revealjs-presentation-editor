@@ -668,7 +668,7 @@ useEffect(() => {
         const currentZ = Number(element["z-index"] ?? 1);
         let nextZ = currentZ;
         if (mode === "front") nextZ = Math.max(...zIndexes, currentZ) + 1 + index;
-        if (mode === "back") nextZ = Math.min(...zIndexes, currentZ) - selectedElementsRaw.length + index;
+        if (mode === "back") nextZ = Math.max(1, Math.min(...zIndexes, currentZ) - selectedElementsRaw.length + index);
         if (mode === "forward") nextZ = currentZ + 1;
         if (mode === "backward") nextZ = Math.max(1, currentZ - 1);
         updateElement(element.id, { "z-index": nextZ });
@@ -903,6 +903,45 @@ useEffect(() => {
     [addMedia, addTextElement, handleElementSelect, beginHistory, commitHistory],
   );
 
+  const suppressLayoutPlaceholder = useCallback(
+    (el) => {
+      if (!el) return;
+      const phId = el["placeholder-id"] ?? el.id;
+      addTextElement({
+        id: phId,
+        "placeholder-id": phId,
+        hidden: true,
+        position: el.position ?? { x: 0, y: 0 },
+        width: el.width ?? 0,
+        height: el.height ?? 0,
+        rotation: 0,
+        "z-index": el["z-index"] ?? 1,
+        background: "transparent",
+        paragraphs: [],
+      });
+    },
+    [addTextElement],
+  );
+
+  const layoutTextIds = useMemo(() => {
+    const layoutId = selectedSlide?.["layout-id"];
+    if (!layoutId) return new Set();
+    const layout = (presentation?.slideset?.layouts ?? []).find((l) => l["layout-id"] === layoutId);
+    return new Set((layout?.elements?.text ?? []).map((el) => el.id));
+  }, [selectedSlide, presentation?.slideset?.layouts]);
+
+  const handleDeleteTextElement = useCallback(
+    (id) => {
+      if (layoutTextIds.has(id)) {
+        // Element is from the layout — hide it so slideContentIds suppresses the decoration
+        updateElement(id, { hidden: true });
+      } else {
+        deleteTextElement(id);
+      }
+    },
+    [layoutTextIds, updateElement, deleteTextElement],
+  );
+
   const { handleImageUpload, handleVideoUpload } = useMediaUpload(addMedia, slideWidth, slideHeight);
 
   const handleAddTextElement = useCallback(
@@ -1047,7 +1086,111 @@ useEffect(() => {
     ],
   );
 
-  const handlePastePicture = useCallback(async () => {
+  const handlePastePicture = useCallback(async (targetElementId) => {
+    const targetEl = targetElementId
+      ? ((selectedSlide?.contents?.text ?? []).find((el) => el.id === targetElementId) ?? selectedTextEl)
+      : selectedTextEl;
+
+    // Find a layout text element that overlaps targetEl so we can suppress it via placeholder-id
+    const findOverlappingLayoutTextId = (el) => {
+      if (!el) return null;
+      const existingPlaceholderId = el["placeholder-id"];
+      if (existingPlaceholderId) return existingPlaceholderId;
+      const layoutId = selectedSlide?.["layout-id"];
+      if (!layoutId) return null;
+      const layout = (presentation?.slideset?.layouts ?? []).find((l) => l["layout-id"] === layoutId);
+      const layoutTexts = layout?.elements?.text ?? [];
+      const master = presentation?.slideset?.master;
+      const masterTexts = master?.elements?.text ?? [];
+      console.log("[PastePicture:debug] slide layout-id:", layoutId);
+      console.log("[PastePicture:debug] layoutTexts:", layoutTexts.map(t => ({ id: t.id, pos: t.position, w: t.width, h: t.height, text: t.paragraphs?.[0]?.runs?.[0]?.text })));
+      console.log("[PastePicture:debug] masterTexts:", masterTexts.map(t => ({ id: t.id, pos: t.position, w: t.width, h: t.height, text: t.paragraphs?.[0]?.runs?.[0]?.text })));
+      console.log("[PastePicture:debug] slide contents.text:", (selectedSlide?.contents?.text ?? []).map(t => ({ id: t.id, hidden: t.hidden, pid: t["placeholder-id"], text: t.paragraphs?.[0]?.runs?.[0]?.text })));
+      const ex = el.position?.x ?? 0, ey = el.position?.y ?? 0;
+      const ew = el.width ?? 300, eh = el.height ?? 80;
+      const match = layoutTexts.find((lt) => {
+        const lx = lt.position?.x ?? 0, ly = lt.position?.y ?? 0;
+        const lw = lt.width ?? 300, lh = lt.height ?? 80;
+        const overlapX = Math.max(0, Math.min(ex + ew, lx + lw) - Math.max(ex, lx));
+        const overlapY = Math.max(0, Math.min(ey + eh, ly + lh) - Math.max(ey, ly));
+        const overlapArea = overlapX * overlapY;
+        const minArea = Math.min(ew * eh, lw * lh);
+        return overlapArea > minArea * 0.3;
+      });
+      return match?.id ?? null;
+    };
+
+    const buildImageProps = (baseProps, placeholderIdOverride) => {
+      const pid = placeholderIdOverride ?? findOverlappingLayoutTextId(targetEl);
+      return pid ? { ...baseProps, "placeholder-id": pid } : baseProps;
+    };
+
+    const scaleToPlaceholder = (naturalW, naturalH, phW, phH) => {
+      const scale = phH > phW
+        ? phH / naturalH
+        : phW / naturalW;
+      return { width: Math.round(naturalW * scale), height: Math.round(naturalH * scale) };
+    };
+
+    const placeImageAtTarget = async (mediaId, key, naturalSize) => {
+      if (targetEl) {
+        const phW = targetEl.width ?? naturalSize.width;
+        const phH = targetEl.height ?? naturalSize.height;
+        const phPos = targetEl.position ?? { x: 60, y: 60 };
+        const { width: fitW, height: fitH } = scaleToPlaceholder(naturalSize.width, naturalSize.height, phW, phH);
+        const pid = findOverlappingLayoutTextId(targetEl);
+        console.log("[PastePicture:OS] targetEl.id:", targetEl.id, "placeholder-id override:", pid, "image size:", fitW, "x", fitH, "at:", phPos);
+        beginHistory();
+        addMedia(buildImageProps({
+          ...createImageMediaElement(mediaId, key, { width: fitW, height: fitH }),
+          position: { x: phPos.x, y: phPos.y },
+          "source-width": naturalSize.width,
+          "source-height": naturalSize.height,
+          "z-index": targetEl["z-index"] ?? 1,
+        }));
+        console.log("[PastePicture:OS] calling updateElement hidden on:", targetEl.id);
+        updateElement(targetEl.id, { hidden: true });
+        console.log("[PastePicture:OS] updateElement called, committing history");
+        commitHistory();
+      } else {
+        const displaySize = fitImageToSlide(naturalSize.width, naturalSize.height, slideWidth, slideHeight);
+        addMedia(createImageMediaElement(mediaId, key, displaySize));
+      }
+    };
+
+    const internalClipboard = Array.isArray(state.clipboard)
+      ? state.clipboard
+      : state.clipboard ? [state.clipboard] : [];
+    const internalMedia = internalClipboard.find((el) => el["media-type"] !== undefined);
+
+    if (internalMedia && targetEl) {
+      const phW = targetEl.width ?? internalMedia.width ?? 300;
+      const phH = targetEl.height ?? internalMedia.height ?? 200;
+      const phPos = targetEl.position ?? { x: 60, y: 60 };
+      const { width: fitW, height: fitH } = scaleToPlaceholder(internalMedia.width ?? phW, internalMedia.height ?? phH, phW, phH);
+      const pid = findOverlappingLayoutTextId(targetEl);
+      console.log("[PastePicture:internal] targetEl.id:", targetEl.id, "placeholder-id override:", pid, "image size:", fitW, "x", fitH);
+      beginHistory();
+      addMedia(buildImageProps({
+        ...structuredClone(internalMedia),
+        id: crypto.randomUUID(),
+        position: { x: phPos.x, y: phPos.y },
+        width: fitW,
+        height: fitH,
+        "z-index": targetEl["z-index"] ?? 1,
+      }));
+      console.log("[PastePicture:internal] calling updateElement hidden on:", targetEl.id);
+      updateElement(targetEl.id, { hidden: true });
+      console.log("[PastePicture:internal] updateElement called, committing history");
+      commitHistory();
+      return true;
+    }
+
+    if (internalMedia && !targetEl) {
+      pasteElement();
+      return true;
+    }
+
     try {
       const clipboardItems = await navigator.clipboard?.read?.();
       const imageItem = clipboardItems?.find((item) =>
@@ -1066,19 +1209,13 @@ useEffect(() => {
         storeMediaFile(file),
         readImageDimensionsFromFile(file),
       ]);
-      const displaySize = fitImageToSlide(
-        naturalSize.width,
-        naturalSize.height,
-        slideWidth,
-        slideHeight,
-      );
-      addMedia(createImageMediaElement(mediaId, key, displaySize));
+      await placeImageAtTarget(mediaId, key, naturalSize);
       return true;
     } catch (error) {
       console.warn("[EditorPage] Clipboard picture paste failed:", error);
       return false;
     }
-  }, [addMedia, slideWidth, slideHeight]);
+  }, [state.clipboard, pasteElement, addMedia, updateElement, beginHistory, commitHistory, presentation, selectedSlide, selectedTextEl, slideWidth, slideHeight]);
 
   const handlePlaceholderImageUpload = useCallback(
     async (placeholderElement, file) => {
@@ -1132,8 +1269,11 @@ useEffect(() => {
   );
 
   const handleDeleteSelection = useCallback(() => {
-    deleteSelectedElements(selectedElementIds);
-  }, [deleteSelectedElements, selectedElementIds]);
+    const layoutIds = selectedElementIds.filter((id) => layoutTextIds.has(id));
+    const regularIds = selectedElementIds.filter((id) => !layoutTextIds.has(id));
+    layoutIds.forEach((id) => updateElement(id, { hidden: true }));
+    if (regularIds.length > 0) deleteSelectedElements(regularIds);
+  }, [deleteSelectedElements, selectedElementIds, layoutTextIds, updateElement]);
 
   const handleNewComment = useCallback(() => {
     setShowComments(true);
@@ -1480,6 +1620,24 @@ useEffect(() => {
       }
     },
     [selectedMasterLayoutId, masterMediaIds, deleteLayoutElement, deleteMasterElement],
+  );
+
+  const masterViewDeleteSelection = useCallback(
+    (id) => {
+      if (!id) return;
+      const isMedia =
+        masterMediaIds.has(id) ||
+        (selectedMasterLayout?.elements?.media ?? []).some((m) => m.id === id) ||
+        (selectedMasterLayout?.placeholders ?? []).some(
+          (p) => (p.type === "image" || p.type === "video") && p["placeholder-id"] === id,
+        );
+      if (isMedia) {
+        masterViewDeleteMedia(id);
+      } else {
+        masterViewDeleteText(id);
+      }
+    },
+    [masterMediaIds, selectedMasterLayout, masterViewDeleteMedia, masterViewDeleteText],
   );
 
   const handleFormatChange = useCallback(
@@ -1879,6 +2037,7 @@ useEffect(() => {
     masterViewAutoFitMedia,
     masterViewDeleteText,
     masterViewDeleteMedia,
+    masterViewDeleteSelection,
     handleBringToFront,
     handleSendToBack,
     handleBringForward,
@@ -1911,7 +2070,7 @@ useEffect(() => {
     removeFont,
     addMedia,
     updateMedia,
-    deleteTextElement,
+    deleteTextElement: handleDeleteTextElement,
     deleteMedia,
     updateSlideNotes,
     updateSlideTransition,
@@ -1955,5 +2114,6 @@ useEffect(() => {
     deleteComment,
     setPendingFormatting,
     promoteLayoutElement,
+    suppressLayoutPlaceholder,
   };
 }

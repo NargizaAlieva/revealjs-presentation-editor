@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import "./EditorCanvas.css";
 import { getSlideSize } from "../../core/render/slidesetRenderUtils";
 import { buildColorThemeStyle, buildAdjustedAnimationMap } from "../../core/render/revealRenderer";
@@ -110,6 +110,7 @@ export default function EditorCanvas({
   onFormatPainterPaste,
   clearSelectionSignal = 0,
   onPromoteLayoutElement,
+  onSuppressLayoutPlaceholder,
 }) {
   const workspaceRef = useRef(null);
   const containerRef = useRef(null);
@@ -128,6 +129,21 @@ export default function EditorCanvas({
   const scaledHeight = height * zoomScale;
   const { contextMenu, openContextMenu, closeContextMenu } =
     useCanvasContextMenu({ selectedElementIds, onSelectElement });
+
+  const suppressTargetRef = useRef(null);
+
+  const handleContextMenuLayoutText = useCallback(
+    (el, event) => {
+      if (onSuppressLayoutPlaceholder) {
+        suppressTargetRef.current = el;
+        openContextMenu(event, el.id, "canvas");
+      } else {
+        onPromoteLayoutElement?.(el, "text");
+        openContextMenu(event, el.id, "text");
+      }
+    },
+    [onPromoteLayoutElement, onSuppressLayoutPlaceholder, openContextMenu],
+  );
   const {
     imageInputRef: placeholderImageInputRef,
     videoInputRef: placeholderVideoInputRef,
@@ -167,16 +183,17 @@ export default function EditorCanvas({
 
   const slideContentIds = useMemo(() => {
     const ids = new Set();
-    textElements.forEach((el) => {
+    const addEl = (el) => {
       ids.add(el.id);
       if (el["placeholder-id"]) ids.add(el["placeholder-id"]);
-    });
-    mediaElements.forEach((el) => {
-      ids.add(el.id);
-      if (el["placeholder-id"]) ids.add(el["placeholder-id"]);
-    });
+    };
+    textElements.forEach(addEl);
+    mediaElements.forEach(addEl);
+    // Hidden elements still suppress layout decorations (e.g. a suppressor added by "delete placeholder")
+    (slide?.contents?.text ?? []).filter((el) => el.hidden).forEach(addEl);
+    (slide?.contents?.media ?? []).filter((el) => el.hidden).forEach(addEl);
     return ids;
-  }, [textElements, mediaElements]);
+  }, [textElements, mediaElements, slide?.contents?.text, slide?.contents?.media]);
 
   const animationSequenceMap = useMemo(
     () => {
@@ -329,6 +346,7 @@ export default function EditorCanvas({
                   layoutId={slide?.["layout-id"]}
                   slideContentIds={slideContentIds}
                   onPromoteLayoutElement={onPromoteLayoutElement}
+                  onContextMenuLayoutText={handleContextMenuLayoutText}
                 />
 
                 {textElements.map((textElement) => {
@@ -576,7 +594,7 @@ export default function EditorCanvas({
           canPaste={canPaste}
           canUndo={canUndo}
           canRedo={canRedo}
-          onClose={closeContextMenu}
+          onClose={() => { suppressTargetRef.current = null; closeContextMenu(); }}
           onUndo={onUndo}
           onRedo={onRedo}
           onCut={onCut}
@@ -584,7 +602,9 @@ export default function EditorCanvas({
           onPaste={onPaste}
           onPasteText={onPasteText}
           onPastePicture={onPastePicture}
-          onDelete={onDeleteSelection}
+          onDelete={suppressTargetRef.current
+            ? () => { onSuppressLayoutPlaceholder?.(suppressTargetRef.current); suppressTargetRef.current = null; onSelectElement?.(null); closeContextMenu(); }
+            : onDeleteSelection}
           onSelectAll={onSelectAll}
           onBringToFront={onBringToFront}
           onBringForward={onBringForward}

@@ -628,6 +628,7 @@ export default function SlideMasterView({
   onMasterViewAutoFitMedia,
   onMasterViewDeleteText,
   onMasterViewDeleteMedia,
+  onMasterViewDeleteSelection,
   cropSignal,
   onBeginHistory,
   onCommitHistory,
@@ -738,6 +739,7 @@ export default function SlideMasterView({
           onResizeMediaElement={onMasterViewResizeMedia}
           onDeleteMedia={onMasterViewDeleteMedia}
           onDeleteTextElement={onMasterViewDeleteText}
+          onDeleteSelection={() => onMasterViewDeleteSelection?.(selectedMasterElementId)}
           updateElement={onMasterViewAutoFitText}
           updateMedia={onMasterViewAutoFitMedia}
           cropSignal={cropSignal}

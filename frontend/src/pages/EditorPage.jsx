@@ -182,6 +182,7 @@ export default function EditorPage() {
             onMasterViewAutoFitMedia={ctrl.masterViewAutoFitMedia}
             onMasterViewDeleteText={ctrl.masterViewDeleteText}
             onMasterViewDeleteMedia={ctrl.masterViewDeleteMedia}
+            onMasterViewDeleteSelection={ctrl.masterViewDeleteSelection}
             cropSignal={ctrl.cropSignal}
             onBeginHistory={ctrl.beginHistory}
             onCommitHistory={ctrl.commitHistory}
@@ -298,6 +299,7 @@ export default function EditorPage() {
                   onFormatPainterCopy={ctrl.formatPainterCopy}
                   onFormatPainterPaste={ctrl.formatPainterPaste}
                   onPromoteLayoutElement={ctrl.promoteLayoutElement}
+                  onSuppressLayoutPlaceholder={ctrl.suppressLayoutPlaceholder}
                 />
               )}
             </div>

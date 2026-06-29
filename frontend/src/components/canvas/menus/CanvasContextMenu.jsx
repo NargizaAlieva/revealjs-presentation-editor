@@ -246,7 +246,7 @@ export default function CanvasContextMenu({
                 icon={<MdImage />}
                 badge="▣"
                 title="Picture"
-                onClick={() => run(onPastePicture)}
+                onClick={() => run(() => onPastePicture?.(elementId))}
               />
               <PasteOptionButton
                 icon={<MdTextFields />}
@@ -277,6 +277,7 @@ export default function CanvasContextMenu({
           setDialog={setDialog}
           run={run}
           onExitEditText={onExitEditText}
+          onDelete={onDelete}
           onNewComment={onNewComment}
           applyFormatting={applyTextFormatting}
           existingLink={existingHyperlink}

@@ -1,6 +1,7 @@
 import {
   MdAddComment,
   MdContentCopy,
+  MdDeleteOutline,
   MdExitToApp,
   MdFontDownload,
   MdFormatAlignLeft,
@@ -85,6 +86,7 @@ export default function TextFormattingMenu({
   setDialog,
   run,
   onExitEditText,
+  onDelete,
   onNewComment,
   applyFormatting,
   existingLink = null,
@@ -100,6 +102,13 @@ export default function TextFormattingMenu({
           icon={<MdExitToApp />}
           label="Exit Edit Text"
           onClick={() => run(() => onExitEditText?.(elementId))}
+        />
+      )}
+      {onDelete && matches("Delete") && (
+        <ContextMenuItem
+          icon={<MdDeleteOutline />}
+          label="Delete"
+          onClick={() => run(onDelete)}
         />
       )}
       {matches("Font") && (
