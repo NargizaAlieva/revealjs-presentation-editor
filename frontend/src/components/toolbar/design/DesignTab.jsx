@@ -6,6 +6,7 @@ import { DESIGN_THEMES, findActiveTheme, updateThemeBackground, THEME_PALETTE_CO
 import { SLIDE_SIZES, clampSlideDimension } from "../../../core/model/slideSizes";
 import { renderShapes } from "../../../core/render/shapeRenderer";
 import { ThemeColorEditor } from "./ThemeColorEditor";
+import { ThemeColorsPicker } from "./ThemeColorsPicker";
 import FormatBackgroundPanel from "../shared/FormatBackgroundPanel";
 
 
@@ -90,7 +91,6 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
     const [showPalette, setShowPalette] = useState(false);
     const [showSizeMenu, setShowSizeMenu] = useState(false);
     const [showCustomSize, setShowCustomSize] = useState(false);
-    const [showColorEditor, setShowColorEditor] = useState(false);
     const [showFormatBg, setShowFormatBg] = useState(false);
     const sizeRef = useRef(null);
 
@@ -260,24 +260,21 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
             <div className="design-right-divider" />
 
             <div className="design-right-section">
-                <button
-                    className="design-advanced-colors-btn"
-                    onClick={() => setShowColorEditor(v => !v)}
-                >
-                    <span>⚙ Advanced Theme Colors</span>
-                    <span className="design-advanced-colors-arrow">{showColorEditor ? "▲" : "▾"}</span>
-                </button>
-
-                {showColorEditor && onUpdateThemeColor && (
-                    <div style={{ marginTop: 12 }}>
-                        <ThemeColorEditor
-                            colorTheme={colorTheme}
-                            onColorChange={(variable, color) => {
-                                onUpdateThemeColor(variable, color);
-                            }}
-                        />
-                    </div>
-                )}
+                <ThemeColorsPicker
+                    currentColorTheme={colorTheme}
+                    onThemeSelect={(themeId) => {
+                        const theme = DESIGN_THEMES.find(t => t.id === themeId);
+                        if (theme) {
+                            onApplyTheme(theme.colorTheme, theme.decorations);
+                        }
+                    }}
+                    onResetTheme={() => {
+                        const defaultTheme = DESIGN_THEMES.find(t => t.id === 'default');
+                        if (defaultTheme) {
+                            onApplyTheme(defaultTheme.colorTheme, defaultTheme.decorations);
+                        }
+                    }}
+                />
             </div>
 
         </div>
