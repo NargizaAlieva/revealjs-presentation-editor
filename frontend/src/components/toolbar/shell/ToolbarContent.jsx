@@ -78,6 +78,7 @@ export default function ToolbarContent({
   onApplyFont,
   onApplyLayoutFont,
   onUpdateDimensions,
+  onUpdateThemeColor,
   selectedSlide,
   currentView,
   onChangeView,
@@ -231,6 +232,7 @@ export default function ToolbarContent({
           onApplySlideBackground={onApplySlideBackground}
           onApplyBgFillImage={onApplyBgFillImage}
           onApplyBackgroundToAll={onApplyBackgroundToAll}
+          onUpdateThemeColor={onUpdateThemeColor}
           selectedSlide={selectedSlide}
         />
       )}
