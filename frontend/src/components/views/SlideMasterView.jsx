@@ -288,7 +288,7 @@ function MasterThumb({ label, isSelected, onClick, presentation, layout, isMaste
             const placeholderBackground = getPlaceholderBackground(presentation, pseudoSlide, pseudoEl);
             const placeholderPadding = getPlaceholderPadding(presentation, pseudoSlide, pseudoEl);
             const elStyle = buildTextElementStyle(pseudoEl, i, masterFormatting, phFmt, placeholderPadding, placeholderBackground);
-            const html = paragraphsToHTML(pseudoEl.paragraphs, masterFormatting, phFmt);
+            const html = paragraphsToHTML(pseudoEl.paragraphs, masterFormatting, phFmt, true);
             return (
               <div
                 key={i}

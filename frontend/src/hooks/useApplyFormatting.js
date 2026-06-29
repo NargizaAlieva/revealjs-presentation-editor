@@ -25,27 +25,10 @@ export const useApplyFormatting = ({
           sel.paragraphIdx === (sel.endParagraphIdx ?? sel.paragraphIdx) &&
           sel.rangeStart === sel.rangeEnd
         );
-      const fontSizeDelta = Number(updates["font-size-delta"] ?? 0);
-      const { "font-size-delta": _delta, ...updatesWithoutDelta } = updates;
-      const normalizedUpdates =
-        fontSizeDelta && !hasRealSel
-          ? {
-              ...updatesWithoutDelta,
-              size: `${Math.max(
-                6,
-                Math.min(
-                  120,
-                  (parseFloat(currentFormatting.size) || 24) + fontSizeDelta,
-                ),
-              )}px`,
-            }
-          : updatesWithoutDelta;
-      const { runUpdates, paraUpdates } =
-        splitFormattingUpdates(normalizedUpdates);
 
       if (hasRealSel) {
+        const { runUpdates, paraUpdates } = splitFormattingUpdates(updates);
         const allUpdates = { ...runUpdates, ...paraUpdates };
-        if (fontSizeDelta) allUpdates["font-size-delta"] = fontSizeDelta;
         if (Object.keys(allUpdates).length > 0)
           updateTextRangeFormatting(
             elementId,
@@ -55,7 +38,26 @@ export const useApplyFormatting = ({
             sel.rangeEnd,
             allUpdates,
           );
-      } else if (editingTextElementIdRef.current === elementId) {
+        return;
+      }
+
+      const fontSizeDelta = Number(updates["font-size-delta"] ?? 0);
+      const { "font-size-delta": _delta, ...updatesWithoutDelta } = updates;
+      const normalizedUpdates = fontSizeDelta
+        ? {
+            ...updatesWithoutDelta,
+            size: `${Math.max(
+              6,
+              Math.min(
+                120,
+                (parseFloat(currentFormatting.size) || 24) + fontSizeDelta,
+              ),
+            )}px`,
+          }
+        : updatesWithoutDelta;
+      const { runUpdates, paraUpdates } = splitFormattingUpdates(normalizedUpdates);
+
+      if (isCurrentlyEditing) {
         if (Object.keys(runUpdates).length > 0) {
           const cursorRunBase = Object.fromEntries(
             Object.entries(currentFormatting).filter(
@@ -72,11 +74,7 @@ export const useApplyFormatting = ({
           const cursorParagraphIdx =
             sel?.elementId === elementId ? sel.paragraphIdx : undefined;
           if (cursorParagraphIdx !== undefined) {
-            updateParagraphFormatting(
-              elementId,
-              cursorParagraphIdx,
-              paraUpdates,
-            );
+            updateParagraphFormatting(elementId, cursorParagraphIdx, paraUpdates);
           } else {
             updateTextElementFormatting(elementId, paraUpdates);
           }

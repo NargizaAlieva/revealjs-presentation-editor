@@ -178,7 +178,7 @@ export default function SlideThumbnail({
             const visibleBg = bg && bg !== "transparent" && bg !== "#FFFFFF00" ? bg : null;
             const visibleHighlight = highlight && highlight !== "transparent" ? highlight : null;
             if (!visibleBg && !visibleHighlight) return null;
-            const html = paragraphsToHTML(textElement.paragraphs, masterFormatting, placeholderFormatting);
+            const html = paragraphsToHTML(textElement.paragraphs, masterFormatting, placeholderFormatting, true);
             return (
               <div
                 key={textElement.id}
@@ -187,7 +187,7 @@ export default function SlideThumbnail({
               />
             );
           }
-          const html = paragraphsToHTML(textElement.paragraphs, masterFormatting, placeholderFormatting);
+          const html = paragraphsToHTML(textElement.paragraphs, masterFormatting, placeholderFormatting, true);
           return (
             <div
               key={textElement.id}

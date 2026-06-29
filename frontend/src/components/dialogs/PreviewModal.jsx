@@ -201,13 +201,22 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
                       const perLine = getPerLineFragments(textElement, animation, lines);
 
                       if (perLine) {
+                        let runningCounter = 0;
                         return (
                           <div key={textElement.id || index} style={baseStyle}>
-                            {perLine.map((entry, lineIndex) => (
-                              <p key={lineIndex} {...entry.fragmentProps}>
-                                {entry.text}
-                              </p>
-                            ))}
+                            {perLine.map((entry, lineIndex) => {
+                              const listType = entry.paragraph.formatting?.["list-type"];
+                              const startCounter = listType === "numbered" ? runningCounter : 0;
+                              if (listType === "numbered") runningCounter++;
+                              else if (!listType) runningCounter = 0;
+                              return (
+                                <div
+                                  key={lineIndex}
+                                  {...entry.fragmentProps}
+                                  dangerouslySetInnerHTML={{ __html: paragraphsToHTML([entry.paragraph], masterFormatting, placeholderFormatting, true, startCounter) }}
+                                />
+                              );
+                            })}
                           </div>
                         );
                       }
@@ -218,7 +227,7 @@ export default function PreviewModal({ slides, presentation, onClose, initialSli
                           key={textElement.id || index}
                           style={baseStyle}
                           {...fragmentProps}
-                          dangerouslySetInnerHTML={{ __html: paragraphsToHTML(textElement.paragraphs, masterFormatting, placeholderFormatting) }}
+                          dangerouslySetInnerHTML={{ __html: paragraphsToHTML(textElement.paragraphs, masterFormatting, placeholderFormatting, true) }}
                         />
                       );
                     })}

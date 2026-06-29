@@ -147,6 +147,7 @@ function buildPStyle(paragraphFormatting, listPaddingLeft = null) {
   const paddingLeft = listPaddingLeft
     ?? (indent > 0 ? getListIndent(indent - 1, "indent") : null);
   return [
+    paragraphFormatting.size ? `font-size: ${paragraphFormatting.size}` : "",
     paragraphFormatting.align ? `text-align: ${paragraphFormatting.align}` : "",
     paragraphFormatting.margin
       ? `margin: ${paragraphFormatting.margin}`

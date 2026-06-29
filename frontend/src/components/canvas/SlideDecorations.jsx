@@ -167,7 +167,7 @@ export default function SlideDecorations({ presentation, width, height, hideMast
               flexDirection: "column",
               justifyContent,
             }}
-            dangerouslySetInnerHTML={{ __html: paragraphsToHTML(el.paragraphs, mf, {}) }}
+            dangerouslySetInnerHTML={{ __html: paragraphsToHTML(el.paragraphs, mf, {}, true) }}
           />
         );
       })}
@@ -203,7 +203,7 @@ export default function SlideDecorations({ presentation, width, height, hideMast
               flexDirection: "column",
               justifyContent,
             }}
-            dangerouslySetInnerHTML={{ __html: paragraphsToHTML(el.paragraphs, mf, {}) }}
+            dangerouslySetInnerHTML={{ __html: paragraphsToHTML(el.paragraphs, mf, {}, true) }}
           />
         );
       })}
