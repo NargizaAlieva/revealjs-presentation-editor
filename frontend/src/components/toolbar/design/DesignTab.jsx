@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import "./DesignTab.css";
 import { getAvailableFonts } from "../../../core/model/fontConfig";
 import { toHex6, toHex9 } from "../../../core/utils/colorUtils";
@@ -86,7 +86,7 @@ function ThemeThumbnail({ theme, isActive, onClick }) {
     );
 }
 
-function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onUpdateThemeColor, onApplySlideBackground, onApplyBgFillImage, onApplyBackgroundToAll, selectedSlide, activeTheme, currentColorSchemeId, onColorSchemeChange, onColorSchemeHover, onColorSchemeLeave }) {
+function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onUpdateThemeColor, onApplySlideBackground, onApplyBgFillImage, onApplyBackgroundToAll, selectedSlide, activeTheme, currentColorSchemeId, onColorSchemeChange }) {
     const [showPalette, setShowPalette] = useState(false);
     const [showSizeMenu, setShowSizeMenu] = useState(false);
     const [showCustomSize, setShowCustomSize] = useState(false);
@@ -144,8 +144,6 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
                     <ColorsDropdown
                         currentSchemeId={currentColorSchemeId}
                         onColorSchemeSelect={onColorSchemeChange}
-                        onColorSchemeHover={onColorSchemeHover}
-                        onColorSchemeLeave={onColorSchemeLeave}
                     />
                 </div>
 
@@ -259,52 +257,38 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
 }
 
 export default function DesignTab({ presentation, onApplyTheme, onApplyFont, onUpdateDimensions, onUpdateThemeColor, onApplySlideBackground, onApplyBgFillImage, onApplyBackgroundToAll, selectedSlide }) {
-    const currentTheme = presentation?.slideset?.master?.["color-theme"] ?? [];
+    const currentTheme = useMemo(
+        () => presentation?.slideset?.master?.["color-theme"] ?? [],
+        [presentation?.slideset?.master],
+    );
     const savedColorSchemeId = presentation?.slideset?.master?.["current-color-scheme-id"];
     const activeTheme = findActiveTheme(currentTheme);
 
     const lastAppliedDesignId = presentation?.slideset?.master?.["last-applied-design-id"];
 
     const currentColorSchemeId = savedColorSchemeId;
-    const savedColorScheme = COLOR_SCHEMES.find(s => s.id === currentColorSchemeId);
 
     useEffect(() => {
         if (activeTheme?.id && activeTheme.id !== lastAppliedDesignId) {
             const defaultScheme = COLOR_SCHEMES.find(s => s.id === activeTheme.defaultColorSchemeId);
-            if (defaultScheme && presentation?.slideset?.master) {
+            if (defaultScheme) {
                 const decorations = applyColorSchemeToDesign(activeTheme, defaultScheme);
                 const updatedColorTheme = updateThemeBackgroundFromScheme(currentTheme, defaultScheme);
-                onApplyTheme(updatedColorTheme, decorations?.decorations);
-                presentation.slideset.master["current-color-scheme-id"] = defaultScheme.id;
-                presentation.slideset.master["last-applied-design-id"] = activeTheme.id;
+                onApplyTheme(updatedColorTheme, decorations?.decorations, {
+                    colorSchemeId: defaultScheme.id,
+                    designId: activeTheme.id,
+                });
             }
         }
-    }, [activeTheme?.id, lastAppliedDesignId]);
+    }, [activeTheme, currentTheme, lastAppliedDesignId, onApplyTheme]);
 
     const applyAndSaveColorScheme = (colorScheme) => {
         if (activeTheme) {
             const decorations = applyColorSchemeToDesign(activeTheme, colorScheme);
             const updatedColorTheme = updateThemeBackgroundFromScheme(currentTheme, colorScheme);
-            onApplyTheme(updatedColorTheme, decorations?.decorations);
-            if (presentation?.slideset?.master) {
-                presentation.slideset.master["current-color-scheme-id"] = colorScheme.id;
-            }
-        }
-    };
-
-    const handleColorSchemeHover = (colorScheme) => {
-        if (activeTheme) {
-            const decorations = applyColorSchemeToDesign(activeTheme, colorScheme);
-            const updatedColorTheme = updateThemeBackgroundFromScheme(currentTheme, colorScheme);
-            onApplyTheme(updatedColorTheme, decorations?.decorations);
-        }
-    };
-
-    const handleColorSchemeLeave = () => {
-        if (savedColorScheme && activeTheme) {
-            const decorations = applyColorSchemeToDesign(activeTheme, savedColorScheme);
-            const updatedColorTheme = updateThemeBackgroundFromScheme(currentTheme, savedColorScheme);
-            onApplyTheme(updatedColorTheme, decorations?.decorations);
+            onApplyTheme(updatedColorTheme, decorations?.decorations, {
+                colorSchemeId: colorScheme.id,
+            });
         }
     };
 
@@ -342,8 +326,6 @@ export default function DesignTab({ presentation, onApplyTheme, onApplyFont, onU
                 activeTheme={activeTheme}
                 currentColorSchemeId={currentColorSchemeId}
                 onColorSchemeChange={handleColorSchemeSelect}
-                onColorSchemeHover={handleColorSchemeHover}
-                onColorSchemeLeave={handleColorSchemeLeave}
                 selectedSlide={selectedSlide}
             />
         </div>

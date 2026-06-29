@@ -191,4 +191,48 @@ describe("editorReducer", () => {
     ).toBe(true);
     expect(result.past).toHaveLength(1);
   });
+
+  test("MASTER.UPDATE_THEME stores theme metadata without mutating prior state", () => {
+    const state = createInitialEditorState();
+    const previousMaster = state.presentation.slideset.master;
+    const colorTheme = previousMaster["color-theme"];
+
+    const result = editorReducer(state, {
+      type: EditorEventType.MASTER.UPDATE_THEME,
+      payload: {
+        colorTheme,
+        decorations: previousMaster.decorations,
+        metadata: {
+          colorSchemeId: "scheme-test",
+          designId: "design-test",
+        },
+      },
+    });
+
+    expect(
+      result.presentation.slideset.master["current-color-scheme-id"],
+    ).toBe("scheme-test");
+    expect(
+      result.presentation.slideset.master["last-applied-design-id"],
+    ).toBe("design-test");
+    expect(previousMaster["current-color-scheme-id"]).not.toBe("scheme-test");
+    expect(previousMaster["last-applied-design-id"]).not.toBe("design-test");
+    expect(result.past).toHaveLength(1);
+
+    const undone = editorReducer(result, {
+      type: EditorEventType.HISTORY.UNDO,
+      payload: {},
+    });
+    expect(
+      undone.presentation.slideset.master["current-color-scheme-id"],
+    ).toBe(previousMaster["current-color-scheme-id"]);
+
+    const redone = editorReducer(undone, {
+      type: EditorEventType.HISTORY.REDO,
+      payload: {},
+    });
+    expect(
+      redone.presentation.slideset.master["current-color-scheme-id"],
+    ).toBe("scheme-test");
+  });
 });

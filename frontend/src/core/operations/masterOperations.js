@@ -125,7 +125,12 @@ function bgToHex6(bg) {
   return null;
 }
 
-export const updateMasterTheme = (presentation, colorTheme, decorations) => {
+export const updateMasterTheme = (
+  presentation,
+  colorTheme,
+  decorations,
+  { colorSchemeId, designId } = {},
+) => {
   const oldBgLight = (presentation?.slideset?.master?.["color-theme"] ?? [])
     .find(e => e["css-variable-name"] === "bg-light")?.color;
   const oldBgHex6 = oldBgLight ? bgToHex6(oldBgLight) : null;
@@ -148,6 +153,12 @@ export const updateMasterTheme = (presentation, colorTheme, decorations) => {
         ...presentation.slideset.master,
         "color-theme": colorTheme,
         ...(decorations !== undefined ? { decorations } : {}),
+        ...(colorSchemeId !== undefined
+          ? { "current-color-scheme-id": colorSchemeId }
+          : {}),
+        ...(designId !== undefined
+          ? { "last-applied-design-id": designId }
+          : {}),
       },
     },
   };

@@ -5,7 +5,7 @@ import SlideDecorations from "../canvas/SlideDecorations";
 import EditorCanvas from "../editor/EditorCanvas";
 import { ColorPalettePopup } from "../toolbar/design/DesignTab";
 import { ColorsDropdown } from "../toolbar/design/ColorsDropdown";
-import { DESIGN_THEMES, COLOR_SCHEMES, findActiveTheme, applyColorSchemeToDesign, updateThemeBackgroundFromScheme } from "../../core/model/designThemes";
+import { DESIGN_THEMES, findActiveTheme, applyColorSchemeToDesign, updateThemeBackgroundFromScheme } from "../../core/model/designThemes";
 import { SLIDE_SIZES } from "../../core/model/slideSizes";
 import { getAvailableFonts } from "../../core/model/fontConfig";
 import { renderShapes } from "../../core/render/shapeRenderer";
@@ -513,30 +513,9 @@ export function SlideMasterRibbon({
                   if (activeTheme) {
                     const decorations = applyColorSchemeToDesign(activeTheme, colorScheme);
                     const updatedColorTheme = updateThemeBackgroundFromScheme(colorTheme, colorScheme);
-                    onApplyTheme?.(updatedColorTheme, decorations?.decorations);
-                    if (presentation?.slideset?.master) {
-                      presentation.slideset.master["current-color-scheme-id"] = colorScheme.id;
-                    }
-                  }
-                }}
-                onColorSchemeHover={(colorScheme) => {
-                  const activeTheme = findActiveTheme(colorTheme);
-                  if (activeTheme) {
-                    const decorations = applyColorSchemeToDesign(activeTheme, colorScheme);
-                    const updatedColorTheme = updateThemeBackgroundFromScheme(colorTheme, colorScheme);
-                    onApplyTheme?.(updatedColorTheme, decorations?.decorations);
-                  }
-                }}
-                onColorSchemeLeave={() => {
-                  const activeTheme = findActiveTheme(colorTheme);
-                  const currentSchemeId = presentation?.slideset?.master?.["current-color-scheme-id"];
-                  if (activeTheme && currentSchemeId) {
-                    const savedScheme = COLOR_SCHEMES.find(s => s.id === currentSchemeId);
-                    if (savedScheme) {
-                      const decorations = applyColorSchemeToDesign(activeTheme, savedScheme);
-                      const updatedColorTheme = updateThemeBackgroundFromScheme(colorTheme, savedScheme);
-                      onApplyTheme?.(updatedColorTheme, decorations?.decorations);
-                    }
+                    onApplyTheme?.(updatedColorTheme, decorations?.decorations, {
+                      colorSchemeId: colorScheme.id,
+                    });
                   }
                 }}
               />

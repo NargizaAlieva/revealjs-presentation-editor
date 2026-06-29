@@ -17,7 +17,7 @@ function ColorPalettePreview({ colors }) {
   );
 }
 
-export function ColorsDropdown({ onColorSchemeSelect, onColorSchemeHover, onColorSchemeLeave, currentSchemeId }) {
+export function ColorsDropdown({ onColorSchemeSelect, currentSchemeId }) {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef(null);
 
@@ -28,20 +28,11 @@ export function ColorsDropdown({ onColorSchemeSelect, onColorSchemeHover, onColo
     const handleClickOutside = (e) => {
       if (ref.current && !ref.current.contains(e.target)) {
         setIsOpen(false);
-        onColorSchemeLeave?.();
       }
     };
     document.addEventListener("mousedown", handleClickOutside, true);
     return () => document.removeEventListener("mousedown", handleClickOutside, true);
-  }, [onColorSchemeLeave]);
-
-  const handleItemMouseEnter = (scheme) => {
-    onColorSchemeHover?.(scheme);
-  };
-
-  const handleItemMouseLeave = () => {
-    onColorSchemeLeave?.();
-  };
+  }, []);
 
   const handleItemClick = (scheme) => {
     onColorSchemeSelect(scheme);
@@ -68,8 +59,6 @@ export function ColorsDropdown({ onColorSchemeSelect, onColorSchemeHover, onColo
                 className={`colors-item ${
                   currentSchemeId === scheme.id ? "active" : ""
                 }`}
-                onMouseEnter={() => handleItemMouseEnter(scheme)}
-                onMouseLeave={handleItemMouseLeave}
                 onClick={() => handleItemClick(scheme)}
                 title={scheme.name}
               >

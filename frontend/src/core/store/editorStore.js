@@ -1020,6 +1020,7 @@ export const editorReducer = (state, event) => {
           state.presentation,
           event.payload.colorTheme,
           event.payload.decorations,
+          event.payload.metadata,
         ),
         lastEvent: event,
         lastUpdated: Date.now(),

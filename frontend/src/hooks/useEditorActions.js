@@ -388,11 +388,12 @@ export function useEditorActions(
   );
 
   const updateMasterTheme = useCallback(
-    (colorTheme, decorations) =>
+    (colorTheme, decorations, metadata) =>
       eventBus.dispatch(
         createEditorEvent(EditorEventType.MASTER.UPDATE_THEME, {
           colorTheme,
           decorations,
+          metadata,
         }),
       ),
     [eventBus],
