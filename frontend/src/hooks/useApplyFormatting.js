@@ -57,6 +57,13 @@ export const useApplyFormatting = ({
         : updatesWithoutDelta;
       const { runUpdates, paraUpdates } = splitFormattingUpdates(normalizedUpdates);
 
+      // element-level keys must always update the whole element, not just the cursor paragraph
+      const ELEMENT_LEVEL_KEYS = new Set(["vertical-align"]);
+      const elementUpdates = Object.fromEntries(Object.entries(paraUpdates).filter(([k]) => ELEMENT_LEVEL_KEYS.has(k)));
+      const paragraphOnlyUpdates = Object.fromEntries(Object.entries(paraUpdates).filter(([k]) => !ELEMENT_LEVEL_KEYS.has(k)));
+      if (Object.keys(elementUpdates).length > 0)
+        updateTextElementFormatting(elementId, elementUpdates);
+
       if (isCurrentlyEditing) {
         if (Object.keys(runUpdates).length > 0) {
           const cursorRunBase = Object.fromEntries(
@@ -70,17 +77,17 @@ export const useApplyFormatting = ({
             ...runUpdates,
           }));
         }
-        if (Object.keys(paraUpdates).length > 0) {
+        if (Object.keys(paragraphOnlyUpdates).length > 0) {
           const cursorParagraphIdx =
             sel?.elementId === elementId ? sel.paragraphIdx : undefined;
           if (cursorParagraphIdx !== undefined) {
-            updateParagraphFormatting(elementId, cursorParagraphIdx, paraUpdates);
+            updateParagraphFormatting(elementId, cursorParagraphIdx, paragraphOnlyUpdates);
           } else {
-            updateTextElementFormatting(elementId, paraUpdates);
+            updateTextElementFormatting(elementId, paragraphOnlyUpdates);
           }
         }
       } else {
-        const allUpdates = { ...runUpdates, ...paraUpdates };
+        const allUpdates = { ...runUpdates, ...paragraphOnlyUpdates };
         if (Object.keys(allUpdates).length > 0)
           updateTextElementFormatting(elementId, allUpdates);
       }
