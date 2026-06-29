@@ -9,7 +9,7 @@ import {
 } from "react-icons/md";
 import FormatBackgroundPanel from "../shared/FormatBackgroundPanel";
 import LayoutThumb from "../shared/LayoutThumb";
-import { HyperlinkDialog } from "../../canvas/menus/CanvasContextMenu";
+import HyperlinkDialog from "../../canvas/dialogs/HyperlinkDialog";
 import "../../canvas/dialogs/TextContextDialogs.css";
 
 export default function InsertTab({ onImageUpload, onVideoUpload, onAddSlide, onAddTextElement, currentBgImage, selectedSlide, presentation, onApplySlideBackground, onApplyBgFillImage, onApplyBackgroundToAll, isSlideMasterOpen, selectedElement, selectedHyperlinkText = "", onHyperlink, onNewComment }) {

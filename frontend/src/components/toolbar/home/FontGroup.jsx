@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   MdBorderColor,
+  MdDeleteOutline,
   MdFormatBold,
   MdFormatClear,
   MdFormatColorText,
@@ -167,9 +168,11 @@ export default function FontGroup({
   currentFormatting = {},
   isTextSelected = false,
   fonts = [],
+  presentation,
   onFormatChange,
   onChangeCase,
   onFontUpload,
+  onFontRemove,
 }) {
   const [showCaseMenu, setShowCaseMenu] = useState(false);
   const [fontUpload, setFontUpload] = useState({
@@ -218,6 +221,13 @@ export default function FontGroup({
     currentFormatting.highlight === "transparent"
       ? "#fff200"
       : currentFormatting.highlight;
+  const uploadedFontIds = new Set(
+    (presentation?.slideset?.fonts ?? [])
+      .filter((font) => font["font-id"] && font["font-file"])
+      .map((font) => font["font-id"]),
+  );
+  const canRemoveCurrentFont =
+    Boolean(onFontRemove) && uploadedFontIds.has(currentFont);
 
   const toggleDecoration = (name, active) => {
     const values = new Set(
@@ -265,6 +275,17 @@ export default function FontGroup({
         error: "The selected font could not be loaded.",
       });
     }
+  };
+
+  const removeCurrentFont = () => {
+    if (!canRemoveCurrentFont) return;
+    const confirmed = window.confirm(
+      `Remove the uploaded font "${currentFont}"?`,
+    );
+    if (!confirmed) return;
+
+    onFontRemove(currentFont);
+    if (isTextSelected) fmt({ font: "Arial" });
   };
 
   return (
@@ -320,6 +341,20 @@ export default function FontGroup({
           onClick={() => fontInputRef.current?.click()}
         >
           <MdFontDownload />
+        </button>
+        <button
+          type="button"
+          className="font-command font-remove-command"
+          disabled={!canRemoveCurrentFont}
+          title={
+            canRemoveCurrentFont
+              ? `Remove uploaded font "${currentFont}"`
+              : "Select an uploaded font to remove it"
+          }
+          aria-label="Remove uploaded font"
+          onClick={removeCurrentFont}
+        >
+          <MdDeleteOutline />
         </button>
         <input
           ref={fontInputRef}

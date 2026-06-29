@@ -88,6 +88,7 @@ export default function EditorPage() {
           onFormatChange={ctrl.handleFormatChange}
           onChangeCase={ctrl.handleChangeCase}
           onFontUpload={ctrl.addFont}
+          onFontRemove={ctrl.removeFont}
           isTextSelected={
             !!(ctrl.isSlideMasterOpen
               ? ctrl.masterSelectedTextEl
@@ -272,6 +273,8 @@ export default function EditorPage() {
                   onPlaceholderImageUpload={ctrl.handlePlaceholderImageUpload}
                   onPlaceholderVideoUpload={ctrl.handlePlaceholderVideoUpload}
                   onHyperlink={ctrl.handleHyperlink}
+                  onRemoveHyperlink={ctrl.handleRemoveHyperlink}
+                  existingHyperlink={ctrl.selectedHyperlinkLink}
                   canHyperlink={ctrl.hasRealSelection}
                   canPaste={!!ctrl.state.clipboard}
                   canUndo={ctrl.state.past.length > 0}

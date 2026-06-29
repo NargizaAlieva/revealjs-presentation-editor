@@ -55,6 +55,21 @@ const paragraphTextLength = (paragraph) =>
 const paragraphText = (paragraph) =>
   (paragraph?.runs ?? []).map((run) => run.text ?? "").join("");
 
+const getSelectedLink = (textElement, selection) => {
+  if (!textElement || !selection) return null;
+  const para = textElement.paragraphs?.[selection.paragraphIdx];
+  if (!para) return null;
+  const start = Math.min(selection.rangeStart, selection.rangeEnd);
+  const end = Math.max(selection.rangeStart, selection.rangeEnd);
+  let offset = 0;
+  for (const run of para.runs ?? []) {
+    const runEnd = offset + run.text.length;
+    if (runEnd > start && offset < end) return run.link ?? null;
+    offset = runEnd;
+  }
+  return null;
+};
+
 const getSelectedPlainText = (textElement, selection) => {
   if (!textElement || !selection) return "";
   const startParagraphIdx = Math.min(
@@ -494,7 +509,9 @@ export function useEditorController() {
         e.target.closest?.(".toolbar-ribbon") ||
         e.target.closest?.(".toolbar") ||
         e.target.closest?.(".bg-palette-popup") ||
-        e.target.closest?.(".sz-dropdown");
+        e.target.closest?.(".sz-dropdown") ||
+        e.target.closest?.(".canvas-context-menu") ||
+        e.target.closest?.(".text-context-dialog");
       const inElement = e.target.closest?.(
         `[data-element-id="${selectedElementId}"]`,
       );
@@ -578,6 +595,13 @@ useEffect(() => {
       hasRealSelection
         ? getSelectedPlainText(activeTextEl, activeSelectionForFormatting)
         : "",
+    [activeTextEl, activeSelectionForFormatting, hasRealSelection],
+  );
+  const selectedHyperlinkLink = useMemo(
+    () =>
+      hasRealSelection
+        ? getSelectedLink(activeTextEl, activeSelectionForFormatting)
+        : null,
     [activeTextEl, activeSelectionForFormatting, hasRealSelection],
   );
 
@@ -1099,9 +1123,24 @@ useEffect(() => {
   }, []);
 
   const handleHyperlink = useCallback(
-    (elementId, hyperlink) => {
-      const selection = activeSelectionRef.current;
+    (elementId, hyperlink, selectionSnapshot = null) => {
       const targetId = elementId ?? selectedElementId;
+      const isExpanded = (s) =>
+        s &&
+        (s.paragraphIdx !== (s.endParagraphIdx ?? s.paragraphIdx) ||
+          s.rangeStart !== s.rangeEnd);
+      const rawSelection =
+        (isExpanded(selectionSnapshot) ? selectionSnapshot : null) ??
+        (isExpanded(activeSelectionRef.current)
+          ? activeSelectionRef.current
+          : null) ??
+        selectionSnapshot;
+      const selection = rawSelection
+        ? {
+            ...rawSelection,
+            elementId: rawSelection.elementId ?? targetId,
+          }
+        : null;
       const rawHref =
         typeof hyperlink === "string" ? hyperlink : hyperlink?.href;
       const linkType =
@@ -1138,6 +1177,39 @@ useEffect(() => {
             typeof hyperlink === "string" ? "" : (hyperlink?.screenTip ?? ""),
           type: linkType,
         },
+      );
+      return true;
+    },
+    [selectedElementId, updateRunLink],
+  );
+
+  const handleRemoveHyperlink = useCallback(
+    (elementId, selectionSnapshot = null) => {
+      const targetId = elementId ?? selectedElementId;
+      const isExp = (s) =>
+        s &&
+        (s.paragraphIdx !== (s.endParagraphIdx ?? s.paragraphIdx) ||
+          s.rangeStart !== s.rangeEnd);
+      const rawSelection =
+        (isExp(selectionSnapshot) ? selectionSnapshot : null) ??
+        (isExp(activeSelectionRef.current) ? activeSelectionRef.current : null) ??
+        selectionSnapshot;
+      const selection = rawSelection
+        ? { ...rawSelection, elementId: rawSelection.elementId ?? targetId }
+        : null;
+      if (
+        !targetId ||
+        !selection ||
+        selection.elementId !== targetId ||
+        selection.rangeStart === selection.rangeEnd
+      )
+        return false;
+      updateRunLink(
+        targetId,
+        selection.paragraphIdx,
+        Math.min(selection.rangeStart, selection.rangeEnd),
+        Math.max(selection.rangeStart, selection.rangeEnd),
+        null,
       );
       return true;
     },
@@ -1686,6 +1758,7 @@ useEffect(() => {
     setPreviewMediaStyleId,
     currentFormatting,
     selectedHyperlinkText,
+    selectedHyperlinkLink,
     hasRealSelection,
     activePendingFormatting,
 
@@ -1748,6 +1821,7 @@ useEffect(() => {
     handleDeleteSelection,
     handleNewComment,
     handleHyperlink,
+    handleRemoveHyperlink,
     handleSaveAs,
     handleNew,
     handleLoadFile,

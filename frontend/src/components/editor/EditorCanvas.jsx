@@ -96,6 +96,8 @@ export default function EditorCanvas({
   onPlaceholderVideoUpload,
   onNewComment,
   onHyperlink,
+  onRemoveHyperlink,
+  existingHyperlink = null,
   canHyperlink = false,
   canPaste = false,
   canUndo = false,
@@ -144,7 +146,12 @@ export default function EditorCanvas({
 
   const closeContextMenu = () => setContextMenu(null);
 
-  const openContextMenu = (event, elementId = null, contextType = "canvas") => {
+  const openContextMenu = (
+    event,
+    elementId = null,
+    contextType = "canvas",
+    textSelection = null,
+  ) => {
     event.preventDefault();
     if (elementId && !selectedElementIds.includes(elementId)) {
       onSelectElement?.(elementId);
@@ -155,6 +162,7 @@ export default function EditorCanvas({
       hasSelection: Boolean(elementId),
       elementId,
       contextType,
+      textSelection,
     });
   };
 
@@ -198,7 +206,6 @@ export default function EditorCanvas({
   );
 
   const {
-    stopInteraction,
     startDraggingText,
     startDraggingMedia,
     startResizingText,
@@ -813,7 +820,10 @@ export default function EditorCanvas({
           onRotateRight={onRotateRight}
           onNewComment={onNewComment}
           onHyperlink={onHyperlink}
+          onRemoveHyperlink={onRemoveHyperlink}
+          existingHyperlink={existingHyperlink}
           hyperlinkText={hyperlinkText}
+          textSelection={contextMenu.textSelection}
           canHyperlink={canHyperlink}
           onExitEditText={exitTextEditing}
           onFormatText={onFormatTextElement}

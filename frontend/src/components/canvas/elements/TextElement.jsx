@@ -78,6 +78,7 @@ export default function TextElement({
   const lastTypedHTMLRef = useRef(null);
   const lastAutoFitHeightRef = useRef(null);
   const savedSelectionRef = useRef(null);
+  const contextSelectionRef = useRef(null);
   const selectionFrameRef = useRef(null);
   const isDeletingRef = useRef(false);
   const isTypingRef = useRef(false);
@@ -200,13 +201,13 @@ useEffect(() => {
 
   const saveCurrentSelection = () => {
     const el = editableRef.current;
-    if (!el) return;
+    if (!el) return null;
     const sel = window.getSelection();
     if (!sel?.rangeCount) {
       savedSelectionRef.current = null;
       setSavedSelState(null);
       onSaveSelection?.(textElement.id, null);
-      return;
+      return null;
     }
     const offsets = sel.isCollapsed
       ? getCollapsedCursorOffset(el)
@@ -214,6 +215,35 @@ useEffect(() => {
     savedSelectionRef.current = offsets;
     setSavedSelState(offsets);
     onSaveSelection?.(textElement.id, offsets);
+    return offsets;
+  };
+
+  const isExpandedSelection = (selection) =>
+    Boolean(
+      selection &&
+        (selection.paragraphIdx !==
+          (selection.endParagraphIdx ?? selection.paragraphIdx) ||
+          selection.rangeStart !== selection.rangeEnd),
+    );
+
+  const getContextMenuSelection = () => {
+    const el = editableRef.current;
+    if (!el) return null;
+
+    const liveSelection = getSelectionOffsets(el);
+    const savedSelection = savedSelectionRef.current;
+    const selection =
+      (isExpandedSelection(liveSelection) ? liveSelection : null) ??
+      contextSelectionRef.current ??
+      (isExpandedSelection(savedSelection) ? savedSelection : null) ??
+      liveSelection;
+
+    if (selection) {
+      savedSelectionRef.current = selection;
+      setSavedSelState(selection);
+      onSaveSelection?.(textElement.id, selection);
+    }
+    return selection;
   };
 
   const innerHTML = paragraphsToHTML(textElement.paragraphs, masterFormatting, placeholderFormatting);
@@ -487,6 +517,18 @@ useEffect(() => {
         ...(placeholderPadding ? { padding: placeholderPadding } : {}),
       }}
       onMouseDown={(event) => {
+        if (event.button === 2) {
+          const liveSelection = editableRef.current
+            ? getSelectionOffsets(editableRef.current)
+            : null;
+          const savedExpanded = isExpandedSelection(savedSelectionRef.current)
+            ? savedSelectionRef.current
+            : null;
+          contextSelectionRef.current =
+            (isExpandedSelection(liveSelection) ? liveSelection : null) ??
+            savedExpanded ??
+            liveSelection;
+        }
         if (
           event.button === 0 &&
           (!isSelected ||
@@ -638,7 +680,7 @@ useEffect(() => {
           setSavedSelState(null);
         }}
         onMouseUp={(e) => {
-          saveCurrentSelection();
+          if (e.button !== 2) saveCurrentSelection();
           syncSelectionToolbar();
           if (e.ctrlKey || e.metaKey) {
             const linkEl = e.target.closest?.("[data-link]");
@@ -650,12 +692,12 @@ useEffect(() => {
           window.setTimeout(syncSelectionToolbar, 0);
         }}
         onContextMenu={(event) => {
-          saveCurrentSelection();
+          const selection = getContextMenuSelection();
           if (onContextMenu) {
             event.preventDefault();
             event.stopPropagation();
             setIsToolbarOpen(false);
-            onContextMenu(event, textElement.id, "text");
+            onContextMenu(event, textElement.id, "text", selection);
           } else {
             openToolbar({ x: event.clientX, y: event.clientY });
           }
@@ -777,19 +819,24 @@ useEffect(() => {
         }}
         onBlur={(e) => {
           const relatedTarget = e.relatedTarget;
+          const goingToTextContextUi =
+            relatedTarget &&
+            (relatedTarget.closest?.(".canvas-context-menu") ||
+              relatedTarget.closest?.(".text-context-dialog"));
           const goingToToolbar =
             toolbarFormInputActiveRef.current ||
             (relatedTarget &&
             (relatedTarget.closest?.(".format-toolbar") ||
               relatedTarget.closest?.(".toolbar") ||
               relatedTarget.closest?.(".toolbar-ribbon") ||
-              relatedTarget.closest?.(".bg-palette-popup")));
+              relatedTarget.closest?.(".bg-palette-popup"))) ||
+            goingToTextContextUi;
           toolbarFormInputActiveRef.current = false;
           const domSel = window.getSelection();
           const hasRealSelection =
             domSel && !domSel.isCollapsed && domSel.rangeCount > 0;
           if (goingToToolbar) {
-            if (!hasRealSelection) {
+            if (!hasRealSelection && !goingToTextContextUi) {
               const el = editableRef.current;
               const collapsed = el ? getCollapsedCursorOffset(el) : null;
               savedSelectionRef.current = collapsed;

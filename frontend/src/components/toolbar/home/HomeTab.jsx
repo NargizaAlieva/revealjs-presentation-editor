@@ -19,6 +19,7 @@ export default function HomeTab({
   onFormatChange,
   onChangeCase,
   onFontUpload,
+  onFontRemove,
   isTextSelected = false,
   presentation,
   onCut,
@@ -69,9 +70,11 @@ export default function HomeTab({
         currentFormatting={currentFormatting}
         isTextSelected={isTextSelected}
         fonts={fonts}
+        presentation={presentation}
         onFormatChange={onFormatChange}
         onChangeCase={onChangeCase}
         onFontUpload={onFontUpload}
+        onFontRemove={onFontRemove}
       />
 
       <ParagraphGroup

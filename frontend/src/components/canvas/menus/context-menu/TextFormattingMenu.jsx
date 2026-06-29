@@ -1,11 +1,14 @@
 import {
   MdAddComment,
+  MdContentCopy,
   MdExitToApp,
   MdFontDownload,
   MdFormatAlignLeft,
   MdFormatListBulleted,
   MdFormatListNumbered,
   MdLink,
+  MdLinkOff,
+  MdOpenInNew,
 } from "react-icons/md";
 import { ContextMenuItem } from "./ContextMenuItem";
 
@@ -84,6 +87,8 @@ export default function TextFormattingMenu({
   onExitEditText,
   onNewComment,
   applyFormatting,
+  existingLink = null,
+  onRemoveLink,
 }) {
   const indentLevel = formatting["indent-level"] ?? 0;
 
@@ -172,11 +177,36 @@ export default function TextFormattingMenu({
       {matches("Hyperlink") && (
         <>
           <div className="canvas-context-menu-separator" />
-          <ContextMenuItem
-            icon={<MdLink />}
-            label="Hyperlink..."
-            onClick={() => setDialog("hyperlink")}
-          />
+          {existingLink ? (
+            <>
+              <ContextMenuItem
+                icon={<MdLink />}
+                label="Edit Link"
+                onClick={() => setDialog("hyperlink")}
+              />
+              <ContextMenuItem
+                icon={<MdOpenInNew />}
+                label="Open Link"
+                onClick={() => run(() => window.open(existingLink.href, "_blank", "noopener"))}
+              />
+              <ContextMenuItem
+                icon={<MdContentCopy />}
+                label="Copy Link"
+                onClick={() => run(() => navigator.clipboard.writeText(existingLink.href))}
+              />
+              <ContextMenuItem
+                icon={<MdLinkOff />}
+                label="Remove Link"
+                onClick={() => run(onRemoveLink)}
+              />
+            </>
+          ) : (
+            <ContextMenuItem
+              icon={<MdLink />}
+              label="Hyperlink..."
+              onClick={() => setDialog("hyperlink")}
+            />
+          )}
         </>
       )}
       {matches("New Comment") && (
