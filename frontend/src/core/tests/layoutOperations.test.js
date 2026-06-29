@@ -306,10 +306,6 @@ describe("layoutOperations", () => {
     });
 });
 
-// ---------------------------------------------------------------------------
-// addLayout / deleteLayout / renameLayout
-// ---------------------------------------------------------------------------
-
 function makePresentation(layouts, slides = []) {
   return { slideset: { layouts, slides } };
 }
@@ -388,10 +384,6 @@ describe("renameLayout", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// addLayoutPlaceholder / removeLayoutPlaceholder
-// ---------------------------------------------------------------------------
-
 describe("addLayoutPlaceholder", () => {
   test("adds a placeholder to the layout", () => {
     const p = makePresentation([{ "layout-id": "a", placeholders: [] }]);
@@ -416,10 +408,6 @@ describe("removeLayoutPlaceholder", () => {
     expect(updated.slideset.layouts[0].placeholders[0]["placeholder-id"]).toBe("body");
   });
 });
-
-// ---------------------------------------------------------------------------
-// addLayoutElement / deleteLayoutElement / updateLayoutElement
-// ---------------------------------------------------------------------------
 
 describe("addLayoutElement", () => {
   test("adds a text element to layout elements", () => {

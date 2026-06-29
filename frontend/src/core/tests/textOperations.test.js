@@ -34,10 +34,6 @@ function getEl(presentation) {
   return presentation.slideset.slides[0].contents.text[0];
 }
 
-// ---------------------------------------------------------------------------
-// updateTextFormatting — whole element
-// ---------------------------------------------------------------------------
-
 describe("updateTextFormatting", () => {
   it("applies formatting to all paragraphs", () => {
     const p = makePresentation();
@@ -76,10 +72,6 @@ describe("updateTextFormatting", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// updateSingleParagraphFormatting — one paragraph
-// ---------------------------------------------------------------------------
-
 describe("updateSingleParagraphFormatting", () => {
   it("updates only the target paragraph", () => {
     const p = makePresentation();
@@ -102,10 +94,6 @@ describe("updateSingleParagraphFormatting", () => {
     expect(updateSingleParagraphFormatting(p, 99, "el-1", 0, {})).toBe(p);
   });
 });
-
-// ---------------------------------------------------------------------------
-// updateTextRangeFormatting — selection range
-// ---------------------------------------------------------------------------
 
 describe("updateTextRangeFormatting", () => {
   const makeRangePresentation = () =>

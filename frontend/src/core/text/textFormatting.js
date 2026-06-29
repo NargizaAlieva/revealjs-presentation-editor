@@ -241,10 +241,21 @@ export const buildRunStyles = (runFormatting = {}) => {
   return styles.join(";");
 };
 
-export const runsToHTML = (runs) =>
+export const runsToHTML = (runs, fallbackFormatting) =>
   (runs ?? [])
     .map((run) => {
-      const styles = buildRunStyles(run.formatting ?? {});
+      const runFmt = run.formatting ?? {};
+      const fb = fallbackFormatting ?? {};
+      const pick = (own, fallback) => (own !== undefined ? own : fallback);
+      const styles = buildRunStyles({
+        weight: pick(runFmt.weight, fb.weight),
+        italics: pick(runFmt.italics, fb.italics),
+        color: pick(runFmt.color, fb.color),
+        size: pick(runFmt.size, fb.size),
+        font: pick(runFmt.font, fb.font),
+        "text-decoration": pick(runFmt["text-decoration"], fb["text-decoration"]),
+        highlight: pick(runFmt.highlight, fb.highlight),
+      });
       const superSub = run["super-sub-script"];
       const superSubStyle =
         superSub === "super"
@@ -252,11 +263,10 @@ export const runsToHTML = (runs) =>
           : superSub === "sub"
             ? "vertical-align:sub;font-size:0.75em"
             : "";
-      const fmt = run.formatting ?? {};
       const linkStyle = run.link?.href
         ? [
-            !fmt.color ? "color:var(--link,#2563eb)" : "",
-            !fmt["text-decoration"] ? "text-decoration:underline" : "",
+            !runFmt.color ? "color:var(--link,#2563eb)" : "",
+            !runFmt["text-decoration"] ? "text-decoration:underline" : "",
             "cursor:pointer",
           ].filter(Boolean).join(";")
         : "";
@@ -299,15 +309,18 @@ export const paragraphsToHTML = (paragraphs, masterFormatting = {}, placeholderF
           }</span>`
         : "";
 
+      const resolvedFallback = {
+        weight: r(formatting.weight, placeholderFormatting.weight, masterFormatting.weight),
+        italics: r(formatting.italics, placeholderFormatting.italics, masterFormatting.italics),
+        color: r(formatting.color, placeholderFormatting.color, masterFormatting.color),
+        size: r(formatting.size, placeholderFormatting.size, masterFormatting.size),
+        font: r(formatting.font, placeholderFormatting.font, masterFormatting.font),
+        "text-decoration": r(formatting["text-decoration"], placeholderFormatting["text-decoration"], masterFormatting["text-decoration"]),
+        highlight: r(formatting.highlight, placeholderFormatting.highlight, masterFormatting.highlight),
+      };
+
       const styles = [
-        buildRunStyles({
-          weight: r(formatting.weight, placeholderFormatting.weight, masterFormatting.weight),
-          italics: r(formatting.italics, placeholderFormatting.italics, masterFormatting.italics),
-          color: r(formatting.color, placeholderFormatting.color, masterFormatting.color),
-          size: r(formatting.size, placeholderFormatting.size, masterFormatting.size),
-          font: r(formatting.font, placeholderFormatting.font, masterFormatting.font),
-          "text-decoration": r(formatting["text-decoration"], placeholderFormatting["text-decoration"], masterFormatting["text-decoration"]),
-        }),
+        buildRunStyles({ ...resolvedFallback, highlight: undefined }),
         formatting.align || placeholderFormatting.align || masterFormatting.align
           ? `text-align:${r(formatting.align, placeholderFormatting.align, masterFormatting.align)}`
           : "",
@@ -325,7 +338,7 @@ export const paragraphsToHTML = (paragraphs, masterFormatting = {}, placeholderF
 
       return `<div data-paragraph-index="${index}"${
         styles ? ` style="${styles}"` : ""
-      }>${markerHtml}${runsToHTML(paragraph.runs)}</div>`;
+      }>${markerHtml}${runsToHTML(paragraph.runs, resolvedFallback)}</div>`;
     })
     .join("");
 };

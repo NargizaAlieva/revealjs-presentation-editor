@@ -10,10 +10,6 @@ import {
   buildRunStyles,
 } from "../text/textFormatting";
 
-// ---------------------------------------------------------------------------
-// Key classification
-// ---------------------------------------------------------------------------
-
 describe("key classification", () => {
   it("highlight is RUN_ONLY (not SHARED)", () => {
     expect(RUN_ONLY_KEYS.has("highlight")).toBe(true);
@@ -38,10 +34,6 @@ describe("key classification", () => {
     }
   });
 });
-
-// ---------------------------------------------------------------------------
-// splitFormattingUpdates
-// ---------------------------------------------------------------------------
 
 describe("splitFormattingUpdates", () => {
   it("routes run-level keys to runUpdates", () => {
@@ -76,10 +68,6 @@ describe("splitFormattingUpdates", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// buildRunStyles — highlight only on runs
-// ---------------------------------------------------------------------------
-
 describe("buildRunStyles", () => {
   it("applies highlight as background-color", () => {
     const styles = buildRunStyles({ highlight: "#ffff00" });
@@ -96,10 +84,6 @@ describe("buildRunStyles", () => {
     expect(styles).toContain("font-size:32px");
   });
 });
-
-// ---------------------------------------------------------------------------
-// applyFormattingToParagraphs
-// ---------------------------------------------------------------------------
 
 describe("applyFormattingToParagraphs", () => {
   const makeParagraphs = () => [
@@ -138,10 +122,6 @@ describe("applyFormattingToParagraphs", () => {
     expect(original[0].formatting.align).toBe("left");
   });
 });
-
-// ---------------------------------------------------------------------------
-// paragraphsToHTML
-// ---------------------------------------------------------------------------
 
 describe("paragraphsToHTML", () => {
   const makePara = (text, formatting = {}, runFmt = {}) => ({
@@ -246,10 +226,6 @@ describe("paragraphsToHTML", () => {
     expect(html).toContain("text-align:left");
   });
 });
-
-// ---------------------------------------------------------------------------
-// migrateParagraphFormatting — alignment preservation bug fix
-// ---------------------------------------------------------------------------
 
 describe("migrateParagraphFormatting", () => {
   const makeParagraph = (formatting, runs = [{ text: "Hello", formatting: {} }]) => ({

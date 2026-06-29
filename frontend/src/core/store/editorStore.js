@@ -1061,17 +1061,29 @@ export const editorReducer = (state, event) => {
         lastUpdated: Date.now(),
       });
 
-    case EditorEventType.MASTER.UPDATE_ITEM:
+    case EditorEventType.MASTER.UPDATE_ITEM: {
+      const updatedPresentation = updateMasterItem(
+        state.presentation,
+        event.payload.elementId,
+        event.payload.updates,
+      );
+      const masterUpdates = event.payload.updates ?? {};
+      const isMasterDragUpdate = "position" in masterUpdates || "width" in masterUpdates || "height" in masterUpdates;
+      if (state.pendingSnapshot && isMasterDragUpdate) {
+        return {
+          ...state,
+          presentation: updatedPresentation,
+          lastEvent: event,
+          lastUpdated: Date.now(),
+        };
+      }
       return withHistory(state, {
         ...state,
-        presentation: updateMasterItem(
-          state.presentation,
-          event.payload.elementId,
-          event.payload.updates,
-        ),
+        presentation: updatedPresentation,
         lastEvent: event,
         lastUpdated: Date.now(),
       });
+    }
 
     case EditorEventType.MASTER.DELETE_ELEMENT:
       return withHistory(state, {

@@ -586,7 +586,8 @@ export default function TextElement({
             (relatedTarget.closest?.(".format-toolbar") ||
               relatedTarget.closest?.(".toolbar") ||
               relatedTarget.closest?.(".toolbar-ribbon") ||
-              relatedTarget.closest?.(".bg-palette-popup"))) ||
+              relatedTarget.closest?.(".bg-palette-popup") ||
+              relatedTarget.closest?.(".cp-popup"))) ||
             goingToTextContextUi;
           toolbarFormInputActiveRef.current = false;
           const domSel = window.getSelection();
@@ -601,7 +602,8 @@ export default function TextElement({
               const tag = relatedTarget?.tagName;
               const isFormInput =
                 tag === "SELECT" || tag === "INPUT" || tag === "TEXTAREA";
-              if (collapsed && !isFormInput) {
+              const isColorPicker = !!relatedTarget?.closest?.(".cp-popup");
+              if (collapsed && !isFormInput && !isColorPicker) {
                 const savedParas = textElement.paragraphs;
                 setTimeout(() => {
                   const editable = editableRef.current;

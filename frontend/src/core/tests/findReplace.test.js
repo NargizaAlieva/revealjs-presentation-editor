@@ -72,7 +72,6 @@ describe("applyAllReplacements", () => {
   });
 
   test("applies matches in right-to-left order so earlier positions stay valid", () => {
-    // Pass matches in wrong order (left first) — function must sort them right-to-left
     const matches = [{ start: 0, end: 3 }, { start: 8, end: 11 }];
     const result = applyAllReplacements(matches, "cat and cat", "dog");
     expect(result).toBe("dog and dog");
