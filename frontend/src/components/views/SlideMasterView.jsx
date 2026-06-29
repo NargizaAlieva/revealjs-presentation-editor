@@ -549,7 +549,7 @@ export function SlideMasterRibbon({
                 onChange={(e) => {
                   onApplyFont?.({ font: e.target.value });
                 }}
-                style={{ fontSize: 12, padding: "6px 8px", border: "1px solid #d1d5db", borderRadius: 3, width: 160, height: 24, cursor: "pointer" }}
+                style={{ fontSize: 12, padding: "4px 8px", border: "1px solid #d1d5db", borderRadius: 3, width: 160, height: 24, cursor: "pointer", lineHeight: "16px", verticalAlign: "middle" }}
               >
                 {getAvailableFonts(presentation).map((f) => (
                   <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>

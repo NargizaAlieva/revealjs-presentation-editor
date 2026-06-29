@@ -139,8 +139,6 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
         <div className="design-right-panel">
 
             <div className="design-right-section">
-                <div className="design-section-title">Customize</div>
-
                 <div className="design-customize-row">
                     <span className="design-customize-label">Colors</span>
                     <ColorsDropdown
@@ -164,14 +162,12 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
                     </select>
                 </div>
 
+                <div className="ribbon-group-title">Customize</div>
             </div>
 
             <div className="design-right-divider" />
 
-            {/* ── Slide Size ── */}
             <div className="design-right-section">
-                <div className="design-section-title">Slide Size</div>
-
                 <div className="design-customize-row">
                     <span className="design-customize-label">Size</span>
                     <div className="design-slide-size-wrap" ref={sizeRef}>
@@ -243,6 +239,7 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
                     </div>
                 </div>
 
+                <div className="ribbon-group-title">Slide Size</div>
             </div>
 
         </div>

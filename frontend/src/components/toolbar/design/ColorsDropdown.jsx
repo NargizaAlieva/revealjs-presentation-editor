@@ -21,6 +21,9 @@ export function ColorsDropdown({ onColorSchemeSelect, onColorSchemeHover, onColo
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef(null);
 
+  const currentScheme = COLOR_SCHEMES.find(s => s.id === currentSchemeId);
+  const displayName = currentScheme?.name ?? "Colors";
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (ref.current && !ref.current.contains(e.target)) {
@@ -50,8 +53,9 @@ export function ColorsDropdown({ onColorSchemeSelect, onColorSchemeHover, onColo
       <button
         className="colors-dropdown-btn"
         onClick={() => setIsOpen(!isOpen)}
+        title={displayName}
       >
-        <span className="colors-dropdown-label">Colors</span>
+        <span className="colors-dropdown-label">{displayName}</span>
         <span className="colors-dropdown-arrow">▼</span>
       </button>
 
