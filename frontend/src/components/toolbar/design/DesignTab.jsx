@@ -185,7 +185,7 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
                             </svg>
                             <span>{sizeLabel}</span>
                             <span className="design-slide-size-dim">{currentW}×{currentH}</span>
-                            <span className="design-slide-size-arrow">▾</span>
+                            <span className="design-slide-size-arrow">▼</span>
                         </button>
 
                         {showSizeMenu && (
