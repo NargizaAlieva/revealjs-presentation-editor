@@ -43,6 +43,47 @@ export const DESIGN_THEMES = [
         { type: "circle", fill: "none", stroke: "#90E0EF", strokeWidth: 2, opacity: 0.15, cx: 1180, cy: 640, r: 100 },
       ],
     },
+    colorVariants: [
+      {
+        id: "ocean-light",
+        name: "Light Blue",
+        decorations: {
+          shapes: [
+            { type: "polygon", fill: "#0099CC", opacity: 0.5, points: "0,720 0,480 500,720" },
+            { type: "polygon", fill: "#00CCFF", opacity: 0.25, points: "0,720 0,580 700,720" },
+            { type: "polygon", fill: "#66DDFF", opacity: 0.18, points: "1280,0 900,0 1280,260" },
+            { type: "circle", fill: "none", stroke: "#99EEFF", strokeWidth: 3, opacity: 0.3, cx: 1180, cy: 640, r: 60 },
+            { type: "circle", fill: "none", stroke: "#99EEFF", strokeWidth: 2, opacity: 0.15, cx: 1180, cy: 640, r: 100 },
+          ],
+        },
+      },
+      {
+        id: "ocean-dark",
+        name: "Dark Blue",
+        decorations: {
+          shapes: [
+            { type: "polygon", fill: "#003366", opacity: 0.5, points: "0,720 0,480 500,720" },
+            { type: "polygon", fill: "#004488", opacity: 0.25, points: "0,720 0,580 700,720" },
+            { type: "polygon", fill: "#0066AA", opacity: 0.18, points: "1280,0 900,0 1280,260" },
+            { type: "circle", fill: "none", stroke: "#0088CC", strokeWidth: 3, opacity: 0.3, cx: 1180, cy: 640, r: 60 },
+            { type: "circle", fill: "none", stroke: "#0088CC", strokeWidth: 2, opacity: 0.15, cx: 1180, cy: 640, r: 100 },
+          ],
+        },
+      },
+      {
+        id: "ocean-navy",
+        name: "Navy",
+        decorations: {
+          shapes: [
+            { type: "polygon", fill: "#001F4D", opacity: 0.5, points: "0,720 0,480 500,720" },
+            { type: "polygon", fill: "#002E6E", opacity: 0.25, points: "0,720 0,580 700,720" },
+            { type: "polygon", fill: "#004B9E", opacity: 0.18, points: "1280,0 900,0 1280,260" },
+            { type: "circle", fill: "none", stroke: "#0066CC", strokeWidth: 3, opacity: 0.3, cx: 1180, cy: 640, r: 60 },
+            { type: "circle", fill: "none", stroke: "#0066CC", strokeWidth: 2, opacity: 0.15, cx: 1180, cy: 640, r: 100 },
+          ],
+        },
+      },
+    ],
     preview: { bg: "#0C2340", header: "#00B4D8", dots: ["#00B4D8", "#0077B6", "#90E0EF"] },
   },
   {
