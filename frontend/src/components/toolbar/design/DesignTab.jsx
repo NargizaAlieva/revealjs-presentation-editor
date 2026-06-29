@@ -274,6 +274,7 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
                             onApplyTheme(defaultTheme.colorTheme, defaultTheme.decorations);
                         }
                     }}
+                    onUpdateThemeColor={onUpdateThemeColor}
                 />
             </div>
 

@@ -22,6 +22,7 @@ export function ThemeColorsPicker({
   currentColorTheme,
   onThemeSelect,
   onResetTheme,
+  onUpdateThemeColor,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showCustomizeDialog, setShowCustomizeDialog] = useState(false);
@@ -103,7 +104,9 @@ export function ThemeColorsPicker({
               <ThemeColorEditor
                 colorTheme={currentColorTheme}
                 onColorChange={(variable, color) => {
-                  // Color change handler will be passed from parent
+                  if (onUpdateThemeColor) {
+                    onUpdateThemeColor(variable, color);
+                  }
                 }}
               />
             </div>
