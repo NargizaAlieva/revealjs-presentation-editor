@@ -5,8 +5,7 @@ import { toHex6, toHex9 } from "../../../core/utils/colorUtils";
 import { DESIGN_THEMES, findActiveTheme, updateThemeBackground, THEME_PALETTE_COLUMNS, STANDARD_COLORS } from "../../../core/model/designThemes";
 import { SLIDE_SIZES, clampSlideDimension } from "../../../core/model/slideSizes";
 import { renderShapes } from "../../../core/render/shapeRenderer";
-import { ThemeColorEditor } from "./ThemeColorEditor";
-import { ThemeColorsPicker } from "./ThemeColorsPicker";
+import { ColorsDropdown } from "./ColorsDropdown";
 import FormatBackgroundPanel from "../shared/FormatBackgroundPanel";
 
 
@@ -144,23 +143,16 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
                 <div className="design-section-title">Customize</div>
 
                 <div className="design-customize-row">
-                    <span className="design-customize-label">Background</span>
-                    <div className="design-bg-wrapper">
-                        <button className="design-bg-swatch-btn" onClick={() => setShowPalette(v => !v)}>
-                            <span className="design-bg-swatch" style={{ background: bgColor }} />
-                            <span className="design-bg-arrow">▾</span>
-                        </button>
-                        {showPalette && (
-                            <ColorPalettePopup currentColor={bgColor} onSelect={applyBg} onClose={() => setShowPalette(false)} />
-                        )}
-                    </div>
-                    <button
-                        className="design-format-bg-btn"
-                        title="Format Background"
-                        onClick={() => setShowFormatBg(v => !v)}
-                    >
-                        Format Background
-                    </button>
+                    <span className="design-customize-label">Colors</span>
+                    <ColorsDropdown
+                        currentThemeId={activeTheme?.id}
+                        onThemeSelect={(themeId) => {
+                            const theme = DESIGN_THEMES.find(t => t.id === themeId);
+                            if (theme) {
+                                onApplyTheme(theme.colorTheme, theme.decorations);
+                            }
+                        }}
+                    />
                 </div>
 
                 <div className="design-customize-row">
@@ -255,27 +247,6 @@ function RightPanel({ presentation, onApplyTheme, onApplyFont, onUpdateDimension
                     </div>
                 </div>
 
-            </div>
-
-            <div className="design-right-divider" />
-
-            <div className="design-right-section">
-                <ThemeColorsPicker
-                    currentColorTheme={colorTheme}
-                    onThemeSelect={(themeId) => {
-                        const theme = DESIGN_THEMES.find(t => t.id === themeId);
-                        if (theme) {
-                            onApplyTheme(theme.colorTheme, theme.decorations);
-                        }
-                    }}
-                    onResetTheme={() => {
-                        const defaultTheme = DESIGN_THEMES.find(t => t.id === 'default');
-                        if (defaultTheme) {
-                            onApplyTheme(defaultTheme.colorTheme, defaultTheme.decorations);
-                        }
-                    }}
-                    onUpdateThemeColor={onUpdateThemeColor}
-                />
             </div>
 
         </div>
