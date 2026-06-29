@@ -14,6 +14,10 @@ vi.mock("../persistence/autoSaveService", () => {
           EditorEventType.MEDIA.ADD,
           EditorEventType.MEDIA.DELETE,
           EditorEventType.MEDIA.UPDATE,
+          EditorEventType.ELEMENT.UPDATE_SILENT,
+          EditorEventType.HISTORY.CANCEL,
+          EditorEventType.HISTORY.UNDO,
+          EditorEventType.HISTORY.REDO,
         ].includes(eventType)
       ),
     })),

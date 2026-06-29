@@ -123,6 +123,52 @@ describe("editorReducer", () => {
     expect(result.selectedElementIds).toEqual([]);
   });
 
+  test("HISTORY.UNDO restores previous presentation state", () => {
+    const state = createInitialEditorState();
+    const afterAdd = editorReducer(state, {
+      type: EditorEventType.MEDIA.ADD,
+      payload: { mediaElement: { id: "undo-media", "media-type": "image" } },
+    });
+    expect(afterAdd.past.length).toBe(1);
+
+    const afterUndo = editorReducer(afterAdd, {
+      type: EditorEventType.HISTORY.UNDO,
+      payload: {},
+    });
+
+    expect(afterUndo.past.length).toBe(0);
+    expect(
+      afterUndo.presentation.slideset.slides[0].contents.media.some(
+        (m) => m.id === "undo-media",
+      ),
+    ).toBe(false);
+  });
+
+  test("HISTORY.REDO re-applies undone state", () => {
+    const state = createInitialEditorState();
+    const afterAdd = editorReducer(state, {
+      type: EditorEventType.MEDIA.ADD,
+      payload: { mediaElement: { id: "redo-media", "media-type": "image" } },
+    });
+    const afterUndo = editorReducer(afterAdd, {
+      type: EditorEventType.HISTORY.UNDO,
+      payload: {},
+    });
+    expect(afterUndo.future.length).toBe(1);
+
+    const afterRedo = editorReducer(afterUndo, {
+      type: EditorEventType.HISTORY.REDO,
+      payload: {},
+    });
+
+    expect(afterRedo.future.length).toBe(0);
+    expect(
+      afterRedo.presentation.slideset.slides[0].contents.media.some(
+        (m) => m.id === "redo-media",
+      ),
+    ).toBe(true);
+  });
+
   test("ELEMENT.UPDATE_MANY updates visibility in one history entry", () => {
     const state = createInitialEditorState();
     const textIds = state.presentation.slideset.slides[0].contents.text.map(

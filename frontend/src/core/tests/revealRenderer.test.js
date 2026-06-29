@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { getPerLineFragments } from "../render/revealRenderer";
+import { buildPStyle } from "../export/exportToReveal";
 
 function makeTextElement(paragraphs) {
   return { id: "el-1", paragraphs };
@@ -90,5 +91,37 @@ describe("getPerLineFragments", () => {
     const idx2 = Number(result[2].fragmentProps["data-fragment-index"]);
     expect(idx1).toBe(idx0 + 1);
     expect(idx2).toBe(idx0 + 2);
+  });
+});
+
+describe("buildPStyle", () => {
+  it("includes font-size when size is set", () => {
+    const style = buildPStyle({ size: "24px" });
+    expect(style).toContain("font-size: 24px");
+  });
+
+  it("includes text-align when align is set", () => {
+    const style = buildPStyle({ align: "center" });
+    expect(style).toContain("text-align: center");
+  });
+
+  it("uses default margin when margin not set", () => {
+    const style = buildPStyle({});
+    expect(style).toContain("margin: 0 0 4px 0");
+  });
+
+  it("uses custom margin when margin is set", () => {
+    const style = buildPStyle({ margin: "8px 0" });
+    expect(style).toContain("margin: 8px 0");
+  });
+
+  it("includes padding-left when listPaddingLeft is provided", () => {
+    const style = buildPStyle({}, "2em");
+    expect(style).toContain("padding-left: 2em");
+  });
+
+  it("produces no font-size when size is not set", () => {
+    const style = buildPStyle({ align: "left" });
+    expect(style).not.toContain("font-size");
   });
 });

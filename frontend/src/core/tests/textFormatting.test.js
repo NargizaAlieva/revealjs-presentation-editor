@@ -329,6 +329,14 @@ describe("migrateParagraphFormatting", () => {
     expect(result[0].formatting["list-type"]).toBe("bullets");
   });
 
+  it("preserves key in userSetKeys even when it matches placeholder (explicit user override)", () => {
+    const paragraphs = [
+      { formatting: { align: "center" }, userSetKeys: ["align"], runs: [] },
+    ];
+    const result = migrateParagraphFormatting(paragraphs, { align: "center" });
+    expect(result[0].formatting.align).toBe("center");
+  });
+
   it("handles null paragraphs gracefully", () => {
     expect(migrateParagraphFormatting(null, {})).toBeNull();
   });

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { addFontEntry, removePresentationFont } from "../operations/fontOperations";
+import { getAvailableFonts, DEFAULT_FONTS } from "../model/fontConfig";
 
 function makePresentation(fonts = []) {
   return { slideset: { fonts } };
@@ -54,5 +55,31 @@ describe("removePresentationFont", () => {
     const p = makePresentation([]);
     const updated = removePresentationFont(p, "Font A");
     expect(updated.slideset.fonts).toHaveLength(0);
+  });
+});
+
+describe("getAvailableFonts", () => {
+  it("returns default fonts when presentation has none", () => {
+    const p = makePresentation([]);
+    const fonts = getAvailableFonts(p);
+    expect(fonts).toEqual(DEFAULT_FONTS);
+  });
+
+  it("places presentation fonts before defaults", () => {
+    const p = makePresentation([{ "font-id": "MyFont", "font-file": "indexeddb://x" }]);
+    const fonts = getAvailableFonts(p);
+    expect(fonts[0]).toBe("MyFont");
+  });
+
+  it("does not duplicate fonts that overlap with defaults", () => {
+    const p = makePresentation([{ "font-id": "Arial", "font-file": "" }]);
+    const fonts = getAvailableFonts(p);
+    const arialCount = fonts.filter((f) => f === "Arial").length;
+    expect(arialCount).toBe(1);
+  });
+
+  it("handles null presentation gracefully", () => {
+    const fonts = getAvailableFonts(null);
+    expect(fonts).toEqual(DEFAULT_FONTS);
   });
 });
